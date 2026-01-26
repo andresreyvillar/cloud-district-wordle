@@ -149,7 +149,7 @@ function renderBubbleChart(stats) {
 
     const layout = {
         title: 'Habilidad (Media) vs. Participación (Mín. 3 partidas)',
-        xaxis: { title: 'Media de Intentos (Menos es mejor)', autorange: 'reversed' },
+        xaxis: { title: 'Media de Intentos (Menos es mejor)' },
         yaxis: { title: 'Partidas Jugadas (Más es mejor)' },
         hovermode: 'closest',
         font: { family: 'Open Sans' },
