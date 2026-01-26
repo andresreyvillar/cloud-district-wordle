@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Analytics</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header>
+    <h1>Wordle Analytics</h1>
+</header>
+
+<div class="container">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('graph')">Evolución</button>
+        <button class="tab-btn" onclick="openTab('stats')">Estadísticas</button>
+        <button class="tab-btn" onclick="openTab('data')">Datos</button>
+    </div>
+
+    <div id="graph" class="tab-content active">
+        <div id="plotly-graph" style="width:100%; height:600px;"></div>
+    </div>
+
+    <div id="stats" class="tab-content">
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Partidas</th>
+                    <th>Media</th>
+                    <th>Distribución de Intentos (1-6)</th>
+                    <th>Fallos (>6)</th>
+                </tr>
+            </thead>
+            <tbody id="statsBody"></tbody>
+        </table>
+    </div>
+
+    <div id="data" class="tab-content">
+        <div style="max-height: 600px; overflow-y: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Wordle #</th>
+                        <th>Intentos</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="js/script.js"></script>
+
+</body>
+</html>
