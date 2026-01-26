@@ -53,9 +53,9 @@ function initDashboard(rawData) {
 
     // Renderizar componentes en sus pestañas
     renderSummary(userStats);
-    renderEvolutionChart(rawData, users);
     renderBubbleChart(userStats);
     renderStatsTable(userStats);
+    renderEvolutionChart(rawData, users);
     renderDataTable(rawData);
 }
 
