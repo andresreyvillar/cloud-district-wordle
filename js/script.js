@@ -126,7 +126,7 @@ function renderBubbleChart(stats) {
     const trace = {
         x: filteredStats.map(s => s.avg),
         y: filteredStats.map(s => s.total),
-        text: filteredStats.map(s => `${s.user}<br>Éxito: ${s.successRate}%`),
+        text: filteredStats.map(s => s.user),
         mode: 'markers+text',
         textposition: 'top center',
         marker: {
