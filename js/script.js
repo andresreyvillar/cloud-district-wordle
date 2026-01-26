@@ -120,17 +120,20 @@ function renderBubbleChart(stats) {
     chartDiv.style.height = '500px';
     container.appendChild(chartDiv);
 
+    // Filtrar usuarios con al menos 3 partidas
+    const filteredStats = stats.filter(s => s.total >= 3);
+
     const trace = {
-        x: stats.map(s => s.avg),
-        y: stats.map(s => s.total),
-        text: stats.map(s => `${s.user}<br>Éxito: ${s.successRate}%`),
+        x: filteredStats.map(s => s.avg),
+        y: filteredStats.map(s => s.total),
+        text: filteredStats.map(s => `${s.user}<br>Éxito: ${s.successRate}%`),
         mode: 'markers+text',
         textposition: 'top center',
         marker: {
-            size: stats.map(s => Math.max(s.successRate, 10)),
+            size: filteredStats.map(s => Math.max(s.successRate, 10)),
             sizemode: 'area',
-            sizeref: 2.0 * Math.max(...stats.map(s => s.successRate)) / (40**2),
-            color: stats.map(s => s.avg),
+            sizeref: 2.0 * Math.max(...filteredStats.map(s => s.successRate)) / (40**2),
+            color: filteredStats.map(s => s.avg),
             colorscale: 'Viridis',
             reversescale: true,
             showscale: true,
@@ -139,7 +142,7 @@ function renderBubbleChart(stats) {
     };
 
     const layout = {
-        title: 'Habilidad (Media) vs. Participación (Partidas)',
+        title: 'Habilidad (Media) vs. Participación (Mín. 3 partidas)',
         xaxis: { title: 'Media de Intentos (Menos es mejor)', autorange: 'reversed' },
         yaxis: { title: 'Partidas Jugadas (Más es mejor)' },
         hovermode: 'closest',
