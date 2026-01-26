@@ -137,7 +137,13 @@ function renderBubbleChart(stats) {
             colorscale: 'Viridis',
             reversescale: true,
             showscale: true,
-            colorbar: { title: 'Media' }
+            colorbar: { 
+                title: 'Media', 
+                orientation: 'h',
+                y: -0.2,
+                yanchor: 'top',
+                thickness: 15
+            }
         }
     };
 
@@ -147,7 +153,7 @@ function renderBubbleChart(stats) {
         yaxis: { title: 'Partidas Jugadas (Más es mejor)' },
         hovermode: 'closest',
         font: { family: 'Open Sans' },
-        margin: { t: 50, b: 80, l: 80, r: 20 }
+        margin: { t: 50, b: 100, l: 80, r: 20 }
     };
 
     Plotly.newPlot('bubble-chart', [trace], layout, { responsive: true });
