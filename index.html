@@ -21,10 +21,12 @@
         <button class="tab-btn" onclick="openTab('data')">Datos</button>
     </div>
 
+    <!-- Pestaña 1: Ranking -->
     <div id="ranking" class="tab-content active">
-        <!-- Aquí se cargarán las tarjetas y el gráfico de burbujas -->
+        <!-- Contenido dinámico desde JS -->
     </div>
 
+    <!-- Pestaña 2: Estadísticas -->
     <div id="stats" class="tab-content">
         <table>
             <thead>
@@ -40,22 +42,12 @@
         </table>
     </div>
 
+    <!-- Pestaña 3: Evolución -->
     <div id="graph" class="tab-content">
         <div id="plotly-graph" style="width:100%; height:600px;"></div>
     </div>
-        <table>
-                            <thead>
-                                <tr>
-                                    <th>Usuario / Constancia</th>
-                                    <th>Partidas</th>
-                                    <th>Media</th>
-                                    <th>Distribución (1-6)</th>
-                                    <th>% Éxito</th>
-                                </tr>
-                            </thead>            <tbody id="statsBody"></tbody>
-        </table>
-    </div>
 
+    <!-- Pestaña 4: Datos -->
     <div id="data" class="tab-content">
         <div style="max-height: 600px; overflow-y: auto;">
             <table>
