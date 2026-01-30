@@ -3,12 +3,12 @@
 const SUPABASE_URL = 'https://oogturrjjcyrvzmiufff.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_h92oql1czQVyp30m49uxFA_23airRWH';
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Consulta a Supabase
-        const { data, error } = await supabase
+        const { data, error } = await _supabase
             .from('wordle_results')
             .select('*')
             .order('wordle_id', { ascending: false });
