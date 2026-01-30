@@ -1,0 +1,46 @@
+name: Update Wordle Stats
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Cada hora
+  workflow_dispatch: # Permite ejecutar manualmente
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install slack_sdk python-dotenv
+
+      - name: Run Extraction Pipeline
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: |
+          python tools/extract_slack.py | python tools/add_results.py
+
+      - name: Commit and Push if changes
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+
+          if [[ -n $(git status -s data/data.json) ]]; then
+            git add data/data.json
+            git commit -m "Auto-update: Wordle Stats from Slack"
+            git push
+          else
+            echo "No hay nuevos datos."
+          fi
