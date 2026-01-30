@@ -1,10 +1,37 @@
-document.addEventListener('DOMContentLoaded', () => {
-    fetch('data/data.json')
-        .then(response => response.json())
-        .then(data => {
-            initDashboard(data);
-        })
-        .catch(err => console.error('Error cargando datos:', err));
+// Configuración de Supabase
+// REEMPLAZA ESTOS VALORES CON LOS DE TU PROYECTO SUPABASE
+const SUPABASE_URL = 'https://oogturrjjcyrvzmiufff.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_h92oql1czQVyp30m49uxFA_23airRWH';
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Consulta a Supabase
+        const { data, error } = await supabase
+            .from('wordle_results')
+            .select('*')
+            .order('wordle_id', { ascending: false });
+
+        if (error) throw error;
+
+        // Mapear datos de DB (snake_case) a formato interno (camelCase/legacy)
+        // DB: player_name, wordle_id, score, date
+        // JS espera: user, num, score, date
+        const mappedData = data.map(row => ({
+            user: row.player_name,
+            num: row.wordle_id.toString(), // El código original espera string a veces
+            score: row.score,
+            date: row.date
+        }));
+
+        initDashboard(mappedData);
+
+    } catch (err) {
+        console.error('Error cargando datos de Supabase:', err);
+        // Fallback opcional o mensaje de error en UI
+        document.querySelector('.container').innerHTML = '<h3 style="text-align:center; margin-top:50px">Error cargando datos. Revisa la consola.</h3>';
+    }
 });
 
 function openTab(tabId) {
