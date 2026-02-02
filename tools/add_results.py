@@ -22,39 +22,33 @@ if not URL or not KEY:
 _supabase: Client = create_client(URL, KEY)
 
 # DICCIONARIO MAESTRO DE IDENTIDAD (ID de Slack -> Nombre que queremos en la Web)
-# Esto es la fuente de verdad absoluta.
 USER_IDENTITY = {
     "U0797LY6G3H": "Cata",
-    "U02U5EHPL3A": "Claire",
-    "U09G8KLSE4Q": "Iván A.",
-    "U09PH16T8HJ": "Carlos R.",  # Identificado por eliminación
-    "U08KF6V12CB": "Carlos H.",  # Identificado por log
-    "U08U27DFDL2": "Paula G.",
-    "U08BCSARLSZ": "Quique",
-    "U02TN4L9HEE": "Raquel",
-    "U04JUF2EWLC": "Luis",
-    "U1CKSFSSX": "Edu N.",
-    "U08KF6V12CB": "Carlos H.",
+    "U02U5EHPL3A": "Carlos R.",  # Confirmado Carlos Rodriguez
+    "U1CKSFSSX": "Carlos H.",    # Confirmado Carlos Henestrosa
+    "U09G8KLSE4Q": "Iván A.",    # Confirmado Ivan Antona
+    "U08U27DFDL2": "Andrés R.",  # Confirmado Andres Rey
+    "U08KF6V12CB": "Paula G.",   # Confirmado Paula Granado
+    "U08BCSARLSZ": "Edu N.",     # Confirmado Edu Noeda
+    "U02TN4L9HEE": "Raquel",     # Confirmado Clara/Raquel (Clara González en Slack)
+    "U04JUF2EWLC": "Raquel",     # Confirmado Raquel Lorenzo
+    "U09PH16T8HJ": "Iria Dorado",# Confirmado Iria Dorado
+    "U09Q60LNVT9": "Enrique L.", # Enrique Lopez
+    "U04JUF2EWLC": "Raquel L.",
 }
 
-# Mapping de emergencia para cuando el bot no da el ID pero sí el nombre
-# (Útil para datos históricos o fallos de la API de Slack)
+# Mapping de emergencia (Nombre/Handle -> ID)
 NAME_TO_ID = {
-    "carlos.h": "U08KF6V12CB",
-    "Carlos": "U08KF6V12CB",
+    "carlos.h": "U1CKSFSSX",
     "ivan.antona": "U09G8KLSE4Q",
-    "Andres R": "U09G8KLSE4Q", # Ajustar si Andrés tiene su propio ID
+    "Andres R": "U08U27DFDL2",
 }
 
 def get_user_info(slack_id_or_name):
-    """Retorna (slack_id, display_name)"""
     sid = slack_id_or_name
-    
-    # Si recibimos un nombre en lugar de un ID, intentamos buscar su ID
     if not sid.startswith('U'):
         sid = NAME_TO_ID.get(sid, sid)
-        
-    name = USER_IDENTITY.get(sid, sid) # Si no lo conocemos, usamos el ID/Nombre tal cual
+    name = USER_IDENTITY.get(sid, sid)
     return sid, name
 
 def calculate_wordle_date(wordle_id):
@@ -63,7 +57,7 @@ def calculate_wordle_date(wordle_id):
     return real_date.strftime("%Y-%m-%d")
 
 def parse_and_upload():
-    print("Iniciando procesamiento basado en ID...")
+    print("Iniciando procesamiento basado en ID verificado...")
     input_text = sys.stdin.read()
     if not input_text: return
 
@@ -92,7 +86,6 @@ def parse_and_upload():
             score = 7 if score_str == 'X' else int(score_str)
             
             try:
-                # Insertar con slack_user_id
                 _supabase.table("wordle_results").upsert({
                     "slack_user_id": current_slack_id,
                     "player_name": current_display_name,
