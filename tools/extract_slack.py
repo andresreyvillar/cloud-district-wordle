@@ -30,9 +30,15 @@ def get_user_map():
         result = client.users_list()
         user_map = {}
         for u in result["members"]:
-            # Preferimos el 'display_name' si existe, sino 'real_name', sino 'name'
+            # Jerarquía de nombres para evitar Unknown User
             profile = u.get("profile", {})
-            name = profile.get("display_name") or profile.get("real_name") or u.get("name")
+            name = (
+                profile.get("display_name") or 
+                profile.get("real_name") or 
+                u.get("real_name") or 
+                u.get("name") or 
+                u.get("id") # Último recurso: el ID de Slack
+            )
             user_map[u["id"]] = name
         return user_map
     except SlackApiError as e:

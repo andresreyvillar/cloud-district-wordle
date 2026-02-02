@@ -26,8 +26,19 @@ supabase: Client = create_client(URL, KEY)
 # Diccionario de usuarios conocidos para normalización
 KNOWN_USERS = {
     "carlos.h": "Carlos H.",
+    "Carlos": "Carlos H.",
     "ivan.antona": "Iván A.",
     "iria.dorado": "Iria Dorado",
+    "Iria Dorado": "Iria Dorado",
+    "Andres R": "Andrés R.",
+    "Quique": "Quique",
+    "Raquel": "Raquel",
+    "Claire": "Claire",
+    "Edu Noeda": "Edu N.",
+    "Paula Granado": "Paula G.",
+    "Luis": "Luis",
+    "Cata": "Cata",
+    "Nouha": "Nouha"
 }
 
 def clean_username(raw_name):
