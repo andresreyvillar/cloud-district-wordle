@@ -73,9 +73,8 @@ def fetch_messages():
             user_name = user_map.get(user_id, user_id)
             
             # Generar formato compatible con add_results.py
-            # Formato esperado: "Nombre  [HH:MM]Mensaje..."
-            # Nota: add_results.py busca dos espacios antes de [HH:MM]
-            line = f"{user_name}  [{time_str}]{text}"
+            # Usamos un delimitador muy específico para evitar que el texto del usuario lo rompa
+            line = f"USER_START|{user_name}|{time_str}|{text}"
             output_buffer.append(line)
             
         return "\n".join(output_buffer)
