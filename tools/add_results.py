@@ -53,67 +53,62 @@ def parse_and_upload():
         print("No se recibió texto de entrada.")
         return
 
-    # Regex para detectar resultados de Wordle
-    # Formato esperado: "La palabra del día #1320 3/6"
-    pattern = re.compile(r"La palabra del día #(\d+) (X|\d)/6", re.IGNORECASE)
+    # Regex para detectar el encabezado de usuario: "Nombre  [HH:MM]"
+    header_pattern = re.compile(r"^(.*?)  [[]\d{2}:\d{2}[]]", re.MULTILINE)
     
-    # Separar por líneas (o bloques si vienen pegados)
-    # Asumimos que el input viene del script extract_slack.py que formatea así:
-    # "User Name  [HH:MM]Mensaje..."
+    # Regex para detectar resultados de Wordle: "La palabra del día #1320 3/6"
+    wordle_pattern = re.compile(r"La palabra del día #(\d+) (X|\d)/6", re.IGNORECASE)
     
     new_entries = 0
     skipped_entries = 0
+    current_user = "Unknown User"
     
-    # Dividimos por saltos de línea que inserta extract_slack.py
+    # Dividimos por líneas para procesar secuencialmente
     lines = input_text.split('\n')
     
     for line in lines:
-        match = pattern.search(line)
-        if match:
-            wordle_num = int(match.group(1))
-            score_str = match.group(2).upper()
+        # 1. Intentar actualizar el usuario actual
+        header_match = header_pattern.match(line)
+        if header_match:
+            user_part = header_match.group(1).strip()
+            current_user = clean_username(user_part)
+            continue
+
+        # 2. Buscar resultado de Wordle en esta línea usando el usuario actual
+        wordle_match = wordle_pattern.search(line)
+        if wordle_match:
+            wordle_num = int(wordle_match.group(1))
+            score_str = wordle_match.group(2).upper()
             score = 7 if score_str == 'X' else int(score_str)
             
-            # Intentar extraer usuario del principio de la línea
-            # Formato esperado: "Nombre Usuario  [HH:MM]..."
-            user_part = line.split("  [")[0].strip()
-            
-            # Si la línea no cumple el formato estricto, usamos un default o intentamos limpiar
-            if "  [" in line:
-                user = clean_username(user_part)
-            else:
-                # Fallback si el formato no es el de extract_slack
-                user = "Unknown User"
-
             # Verificar si ya existe en DB
-            # Consultamos si hay un registro para este usuario y wordle_id
             try:
                 existing = supabase.table("wordle_results")\
                     .select("id")\
-                    .eq("player_name", user)\
+                    .eq("player_name", current_user)\
                     .eq("wordle_id", wordle_num)\
                     .execute()
                 
                 if existing.data and len(existing.data) > 0:
-                    print(f"Saltando duplicado: {user} - #{wordle_num}")
+                    print(f"Saltando duplicado: {current_user} - #{wordle_num}")
                     skipped_entries += 1
                     continue
                 
                 # Insertar nuevo registro
                 new_record = {
-                    "player_name": user,
+                    "player_name": current_user,
                     "wordle_id": wordle_num,
                     "score": score,
-                    "date": calculate_wordle_date(wordle_num), # Fecha calculada matemáticamente
+                    "date": calculate_wordle_date(wordle_num),
                     "raw_text": line[:200]
                 }
                 
                 supabase.table("wordle_results").insert(new_record).execute()
-                print(f"GUARDADO: {user} - #{wordle_num} ({score}/6)")
+                print(f"GUARDADO: {current_user} - #{wordle_num} ({score}/6)")
                 new_entries += 1
 
             except Exception as e:
-                print(f"Error insertando {user}: {e}", file=sys.stderr)
+                print(f"Error procesando {current_user}: {e}", file=sys.stderr)
 
     print("------------------------------------------------")
     print(f"Proceso finalizado. Nuevos: {new_entries}, Saltados: {skipped_entries}")
