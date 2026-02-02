@@ -1,21 +1,23 @@
-name: Update and Post Wordle Stats
+name: Hourly Data Update
 
 on:
   schedule:
-    - cron: '0 * * * *'      # Actualizar datos cada hora
-    - cron: '0 17 * * *'     # Publicar ranking a las 17:00 UTC
-  workflow_dispatch:           # Permite ejecución manual
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   update-data:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+
       - name: Install dependencies
         run: pip install slack_sdk python-dotenv supabase
+
       - name: Run Extraction
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -23,22 +25,3 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python tools/extract_slack.py | python tools/add_results.py
-
-  post-ranking:
-    runs-on: ubuntu-latest
-    if: github.event.schedule == '0 17 * * *' || github.event_name == 'workflow_dispatch'
-    needs: update-data
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      - name: Install dependencies
-        run: |
-          pip install slack_sdk python-dotenv playwright
-          playwright install chromium --with-deps
-      - name: Capture and Post
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-        run: python tools/post_ranking.py
