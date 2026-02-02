@@ -69,8 +69,8 @@ def fetch_messages():
             # Formatear hora como HH:MM
             time_str = datetime.fromtimestamp(ts).strftime("%H:%M")
             
-            # Obtener nombre legible
-            user_name = user_map.get(user_id, "Unknown User")
+            # Obtener nombre legible o ID como fallback
+            user_name = user_map.get(user_id, user_id)
             
             # Generar formato compatible con add_results.py
             # Formato esperado: "Nombre  [HH:MM]Mensaje..."

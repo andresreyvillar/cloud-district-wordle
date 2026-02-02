@@ -78,14 +78,14 @@ def parse_and_upload():
     lines = input_text.split('\n')
     
     for line in lines:
-        # 1. Intentar actualizar el usuario actual
+        # 1. Intentar actualizar el usuario actual si encontramos un encabezado
         header_match = header_pattern.match(line)
         if header_match:
             user_part = header_match.group(1).strip()
             current_user = clean_username(user_part)
-            continue
+            # No hacemos 'continue' por si el Wordle está en esta misma línea
 
-        # 2. Buscar resultado de Wordle en esta línea usando el usuario actual
+        # 2. Buscar resultado de Wordle en esta línea
         wordle_match = wordle_pattern.search(line)
         if wordle_match:
             wordle_num = int(wordle_match.group(1))
