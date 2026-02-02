@@ -50,8 +50,8 @@ def fetch_messages():
         # Obtenemos mapa de usuarios para traducir IDs a Nombres (opcional)
         user_map = get_user_map()
         
-        # Obtenemos historial masivo (máximo permitido por Slack por petición: 1000)
-        result = client.conversations_history(channel=CHANNEL_ID, limit=1000)
+        # Obtenemos historial (últimos 50 mensajes son suficientes para ejecución horaria)
+        result = client.conversations_history(channel=CHANNEL_ID, limit=50)
         messages = result["messages"]
         
         # Slack devuelve del más nuevo al más viejo. Invertimos para orden cronológico.
