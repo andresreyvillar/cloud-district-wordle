@@ -15,15 +15,16 @@
 
 <div class="container">
     <div class="tabs">
-        <button class="tab-btn active" onclick="openTab('ranking')">Ranking</button>
-        <button class="tab-btn" onclick="openTab('stats')">Estadísticas</button>
-        <button class="tab-btn" onclick="openTab('graph')">Evolución</button>
-        <button class="tab-btn" onclick="openTab('data')">Datos</button>
+        <button class="tab-btn active" data-tab="ranking">Ranking</button>
+        <button class="tab-btn" data-tab="stats">Estadísticas</button>
+        <button class="tab-btn" data-tab="graph">Evolución</button>
+        <button class="tab-btn" data-tab="data">Datos</button>
     </div>
 
     <!-- Pestaña 1: Ranking -->
     <div id="ranking" class="tab-content active">
-        <!-- Contenido dinámico desde JS -->
+        <div id="summary-container"></div>
+        <div id="bubble-chart" class="chart-container" style="height: 500px;"></div>
     </div>
 
     <!-- Pestaña 2: Estadísticas -->
