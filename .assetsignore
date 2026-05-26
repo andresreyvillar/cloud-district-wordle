@@ -1,0 +1,30 @@
+# Files excluded from Cloudflare Pages/Workers asset upload
+# Syntax: gitignore-like patterns
+
+# Secrets and environment
+.env
+.env.*
+!.env.example
+
+# Backend scripts and tooling
+*.py
+tools/
+extract_data.py
+update.sh
+update.log
+
+# Legacy / source-only data
+data/
+
+# Repo metadata
+.git/
+.gitignore
+.github/
+README.md
+wrangler.jsonc
+
+# Editor / OS junk
+.DS_Store
+.vscode/
+__pycache__/
+*.tmp
