@@ -119,6 +119,19 @@
   por test) y este registro · **estado:** pendiente — *destino: que `tools/wslice/coverage.py` reconozca
   `pytestmark` y `pytest.mark.skipif` a nivel de módulo, con su test en `tests/harness/test_coverage.py`*
 
+### 2026-08-04 — El entorno de test no tenía las dependencias que el repo declara
+- **Qué pasó:** el venv se creó instalando `pytest` y `PyYAML` a mano en lugar de
+  `requirements-dev.txt`. El desfase no se notó durante cuatro slices, porque sus tests solo tocaban el
+  harness y funciones puras. Apareció al primer test que importó código de producción: `slack_sdk` no
+  estaba en el venv y el test falló por una razón que no tenía nada que ver con lo que probaba.
+- **Causa raíz:** se instaló lo que hacía falta en ese momento en vez de lo que el repo declara, y nada
+  comprobaba que el entorno coincidiese con `requirements-dev.txt`.
+- **Regla:** el entorno de desarrollo se crea **siempre** con `pip install -r requirements-dev.txt`,
+  nunca instalando paquetes sueltos. Si un test falla por un `ModuleNotFoundError`, lo primero es
+  comprobar el entorno contra el archivo declarado, no tocar el test.
+- **Codificada en:** `README.md` y `CLAUDE.md` (puesta en marcha) · **estado:** pendiente —
+  *destino: check de entorno en `wslice verify gates` que compare lo instalado con requirements-dev.txt*
+
 ### 2026-08-04 — El gate de `test-commands` se satisface con una expresión regular
 - **Qué pasó:** al portar el harness se replicó el gate que busca comandos de test en `tasks.md`
   mediante regex. Que pase no demuestra que los comandos existan, sean correctos ni se ejecuten.

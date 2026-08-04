@@ -167,3 +167,22 @@ def test_un_dia_de_dos_jugadores_no_es_un_dia_dificil():
     # y con muestra suficiente, la misma media sí la concede
     con_muestra = filas + [r(f"relleno{i}", 1630, 7, dia=7) for i in range(3)]
     assert "dia-imposible" in medallas_permanentes(con_muestra)["Solitario"]
+
+
+# @scenarios el-resumen-conserva-lo-que-ya-publicaba
+def test_el_mensaje_conserva_el_saludo_y_el_enlace():
+    """Las medallas se añaden al mensaje; no lo sustituyen."""
+    from post_ranking import comentario
+
+    con = comentario("🏅 *Medallas de hoy*\n💪 Fondista — Alguien")
+    sin = comentario("")
+
+    for texto in (con, sin):
+        assert "ranking actualizado" in texto
+        assert "workers.dev" in texto
+    assert "Fondista" in con
+    assert "Medallas" not in sin
+
+    # y sin medallas el mensaje no deja un hueco donde iría la sección
+    assert "\n\n\n" not in sin
+    assert sin.count("\n\n") == 1

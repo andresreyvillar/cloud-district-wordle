@@ -81,6 +81,10 @@ resolvió rápido
 **WHEN** un día lo juegan menos de cinco personas
 **THEN** ese día no cuenta como difícil para ninguna medalla, aunque su media sea alta.
 
+### el-resumen-conserva-lo-que-ya-publicaba
+**WHEN** se compone el texto del resumen, con medallas o sin ellas
+**THEN** sigue conteniendo el saludo y el enlace a la web que ya publicaba.
+
 ### calculo-determinista
 **WHEN** se calculan las medallas dos veces sobre los mismos resultados y la misma temporada
 **THEN** el resultado es idéntico, sin depender del reloj ni del orden de las filas.

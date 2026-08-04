@@ -63,3 +63,43 @@
     mirando el futuro.
     PENDIENTE: cablear tools/post_ranking.py (tarea 3 del pack). El dominio está listo y verificado
     contra datos reales, pero el resumen todavía no lo publica.
+
+- run: '2026-08-04T20:30:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 7
+    supervivientes: 0
+  notas: >-
+    Cableado de tools/post_ranking.py (tarea 3 del pack): lee los resultados paginando, deriva la
+    jornada y la temporada DE LOS DATOS —no del reloj, que es el borde del sistema— y añade la sección
+    al mensaje sin sustituir nada. Slice completo: 10 escenarios, 10/10 cubiertos.
+    DOS RONDAS DE CORRECCIÓN, las dos por problemas que el propio cableado destapó:
+    (1) TESTABILIDAD. post_ranking.py importaba playwright a nivel de módulo, así que las funciones que
+    componen el texto no se podían verificar sin un navegador instalado. Import diferido a la función
+    que lo usa: ahora el mensaje se compone y se prueba sin playwright. De paso, si el navegador
+    faltara, el módulo sigue siendo utilizable.
+    (2) EL ENTORNO DE TEST NO ERA EL DECLARADO. El venv se había creado con pytest y PyYAML a mano en
+    lugar de con requirements-dev.txt, y el desfase no se notó en cuatro slices porque sus tests solo
+    tocaban el harness y funciones puras. Apareció al primer test que importó código de producción.
+    Registrado como lección con destino mecánico.
+    MUTACIÓN — 7 mutantes acumulados, 0 supervivientes. Los dos del cableado necesitaron reforzar el
+    test: el que añadía la sección de medallas aunque estuviese vacía SOBREVIVIÓ, porque el test solo
+    comprobaba presencia de subcadenas y no el formato. Con la comprobación de que no queda un hueco
+    donde iría la sección, muere.
+    SECURITY (4e) — el texto solo contiene nombres de jugador, números y el enlace ya publicado: no hay
+    ningún campo libre que llegue al mensaje. Ningún dato nuevo sale al canal que no esté ya en la web.
+    PENDIENTE: la primera publicación real es la verificación final, y ocurre delante del grupo. Hoy no
+    hay medallas nuevas (agosto lleva dos días), así que el primer mensaje con sección llegará cuando
+    alguien cruce un umbral.
