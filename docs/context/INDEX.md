@@ -27,10 +27,12 @@ del canal, sin datos personales más allá del nombre mostrado que ya usa la web
 
 | Fecha | Fuente | Tipo | Autoridad | Capabilities | Estado |
 |---|---|---|---|---|---|
-| — | *(vacío)* | | | | |
+| 2026-08-04 | [hilo-reglas-temporadas](sources/2026-08-04-hilo-reglas-temporadas.md) | hilo-slack | decisión del grupo (parcial) | ranking · estadisticas · resultados · dashboard | vigente |
 
 ## Briefs
 
 | Brief | Tema | Capabilities | Estado |
 |---|---|---|---|
-| — | *(vacío)* | | |
+| [reglas-temporadas](briefs/reglas-temporadas.md) | Modelo de participación e imputación por dificultad | ranking · estadisticas | vigente |
+| [ranking-de-figuras](briefs/ranking-de-figuras.md) | Nonogramas: categorías, álbum y resumen diario | ingesta · resultados · publicacion | vigente |
+| [medallas](briefs/medallas.md) | Sistema de logros con umbrales calibrados por rareza | ranking · estadisticas · dashboard | vigente |

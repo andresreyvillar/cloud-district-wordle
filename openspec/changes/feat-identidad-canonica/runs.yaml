@@ -1,0 +1,49 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-04T17:30:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: identidad-canonica-de-jugador
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Autoría del slice y de los deltas de identidad (3 Requirements, primer slice de esa capability) y
+    resultados (3 Requirements).
+    ESTE PACK CORRIGE EL ORDEN DEL ROADMAP, y con una medición: la Fase 1 tenía primero el cambio del
+    extractor y después la fusión. Va al revés. Si el extractor emitiera identificadores antes de esta
+    migración, el upsert no encontraría conflicto contra las filas que guardan un nombre y se
+    duplicarían 32 de las 40 filas de la ventana de reprocesado, afectando a 11 jugadores.
+    Investigación previa a la autoría, toda verificada contra producción por SQL y por el directorio de
+    Slack: los 1235 nombres de la tabla se resuelven al 100% a un identificador, cero casos manuales;
+    "Marcos Granado" y "marcos.granado" resuelven al MISMO identificador y comparten cuatro puzzles con
+    puntuación idéntica (la misma partida contada dos veces); y las 8 filas con identificador
+    U08KF6V12CB llevan el nombre de otro jugador, con puntuaciones distintas de las de la persona a la
+    que pertenece ese identificador los mismos días.
+    DECISIÓN HUMANA incorporada al slice: esas 8 filas se ELIMINAN, no se reasignan. La evidencia la
+    sostiene — el jugador que indica su nombre ya tiene fila propia para 6 de los 8 puzzles, con la
+    misma puntuación en 5 — y reasignarlas produciría 6 conflictos contra el índice único sin resolver
+    la ambigüedad. Queda declarado en el proposal que en uno de los 8 casos la puntuación no cuadra y
+    que se acepta perder una partida que quizá fuera real, antes que atribuirla por conjetura.
+    Fase 0: hay colisión parcial de trigger con captura-del-patron (los dos son del pipeline), pero no
+    de comportamiento ni de entry point real: aquel es el cron horario, este es un comando manual.
+
+- run: '2026-08-04T17:45:00Z'
+  fase: tdd
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: identidad-canonica-de-jugador
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+  rondas_correccion: 0
+  notas: >-
+    Ocho tests para siete escenarios, sobre dobles en memoria (directorio falso y tabla falsa que
+    registra escrituras y borrados); 7/7 escenarios declarados, exit 0, todos pendientes.
+    El escenario de fusión lleva dos tests a propósito: uno comprueba que dos identidades del mismo
+    jugador con el mismo puzzle y la misma puntuación colapsan, y el otro que dos puzzles distintos NO
+    se fusionan. Sin el segundo, una implementación que fusionara por jugador sin mirar el puzzle
+    pasaría el primero.

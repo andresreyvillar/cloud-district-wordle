@@ -17,28 +17,27 @@ async def capture_ranking():
     print("Iniciando navegador para captura...")
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        # Configurar un viewport similar a un móvil para que el ranking salga bien
-        page = await browser.new_page(viewport={'width': 500, 'height': 800})
+        # Configurar un viewport Widescreen
+        page = await browser.new_page(viewport={'width': 1280, 'height': 800})
         
         print(f"Cargando {WEB_URL}...")
         await page.goto(WEB_URL)
         
         # Esperar a que el elemento del ranking esté visible y tenga datos
-        # (Ajustamos el selector según tu HTML)
-        await page.wait_for_selector(".summary-cards", timeout=10000)
+        await page.wait_for_selector(".summary-cards", timeout=15000)
         
-        # Esperar un segundo extra para que Plotly/Supabase terminen de pintar
-        await asyncio.sleep(2)
+        # Esperar un poco más para que las gráficas de Plotly se dibujen bien en panorámico
+        await asyncio.sleep(3)
         
-        # Hacer captura de los elementos principales (Ranking y Resumen)
+        # Hacer captura de la zona principal
         screenshot_path = "ranking_snapshot.png"
         
-        # Podemos capturar toda la página o solo un área
+        # Capturamos la zona del contenedor principal
         container = await page.query_selector(".container")
         await container.screenshot(path=screenshot_path)
         
         await browser.close()
-        print("Captura realizada con éxito.")
+        print("Captura widescreen realizada con éxito.")
         return screenshot_path
 
 def upload_to_slack(file_path):

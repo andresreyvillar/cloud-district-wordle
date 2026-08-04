@@ -1,9 +1,10 @@
 import sys
-import re
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from supabase import create_client, Client
+
+from patterns import bloques_de_resultado
 
 # Cargar variables de entorno
 load_dotenv()
@@ -61,44 +62,32 @@ def parse_and_upload():
     input_text = sys.stdin.read()
     if not input_text: return
 
-    header_pattern = re.compile(r"^USER_START\|(.*?)\|(.*?)\|(.*)$")
-    wordle_pattern = re.compile(r"La palabra del día #(\d+) (X|\d)/6", re.IGNORECASE)
-    
     new_entries = 0
-    current_slack_id = "Unknown"
-    current_display_name = "Unknown User"
-    
-    lines = input_text.split('\n')
-    
-    for line in lines:
-        header_match = header_pattern.match(line)
-        if header_match:
-            raw_user = header_match.group(1).strip()
-            current_slack_id, current_display_name = get_user_info(raw_user)
-            line_to_check = header_match.group(3)
-        else:
-            line_to_check = line
 
-        wordle_match = wordle_pattern.search(line_to_check)
-        if wordle_match:
-            wordle_num = int(wordle_match.group(1))
-            score_str = wordle_match.group(2).upper()
-            score = 7 if score_str == 'X' else int(score_str)
-            
-            try:
-                _supabase.table("wordle_results").upsert({
-                    "slack_user_id": current_slack_id,
-                    "player_name": current_display_name,
-                    "wordle_id": wordle_num,
-                    "score": score,
-                    "date": calculate_wordle_date(wordle_num),
-                    "raw_text": line_to_check[:200]
-                }, on_conflict="slack_user_id, wordle_id").execute()
-                
-                print(f"OK: {current_display_name} (#{current_slack_id}) - #{wordle_num}")
-                new_entries += 1
-            except Exception as e:
-                print(f"Error con {current_display_name}: {e}")
+    # Las filas de la cuadrícula llegan como líneas sueltas después de su resultado, así que el
+    # lote se agrupa en bloques (resultado + filas) antes de escribir. Ver tools/patterns.py.
+    for bloque in bloques_de_resultado(input_text.split('\n')):
+        if bloque.usuario is None:
+            slack_id, display_name = "Unknown", "Unknown User"
+        else:
+            slack_id, display_name = get_user_info(bloque.usuario)
+
+        try:
+            _supabase.table("wordle_results").upsert({
+                "slack_user_id": slack_id,
+                "player_name": display_name,
+                "wordle_id": bloque.numero,
+                "score": bloque.score,
+                "date": calculate_wordle_date(bloque.numero),
+                "raw_text": bloque.texto_resultado[:200],
+                "pattern": bloque.patron
+            }, on_conflict="slack_user_id, wordle_id").execute()
+
+            dibujo = bloque.patron if bloque.patron else "sin patrón"
+            print(f"OK: {display_name} (#{slack_id}) - #{bloque.numero} [{dibujo}]")
+            new_entries += 1
+        except Exception as e:
+            print(f"Error con {display_name}: {e}")
 
     print(f"Finalizado. Procesados: {new_entries}")
 

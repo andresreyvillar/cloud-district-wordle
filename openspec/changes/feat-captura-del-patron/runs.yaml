@@ -1,0 +1,120 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-04T14:10:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: captura-del-patron
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Autoría del slice y de los deltas de ingesta (3 Requirements) y resultados (3 Requirements).
+    Fase 0 sin colisión posible: el workspace no tenía slices.
+    Contexto verificado antes de escribir, no asumido: la tabla NO tiene columna de patrón (columnas
+    actuales id, player_name, wordle_id, score, date, raw_text, created_at, slack_user_id); los
+    mensajes del canal traen la cuadrícula con cuatro nombres de emoji distintos, dos de ellos para
+    la celda ausente según el tema claro u oscuro de quien publica; y el 97% de las cuadrículas
+    resueltas terminan en una fila de cinco aciertos.
+    El formato de almacenamiento (filas separadas por barra, celdas G/Y/punto) es una decisión de
+    este pack y queda declarada en el delta de resultados como Requirement, no como detalle de
+    implementación.
+
+- run: '2026-08-04T14:25:00Z'
+  fase: tdd
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: captura-del-patron
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Siete tests de escenario sobre fixtures de texto, todos pendientes (7/7 declarados, exit 0).
+    Los tests atacan funciones puras que aún no existen (tools/patterns.py), lo que fuerza a que la
+    implementación separe el parseo del pipeline.
+    UNA RONDA DE CORRECCIÓN, y de las útiles: la primera versión marcaba los tests con
+    `pytestmark = pytest.mark.skip` a nivel de módulo y `slice coverage` los contaba como cubiertos
+    en lugar de pendientes, así que el Gate 2 no distinguía TDD rojo de trabajo terminado. Corregido
+    con decorador por test y registrado como lección con destino mecánico (que el escáner entienda
+    pytestmark). Es un fallo del harness que solo aparece al usarlo de verdad.
+
+- run: '2026-08-04T15:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: captura-del-patron
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    verify-slice: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 3
+    supervivientes: 0
+  notas: >-
+    Implementado tools/patterns.py (funciones puras: fila_normalizada, filas_de_cuadricula,
+    normalizar_patron, bloques_de_resultado, patrones_por_resultado) y cableado en add_results.py.
+    Los 7 escenarios pasaron de pendiente a verde sin tocar sus aserciones.
+    EXTRACT_SLACK.PY SIN CAMBIOS, y verificado en lugar de asumido: el proposal anticipaba tocarlo,
+    pero el formato que ya emite (USER_START con el texto multilínea detrás) conserva las filas de
+    cuadrícula como líneas sueltas, que es exactamente lo que bloques_de_resultado necesita. Se
+    comprobó reconstruyendo un lote real. Menos diff que el previsto en el pack.
+    Limpieza mínima acotada: `import re` quedó huérfano en add_results.py al mover las regex a
+    patterns.py, y se retiró tras comprobar que no había otro uso.
+    MUTACIÓN — 3 mutantes. Los dos que prescribía el pack murieron en su test esperado (exigir 4
+    celdas en vez de 5 → linea-que-no-es-fila-se-ignora; quitar la normalización del cuadrado
+    blanco → ausentes-se-normalizan). El TERCERO, añadido por iniciativa propia —quitar el cierre
+    de bloque cuando llega un mensaje nuevo sin resultado— SOBREVIVIÓ: ningún test cubría que un
+    mensaje de conversación con celdas entre dos resultados no contamine el patrón anterior, y ese
+    comportamiento está en el delta de ingesta como Scenario. Se reforzó con dos tests
+    (conversación entre resultados, y celdas sin resultado previo), se re-stageó el refuerzo, y el
+    mutante murió a la segunda. Es la ronda de corrección contabilizada.
+    SECURITY (4e) — el patrón se construye desde un diccionario cerrado de cuatro nombres de emoji,
+    así que su alfabeto es {G, Y, ., /} por construcción: verificado sobre los 143 patrones reales
+    del canal y con tres intentos de inyección (SQL, script, texto pegado tras las celdas), los tres
+    descartados por la regla de "cinco celdas y nada más". El upsert envía las mismas columnas que
+    antes más pattern; raw_text sigue truncado a 200. La columna es nullable y aditiva: la v1 no la lee.
+    ADVERSARIAL (4d) SKIP: la sesión tiene el uso de subagentes desactivado salvo petición explícita
+    del usuario. Deuda declarada, no gate aprobado.
+    PENDIENTE DEL HUMANO, bloqueante para el merge: la columna `pattern` NO existe todavía en
+    Supabase. Añadir esquema en producción es un despliegue y el agente no despliega (§7). El orden
+    de tasks.md es obligatorio: primero la columna, después el merge.
+
+- run: '2026-08-04T16:05:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: captura-del-patron
+  gates:
+    security: pass
+  rondas_correccion: 0
+  notas: >-
+    MIGRACIÓN APLICADA (tarea 1 del pack): `alter table wordle_results add column pattern text`, vía el
+    MCP de Supabase que el humano acaba de autorizar, con comentario de columna documentando el formato.
+    Verificado después: la columna existe, es text y nullable sin default; las 1532 filas quedan con
+    pattern nulo; la v1 sigue leyendo player_name/wordle_id/score/date igual; la clave publicable NO
+    puede escribir en la columna nueva (PATCH → 0 filas modificadas); y `get_advisors` de seguridad no
+    reporta nada tras el DDL.
+    DOS CORRECCIONES que solo aparecieron al tener acceso SQL, ambas de cosas que yo había dado por
+    ciertas sin comprobarlas:
+    (1) El delta declaraba la unicidad como `type: constraint`. Es un ÍNDICE ÚNICO
+    (idx_slack_user_wordle_unique), no una constraint: pg_constraint solo tiene la primary key. El check
+    del delta se corrigió a `type: index` con su nombre real, y se añadió el límite conocido —
+    slack_user_id es nullable y dos NULL no colisionan en un índice único (hoy 0 filas nulas, así que
+    el riesgo es teórico).
+    (2) La cifra "1312 de 1530 filas guardan un nombre en la columna de ID", que llevaba citando en dos
+    proposals, el roadmap y una lección, estaba MAL: la medí sobre un volcado de una sola página de 1000
+    filas. La real es 1234 de 1532. Corregida en los cuatro documentos y registrada como lección con
+    destino mecánico (probe row-count que verifique cifras declaradas contra la base de datos).
+    Las políticas RLS reales también quedaron registradas en el ADR 0005: una sola política, SELECT para
+    public, sin políticas de escritura. Antes eso estaba inferido probando la API; ahora está verificado.
+    PENDIENTE para cerrar el slice: el merge. El código ya está listo y la columna ya existe, así que el
+    orden crítico del pack (columna antes que código) se cumple.

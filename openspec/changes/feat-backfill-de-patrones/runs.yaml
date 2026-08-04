@@ -1,0 +1,119 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-04T14:40:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: backfill-de-patrones
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Autoría del slice y de los deltas de ingesta (3 Requirements) y resultados (3 Requirements).
+    Depende de feat-captura-del-patron: reutiliza su columna y sus funciones de extracción, y el
+    delta de ingesta lo convierte en Requirement explícito para que no puedan divergir dos
+    implementaciones del mismo parseo.
+    Viabilidad verificada antes de escribir: el histórico del canal sigue accesible a 240 días con
+    las cuadrículas intactas, así que el backfill puede recuperar las ~1530 filas ya registradas.
+    Riesgo declarado en el proposal: es la única escritura masiva del proyecto sobre datos de
+    personas identificables, y la asociación mensaje-fila depende de la identidad de autor, que es
+    justo lo que está roto en este repo. Se espera un número no trivial de filas no resueltas y el
+    slice las declara en lugar de adivinarlas.
+
+- run: '2026-08-04T14:55:00Z'
+  fase: tdd
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: backfill-de-patrones
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Siete tests de escenario sobre dobles en memoria (canal falso que pagina, tabla falsa que
+    registra escrituras); 7/7 escenarios declarados, exit 0, todos pendientes.
+    UNA RONDA DE CORRECCIÓN: el test del ensayo (--dry-run) verificaba comportamiento que no estaba
+    entre los escenarios del slice, así que reutilizaba la anotación de otro escenario. Se resolvió
+    ascendiendo el ensayo a escenario propio (ensayo-no-escribe), que es lo que era: el proposal ya
+    lo declara obligatorio antes de la escritura masiva. Un test sin escenario que lo respalde es un
+    test que nadie ha especificado.
+
+- run: '2026-08-04T16:45:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: backfill-de-patrones
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    Implementado tools/backfill_patterns.py: rellenar() puro con canal y tabla por parámetro, más los
+    adaptadores reales. Los 7 escenarios pasaron de pendiente a verde sin tocar sus aserciones.
+    Decisión de diseño derivada del propio pack: la asociación mensaje-fila NO usa el diccionario de
+    identidades, compara el autor contra slack_user_id y contra player_name. Así no hay que tocar
+    add_results.py ni duplicar el mapeo, y lo que no coincide se declara como no resuelto, que es
+    exactamente lo que el proposal anticipaba.
+    UNA RONDA DE CORRECCIÓN: la primera versión de los adaptadores usaba urllib y el ensayo falló en
+    seco por verificación de certificados en macOS. El arreglo correcto NO era desactivar TLS —como
+    hace extract_slack.py— sino usar los clientes que el pipeline ya declara (slack_sdk y supabase)
+    con el bundle de certifi. Se comprobó antes de reescribir que slack_sdk con certifi autentica sin
+    renunciar a la verificación: el hack de CERT_NONE de extract_slack.py es innecesario, y eso es
+    material para un slice de seguridad propio (fuera del alcance de este pack).
+    MUTACIÓN — 4 mutantes, todos muertos en su test esperado: escribir siempre en lugar de solo donde
+    falta el patrón, detenerse tras la primera página, contar como rellenada una fila inexistente, e
+    ignorar dry_run. El guardián de dry_run se volvió a mutar DESPUÉS de reescribir los adaptadores
+    para confirmar que seguía protegido, dado que la siguiente ejecución escribe en producción.
+    ENSAYO CONTRA PRODUCCIÓN (tarea 4.1, solo lectura) — 1533 filas, todas sin patrón:
+    rellenadas 1228 · intactas 0 · no resueltas 305 · resultados del canal sin fila 293.
+    Las 305 no resueltas están explicadas al detalle y no son un fallo del comando: 298 son las filas
+    cuya columna de identidad guarda un ID de Slack (Andrés R., Carlos H., Iván A.), cuyo mensaje trae
+    el nombre mostrado mientras el player_name está normalizado con acentos y puntos; y 7 son las del
+    jugador renombrado, porque users.list devuelve su nombre actual y sus mensajes antiguos ya no
+    coinciden. Se resolverán solas cuando la Fase 1 unifique identidades; volver a ejecutar el
+    comando entonces es seguro porque es idempotente.
+    SECURITY (4e) — el update envía únicamente {"pattern": ...}, nunca un objeto completo que pudiera
+    pisar puntuación o fecha; el informe solo cuenta y no volca nombres ni texto de mensajes; la
+    verificación TLS está activa (0 usos de CERT_NONE); y el alfabeto del patrón sigue cerrado por
+    construcción.
+    ADVERSARIAL (4d) SKIP: subagentes desactivados en la sesión salvo petición explícita.
+    PENDIENTE: la ESCRITURA REAL de 1228 filas no se ha ejecutado. Requiere confirmación explícita del
+    humano (escritura masiva sobre datos de personas identificables, §7).
+
+- run: '2026-08-04T18:15:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: backfill-de-patrones
+  gates:
+    tests: pass
+    security: pass
+  rondas_correccion: 0
+  notas: >-
+    EJECUCIÓN REAL AUTORIZADA POR EL HUMANO. Escritura masiva completada en 1m47s:
+    rellenadas 1228 · intactas 0 · no resueltas 305 · resultados del canal sin fila 293.
+    Cifras idénticas a las del ensayo, lo que confirma que el ensayo es fiel.
+    VERIFICACIÓN POSTERIOR, tres comprobaciones independientes en lugar de una:
+    (1) CENSO Y HUELLA. Antes y después: 1533 filas y md5 08f2c9c40bcd7b50566fd7c4d395d683 del
+    agregado de id+player_name+wordle_id+score+date. La huella es IDÉNTICA, así que ninguna columna
+    distinta de pattern se ha tocado. Es más fuerte que comparar el conteo de filas.
+    (2) COHERENCIA SOBRE LAS 1228, no sobre una muestra: el número de filas del patrón coincide con la
+    puntuación en 1196 casos, y los 32 restantes son fallos (score 7 con 6 filas dibujadas), que es
+    exactamente lo correcto. Cero incoherentes y cero patrones fuera del alfabeto {G,Y,.,/}.
+    Un desfase de asociación mensaje-fila habría producido incoherencias aquí.
+    (3) MUESTREO MANUAL (tarea 4.4): tres filas de tres jugadores distintos comparadas carácter a
+    carácter con la cuadrícula de su mensaje original en el canal. 3/3 coinciden.
+    Las 305 filas sin patrón siguen siendo el problema de identidad, no del comando. Tras
+    feat-identidad-canonica hay que reejecutar este comando: es idempotente y recuperará el resto.
+    Decisión de secuencia del humano: se ejecutó ANTES de la canonización, aceptando recuperar el 80%
+    ahora y el resto después.

@@ -13,7 +13,7 @@ cuenta como 7.
 
 Eso ya produjo un fallo concreto y medible: el cambio que debía pasar la identidad de jugador a
 `slack_user_id` quedó a medias — el código lo aparenta pero el extractor sigue emitiendo nombres
-mostrados de Slack. Resultado en producción: 1312 de 1530 filas guardan un nombre en la columna de
+mostrados de Slack. Resultado en producción: 1234 de 1532 filas guardan un nombre en la columna de
 ID, el diccionario de identidades quedó inerte, hay un jugador partido en dos por un renombre
 (`Marcos Granado` / `marcos.granado`) y 8 filas atribuidas al jugador equivocado.
 
@@ -59,7 +59,7 @@ Lo que **no** entra, con el disparador objetivo que lo traería:
 
 | Fuera | Disparador |
 |---|---|
-| Arreglar la identidad de jugadores (los 1312 nombres en la columna de ID, el duplicado de `Marcos Granado`, las 8 filas mal atribuidas) | Primer slice de la capability `identidad` — es comportamiento observable y necesita su propio pack |
+| Arreglar la identidad de jugadores (los 1234 nombres en la columna de ID, el duplicado de `Marcos Granado`, las 8 filas mal atribuidas) | Primer slice de la capability `identidad` — es comportamiento observable y necesita su propio pack |
 | Columna o concepto de temporada en la tabla | Slice de `ranking` para la Season 2 |
 | Tests del código de producción existente (`tools/*.py`, `js/script.js`) | Cada slice que toque ese código trae los suyos. Escribirlos ahora fijaría el comportamiento actual sin que nadie haya decidido cuál debe ser |
 | Probes reales de `checks:` (`column`, `table`, `rls-policy`, `cron`) | El primer Requirement que los declare y necesite verificación mecánica |

@@ -91,6 +91,23 @@ lo que la v1 lee (`player_name`, `wordle_id`, `score`, `date`). Se acepta explí
 consecuencia: la v1 no es un archivo histórico, es la vista antigua de los datos actuales. Si en algún
 momento se quiere un archivo de verdad, es la opción B y merece su propio ADR.
 
+### Estado del esquema, verificado por SQL
+
+Lo que antes se inferría probando la API REST, ahora está comprobado contra el esquema:
+
+| Elemento | Realidad |
+|---|---|
+| Clave primaria | `id` (uuid, `gen_random_uuid()`) |
+| Unicidad del resultado | **índice único** `idx_slack_user_wordle_unique (slack_user_id, wordle_id)` — no es una constraint; es lo que hace funcionar el `on_conflict` del upsert |
+| Columnas obligatorias | `player_name`, `wordle_id`, `score`, `created_at` |
+| Columnas nullable | `date` (default `CURRENT_DATE`), `raw_text`, `slack_user_id`, `pattern` |
+| RLS | activo, con **una sola política**: `SELECT` para el rol `public` con `qual = true`. No hay política de `INSERT`, `UPDATE` ni `DELETE`, y por eso la clave publicable no puede escribir |
+| Advisories de seguridad | ninguno tras la migración de `pattern` |
+
+La ausencia de políticas de escritura es lo que sostiene la seguridad del modelo: la web publica la
+clave publicable y con ella solo se puede leer. Cualquier política nueva de escritura rompería esa
+garantía y necesita su propio ADR.
+
 **Mecanismo de deploy: pendiente de confirmar.** El repo no tiene workflow de despliegue, así que el
 deploy lo dispara Cloudflare al detectar el push (Workers Builds conectado al repositorio) `?`. Hay
 dos formas de montar el segundo Worker y la elección depende de cómo esté configurado hoy:

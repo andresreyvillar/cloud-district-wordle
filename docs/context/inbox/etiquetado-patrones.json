@@ -1,0 +1,320 @@
+[
+ {
+  "n": 1,
+  "wordle": 1611,
+  "grid": [
+   "Y.G.Y",
+   ".GGGG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 2,
+  "wordle": 1644,
+  "grid": [
+   ".G...",
+   ".G...",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 3,
+  "wordle": 1601,
+  "grid": [
+   "Y....",
+   ".Y..Y",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 4,
+  "wordle": 1560,
+  "grid": [
+   "G..G.",
+   "G..GY",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 5,
+  "wordle": 1566,
+  "grid": [
+   "Y....",
+   ".GGG.",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 6,
+  "wordle": 1575,
+  "grid": [
+   ".Y..G",
+   "Y.Y.G",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 7,
+  "wordle": 1671,
+  "grid": [
+   ".Y.GY",
+   ".GYG.",
+   ".G.GG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 8,
+  "wordle": 1545,
+  "grid": [
+   ".G...",
+   ".G...",
+   ".G...",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 9,
+  "wordle": 1573,
+  "grid": [
+   "....Y",
+   "Y...Y",
+   "YYYY.",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 10,
+  "wordle": 1568,
+  "grid": [
+   ".....",
+   ".G.GG",
+   ".GGGG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 11,
+  "wordle": 1621,
+  "grid": [
+   "....G",
+   "..Y.G",
+   ".Y..G",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 12,
+  "wordle": 1601,
+  "grid": [
+   "..Y..",
+   "...Y.",
+   ".GGG.",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 13,
+  "wordle": 1621,
+  "grid": [
+   "....G",
+   ".G..G",
+   "YG..G",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 14,
+  "wordle": 1594,
+  "grid": [
+   "..YYY",
+   ".GY.Y",
+   "YG.Y.",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 15,
+  "wordle": 1617,
+  "grid": [
+   "..YGY",
+   "G.GG.",
+   "G.GGG",
+   "G.GGG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 16,
+  "wordle": 1545,
+  "grid": [
+   "....Y",
+   ".G...",
+   ".G.Y.",
+   ".GY..",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 17,
+  "wordle": 1644,
+  "grid": [
+   "....Y",
+   ".G..Y",
+   ".GG..",
+   "GGG..",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 18,
+  "wordle": 1574,
+  "grid": [
+   "...GY",
+   ".G.G.",
+   ".G.G.",
+   ".GGG.",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 19,
+  "wordle": 1586,
+  "grid": [
+   ".....",
+   ".GG.G",
+   ".GG.G",
+   ".GG.G",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 20,
+  "wordle": 1659,
+  "grid": [
+   "Y.YYY",
+   ".YYYY",
+   "YYY.Y",
+   "G.GGG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 21,
+  "wordle": 1638,
+  "grid": [
+   "Y..Y.",
+   ".YG.Y",
+   ".GGG.",
+   ".GGGY",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 22,
+  "wordle": 1561,
+  "grid": [
+   ".G...",
+   ".G...",
+   ".GY..",
+   ".G.GG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 23,
+  "wordle": 1582,
+  "grid": [
+   "YG.Y.",
+   ".GGGG",
+   ".GGGG",
+   ".GGGG",
+   ".GGGG",
+   ".GGGG"
+  ]
+ },
+ {
+  "n": 24,
+  "wordle": 1604,
+  "grid": [
+   "...Y.",
+   "G...G",
+   "G.G..",
+   "G.G.G",
+   "G.G.G",
+   "GGG.G"
+  ]
+ },
+ {
+  "n": 25,
+  "wordle": 1533,
+  "grid": [
+   ".Y...",
+   "...Y.",
+   ".YY.G",
+   ".G.YG",
+   "GGG.G",
+   "GGG.G"
+  ]
+ },
+ {
+  "n": 26,
+  "wordle": 1649,
+  "grid": [
+   "YG...",
+   ".G.YY",
+   ".GGG.",
+   ".GGG.",
+   "YGGG.",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 27,
+  "wordle": 1537,
+  "grid": [
+   ".G..G",
+   ".GG.G",
+   ".GG.G",
+   ".GG.G",
+   ".GG.G",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 28,
+  "wordle": 1558,
+  "grid": [
+   "Y....",
+   ".G.Y.",
+   ".GG.G",
+   ".GG.G",
+   ".GGGG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 29,
+  "wordle": 1562,
+  "grid": [
+   "...GG",
+   "..YGG",
+   "G..GG",
+   "GG.GG",
+   "GG.GG",
+   "GGGGG"
+  ]
+ },
+ {
+  "n": 30,
+  "wordle": 1538,
+  "grid": [
+   "..G.G",
+   ".GGYG",
+   "GGG.G",
+   "GGG.G",
+   ".Y..G",
+   "GGGGG"
+  ]
+ }
+]

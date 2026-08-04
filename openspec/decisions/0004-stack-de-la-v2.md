@@ -1,9 +1,9 @@
 ---
 adr: 0004
 titulo: Stack de la v2.0
-estado: propuesto
+estado: aceptado
 fecha: 2026-08-04
-decide: <pendiente de firma humana>
+decide: Andrés Rey
 afecta: [dashboard, estadisticas, ranking]
 ---
 
@@ -51,8 +51,54 @@ intermedio que hay que invalidar.
 
 ## Decisión
 
-*(En blanco — se firma al definir el roadmap de la v2.0.)*
+**Opción B: vanilla con módulos ES y la lógica de dominio extraída del render.**
+
+El alcance real de la v2.0 —cinco secciones, selector de temporada y URLs propias por vista
+([ADR 0006](0006-estructura-de-informacion-v2.md))— descarta la opción A: no cabe con salud en un
+único archivo que mezcla cálculo y DOM. Pero tampoco justifica un bundler: lo que la v2.0 necesita de
+verdad es poder **testear el cálculo** (temporadas, elegibilidad, medallero, rachas), y eso se
+consigue separando módulos, no añadiendo build.
+
+Estructura acordada:
+
+```
+js/
+  domain/     ← funciones puras: sin DOM, sin fetch, sin reloj. Testeables con node --test
+  ui/         ← render y Plotly: tocan el DOM, se verifican con Playwright
+  router.js   ← mapa de rutas → vista
+  app.js      ← el borde: carga datos, resuelve la ruta, orquesta
+```
+
+Se descarta la opción D (mover el cálculo a Python y que la web solo pinte) pese a ser atractiva
+—`pytest` ya está montado y la captura de Slack compartiría números con la web por construcción—
+porque introduce un artefacto materializado que hay que invalidar y quita la interactividad de
+recalcular en cliente (cambiar de temporada sin ir al servidor). Queda como alternativa si el cálculo
+en cliente se vuelve lento o si los números de la web y de la captura llegan a divergir.
+
+Se descartan C y las variantes con framework: superficie de dependencias y paso de build que este
+dashboard no necesita.
+
+**Consecuencia técnica verificada:** las URLs limpias no requieren build. Basta añadir
+`"not_found_handling": "single-page-application"` al bloque `assets` de `wrangler.jsonc`, y el Worker
+sirve `/index.html` con `200 OK` para cualquier ruta que no sea un archivo real
+([Cloudflare, SPA routing](https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/)).
 
 ## Consecuencias
 
-*(Se completa con la decisión.)*
+**Se vuelve fácil:** testear el dominio (una función pura por regla del juego, sin navegador);
+desplegar (sigue siendo copiar archivos, sin build que pueda fallar en CI); razonar sobre qué código
+toca el DOM y qué código solo calcula. El harness ya reconoce la anotación `@scenarios` en JSDoc sobre
+`test()`, así que la cobertura de escenarios funciona sin tocar `tools/wslice`.
+
+**Se vuelve difícil:** garantizar la forma de los datos. Sin tipos, si Supabase devuelve una columna
+nueva o un nulo inesperado, se descubre en runtime. Mitigación: un único punto de mapeo en el borde
+(hoy `mapRow`) que normaliza y valida, y golden tests sobre el resultado del cálculo.
+
+**Se vuelve difícil también:** compartir código con el pipeline Python. Las reglas de temporada
+quedarán implementadas en JavaScript, así que si `tools/post_ranking.py` necesitara calcular lo mismo,
+habría duplicación. Hoy no la necesita —captura la web renderizada—, y ese es justo el motivo por el
+que la duplicación no aparece.
+
+**Límite declarado:** si aparece un segundo consumidor de las reglas (un endpoint, un bot que responda
+en el canal, un export), esta decisión se revisa a favor de la opción D. El disparador es explícito:
+**dos consumidores del mismo cálculo**.
