@@ -1,0 +1,20 @@
+# Manifest del workspace para el harness de slices (tools/wslice).
+# Análogo al openspec.workspace.yaml de pga-cms, con las rutas de este proyecto.
+slices: openspec/slices
+specs: openspec/specs
+changes: openspec/changes
+e2e_tests: tests/slices
+
+# Surfaces de entrada válidas para triggers ui/http (§3 slice-system.md).
+# Un módulo interno (tools/, js/ como librería) NUNCA es entry point.
+#   web      → dashboard estático servido por Cloudflare Workers assets
+#   pipeline → scripts Python ejecutados por GitHub Actions o a mano
+apps:
+  - web
+  - pipeline
+
+# Raíces donde el escáner de cobertura busca anotaciones @scenarios.
+test_roots:
+  - tests
+  - js
+  - tools

@@ -16,6 +16,21 @@ update.log
 # Legacy / source-only data
 data/
 
+# Método spec-driven: especificaciones, harness y documentación
+openspec/
+openspec.workspace.yaml
+docs/
+tests/
+CLAUDE.md
+.claude/
+
+# Entorno y configuración de desarrollo
+.venv/
+pytest.ini
+requirements.txt
+requirements-dev.txt
+.pytest_cache/
+
 # Repo metadata
 .git/
 .gitignore

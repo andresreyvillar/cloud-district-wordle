@@ -1,0 +1,78 @@
+# Run records del change pack (§11). Lo escribe el actor de cada fase.
+# Los timestamps van ENTRECOMILLADOS: YAML los parsearía como datetime (el schema los normaliza,
+# pero mejor no tentar).
+#
+# Nombres de gate estables para que `wslice metrics` sea comparable entre packs:
+#   validate · gates-mecanicos · sintaxis · tests · verify-slice · mutacion · adversarial · security
+
+- run: '2026-08-04T11:50:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Autoría del pack de adopción del método (proposal + tasks). Slice N/A: instalar el método no
+    introduce comportamiento observable de producto. Preflight de la tarea 0: python3 3.12.8 en
+    /usr/local/bin, PyYAML 6.0.3 disponible, pytest y playwright ausentes del intérprete del sistema
+    (de ahí el venv del proyecto), node v20.19.4 presente pero sin usar. Las tres decisiones de
+    adaptación las firmó el humano antes de escribir nada: harness en Python agnóstico de stack,
+    7 capabilities, protocolo completo con 4c y 4d.
+
+- run: '2026-08-04T12:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    tests: pass
+    sintaxis: pass
+  rondas_correccion: 0
+  notas: >-
+    Harness portado módulo a módulo desde slspec (11 archivos, ~1200 líneas) y 52 tests del harness
+    en verde a la primera ejecución. Tres puntos donde el port no es literal, todos declarados en
+    tasks.md: el escáner de @scenarios es multi-lenguaje (Python en tres formas idiomáticas + JSDoc),
+    metrics normaliza el timestamp que YAML convierte en datetime, y el regex de test-commands busca
+    pytest/playwright/node --test en lugar de pnpm. Ningún archivo de producto tocado.
+
+- run: '2026-08-04T12:55:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    verify-slice: skip
+    adversarial: skip
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    MUTACIÓN — cuatro mutantes, cero supervivientes al cerrar, pero el camino importa más que el
+    número. El mutante 3 (quitar el filtro .md de federated-untouched) SOBREVIVIÓ: ningún test cubría
+    ese gate porque depende de git status del repo real y no de un fixture. Se reforzó con 5 tests que
+    montan un repo git temporal, y uno de ellos falló contra el código sano: git status --porcelain
+    colapsa un directorio enteramente sin trackear en una sola línea, así que una capability nueva
+    completa esquivaba el gate. Arreglado con --untracked-files=all y protegido por el mutante 4.
+    Es un bug heredado del port: el mismo agujero está en slspec de pga-cms.
+    Dos trampas del procedimiento encontradas al ejecutarlo, ambas codificadas en §6 Gate 4c y en la
+    skill: (1) el .pyc del mutante sobrevivió a un git restore por coincidir tamaño y mtime al
+    segundo, dejando los tests rojos con el código correcto — de ahí que todos los comandos de test
+    lleven ahora -B; (2) un git restore se llevó un arreglo hecho a mitad del gate porque el index
+    no se había actualizado.
+    La ronda de corrección contabilizada es esa: reforzar el gate y rehacer la mutación.
+    SECURITY (4e) — se revisó lo que este pack añade a la superficie publicada: .assetsignore excluye
+    openspec/, docs/, tests/, .venv/, pytest.ini, requirements*, CLAUDE.md y .claude/; .gitignore
+    excluye .venv/, .pytest_cache/ y ranking_snapshot.png. Ningún artefacto del método contiene
+    credenciales; los tests no leen .env ni tocan Supabase (workspaces en tmp_path). No se ejecutó
+    ningún script del pipeline.
+    VERIFY-SLICE (4a) y cobertura de deltas (4b) SKIP: el pack es Slice N/A.
+    ADVERSARIAL (4d) SKIP: la sesión tiene el uso de subagentes desactivado salvo petición explícita
+    del usuario, así que no se pudo lanzar un verificador independiente. Queda como deuda declarada,
+    no como gate aprobado — el primer slice real debe ejecutarlo.
