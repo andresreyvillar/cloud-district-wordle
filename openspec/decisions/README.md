@@ -39,3 +39,4 @@ afecta: [capabilities o "todas"]
 | [0002](0002-harness-en-python.md) | Harness en Python, agnóstico de stack | **aceptado** |
 | [0003](0003-modelo-de-ramas-y-despliegue.md) | Modelo de ramas — el merge a `main` es el despliegue | **aceptado** |
 | [0004](0004-stack-de-la-v2.md) | Stack de la v2.0 | **propuesto** — se firma al definir el roadmap |
+| [0005](0005-hosting-y-convivencia-v1-v2.md) | Hosting de la v2.0 y convivencia con la v1 | **aceptado** |

@@ -80,3 +80,28 @@ sobre el harness dio tres hallazgos que ninguna revisión de código habría dad
 
 Las tres son reglas codificadas, no anécdotas (`docs/lecciones.md`). El orden importa: el mutante que
 sobrevive no se tapa reforzando el test a ojo — se investiga, y a veces lo que aparece es un bug.
+
+## 2026-08-04 — Dónde vive la web: la premisa era falsa
+
+**Qué.** Al revisar el alojamiento antes de abrir la v2.0, se descubre que la web **no está en
+Cloudflare Pages**, como se creía: es un **Worker con Static Assets**. Lo demuestran tres cosas
+independientes — la URL es `*.workers.dev` (Pages sería `*.pages.dev`, y ese host no resuelve),
+`wrangler.jsonc` declara `assets.directory`, y no hay Worker script: solo assets desde el edge.
+
+**Por qué importa.** La pregunta era "¿es buena práctica quedarse aquí?", y la respuesta cambia por
+completo según la plataforma. Resulta que ya está en la recomendada: Cloudflare dirige todo el trabajo
+nuevo a Workers y Pages solo se mantiene. No hay nada que migrar.
+
+**Decisiones** ([ADR 0005](../openspec/decisions/0005-hosting-y-convivencia-v1-v2.md)):
+- La v2.0 va a un Worker nuevo, `cloud-district-wordle-2`. La v1 **no se mueve**.
+  *Descartado:* que la v2.0 heredase la URL actual y la v1 se apartase con sufijo. Suena mejor, pero
+  obliga a republicar producción y coordinar dos despliegues para ahorrar el cambio de una línea.
+- Una sola base de datos, con invariante dura: **mientras la v1 esté publicada, el esquema solo crece**.
+  Nunca se renombra ni se borra lo que la v1 lee.
+
+**Aprendizaje.** Dos, y ninguno es sobre Cloudflare. El primero: la premisa que nadie cuestiona es la
+que conviene verificar — costó tres comandos y cambiaba la respuesta entera. El segundo: la parte
+difícil de "mantener la v1 viva" no era el hosting (dos URLs son gratis) sino los datos. Las dos
+versiones leen la misma tabla, así que la v1 no es un archivo histórico: es la vista antigua de datos
+que siguen cambiando. Decirlo por escrito evita la sorpresa de ver la v1 con números "raros" el día que
+se fusionen los jugadores duplicados.

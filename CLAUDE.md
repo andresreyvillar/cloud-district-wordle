@@ -127,6 +127,9 @@ feat/<change-id> · chore/openspec-slice-<slug>  ──PR──▶  main  ──
 - NUNCA editar `openspec/slice-system.md` — es la constitución; cambios requieren acuerdo explícito.
 - NUNCA commit/push/merge automático: handoff staged, el humano decide.
 - NUNCA escribir en la tabla de producción para explorar o probar. Los tests usan fixtures locales.
+- NUNCA renombrar ni eliminar las columnas que lee la v1 (`player_name`, `wordle_id`, `score`,
+  `date`): mientras la v1 siga publicada, **todo cambio de esquema es aditivo**
+  ([ADR 0005](openspec/decisions/0005-hosting-y-convivencia-v1-v2.md)).
 - NUNCA publicar en el canal de Slack fuera del workflow (el bot tiene `files:write`: un mal uso
   escribe delante de todo el grupo).
 - NUNCA commitear `.env` ni pegar tokens en specs, tests o documentación.
