@@ -132,6 +132,30 @@
 - **Codificada en:** `README.md` y `CLAUDE.md` (puesta en marcha) · **estado:** pendiente —
   *destino: check de entorno en `wslice verify gates` que compare lo instalado con requirements-dev.txt*
 
+### 2026-08-04 — Dos cifras de calibración se midieron con una definición distinta de la que implementa el código
+- **Qué pasó:** al medir el impacto de la regla de días laborables aparecieron dos cifras falsas en
+  `docs/context/briefs/medallas.md`, las dos escritas el mismo día: `Pleno` decía que lo lograba el **12%**
+  y el valor real era **0 de 123** parejas jugador-mes (la medalla era literalmente inganable), y
+  `El día imposible` decía "2 personas, una vez" cuando son **4 personas en 2 días**.
+- **Causa raíz:** las dos se midieron con una consulta *ad hoc* escrita para el análisis, cuya semántica
+  divergía de la que implementa el código. En `Pleno`, la consulta contaba "días del mes" de una forma y
+  `medallas_de_temporada` deriva los días de la temporada de los datos, así que un domingo con un solo
+  jugador entraba como día que todos los demás habían faltado. En `El día imposible`, la consulta encontró
+  un día y había dos. Ninguna de las dos se validó contra el catálogo real.
+- **Regla:** una cifra de rareza o calibración de una medalla se mide **ejecutando el código que la
+  implementa** sobre los datos, no con una consulta paralela que reimplemente la condición. Si hace falta
+  SQL, es como *segunda* vía de verificación y las dos tienen que coincidir — que es como se detectaron
+  estas dos.
+- **Codificada en:** `docs/context/briefs/medallas.md` (las cifras corregidas y la tabla "Dos cifras que
+  estaban mal", con la vía de medición declarada) y la tarea 4 de
+  `openspec/changes/feat-solo-dias-laborables/tasks.md`, que ejecuta el catálogo contra producción y
+  declara el resultado esperado · **estado:** pendiente — *destino: extender el probe `row-count` ya
+  propuesto para que verifique también las cifras declaradas en un brief ejecutando el módulo del dominio,
+  no una consulta paralela*
+- **Relación:** es la segunda vez que una cifra escrita en un documento se hereda sin volver a medirla (ver
+  la lección de la página única de PostgREST). El patrón repetido no es el error de medida, es **que nadie
+  vuelve a medir lo que ya está escrito**.
+
 ### 2026-08-04 — El gate de `test-commands` se satisface con una expresión regular
 - **Qué pasó:** al portar el harness se replicó el gate que busca comandos de test en `tasks.md`
   mediante regex. Que pase no demuestra que los comandos existan, sean correctos ni se ejecuten.
@@ -142,3 +166,24 @@
 - **Codificada en:** `openspec/slice-system.md` §7 (comandos deterministas) + nota de honestidad en
   el proposal del pack de adopción · **estado:** pendiente — *destino: probe en `tools/wslice` que
   ejecute los comandos declarados en lugar de buscarlos*
+
+### 2026-08-05 — El doble en memoria era más permisivo que la tabla real y la migración reventó a mitad
+- **Qué pasó:** los 10 tests de `identidad-canonica-de-jugador` en verde, 6 mutantes muertos, y la
+  ejecución real falló a mitad con `duplicate key value violates unique constraint`. La tabla tiene un
+  índice único `(slack_user_id, wordle_id)`; el `TablaFalsa` de los tests no imponía nada, así que aceptaba
+  escrituras que producción rechaza. El fallo dejó la tabla parcialmente migrada (18 de 1233 filas).
+- **Causa raíz:** el doble se escribió para observar llamadas (`escrituras`, `borrados`), no para imitar
+  las **restricciones** de lo que sustituye. Un doble que acepta lo que la tabla rechaza no prueba nada
+  sobre la tabla, y ningún mutante puede cazarlo porque el hueco está en el test, no en el código.
+- **Regla:** un doble de una tabla **imita sus restricciones**, no solo su interfaz: índices únicos, NOT
+  NULL y claves ajenas se comprueban en el doble y se lanza como lanzaría el motor. Antes de escribir un
+  doble se leen las restricciones reales del objeto que sustituye.
+- **Codificada en:** `tests/slices/identidad-canonica-de-jugador/test_identidad_canonica.py`
+  (`TablaFalsa` impone el índice único y lanza `ViolacionDeIndiceUnico`) y el escenario
+  `clave-ocupada-se-declara-y-no-se-fuerza` del slice · **estado:** pendiente —
+  *destino: check en `wslice verify slice` que compare los `checks:` de tipo `index` declarados en los
+  deltas con lo que imponen los dobles del `tests_root`, y avise si un índice declarado no se imita*
+- **Segunda lección de la misma ejecución:** una migración que deja filas "intactas" por prudencia puede
+  **bloquear** a otras. La fila conflictiva del puzzle 1481 se queda donde está por diseño, y donde está es
+  la clave que necesita su dueña legítima. Lo prudente no es neutral: hay que declararlo (`bloqueadas`) en
+  lugar de suponer que no tocar nada no tiene consecuencias.

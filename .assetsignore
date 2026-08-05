@@ -31,6 +31,9 @@ requirements.txt
 requirements-dev.txt
 .pytest_cache/
 
+# Snapshots de sesión (contexto de trabajo, no de producto)
+context-snapshot-*.md
+
 # Repo metadata
 .git/
 .gitignore
