@@ -1,0 +1,25 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T13:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    validate: n/a
+    tests: pass
+    sintaxis: pass
+    mutacion: n/a
+  rondas_correccion: 1
+  notas: >-
+    Herramienta para levantar la v2.0 en local corriendo la secuencia de los cron.
+    RONDA DE CORRECCIÓN, y fue de diseño: la primera propuesta era montar un Supabase local con el CLI para
+    aislar las escrituras, con Docker y varios gigas de imágenes. El usuario preguntó por qué no apuntar a la
+    Supabase de producción estando en local, y tenía razón: eso es lo que ya hacía la web, y lo que decide el
+    riesgo no es local-contra-remoto sino QUÉ ESCRIBE CADA PASO. season_snapshots es derivada —borrable y
+    recalculable— así que aislarla no aporta nada.
+    Queda: ingesta apagada por defecto (es la única que toca el registro real de partidas, y el cron ya la
+    ejecuta cada hora), materialización encendida, resumen SIEMPRE en seco, web encendida.
+    La herramienta imprime qué va a tocar antes de tocarlo. Una herramienta sigilosa que escribe en
+    producción es una trampa.
+    Verificado: --seco no escribe nada, y --temporada 2026-08 escribe una sola instantánea.

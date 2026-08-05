@@ -154,6 +154,12 @@ python3 -m tools.wslice metrics
 .venv/bin/python3 -B -m pytest tests/harness   # solo el harness
 node --check js/script.js                   # sintaxis del frontend
 
+# La v2.0 en local, con la secuencia de los cron (declara qué escribe antes de escribir)
+python3 tools/local_stack.py                    # calcula, materializa y sirve en :8788
+python3 tools/local_stack.py --seco             # no escribe nada
+python3 tools/local_stack.py --temporada 2026-08
+python3 tools/serve_v2.py                       # solo la web, con el fallback SPA del Worker
+
 # Pipeline (toca producción: usar con cabeza)
 python3 tools/extract_slack.py | python3 tools/add_results.py
 python3 tools/post_ranking.py
