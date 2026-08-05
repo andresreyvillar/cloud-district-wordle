@@ -19,8 +19,8 @@
  * los enlaces que la gente comparte en el canal (ADR 0006, actualización del 2026-08-05).
  */
 
-/** Una temporada es `AAAA-MM` con mes real: `2026-13` no es una temporada. */
-export const TEMPORADA_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+/** Una temporada es `AAAA-MM` con mes real, o `0` — la temporada histórica. `2026-13` no es una temporada. */
+export const TEMPORADA_RE = /^(0|\d{4}-(0[1-9]|1[0-2]))$/;
 
 /** Un identificador de Slack: `U` y mayúsculas, dígitos o guiones bajos. */
 export const IDENTIFICADOR_RE = /^U[A-Z0-9_]+$/;

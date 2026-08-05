@@ -27,9 +27,16 @@ const PENDIENTES = {
   [VISTAS.JUGADOR]: 'ficha-de-jugador',
 };
 
-/** Las temporadas que hay en los datos, de más reciente a más antigua. */
-export function temporadasDe(resultados) {
-  return [...new Set(resultados.map((fila) => fila.temporada))].sort().reverse();
+/**
+ * Las temporadas que existen, según las instantáneas.
+ *
+ * Salen de la instantánea y **no de los resultados crudos**: el modelo agrupa todo lo anterior al límite en
+ * la temporada 0, así que derivarlas del mes de cada fila listaba nueve temporadas que ya no existen.
+ */
+export function temporadasDe(instantaneas) {
+  return [...instantaneas.entries()]
+    .map(([id, carga]) => ({ id, etiqueta: carga.etiqueta ?? id, ordinal: carga.ordinal ?? 0 }))
+    .sort((a, b) => b.ordinal - a.ordinal);
 }
 
 /**
@@ -39,7 +46,7 @@ export function temporadasDe(resultados) {
  * reproducible y no queda vacía el día 1 de un mes en que nadie ha jugado todavía.
  */
 export function temporadaEfectiva(destino, temporadas) {
-  return destino.temporada ?? temporadas[0] ?? null;
+  return destino.temporada ?? temporadas[0]?.id ?? null;
 }
 
 function elementos() {
@@ -52,7 +59,7 @@ function elementos() {
 
 function pintar(destino, resultados, instantaneas) {
   const { navegacion, selector, vista } = elementos();
-  const temporadas = temporadasDe(resultados);
+  const temporadas = temporadasDe(instantaneas);
   const actual = temporadaEfectiva(destino, temporadas);
 
   pintarNavegacion(navegacion, { ...destino, temporada: actual });

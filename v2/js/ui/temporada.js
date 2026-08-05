@@ -97,14 +97,14 @@ function podio(tabla) {
           <span class="avg">${escapar(cifra(fila.media_temporada))}</span>
         </div>
         <span class="nombre">${escapar(fila.nombre)}</span>
-        <div class="tiras">${tira(fila.por_dia, 20)}</div>
+        ${fila.por_dia.length <= 40 ? `<div class="tiras">${tira(fila.por_dia, 20)}</div>` : ''}
         <span class="detalle">${fila.jugados} de ${fila.dias} jornadas · media jugada ${escapar(cifra(fila.media_jugada))}</span>
       </div>`,
     )
     .join('');
 }
 
-function marcador(tabla) {
+function marcador(tabla, imputada) {
   const filas = tabla
     .map((fila) => {
       const acento = fila.posicion <= 3 ? COLOR.bueno : 'rgba(43,39,51,.12)';
@@ -113,7 +113,7 @@ function marcador(tabla) {
         <i class="acento" style="background:${acento}"></i>
         <span class="pos">${fila.posicion}</span>
         <span class="nom">${escapar(fila.nombre)}</span>
-        <span class="tiras">${tira(fila.por_dia, 14)}</span>
+        <span class="tiras">${fila.por_dia.length <= 40 ? tira(fila.por_dia, 14) : ''}</span>
         <span class="num fuerte">${escapar(cifra(fila.media_temporada))}</span>
         <span class="num suave">${escapar(cifra(fila.media_jugada))}</span>
         <span class="num suave">${fila.jugados}/${fila.dias}</span>
@@ -124,15 +124,17 @@ function marcador(tabla) {
   return `
     <section class="bloque">
       <header class="bloque-cab"><h2>MARCADOR</h2>
-        <span>Ordenado por media de temporada (con ausencias imputadas)</span></header>
+        <span>${imputada ? 'Ordenado por media de temporada (con ausencias imputadas)' : 'Ordenado por media de las partidas jugadas'}</span></header>
       <div class="cabeza">
         <i></i><span>Pos</span><span>Jugador</span><span>Jornadas</span>
         <span class="der">Media temp.</span><span class="der">Media jugada</span><span class="der">Jorn.</span>
       </div>
       ${filas}
-      <p class="nota">A las jornadas no jugadas se les imputa
-        min( max( dificultad del día , tu media ) + 0,5 ; 7 ). El denominador es el mismo para todos, así
-        que las medias se comparan sin más reglas.</p>
+      <p class="nota">${
+        imputada
+          ? 'A las jornadas no jugadas se les imputa min( max( dificultad del día , tu media ) + 0,5 ; 7 ). El denominador es el mismo para todos, así que las medias se comparan sin más reglas.'
+          : 'Sin imputar: cada media es la de las partidas que ese jugador jugó de verdad. Por eso la columna de jornadas dice cuántas jugó cada uno.'
+      }</p>
     </section>`;
 }
 
@@ -229,20 +231,27 @@ export function pintarTemporada(contenedor, carga, temporada) {
       <div class="hero">
         <div class="hero-texto">
           <div class="hero-meta">
-            <span class="chip">${escapar(temporada ?? '')}</span>
+            <span class="chip">${escapar(carga.etiqueta ?? temporada ?? '')}</span>
             <span class="mono">${escapar(carga.estado ?? '')}${carga.updated_at ? ` · ${escapar(antiguedad(carga.updated_at))}` : ''}</span>
           </div>
           <h1>${escapar(lider.nombre)} lidera con ${escapar(cifra(lider.media_temporada))} de media por día${
             segundo ? ` y ${escapar(segundo.nombre)} le sigue a ${escapar(cifra(diferencia))}` : ''
           }.</h1>
           <p class="serif">${carga.dias?.length ?? 0} jornadas válidas, ${carga.jugadores?.length ?? 0}
-            jugadores y ${carga.resultados ?? 0} resultados. La tabla se calcula sobre los días de la
-            temporada, no sobre las partidas jugadas.</p>
-          <div class="hero-tira">
+            jugadores y ${carga.resultados ?? 0} resultados. ${
+              carga.imputada === false
+                ? 'La temporada 0 se ordena por la media de las partidas jugadas: las reglas nuevas no estaban en vigor y la gente se incorporó en meses distintos.'
+                : 'La tabla se calcula sobre los días de la temporada, no sobre las partidas jugadas.'
+            }</p>
+          ${
+            lider.por_dia.length <= 40
+              ? `<div class="hero-tira">
             <span class="mono etiqueta">Partida de ${escapar(lider.nombre)}, jornada a jornada</span>
             <div class="tiras grande">${tira(lider.por_dia, 30)}</div>
             ${leyenda()}
-          </div>
+          </div>`
+              : ''
+          }
         </div>
         <div class="podio">
           <span class="mono etiqueta">Podio de la temporada</span>
@@ -250,7 +259,7 @@ export function pintarTemporada(contenedor, carga, temporada) {
         </div>
       </div>
 
-      ${marcador(tabla)}
+      ${marcador(tabla, carga.imputada !== false)}
       ${logros(carga)}
       ${estadisticas(carga)}
     </div>`;

@@ -1,0 +1,36 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T15:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: temporada-mensual
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 3
+    supervivientes: 0
+  notas: >-
+    Temporadas numeradas desde el límite 2026-08. Todo lo anterior es la temporada 0, un bloque de 159 días,
+    ordenada por media de partidas jugadas SIN imputar. 10 escenarios, 4 nuevos.
+    RONDA 1 — ERROR PROPIO GRAVE: en el script de edición escribí `p.write_text(t)` en vez de
+    `s.write_text(t)` y volqué el contenido de standings.py encima de seasons.py. Se detectó al instante
+    porque los tests fallaron con un ImportError circular. Recuperado con git restore y rehecho escribiendo
+    cada archivo por separado y comprobando su identidad con un assert antes y después. La lección: un script
+    que edita varios archivos verifica cuál está escribiendo.
+    RONDA 2 — el selector de la web seguía listando los nueve meses viejos, porque los derivaba de los
+    resultados crudos (`date.slice(0,7)`) en lugar de las instantáneas. Era código del esqueleto, escrito
+    cuando una temporada era un mes. Ahora sale de las instantáneas, que son la autoridad del modelo.
+    Se borraron las 9 instantáneas mensuales huérfanas antes de rematerializar: el modelo ya no las reconoce
+    y la web las habría mostrado como temporadas fantasma.
+    MUTACIÓN — 3 mutantes, 0 supervivientes: el límite en 1900 (nada sería temporada 0), la temporada 0
+    imputando, y el número de orden empezando en 0.
+    PATOLOGÍA DETECTADA Y NO RESUELTA, pendiente de decisión: sin imputación y sin umbral mínimo, la
+    temporada 0 la lidera quien apenas jugó — Carmen 1ª con 2,00 y UNA partida de 159, Sandra 2ª con 3.
+    Es exactamente lo que el modelo de imputación venía a evitar, reintroducido al quitarle la imputación a
+    la 0. El brief ya avisaba de que el umbral mínimo existía para eso.

@@ -28,9 +28,13 @@ Es **lo único que el grupo cerró por votación**: 6 a favor y 0 en contra
 ([fuente](../../../docs/context/sources/2026-08-04-hilo-reglas-temporadas.md)). Todo lo demás del hilo son
 ideas sin decidir.
 
-Hoy no existe el concepto: el ranking agrega todo el histórico desde el wordle #1419 y la pregunta "¿quién
-ganó en marzo?" no tiene dónde vivir. Aplicando temporadas mensuales al histórico existente hay **9
-temporadas cerradas**, así que el archivo no es una promesa: es contenido desde el primer día.
+Hoy no existe el concepto: el ranking agrega todo el histórico desde el wordle #1419 y no hay forma de mirar
+un mes concreto.
+
+**Las temporadas están numeradas desde un límite** (decisión del 2026-08-05): todo lo jugado antes del
+`2026-08` es **la temporada 0**, un solo bloque con el histórico, y desde agosto cada mes es una temporada
+numerada. Consecuencia aceptada y declarada: el archivo pierde el "quién ganó en marzo" y los seis ganadores
+distintos que habría habido tratando cada mes del pasado como temporada propia.
 
 Este slice define **qué es una temporada** y la deja materializada. La clasificación de dentro es
 [[clasificacion-de-temporada]] (TBD): aquí no se ordena a nadie.
@@ -46,8 +50,23 @@ es una decisión y no un efecto secundario.
 ## Comportamiento observable
 
 ### temporada-es-el-mes-de-la-fecha
-**WHEN** un resultado se asigna a una temporada
+**WHEN** un resultado posterior al límite se asigna a una temporada
 **THEN** es la del mes de su fecha, así que un resultado del día 1 pertenece ya a la temporada nueva.
+
+### antes-del-limite-todo-es-la-temporada-cero
+**WHEN** un resultado es anterior al límite de temporadas
+**THEN** pertenece a la temporada 0, sea de qué mes sea, y la temporada 0 aparece como **un solo bloque** y
+no como una temporada por mes.
+
+### el-numero-de-orden-se-deriva-del-limite
+**WHEN** se pide el número de orden de una temporada
+**THEN** el mes del límite es la 1, el siguiente la 2, y la histórica la 0 — derivado del límite, no
+almacenado.
+
+### la-temporada-cero-no-imputa
+**WHEN** se calcula la clasificación de la temporada 0
+**THEN** cada jugador sale con la media de lo que jugó de verdad, sin ausencias imputadas, y la instantánea
+declara que no está imputada.
 
 ### solo-los-dias-laborables-forman-la-temporada
 **WHEN** se determinan los días que forman una temporada
@@ -77,7 +96,8 @@ el reloj.
 
 ## Estado después
 
-Existe una fila por temporada en `season_snapshots` con sus días, sus jornadas y su estado. `wordle_results`
+Existe una fila por temporada en `season_snapshots` —una para la temporada 0 y una por cada mes desde el
+límite— con sus días, sus jornadas y su estado. `wordle_results`
 **no se toca**: la instantánea es derivada, y borrarla y recalcularla no pierde nada.
 
 ## Edge cases

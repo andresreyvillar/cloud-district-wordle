@@ -87,6 +87,28 @@ def catalogo() -> tuple[Regla, ...]:
             votada=True,
         ),
         Regla(
+            id="temporada-cero",
+            eje="temporada",
+            titulo="Todo lo jugado antes de agosto de 2026 es la temporada 0",
+            que_hace=(
+                "El histórico entero —de noviembre de 2025 a julio de 2026— es una sola temporada, la 0. "
+                "Desde agosto, cada mes es una temporada numerada: agosto es la 1, septiembre la 2. Y la "
+                "temporada 0 se ordena por la media de las partidas que jugaste, sin imputar ausencias."
+            ),
+            por_que=(
+                "Las reglas nuevas no estaban en vigor entonces, así que aplicarlas hacia atrás cambiaría "
+                "el resultado de un partido ya jugado. Y medido: de los 159 días válidos de ese periodo, "
+                "siete de veinte jugadores tendrían más del 70% imputado porque se incorporaron a lo largo "
+                "del camino. A quien entró el 22 de julio se le contarían 156 ausencias desde noviembre, "
+                "que es castigar por no jugar antes de estar."
+            ),
+            estado=APLICADA,
+            votada=False,
+            parametros=(
+                _p("la temporada 1 empieza", seasons.INICIO_TEMPORADAS, "seasons.INICIO_TEMPORADAS"),
+            ),
+        ),
+        Regla(
             id="solo-dias-laborables",
             eje="temporada",
             titulo="Solo cuentan los días de lunes a viernes",

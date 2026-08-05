@@ -34,7 +34,8 @@ export function pintarNavegacion(contenedor, destino) {
 }
 
 /**
- * Pinta el selector de temporada. `temporadas` viene ordenada de más reciente a más antigua.
+ * Pinta el selector de temporada. `temporadas` viene ordenada de más reciente a más antigua, y cada entrada
+ * trae su identificador y su etiqueta ("Temporada 1 · agosto 2026").
  *
  * La opción vacía es "la en curso", que es lo que representa la ruta `/`.
  */
@@ -42,9 +43,9 @@ export function pintarSelector(selector, temporadas, actual) {
   selector.innerHTML =
     `<option value=""${actual ? '' : ' selected'}>En curso</option>` +
     temporadas
-      .map((temporada) => {
-        const marca = temporada === actual ? ' selected' : '';
-        return `<option value="${escapar(temporada)}"${marca}>${escapar(temporada)}</option>`;
+      .map(({ id, etiqueta }) => {
+        const marca = id === actual ? ' selected' : '';
+        return `<option value="${escapar(id)}"${marca}>${escapar(etiqueta)}</option>`;
       })
       .join('');
 }

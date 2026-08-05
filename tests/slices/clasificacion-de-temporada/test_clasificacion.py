@@ -13,7 +13,7 @@ import pytest
 
 MOTIVO = "TDD rojo — tools/standings.py no existe todavía"
 
-MES = "2026-07"
+MES = "2026-09"  # posterior al límite de temporadas: es una temporada numerada
 
 
 def laborables(mes: str = MES) -> list[int]:

@@ -31,14 +31,61 @@ MUESTRA_MINIMA_DEL_DIA = 5
 EN_CURSO = "en curso"
 CERRADA = "cerrada"
 
+#: El límite que parte el histórico. **Todo lo jugado antes es la temporada 0**; desde este mes, cada mes
+#: natural es una temporada numerada. Decisión del dueño el 2026-08-05.
+#:
+#: Cambiar esta fecha RENUMERA todas las temporadas, así que conviene que esté acordada antes de tocarla.
+INICIO_TEMPORADAS = "2026-08"
+
+#: El identificador de la temporada 0. Los meses usan `AAAA-MM` para que un enlace pegado en el canal siga
+#: diciendo de qué mes habla (ADR 0006); la temporada 0 no es un mes, así que usa su número.
+TEMPORADA_CERO = "0"
+
+MESES = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)
+
 
 def temporada_de(fecha) -> str:
-    """La temporada de una fecha: `AAAA-MM`.
+    """La temporada de una fecha: `0` si es anterior al límite, su `AAAA-MM` si no.
 
     Recorta la cadena en lugar de parsear la fecha porque `date` llega como `AAAA-MM-DD` de PostgREST y
     como objeto del pipeline, y `str()` da la misma forma en los dos casos.
     """
-    return str(fecha)[:7]
+    mes = str(fecha)[:7]
+    return TEMPORADA_CERO if mes < INICIO_TEMPORADAS else mes
+
+
+def ordinal(temporada: str) -> int:
+    """El número de orden de una temporada. La 0 es la 0; el mes del límite es la 1.
+
+    Se **deriva** del límite en lugar de almacenarse, así que no puede desincronizarse del modelo.
+    """
+    if temporada == TEMPORADA_CERO:
+        return 0
+    año, mes = (int(p) for p in temporada.split("-"))
+    año0, mes0 = (int(p) for p in INICIO_TEMPORADAS.split("-"))
+    return (año - año0) * 12 + (mes - mes0) + 1
+
+
+def etiqueta(temporada: str) -> str:
+    """Cómo se llama una temporada para el grupo."""
+    if temporada == TEMPORADA_CERO:
+        return "Temporada 0 · el histórico"
+    año, mes = (int(p) for p in temporada.split("-"))
+    return f"Temporada {ordinal(temporada)} · {MESES[mes - 1]} {año}"
+
+
+def imputa(temporada: str) -> bool:
+    """Si a esta temporada se le imputan las ausencias.
+
+    La 0 no. De sus 159 días válidos, **siete de veinte jugadores tendrían más del 70% imputado** porque se
+    incorporaron a lo largo del periodo: a quien entró el 22 de julio se le contarían 156 ausencias desde
+    noviembre. Imputar ahí castiga por no jugar antes de estar, y además aplica hacia atrás unas reglas que
+    no estaban en vigor.
+    """
+    return temporada != TEMPORADA_CERO
 
 
 def _por_jornada(resultados: list[dict]) -> dict[int, list[dict]]:
@@ -81,10 +128,15 @@ def temporadas(resultados: list[dict]) -> list[dict]:
     Una temporada cuyos días no alcanzan la muestra mínima **sigue apareciendo**, con cero días: hacerla
     desaparecer del archivo sería peor que mostrarla vacía.
     """
-    presentes = sorted({temporada_de(fila["date"]) for fila in resultados}, reverse=True)
+    todas = {temporada_de(fila["date"]) for fila in resultados}
+    # La temporada 0 va siempre al final: es el bloque más antiguo y su identificador no ordena por fecha.
+    meses = sorted(t for t in todas if t != TEMPORADA_CERO)
+    presentes = list(reversed(meses)) + ([TEMPORADA_CERO] if TEMPORADA_CERO in todas else [])
     return [
         {
             "temporada": temporada,
+            "ordinal": ordinal(temporada),
+            "etiqueta": etiqueta(temporada),
             "estado": EN_CURSO if indice == 0 else CERRADA,
             "dias": len(dias_de_temporada(resultados, temporada)),
         }
@@ -131,6 +183,9 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
 
     return {
         "temporada": temporada,
+        "ordinal": ordinal(temporada),
+        "etiqueta": etiqueta(temporada),
+        "imputada": imputa(temporada),
         "estado": estado,
         "dias": dias,
         "resultados": len(cuentan),

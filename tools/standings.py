@@ -31,7 +31,7 @@ import statistics
 from collections import defaultdict
 
 from badges import FALLO
-from seasons import dias_de_temporada, resultados_de_temporada
+from seasons import dias_de_temporada, imputa, resultados_de_temporada
 
 #: Lo que se suma a la nota imputada. Con 0,5 y con 1,0 el campeón es el mismo en los 8 meses del histórico;
 #: 0,5 mueve menos a quien juega a diario, así que es el que menos castiga por el borde de la regla.
@@ -67,6 +67,9 @@ def clasificacion(resultados: list[dict], temporada: str) -> list[dict]:
     if not dias:
         return []
 
+    # La temporada 0 no imputa: se ordena por lo que cada uno jugó de verdad (ver `seasons.imputa`).
+    con_imputacion = imputa(temporada)
+
     cuentan = resultados_de_temporada(resultados, temporada)
     dificultad = dificultad_por_dia(resultados, temporada)
     fecha_de = {fila["wordle_id"]: str(fila["date"])[:10] for fila in cuentan}
@@ -83,7 +86,7 @@ def clasificacion(resultados: list[dict], temporada: str) -> list[dict]:
         media_personal = statistics.mean(suyas.values())
 
         por_dia = []
-        for jornada in dias:
+        for jornada in (dias if con_imputacion else sorted(suyas)):
             if jornada in suyas:
                 por_dia.append(
                     {

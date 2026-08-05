@@ -51,6 +51,20 @@ def jornada(wordle: int, mes: str, dia: int, jugadores: int, score: int = 4) -> 
     ]
 
 
+def jornada_con(wordle: int, mes: str, dia: int, scores: dict[str, int]) -> list[dict]:
+    """Una jornada con una puntuación concreta por jugador, para los casos que dependen de las medias."""
+    return [
+        {
+            "player_name": nombre,
+            "slack_user_id": f"U_{nombre.upper()}",
+            "wordle_id": wordle,
+            "score": puntos,
+            "date": f"{mes}-{dia:02d}",
+        }
+        for nombre, puntos in scores.items()
+    ]
+
+
 class TablaFalsa:
     """Doble con la semántica del `upsert`: la clave decide si inserta o actualiza."""
 
@@ -71,10 +85,11 @@ class TablaFalsa:
 def test_la_temporada_es_el_mes_de_la_fecha_y_el_dia_1_ya_es_la_nueva():
     from tools.seasons import temporada_de
 
-    assert temporada_de("2026-08-01") == "2026-08"
-    assert temporada_de("2026-07-31") == "2026-07"
+    # Meses posteriores al límite: cada uno es su propia temporada
+    assert temporada_de("2026-09-01") == "2026-09"
+    assert temporada_de("2026-08-31") == "2026-08"
     # sin periodo de gracia: el día 1 no pertenece al mes anterior
-    assert temporada_de("2026-08-01") != temporada_de("2026-07-31")
+    assert temporada_de("2026-09-01") != temporada_de("2026-08-31")
 
 
 # @scenarios temporada-es-el-mes-de-la-fecha
@@ -82,11 +97,11 @@ def test_la_temporada_sale_de_la_fecha_del_puzzle_y_no_de_cuando_se_publico():
     """La columna de fecha se deriva del número de puzzle, así que un resultado publicado tarde cae en su mes."""
     from tools.seasons import resultados_de_temporada
 
-    # el puzzle del 31 de julio, aunque se publicase en agosto, tiene fecha de julio
-    filas = jornada(1668, "2026-07", 31, 6) + jornada(1669, "2026-08", 3, 6)
+    # el puzzle del 31 de agosto, aunque se publicase en septiembre, tiene fecha de agosto
+    filas = jornada(1668, "2026-08", 31, 6) + jornada(1669, "2026-09", 1, 6)
 
-    de_julio = resultados_de_temporada(filas, "2026-07")
-    assert {fila["wordle_id"] for fila in de_julio} == {1668}
+    de_agosto = resultados_de_temporada(filas, "2026-08")
+    assert {fila["wordle_id"] for fila in de_agosto} == {1668}
 
 
 # @scenarios solo-los-dias-laborables-forman-la-temporada
@@ -128,13 +143,13 @@ def test_la_temporada_mas_reciente_con_datos_esta_en_curso():
     from tools.seasons import temporadas
 
     filas = (
-        jornada(1600, "2026-06", dia_laborable(0, "2026-06"), 6)
-        + jornada(1640, "2026-07", dia_laborable(0, "2026-07"), 6)
-        + jornada(1670, "2026-08", dia_laborable(0, "2026-08"), 6)
+        jornada(1600, "2026-08", dia_laborable(0, "2026-08"), 6)
+        + jornada(1640, "2026-09", dia_laborable(0, "2026-09"), 6)
+        + jornada(1670, "2026-10", dia_laborable(0, "2026-10"), 6)
     )
     lista = temporadas(filas)
 
-    assert [entrada["temporada"] for entrada in lista] == ["2026-08", "2026-07", "2026-06"]
+    assert [entrada["temporada"] for entrada in lista] == ["2026-10", "2026-09", "2026-08"]
     assert lista[0]["estado"] == "en curso"
     assert {entrada["estado"] for entrada in lista[1:]} == {"cerrada"}
 
@@ -199,3 +214,82 @@ def test_el_ensayo_cuenta_igual_pero_no_escribe():
     assert informe_ensayo.materializadas == informe_real.materializadas == 1
     assert ensayo.escrituras == 0
     assert ensayo.filas == []
+
+
+# @scenarios antes-del-limite-todo-es-la-temporada-cero
+def test_todo_lo_anterior_al_limite_es_la_temporada_cero():
+    from tools.seasons import TEMPORADA_CERO, temporada_de
+
+    for fecha in ("2025-11-26", "2026-01-15", "2026-07-31"):
+        assert temporada_de(fecha) == TEMPORADA_CERO, fecha
+    assert temporada_de("2026-08-03") == "2026-08"
+
+
+# @scenarios antes-del-limite-todo-es-la-temporada-cero
+def test_la_temporada_cero_aparece_como_un_solo_bloque():
+    """Nueve meses de histórico son UNA entrada, no nueve. Es la decisión del 2026-08-05."""
+    from tools.seasons import TEMPORADA_CERO, temporadas
+
+    filas = (
+        jornada(1500, "2026-05", dia_laborable(0, "2026-05"), 6)
+        + jornada(1540, "2026-06", dia_laborable(0, "2026-06"), 6)
+        + jornada(1600, "2026-07", dia_laborable(0, "2026-07"), 6)
+        + jornada(1670, "2026-08", dia_laborable(0, "2026-08"), 6)
+    )
+    lista = temporadas(filas)
+    ids = [e["temporada"] for e in lista]
+
+    assert ids == ["2026-08", TEMPORADA_CERO], ids
+    cero = lista[-1]
+    assert cero["dias"] == 3, "los tres meses anteriores aportan sus días a la misma temporada"
+    # la temporada 0 va al final aunque su identificador no ordene por fecha
+    assert lista[0]["estado"] == "en curso"
+
+
+# @scenarios el-numero-de-orden-se-deriva-del-limite
+def test_el_numero_de_orden_sale_del_limite():
+    from tools.seasons import TEMPORADA_CERO, etiqueta, ordinal
+
+    assert ordinal(TEMPORADA_CERO) == 0
+    assert ordinal("2026-08") == 1
+    assert ordinal("2026-09") == 2
+    assert ordinal("2027-01") == 6
+    assert etiqueta("2026-08") == "Temporada 1 · agosto 2026"
+    assert etiqueta(TEMPORADA_CERO).startswith("Temporada 0")
+
+
+# @scenarios la-temporada-cero-no-imputa
+def test_la_temporada_cero_no_imputa_ausencias():
+    """A quien se incorporó tarde no se le pueden contar ausencias de antes de estar."""
+    from tools.seasons import TEMPORADA_CERO, imputa
+    from tools.standings import clasificacion
+
+    assert imputa(TEMPORADA_CERO) is False
+    assert imputa("2026-08") is True
+
+    base = {"r1": 4, "r2": 4, "r3": 4, "r4": 4, "r5": 4}
+    dias = [dia_laborable(i, "2026-05") for i in range(3)]
+    filas = jornada_con(1500, "2026-05", dias[0], {"veterano": 4, **base})
+    filas += jornada_con(1501, "2026-05", dias[1], {"veterano": 4, **base})
+    # el recién llegado juega un solo día, y muy bien
+    filas += jornada_con(1502, "2026-05", dias[2], {"veterano": 4, "recien": 2, **base})
+
+    tabla = {f["nombre"]: f for f in clasificacion(filas, TEMPORADA_CERO)}
+
+    assert tabla["recien"]["media_temporada"] == tabla["recien"]["media_jugada"] == 2.0
+    assert tabla["recien"]["jugados"] == 1
+    assert len(tabla["recien"]["por_dia"]) == 1, "sin imputar, solo aparecen sus días jugados"
+    assert tabla["recien"]["posicion"] == 1, "con su media real es el primero"
+
+
+# @scenarios la-temporada-cero-no-imputa
+def test_la_instantanea_declara_si_la_temporada_esta_imputada():
+    from tools.seasons import TEMPORADA_CERO, instantanea
+
+    base = {"r1": 4, "r2": 4, "r3": 4, "r4": 4, "r5": 4}
+    viejas = jornada_con(1500, "2026-05", dia_laborable(0, "2026-05"), base)
+    nuevas = jornada_con(1670, "2026-08", dia_laborable(0, "2026-08"), base)
+
+    assert instantanea(viejas, TEMPORADA_CERO)["imputada"] is False
+    assert instantanea(nuevas, "2026-08")["imputada"] is True
+    assert instantanea(nuevas, "2026-08")["etiqueta"] == "Temporada 1 · agosto 2026"
