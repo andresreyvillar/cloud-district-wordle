@@ -67,7 +67,7 @@ nombres como abiertos. Se adoptan los suyos **salvo cuando adoptarlos redefinir�
 | Antes | Ahora | Por qué |
 |---|---|---|
 | `Pleno` | **`Metrónom@`** | El nombre estaba abierto y el de la maqueta dice mejor lo que premia |
-| `Abstract@` | **`Fontaner@`** | Igual, y con más gracia |
+| `Abstract@` | **`Abstract@`** (vuelve atrás) | Se había adoptado `Fontaner@` de la maqueta, que es un chiste de fontanero sobre las cacas. Al fijar el vocabulario de figuras el mismo día —`caca` pasa a `abstracto`— el chiste se queda sin referente y `Abstract@` vuelve a ser el nombre coherente. **Segundo renombrado de la misma medalla en una sesión**, que es la señal de que los nombres deberían cerrarse con el grupo y no a base de iteraciones |
 | `Impecable` | **`Impecable`** (sin cambio) | La maqueta llama `Superviviente` al mes sin fallo, pero ese nombre **ya está** en otra regla (resolver en ≤4 tres días duros). Adoptarlo dejaría dos reglas distintas con el mismo nombre, así que se rechaza |
 
 Pendiente de la maqueta y **no adoptado todavía**: `Rajad@` (tres o más ausencias en los días duros), que
@@ -98,15 +98,15 @@ hay que rehacerlos junto a la calibración, no por separado.
 | **Arquitect@** | 4 escuadras en un mes | 2% | legendario |
 | **Florista** | 5 flores en un mes | 8% | raro |
 | **Coleccionista** | las cuatro figuras en el mismo mes | 32% | común |
-| **Fontaner@** | 12 cacas en un mes | 24% | común |
+| **Abstract@** | 12 abstractos en un mes | 24% | común |
 
 **Los umbrales son los calibrados, no los de la maqueta de diseño.** El
 [diseño de la liga arcade](../sources/2026-08-05-diseno-liga-arcade.md) pide "más de 10" en cada figura, que
 es la propuesta original y **no la logra nadie**: máximo histórico 6, media 1,1, cero de 123 parejas
 jugador-mes. Decisión del usuario el 2026-08-05: se asumen los calibrados. Los nombres sí se toman de la
-maqueta (`Fontaner@` en lugar de `Abstract@`).
+maqueta donde tienen referente; `Abstract@` conserva el suyo porque la categoría se llama `abstracto`.
 
-El máximo histórico observado por categoría y mes: loro 6, flor 8, escuadra 6, caca 18. Los umbrales
+El máximo histórico observado por categoría y mes: loro 6, flores 8, geometrico 6, abstracto 18. **Medido con el clasificador desmentido**, así que hay que remedirlo con el calibrado. Los umbrales
 están puestos justo por debajo de lo que alguien ha llegado a hacer, que es donde un logro es difícil sin
 ser imposible.
 
@@ -150,10 +150,11 @@ quiere congelar el palmarés, será una decisión con su propio ADR.
 
 ## Límite honesto
 
-**Los umbrales de las medallas de figuras no son fiables todavía.** Salen del clasificador sin calibrar,
-que manda el 69% de los patrones a caca y falla en el único patrón etiquetado a mano. Cuando la
-calibración cambie, estos cinco umbrales hay que volver a medirlos — y por eso las medallas se calculan
-en vez de guardarse.
+**Los umbrales de las medallas de figuras no son fiables todavía.** Salen del clasificador sin calibrar, que
+mandaba el 69% de los patrones a la papelera contando filas — criterio que las 30 etiquetas humanas
+desmintieron ([brief de figuras](ranking-de-figuras.md)). El reparto humano es abstracto 33% y flores 37%,
+casi el inverso. Cuando el clasificador esté calibrado, estos cinco umbrales hay que **volver a medirlos**, y
+por eso las medallas se calculan en vez de guardarse.
 
 Los de rendimiento y constancia sí son firmes: no dependen del clasificador, solo de puntuaciones y
 fechas, que están verificadas.

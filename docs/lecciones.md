@@ -212,3 +212,29 @@
   el canal; una fila fantasma no. *Destino mecánico: un probe que reporte las filas sin patrón tras un
   backfill completo como candidatas a fila fantasma, que es un detector barato y objetivo de un problema
   que hasta hoy solo se veía a mano.*
+
+### 2026-08-05 — El clasificador se diseñó sobre supuestos visuales que nadie había comprobado con un humano
+- **Qué pasó:** el brief de figuras fijó dos criterios como hechos medidos: que la última fila (`GGGGG`) no
+  se analiza "porque dispararía la señal de flor en casi todos los aciertos", y que "en dos filas no hay
+  figura posible". Con las 30 etiquetas humanas delante, **los dos son falsos**: esa banda verde **es** el
+  suelo de la flor y los amarillos dispersos encima son los pétalos, y hay flores con dos filas sobre la
+  base. El resultado medible del error: la heurística mandaba el **69%** de los patrones a la papelera y el
+  humano manda el **33%**, con las flores casi invertidas (12% frente a 37%).
+- **Causa raíz:** los dos criterios eran **intuiciones de quien escribió el clasificador sobre cómo mira un
+  humano**, y se escribieron en el brief con el mismo formato que los hechos que sí estaban medidos (el 97%
+  de cuadrículas que acaban en `GGGGG`, la retención del canal a 240 días). Un lector no podía distinguir
+  una medición de una conjetura.
+- **Regla:** un cálculo que **interpreta algo para personas** —clasificar un dibujo, elegir un tono, decidir
+  qué es "bonito"— no puede calibrarse contra la intuición de quien lo escribe. Necesita un conjunto de
+  etiquetas humanas **antes** de que sus parámetros entren en un documento, y hasta que exista, sus criterios
+  se escriben marcados como conjetura, no en la sección de hechos medidos.
+- **Codificada en:** `docs/context/briefs/ranking-de-figuras.md` (los dos supuestos tachados y marcados como
+  DESMENTIDOS, con las cuadrículas que lo demuestran) y
+  `docs/context/sources/2026-08-05-etiquetado-de-patrones.md`, que pasa a ser el conjunto dorado contra el
+  que se mide cualquier cambio de peso · **estado:** pendiente —
+  *destino: que el slice del clasificador tenga un test que ejecute las 30 etiquetas y falle si el acuerdo
+  baja de un umbral declarado, de modo que la calibración sea un gate y no una promesa*
+- **Y una tercera cifra a remedir:** la correlación −0,37 entre media de intentos y número de cacas —el
+  argumento de que los dos rankings premian a gente distinta— **se midió con el clasificador desmentido**.
+  Queda marcada como pendiente en el brief en lugar de seguir citándose. Es la tercera vez en dos días que
+  una cifra derivada se hereda sin volver a medirla; el patrón ya no es casualidad.

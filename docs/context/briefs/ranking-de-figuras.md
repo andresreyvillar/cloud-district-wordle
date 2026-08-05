@@ -22,19 +22,34 @@ histórico de 1533 resultados.
 ### Categorías y emojis
 
 Cuatro categorías. **No existe la categoría "ambiguo"**: todo patrón que no alcance una figura
-reconocible es 💩. El clasificador no empata — o reconoce algo, o es caca.
+reconocible es `abstracto`. El clasificador no empata — o reconoce algo, o es abstracto.
 
-| Categoría | Emoji | Qué es | Cuenta en el ranking de belleza |
+**Vocabulario fijado el 2026-08-05**, el que el dueño usó al etiquetar de verdad
+([conjunto dorado](../sources/2026-08-05-etiquetado-de-patrones.md)):
+
+| Categoría | Emoji | Qué es, según las etiquetas humanas | Cuenta en el ranking de belleza |
 |---|---|---|---|
-| loro | 🦜 | masa verde compacta con amarillo pegado como pico | sí |
-| flor | 🌷 | banda verde inferior con amarillos separados encima | sí |
-| escuadra | 📐 | forma simétrica o geométricamente interesante (escalera, tridente) | sí |
-| caca | 💩 | no se reconoce ninguna figura | **no** — se registra y se muestra, pero el ranking ordena por figuras reconocibles |
+| loro | 🦜 | columna verde vertical **más** un segundo elemento verde y un amarillo de pico | sí |
+| flores | 🌷 | la banda verde final como suelo y amarillos dispersos encima; poca celda, aireado | sí |
+| geometrico | 📐 | pocas celdas y forma limpia: un tallo, una pirámide, una escalera | sí |
+| abstracto | 🌀 | ruido disperso, o un bloque verde uniforme y grande | **no** — se registra y se muestra, pero el ranking ordena por figuras reconocibles |
 
-Reparto medido sobre 143 patrones reales: **💩 69% · 🌷 12% · 📐 11% · 🦜 8%**.
+`caca` pasa a llamarse **`abstracto`** y `escuadra` a **`geometrico`**. No es cosmética: `caca` se le cuelga
+a un tercio de las partidas y, por la correlación −0,37 medida más abajo, sobre todo **a quien juega bien**.
+Llamarlo abstracto describe el dibujo en lugar de insultar al jugador.
 
-La tira del álbum se muestra **agrupada**, no repitiendo emojis: `🦜1 🌷2 📐1 💩12`. Con un 69% de
-cacas, la tira literal satura la línea.
+### Reparto medido: la heurística estaba muy equivocada
+
+| | abstracto | flores | loro | geometrico |
+|---|---|---|---|---|
+| **Etiquetas humanas** (30) | **33%** | **37%** | 17% | 13% |
+| Heurística sin calibrar (143) | 69% | 12% | 8% | 11% |
+
+La heurística mandaba a la papelera el doble de lo que un humano descarta, y veía un tercio de las flores.
+Las dos causas están identificadas y son supuestos del propio brief: ver abajo.
+
+La tira del álbum se muestra **agrupada**, no repitiendo emojis: `🦜1 🌷2 📐1 🌀12`. Incluso con un
+tercio de abstractos, la tira literal satura la línea.
 
 ### Almacenamiento
 
@@ -51,7 +66,7 @@ Sustituye la captura del gráfico por un mensaje compuesto:
 1. **Jugador del día** — mejor puntuación.
 2. **Obra del día** — mejor figura. *(Separado del anterior por evidencia: ver más abajo.)*
 3. **Top 5 del ranking** con el emoji de figura de cada uno.
-4. **Ranking de belleza** — quién ha aportado más figuras reconocibles, con la tira agrupada (`🦜1 🌷2 📐1 💩12`).
+4. **Ranking de belleza** — quién ha aportado más figuras reconocibles, con la tira agrupada (`🦜1 🌷2 📐1 🌀12`).
 5. **Comentarios jocosos de la jornada**, con memes o emojis.
 
 ## Hechos medidos que condicionan el diseño
@@ -62,32 +77,45 @@ La ingesta guarda solo la primera línea del mensaje (`raw_text = "La palabra de
 cuadrícula nunca se persiste. En cambio el canal **conserva el histórico completo**: comprobado a 240
 días, las cuadrículas siguen accesibles. El álbum puede nacer con histórico vía backfill.
 
-### La última fila no se analiza
+### ~~La última fila no se analiza~~ — DESMENTIDO por las etiquetas
 
-El **97%** de las cuadrículas resueltas acaban en `GGGGG`. Esa banda verde completa dispararía la
-señal de "flor" en casi todos los aciertos, así que el análisis usa solo el *camino* (las filas
-anteriores a la solución).
+El brief descartaba la última fila porque el 97% de las cuadrículas resueltas acaban en `GGGGG` y "esa banda
+verde dispararía la señal de flor en casi todos los aciertos".
 
-### El 37% de las partidas no tiene lienzo — y son las de los buenos
+**Estaba justo al revés.** En las etiquetas humanas, esa banda **es el suelo de la flor** y los amarillos
+dispersos encima son los pétalos:
 
-Quitando la última fila, 53 de 143 cuadrículas dejan 2 filas o menos. En dos filas no hay figura
-posible. Esas partidas caen en 💩 (**decisión pendiente**: ver Abierto).
+```
+Y....        ..Y..        .Y..G
+.Y..Y        ...Y.        Y.Y.G
+GGGGG        .GGG.        GGGGG
+             GGGGG
+```
 
-De ahí el mejor efecto del diseño: **correlación −0,37 entre media de intentos y número de cacas**. Es
-negativa, o sea que **quien juega mejor acumula más cacas**, porque resuelve en dos o tres intentos y no
-deja lienzo. Medido: los tres jugadores con mejor media del periodo tienen 7, 12 y 10 cacas
-respectivamente. Ganar el mes y tener el álbum lleno de mierda es la tensión que hace que los dos
-rankings no se pisen.
+Quitar esa fila eliminaba precisamente la señal que define una flor, y de ahí sale la mayor parte del error
+del 69%. **El clasificador analiza la cuadrícula completa.**
 
-### Los dos rankings premian a gente distinta — y eso es una virtud
+### ~~En dos filas no hay figura posible~~ — DESMENTIDO por las etiquetas
 
-| | Intentos medios |
-|---|---|
-| Partidas sin lienzo (≤2 filas) | 2,9 |
-| Partidas con lienzo (≥3 filas) | 4,7 |
+El brief daba por hecho que una cuadrícula con dos filas sobre la base no puede contener figura, y con eso
+mandaba el 37% de las partidas a la papelera por construcción.
 
-La figura sale de las partidas que salen mal. Quien gana el mes en puntuación casi nunca va a ganar el
-álbum, y al revés. El ranking de figuras da un premio a quien sufre.
+Tres de las treinta etiquetas (fichas 01, 03 y 06) tienen exactamente dos filas sobre la base y son
+**flores**. El número de filas no decide nada: lo que decide es la densidad y la limpieza del dibujo.
+
+### La tensión entre los dos rankings — HAY QUE VOLVER A MEDIRLA
+
+El brief afirmaba una **correlación −0,37 entre media de intentos y número de cacas**: quien juega mejor
+acumula más papelera, porque resuelve pronto y no deja lienzo. Era el mejor efecto del diseño, la razón por
+la que los dos rankings premian a gente distinta.
+
+**Esa cifra se midió con el clasificador desmentido**, el que mandaba el 69% a la papelera por contar filas.
+Con el número de filas descartado como criterio, el signo puede mantenerse, atenuarse o desaparecer. Queda
+**pendiente de remedir** cuando el clasificador esté calibrado, y hasta entonces no se cita como hecho.
+
+Lo que sí sigue en pie, porque no depende del clasificador, es la diferencia de intentos entre partidas con
+y sin lienzo (2,9 frente a 4,7): la figura sale de las partidas que salen mal. La *intuición* de que los dos
+rankings premian a gente distinta es sólida; la cifra que la medía, no.
 
 ### Por eso el "jugador del día" se separa en dos premios
 
@@ -124,19 +152,38 @@ generar todas es inviable; lo razonable es una al día (la obra del día) o solo
 
 | Abierto | Qué falta decidir |
 |---|---|
-| ¿Las partidas sin lienzo (≤2 filas) son 💩 o categoría aparte? | Si son 💩: reparto 69% de cacas y los mejores jugadores son los que más acumulan (divertido, y una sola regla que explicar). Si van aparte: 31% de cacas y 37% sin figura, pero hay que explicar una categoría técnica más |
+| ~~¿Las partidas sin lienzo son categoría aparte?~~ | **CERRADO por las etiquetas**: el número de filas no decide nada, así que la pregunta desaparece. Hay flores de dos filas sobre la base |
 | Puntuación del álbum | Recuento absoluto de figuras reconocibles, o ponderado por rareza. Medido: 🦜 8%, 📐 11%, 🌷 12% — el loro es la pieza rara |
-| Calibración del clasificador | **Sin resolver**: la heurística falla en el único patrón etiquetado disponible. Necesita 20-30 patrones etiquetados a mano para ajustar pesos y medir acierto |
+| Calibración del clasificador | **Desbloqueado**: hay 30 patrones etiquetados ([conjunto dorado](../sources/2026-08-05-etiquetado-de-patrones.md)). Falta escribir el clasificador y medir su acierto contra ellos |
+| La categoría `loto` | Apareció una vez al etiquetar (ficha 29: dos masas verdes con un canal vertical en medio). **Plegada en `flores` por ahora**: con un ejemplo no se calibra nada, se acertaría por azar. Si al mirar más patrones sale a menudo, se separa |
 | Capability | La clasificación es un dominio nuevo (`patrones`?). Crear capability requiere acuerdo explícito |
 | Qué pasa con la captura de Playwright | Sustituir la imagen por texto elimina el navegador del workflow diario: menos dependencias y más rápido, pero se pierde el gráfico |
 
+## Cómo funciona el etiquetado en la práctica
+
+**A mano se etiqueta una vez.** Las 30 fichas son el examen, no el mecanismo. En producción no hay humano ni
+coste por partida:
+
+1. alguien publica en Slack;
+2. el cron horario ingiere y guarda el **patrón crudo** (ya funciona: 1521 de 1521 filas lo tienen);
+3. al materializar la temporada, una función pura convierte patrón → figura;
+4. el álbum y el ranking de belleza salen de ahí.
+
+Determinista, sin llamadas a ningún modelo y sin céntimos por resultado.
+
+**Se guarda el dibujo, no el veredicto.** La categoría no vive en ninguna columna: se deriva cada vez. Por
+eso cambiar un peso **reclasifica todo el histórico solo**, sin migración — y por eso el conjunto dorado es
+lo que hace seguro tocarlo: cada cambio se mide en "coincidía en N de 30, ahora en M de 30".
+
+**Equivocarse es barato.** El álbum no toca el ranking de puntuación (decisión explícita), así que una figura
+mal puesta es una gracia perdida, no una injusticia en la tabla.
+
 ## Límite honesto
 
-El clasificador heurístico **no está validado**. Dos síntomas concretos: manda el 69% de los patrones a
-💩, y clasifica como 📐 el único patrón que un humano etiquetó como 🦜. Parte de ese 69% es real (el 37%
-sin lienzo lo es por construcción), pero el resto apunta a pesos mal calibrados.
+**30 etiquetas dan para medir, no para afinar.** El margen de una precisión medida sobre 30 casos es de unos
+±9 puntos: distingue "60% frente a 85%", no "78% frente a 82%". Y con cuatro categorías salen unos 7-8
+ejemplos por categoría, que es poco para ajustar umbrales finos.
 
-La idea es viable —las señales geométricas existen, se calculan y separan casos claros— pero cualquier
-ponderación escrita hoy es una conjetura. **Antes de especificar el slice de clasificación hace falta un
-conjunto de 20-30 patrones etiquetados a mano** contra el que medir el acierto. Sin eso no hay forma de
-saber si la heurística basta o si el trabajo lo tiene que hacer un modelo mirando la imagen.
+Si el clasificador se queda por debajo de un acierto razonable con la cuadrícula completa, la alternativa es
+un modelo mirando el dibujo — y eso cambia el trato: deja de ser determinista, deja de ser gratis y no se
+puede cubrir con golden tests. Esa decisión, si llega, es un ADR.
