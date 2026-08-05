@@ -30,7 +30,10 @@ nombre en la columna que debería llevar un identificador. Eso tiene tres consec
 - Un jugador que se cambia el nombre **se convierte en dos jugadores**. Ya pasó: dos identidades
   distintas que resuelven al mismo ID de Slack, con las mismas puntuaciones registradas dos veces.
 - Ocho filas llevan el identificador de **otra persona**, producto de un cruce en el diccionario de
-  mapeos: su nombre mostrado dice un jugador y su identificador pertenece a otro.
+  mapeos: su nombre mostrado dice un jugador y su identificador pertenece a otro. **Son partidas jugadas
+  de verdad**: seis duplican filas que el dueño real ya tiene y dos no existen bajo su identificador, así
+  que se reatribuyen en lugar de borrarse. La primera versión de este slice decía eliminarlas, y el ensayo
+  demostró que eso perdía dos partidas.
 - Cualquier clasificación mensual con umbral de participación **cuenta mal** a quien esté partido en dos,
   porque reparte sus días entre dos jugadores.
 
@@ -60,9 +63,21 @@ workspace
 con la misma puntuación
 **THEN** queda una sola fila para ese jugador y ese puzzle.
 
-### atribucion-cruzada-se-elimina
+### atribucion-cruzada-se-reatribuye
 **WHEN** una fila lleva el identificador de una persona distinta de la que indica su nombre mostrado
-**THEN** la fila se elimina, porque es producto de un cruce de mapeo y no de una partida jugada.
+**THEN** la fila se reatribuye a quien dice el nombre, porque el nombre es la señal fiable y la partida se
+jugó de verdad; si el dueño real ya tiene ese puzzle con la misma puntuación, queda una sola fila, y si la
+puntuación difiere la fila se declara conflictiva y no se toca.
+
+### clave-ocupada-se-declara-y-no-se-fuerza
+**WHEN** la identidad que hay que escribir en una fila choca con la de otra fila del mismo puzzle
+**THEN** si la otra fila va a desaparecer por fusión se escribe después de borrarla, y si no se mueve la
+escritura se omite: la fila conserva su identidad y el informe la declara bloqueada.
+
+### nombre-compartido-lo-desempata-quien-juega
+**WHEN** dos personas del workspace comparten una forma del nombre
+**THEN** se resuelve a favor de la que ha publicado en el canal, y si las dos han publicado la forma se
+declara ambigua y sus filas quedan como no resueltas.
 
 ### nombre-desconocido-se-declara
 **WHEN** el nombre de una fila no corresponde a ninguna persona del workspace
@@ -78,20 +93,27 @@ con la misma puntuación
 
 ## Estado después
 
-Todas las filas resolubles guardan un identificador de Slack en lugar de un nombre. El número de partidas
-por jugador cambia **solo** por las dos causas declaradas: las fusiones de un renombre (la misma partida
-contada una vez en lugar de dos) y las eliminaciones por atribución cruzada. El comando informa de las
-dos cantidades, y esa es la única forma legítima de que el censo se mueva.
+Todas las filas resolubles guardan un identificador de Slack en lugar de un nombre. El censo baja **por una
+sola causa declarada: las fusiones**, y una fusión exige que las dos filas coincidan en jugador, puzzle y
+puntuación. Nada se elimina por otro motivo. El comando informa de cuántas fusiona, cuántas reatribuye y
+cuántas deja conflictivas, y ese informe es la única forma legítima de explicar el censo nuevo.
 
 `player_name` sigue conteniendo el nombre mostrado, así que la web publicada no nota nada
 ([ADR 0005](../../decisions/0005-hosting-y-convivencia-v1-v2.md)).
 
 ## Edge cases
 
-- **Alguien que ya no está en el workspace**: su nombre no resuelve y sus filas quedan como no resueltas.
-  No se borran: un jugador que se fue jugó de verdad.
-- **Dos personas con el mismo nombre mostrado**: el directorio devuelve una sola, así que la resolución
-  sería ambigua. No se ha observado hoy, y si apareciese el comando debe declararlo en lugar de elegir `?`.
+- **Alguien que ya no está en el workspace**: **sí resuelve**. `users.list` sigue devolviendo el nombre y el
+  identificador de los usuarios desactivados, y un identificador de Slack no se reasigna nunca. Tres de los
+  jugadores del histórico están en este caso, con 110 filas entre los tres: filtrarlos las dejaba todas sin
+  resolver, incluido el renombre que este slice viene a arreglar.
+- **Dos personas con el mismo nombre mostrado**: ocurre de verdad, en dos formas. Lo desempata quién ha
+  publicado en el canal, que es la señal pertinente porque quien está en la tabla es quien juega. Sin
+  desempate, la forma se declara ambigua.
+- **Una etiqueta que no existe en Slack**: tres nombres de la tabla son etiquetas escritas a mano y no
+  resuelven contra el workspace. Van en un mapeo curado que se aplica **como relleno, nunca por encima** de
+  `users.list`: ese diccionario hereda un error de etiquetado, y aplicado como override atribuiría 111
+  filas a otra persona.
 - **Reejecución**: idempotente por `id-existente-no-se-toca`.
 
 ## Slices compañeros

@@ -47,3 +47,83 @@
     jugador con el mismo puzzle y la misma puntuación colapsan, y el otro que dos puzzles distintos NO
     se fusionan. Sin el segundo, una implementación que fusionara por jugador sin mirar el puzzle
     pasaría el primero.
+
+- run: '2026-08-05T06:05:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: identidad-canonica-de-jugador
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 3
+  mutacion:
+    mutantes: 6
+    supervivientes: 0
+  notas: >-
+    tools/canonical_identity.py con canonizar() puro y adaptadores reales. 9 escenarios, 9/9 cubiertos,
+    15 tests. TRES rondas de corrección, y las tres las destapó el contacto con datos reales, no un gate.
+    RONDA 1 — EL DIRECTORIO NO ERA EL QUE EL ANÁLISIS SUPUSO. El primer ensayo dio fusionadas=2 y
+    cruzadas=0 contra las 4 y 8 declaradas, así que se paró (tarea 5.1). Dos causas: (a) el directorio
+    descartaba los usuarios DESACTIVADOS, y tres jugadores del histórico ya salieron del workspace — 110
+    filas sin resolver, incluido el renombre que el slice venía a arreglar; users.list sigue devolviendo su
+    nombre y un identificador de Slack no se reasigna nunca. (b) tres nombres de la tabla son etiquetas
+    escritas a mano del USER_IDENTITY de add_results.py y no existen como nombre en Slack. Con ambas
+    arregladas: resueltas 1233, ya_canonicas 290, cruzadas 8, no_resueltas 0 — las cifras del análisis.
+    El primer ensayo también iba a FUSIONAR 2 PARTIDAS DE UN JUGADOR DENTRO DE LAS DE OTRA porque sus
+    puntuaciones coincidían: pérdida de datos disfrazada de fusión, evitada por el ensayo.
+    RONDA 2 — CAMBIO DE ESPECIFICACIÓN. El slice decía eliminar las 8 filas cruzadas "porque no son
+    partidas jugadas". Los datos dicen lo contrario: son partidas de un jugador bajo el identificador de
+    otra, y DOS de ellas (#1477 y #1488) no existen bajo el identificador correcto, así que borrarlas
+    perdía dos partidas. Cambiado a reatribuir + fusionar duplicados; el delta de resultados se corrigió
+    para que el censo solo baje por fusión.
+    RONDA 3 — MUTANTE SUPERVIVIENTE, Y ERA EL PEOR POSIBLE. El mutante que convertía el mapeo curado de
+    relleno en override sobrevivió: no lo cubría ningún test porque vivía dentro del adaptador de Slack.
+    Con el curado por encima de users.list, 111 filas de una jugadora se atribuían a otra por un error de
+    etiquetado heredado del repo. Se extrajo resolver_formas() como función pura y se cubrió con tres
+    tests. 6 mutantes, 0 supervivientes.
+    SECURITY (4e) — el update envía solo slack_user_id; player_name no se toca (lo lee la web v1); la
+    copia de seguridad de las 1533 filas está fuera del repo; el informe no volca nombres a ningún archivo.
+
+- run: '2026-08-05T06:15:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: identidad-canonica-de-jugador
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    security: pass
+  rondas_correccion: 1
+  notas: >-
+    LA PRIMERA EJECUCIÓN REAL FALLÓ A MITAD con violación del índice único
+    (slack_user_id, wordle_id)=(U08KF6V12CB, 1478). Estado tras el fallo: 1533 filas intactas, 0 borrados,
+    18 identidades reescritas — todas correctas, y el proceso es idempotente, así que no hubo daño.
+    CAUSA RAÍZ: el diseño calculaba bien el destino de cada fila pero escribía sin mirar quién ocupa la
+    clave EN ESE INSTANTE. La fila de una jugadora necesitaba una clave que ocupaba la fila cruzada que se
+    iba a borrar después. Y peor: en el puzzle 1481 la fila conflictiva —que por definición se queda donde
+    está— se sienta sobre la clave que necesita su dueña legítima, y eso no lo resuelve ningún orden.
+    POR QUÉ LOS TESTS NO LO CAZARON: el doble en memoria NO imponía el índice único, así que era más
+    permisivo que producción. Un doble que acepta lo que la tabla rechaza no prueba nada sobre la tabla.
+    ARREGLO: (1) TablaFalsa impone el índice único y lanza como Postgres; (2) borrar antes de escribir, que
+    libera claves; (3) escribir por punto fijo, y lo que siga bloqueado se declara (bloqueadas) sin forzar
+    ni borrar. Escenario nuevo clave-ocupada-se-declara-y-no-se-fuerza con dos tests, las dos formas reales
+    (#1478 se desbloquea al borrar, #1481 no se desbloquea nunca).
+    EJECUCIÓN REAL: resueltas=1214 ya_canonicas=308 fusionadas=9 cruzadas=8 no_resueltas=0 conflictivas=1
+    bloqueadas=1. Suma 1533 con las 18 de la ejecución fallida.
+    VERIFICADO CONTRA LA BASE DE DATOS Y CONTRA EL RESPALDO: 1524 filas (1533-9); 1523 con identificador y
+    1 con nombre (la bloqueada); 0 columnas intocables alteradas (player_name, wordle_id, score, date,
+    pattern); 0 filas nuevas; las 9 borradas tienen gemela viva bajo la identidad resuelta; el renombre
+    quedó en 15 partidas bajo un solo identificador sin duplicados; #1477 y #1488 PRESENTES bajo su dueño.
+    PENDIENTE Y URGENTE: el extractor sigue emitiendo nombres mostrados (main, sin cambiar), así que el
+    cron horario reinsertará identidades de nombre junto a las canónicas. Es recuperable —la migración es
+    idempotente y fusiona los duplicados— pero exige el slice ingesta-por-id-de-slack ya.
+    PENDIENTE: backfill_patterns.py busca la fila por nombre mostrado y ahora no encuentra ninguna
+    (0 rellenadas de 299). Hay que cambiarlo a buscar por identificador, que es lo que la columna guarda.
