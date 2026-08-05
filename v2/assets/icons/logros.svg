@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+<!--
+  Iconos de logros, en pixel art sobre rejilla de 16×16.
+
+  Por qué pixel art y no ilustración: el diseño de la liga arcade usa tipografía de píxeles
+  (Silkscreen) y cuadrículas de emojis. Un icono con degradados o curvas suaves pelearía con eso.
+  Aquí cada forma cae en la rejilla entera, con `shape-rendering: crispEdges`, así que se ve nítido a
+  cualquier tamaño múltiplo de 16 y honesto a los demás.
+
+  Se usan como sprite, para que sea una sola petición y para que el CSS pueda pintarlos:
+
+      <svg class="icono"><use href="/assets/icons/logros.svg#suertudo"></use></svg>
+
+  Cada símbolo tiene DOS capas: el trazo principal en `currentColor` —lo hereda del CSS, así que
+  funciona igual en claro y en oscuro— y un acento con su color propio, que es lo que hace que un
+  loro se distinga de una flor de un vistazo.
+-->
+
+<symbol id="suertudo" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Suertud@ — resolver en un solo intento</title>
+  <!-- trébol de cuatro hojas: cuatro bloques y un tallo -->
+  <path fill="#3DE07A" d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/>
+  <path fill="currentColor" d="M7 7h2v2H7zM8 12h1v3H8z"/>
+</symbol>
+
+<symbol id="dia-imposible" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>El día imposible — resolver rápido el día que el grupo se atasca</title>
+  <!-- cabeza de piedra: el día que no había por dónde cogerla -->
+  <path fill="currentColor" d="M4 1h8v10H4zM5 11h6v4H5z"/>
+  <path fill="#FFD23F" d="M6 4h2v2H6zM9 4h2v2H9z"/>
+  <path fill="#FFD23F" d="M6 8h4v1H6z"/>
+</symbol>
+
+<symbol id="superviviente" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Superviviente — resolver en cuatro o menos tres días difíciles</title>
+  <!-- escudo con un visto dentro. La primera versión llevaba una cruz y leía como una lápida:
+       exactamente lo contrario de sobrevivir. -->
+  <path fill="currentColor" d="M2 1h12v7H2zM3 8h10v3H3zM5 11h6v2H5zM7 13h2v2H7z"/>
+  <path fill="#3DE07A" d="M10 3h2v2h-2zM8 5h2v2H8zM6 7h2v2H6zM4 5h2v2H4z"/>
+</symbol>
+
+<symbol id="pleno" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Pleno — no faltar ni un día laborable de la temporada</title>
+  <!-- calendario con todas las casillas puestas -->
+  <path fill="currentColor" d="M2 3h12v2H2zM2 5h1v10H2zM13 5h1v10h-1zM2 14h12v1H2zM4 1h2v3H4zM10 1h2v3h-2z"/>
+  <path fill="#3DE07A" d="M4 7h2v2H4zM7 7h2v2H7zM10 7h2v2h-2zM4 10h2v2H4zM7 10h2v2H7zM10 10h2v2h-2z"/>
+</symbol>
+
+<symbol id="verdugo" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Verdugo — ser el mejor del día cinco veces</title>
+  <!-- diana de cuadrados concéntricos -->
+  <path fill="currentColor" d="M1 1h14v2H1zM1 13h14v2H1zM1 3h2v10H1zM13 3h2v10h-2z"/>
+  <path fill="currentColor" d="M4 4h8v1H4zM4 11h8v1H4zM4 5h1v6H4zM11 5h1v6h-1z"/>
+  <path fill="#FF4D6D" d="M6 6h4v4H6z"/>
+</symbol>
+
+<symbol id="impecable" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Impecable — cerrar el mes sin un solo fallo</title>
+  <!-- destello de cuatro puntas -->
+  <path fill="#FFD23F" d="M7 0h2v6H7zM7 10h2v6H7zM0 7h6v2H0zM10 7h6v2h-6z"/>
+  <path fill="currentColor" d="M6 6h4v4H6z"/>
+</symbol>
+
+<symbol id="fondista" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Fondista — quince partidas o más en el mes</title>
+  <!-- cronómetro con corona y agujas: aguantar el mes entero -->
+  <path fill="currentColor" d="M6 0h4v2H6zM3 3h10v2H3zM2 5h2v8H2zM12 5h2v8h-2zM4 13h8v2H4z"/>
+  <path fill="#8B5CFF" d="M7 6h2v4H7zM9 9h3v2H9z"/>
+</symbol>
+
+<symbol id="ornitologo" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Ornitólog@ — coleccionar loros en un mes</title>
+  <!-- loro: cresta, cabeza redondeada, pico curvo escalonado y cola. La primera versión era un
+       bloque verde con un pico recto y no se leía como un pájaro. -->
+  <path fill="#FFD23F" d="M5 0h2v2H5z"/>
+  <path fill="#3DE07A" d="M4 2h6v2H4zM3 4h8v5H3zM4 9h6v2H4zM5 11h3v5H5z"/>
+  <path fill="#3DE07A" d="M8 12h4v2H8z"/>
+  <path fill="#FFD23F" d="M11 4h3v2h-3zM12 6h2v2h-2zM11 8h2v1h-2z"/>
+  <path fill="currentColor" d="M7 5h2v2H7z"/>
+</symbol>
+
+<symbol id="florista" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Florista — coleccionar flores en un mes</title>
+  <!-- tulipán: copa, tallo y hojas -->
+  <path fill="#FF4D6D" d="M3 2h3v5H3zM7 1h2v6H7zM10 2h3v5h-3zM3 7h10v2H3z"/>
+  <path fill="currentColor" d="M7 9h2v7H7z"/>
+  <path fill="#3DE07A" d="M2 11h5v2H2zM9 12h5v2H9z"/>
+</symbol>
+
+<symbol id="arquitecto" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Arquitect@ — coleccionar escuadras en un mes</title>
+  <!-- escuadra -->
+  <path fill="currentColor" d="M1 1h3v14H1zM1 12h14v3H1z"/>
+  <path fill="#8B5CFF" d="M5 12h2v2H5zM8 12h2v2H8zM11 12h2v2h-2zM2 9h2v2H2zM2 6h2v2H2z"/>
+</symbol>
+
+<symbol id="fontanero" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Fontaner@ — acumular cacas en un mes</title>
+  <!-- tres montículos: el álbum del que juega bien y no deja lienzo -->
+  <path fill="currentColor" d="M6 2h4v3H6zM4 5h8v3H4zM2 8h12v3H2zM1 11h14v3H1z"/>
+  <path fill="#FFD23F" d="M5 9h2v1H5zM9 9h2v1H9z"/>
+</symbol>
+
+<symbol id="rajado" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Rajad@ — ausencias justo en los días duros</title>
+  <!-- casilla partida por una grieta -->
+  <path fill="currentColor" d="M1 1h14v2H1zM1 13h14v2H1zM1 3h2v10H1zM13 3h2v10h-2z"/>
+  <path fill="#FF4D6D" d="M8 3h1v3H8zM7 6h1v2H7zM9 8h1v2H9zM8 10h1v3H8z"/>
+</symbol>
+
+<symbol id="metronomo" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Metrónom@ — publicar todos los días de la temporada</title>
+  <!-- metrónomo: cuerpo triangular, base ancha y péndulo inclinado a la derecha -->
+  <path fill="currentColor" d="M7 2h2v11H7zM6 5h4v8H6zM5 9h6v4H5zM2 13h12v3H2z"/>
+  <path fill="#3DE07A" d="M10 1h2v2h-2zM9 3h1v2H9zM8 5h1v2H8z"/>
+</symbol>
+
+<symbol id="francotirador" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <title>Francotirador@ — resolver en dos intentos o menos</title>
+  <!-- retícula -->
+  <path fill="currentColor" d="M7 0h2v5H7zM7 11h2v5H7zM0 7h5v2H0zM11 7h5v2h-5z"/>
+  <path fill="#FF4D6D" d="M6 6h4v4H6z"/>
+  <path fill="currentColor" d="M4 4h1v1H4zM11 4h1v1h-1zM4 11h1v1H4zM11 11h1v1h-1z"/>
+</symbol>
+</svg>

@@ -1,0 +1,4 @@
+# Excluido del Worker de la v2.0 (wrangler.v2.jsonc). Sintaxis tipo gitignore.
+#
+# Páginas de desarrollo: útiles en local, no son producto.
+dev/
