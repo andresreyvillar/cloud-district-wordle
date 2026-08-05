@@ -102,3 +102,10 @@ que la duplicación no aparece.
 **Límite declarado:** si aparece un segundo consumidor de las reglas (un endpoint, un bot que responda
 en el canal, un export), esta decisión se revisa a favor de la opción D. El disparador es explícito:
 **dos consumidores del mismo cálculo**.
+
+> **Actualización 2026-08-05 — el disparador se cumplió y esta parte queda sustituida.** El resumen diario
+> en Python y la web pasaron a necesitar las mismas reglas (día laborable, muestra mínima, umbrales de
+> medallas, imputación). El [ADR 0008](0008-donde-vive-el-calculo.md) mueve el cálculo a Python con una
+> instantánea materializada por temporada. **Lo que este ADR conserva:** vanilla con módulos ES, sin build,
+> y `js/domain/` separado del render — pero dentro de `js/domain/` va presentación y formato, no reglas del
+> juego.

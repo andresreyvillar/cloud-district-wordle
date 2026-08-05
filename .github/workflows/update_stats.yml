@@ -25,3 +25,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python tools/extract_slack.py | python tools/add_results.py
+
+      - name: Materialize the running season
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        # Only the running season: recalculating a closed one is a decision, not a side effect (ADR 0008).
+        run: python tools/materialize_seasons.py

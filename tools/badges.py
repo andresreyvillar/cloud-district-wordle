@@ -22,9 +22,9 @@ from dataclasses import dataclass
 
 from calendario import solo_laborables
 
-#: un día solo cuenta como difícil si jugaron al menos estas personas: con menos, su media no dice nada.
-#: Es el mismo criterio que el modelo de participación, para no tener dos definiciones de "día difícil".
-MUESTRA_MINIMA_DEL_DIA = 5
+# El umbral de muestra vive en `seasons` porque es parte de qué es un día de temporada. Se importa en lugar
+# de copiarse: el docstring de este módulo ya decía que quería ser el mismo criterio, y ahora lo es.
+from seasons import MUESTRA_MINIMA_DEL_DIA  # noqa: F401  (se re-exporta: los tests lo leen de aquí)
 
 FALLO = 7
 

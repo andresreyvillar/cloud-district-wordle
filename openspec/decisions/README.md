@@ -42,3 +42,4 @@ afecta: [capabilities o "todas"]
 | [0005](0005-hosting-y-convivencia-v1-v2.md) | Hosting de la v2.0 y convivencia con la v1 | **aceptado** |
 | [0006](0006-estructura-de-informacion-v2.md) | Estructura de información y rutas de la v2.0 | **aceptado** |
 | [0007](0007-libreria-de-graficos.md) | Librería de gráficos y forma de las visualizaciones | **aceptado** — la forma antes que la librería |
+| [0008](0008-donde-vive-el-calculo.md) | Dónde vive el cálculo — Python calcula, la web pinta | **aceptado** — sustituye parcialmente al 0004 |
