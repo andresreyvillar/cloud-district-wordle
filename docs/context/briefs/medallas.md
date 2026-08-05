@@ -38,27 +38,44 @@ perseguir.
 
 ## Catálogo calibrado
 
+Todas las cifras remedidas el 2026-08-04 **con la regla de días laborables aplicada**
+([reglas-temporadas](reglas-temporadas.md)), ejecutando el catálogo real contra las 123 parejas
+jugador-mes. Dos de las cifras anteriores estaban mal: ver más abajo.
+
 ### Rendimiento
 
 | Medalla | Condición | Logran | Nivel |
 |---|---|---|---|
 | **Suertud@** | resolver en **un** intento | 2 personas en 9 meses (0,13% de partidas) | legendario |
-| **El día imposible** | resolver en ≤4 un día cuya media del grupo sea ≥5,5 | 2 personas, una vez | legendario |
-| **Superviviente** | resolver en ≤4 tres días difíciles (media ≥4,5) en el mismo mes | 4% | legendario |
-| **Verdugo** | ser el mejor del día cinco veces en el mes | 34% | común |
-| **Impecable** | un mes sin ningún fallo, con 10 partidas mínimo | 41% | común |
+| **El día imposible** | resolver en ≤4 un día cuya media del grupo sea ≥5,5 | 4 personas, en 2 días | legendario |
+| **Superviviente** | resolver en ≤4 tres días difíciles (media ≥4,5) en el mismo mes | 4,1% | legendario |
+| **Verdugo** | ser el mejor del día cinco veces en el mes | 32,5% | común |
+| **Impecable** | un mes sin ningún fallo, con 10 partidas mínimo | 41,5% | común |
 
 ### Constancia
 
 | Medalla | Condición | Logran | Nivel |
 |---|---|---|---|
-| **Pleno** | no faltar ni un solo día del mes | 12% | raro |
-| **Fondista** | 15 partidas o más en el mes | 48% | común |
+| **Pleno** | no faltar ni un solo **día laborable** del mes | 4,9% | raro |
+| **Fondista** | 15 partidas o más en el mes | 47,2% | común |
+
+### Dos cifras que estaban mal
+
+| Medalla | Decía | Es | Por qué |
+|---|---|---|---|
+| **Pleno** | 12% | **4,9%** | Se midió con una definición de "día del mes" distinta de la que implementa el código. Con la regla anterior el valor real era **0**: los días de la temporada salen de los datos, así que una sola persona jugando un domingo se lo bloqueaba a todo el grupo. La medalla era inganable |
+| **El día imposible** | 2 personas, una vez | **4 personas, en 2 días** | Se contó un solo día (2025-12-15, media 5,67) y hay otro (2026-03-24, media 6,00). Verificado por SQL y por el catálogo, que coinciden |
+
+`Pleno` sigue siendo exactamente lo que se buscaba —4,9% cae en la banda de *raro*— pero por una razón
+distinta a la que el brief creía. Y `Verdugo` baja del 34% al 32,5% porque diez de sus créditos históricos
+salían de días de fin de semana en los que jugaba **una sola persona**, y ser el mejor del día era
+automático.
 
 ### Figuras
 
 Umbrales **provisionales**: dependen del clasificador, que todavía no está calibrado (ver el límite al
-final). Los porcentajes son con el clasificador actual.
+final). Los porcentajes son con el clasificador actual, y **medidos antes de la regla de días laborables**:
+hay que rehacerlos junto a la calibración, no por separado.
 
 | Medalla | Condición | Logran | Nivel |
 |---|---|---|---|
@@ -73,6 +90,10 @@ están puestos justo por debajo de lo que alguien ha llegado a hacer, que es don
 ser imposible.
 
 ## Reglas del sistema
+
+**Solo cuentan los días laborables.** Sábado y domingo no otorgan nada, ni una medalla permanente. Las
+partidas de fin de semana se siguen guardando; la exclusión vive en el cálculo
+([reglas-temporadas](reglas-temporadas.md)).
 
 **Ámbito.** Dos clases, y la diferencia importa:
 
@@ -104,6 +125,7 @@ quiere congelar el palmarés, será una decisión con su propio ADR.
 | Medallas de remontada | Mismo bloqueo |
 | Medallas negativas | El grupo pidió un "muro de la vergüenza". `Abstract@` ya va por ahí, pero conviene decidir si se quieren logros explícitamente malos o solo irónicos |
 | ¿Se anuncian todas? | Anunciar las comunes cada mes puede saturar el resumen. Quizá solo legendarias y raras |
+| **¿"El mejor del día" exige muestra mínima?** | `Verdugo` da el crédito aunque ese día jugasen dos personas. Medido: **25 de los 447 créditos históricos** salen de días con menos de cinco jugadores, y la regla de días laborables solo tapa 10 de esos 25. Los otros 15 son laborables con poca gente (festivos, agosto). Aplicar aquí el mismo umbral de 5 que la dificultad sería coherente, pero es una regla nueva y la decide el grupo |
 
 ## Límite honesto
 

@@ -1,0 +1,86 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-04T21:20:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Modificación del slice de medallas por una regla de temporada nueva: solo cuentan los días laborables.
+    Medido ANTES de escribir, porque el alcance real no era el que parecía. Los fines de semana son 13
+    resultados de 1533 (0,85%) en 10 jornadas, y ninguna llega a los 5 jugadores del umbral de muestra, así
+    que para la dificultad del día, el día imposible y superviviente la regla no cambia ningún resultado:
+    formaliza lo que ya ocurría por accidente.
+    Donde sí cambia es en Pleno, y ahí arregla un fallo: los días de la temporada se derivan de los datos,
+    así que una sola persona jugando un domingo lo bloqueaba a todo el grupo. Medido sobre 123 parejas
+    jugador-mes, hoy lo logran 0; con días laborables, 6. Nueve de las diez jornadas de fin de semana del
+    histórico son un único jugador. Fondista pierde una pareja (59 → 58) e Impecable no cambia (51).
+    HALLAZGO COLATERAL, dejado fuera de alcance a propósito: ser el mejor del día no exige muestra mínima,
+    y 25 de los 447 créditos históricos salen de días con menos de cinco jugadores. La regla de días
+    laborables solo tapa 10 de esos 25. Es una regla distinta —¿el mejor del día exige muestra?— que el
+    grupo tiene que decidir; anotada como abierta en el brief, no implementada aquí.
+    CIFRA CORREGIDA: el brief afirmaba que Pleno lo lograba el 12%. Eran 0. Se midió con una definición de
+    "día del mes" distinta de la que implementa el código. Va como lección.
+    Alcance decidido con el usuario: la regla aplica a TODO, figuras incluidas; y los resultados de fin de
+    semana se siguen capturando y guardando, con la exclusión viviendo en el cálculo.
+
+- run: '2026-08-04T22:10:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: skip
+    adversarial: skip
+  rondas_correccion: 0
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    tools/calendario.py con la única definición de día laborable del proyecto, y el filtro aplicado en las
+    dos entradas públicas de badges.py. Slice completo: 14 escenarios, 14/14 cubiertos, 17 tests verdes y
+    suite completa sin regresiones.
+    LOS FIXTURES EXISTENTES HUBO QUE ARREGLARLOS, y es la parte que más cerca estuvo de pasar
+    desapercibida: usaban dia=(i % 28) + 1 sobre agosto de 2026, que empieza en sábado, así que un fixture
+    de "quince partidas" tenía cinco fines de semana dentro y solo diez que contasen. Se añadieron los
+    helpers dia_laborable(n) y dia_de_finde(n), que calculan el n-ésimo día de cada tipo del mes real. Los
+    fixtures se corrigieron ANTES de implementar y siguieron verdes con el código sin filtrar, que es lo
+    que demuestra que el arreglo no cambió lo que los tests comprueban.
+    ENSAYO CONTRA PRODUCCIÓN (solo lectura, sin publicar): 1533 filas, 1520 laborables, 13 de fin de
+    semana. Plenos: 6 en total —2026-02 (4), 2026-06 (1), 2026-07 (1)— exactamente lo que predijo el
+    análisis SQL, que es una vía de medición independiente del código.
+    DOS CIFRAS FALSAS DESTAPADAS al remedir el catálogo completo: Pleno decía 12% y era 0 (inganable), y El
+    día imposible decía "2 personas, una vez" y son 4 en 2 días. Las dos venían de consultas ad hoc cuya
+    semántica no coincidía con la del código. Corregidas en el brief con la vía de medición declarada, y
+    registradas como lección con destino mecánico.
+    MUTACIÓN — 4 mutantes, 0 supervivientes, y cada uno muere en el escenario que le corresponde: el
+    viernes dejando de ser laborable (caen los fixtures de umbral exacto), quitar el filtro de
+    medallas_de_temporada, quitar el de medallas_permanentes, y solo_laborables devolviendo la lista sin
+    filtrar. Los dos del medio son los que importan: demuestran que el filtro está en LAS DOS entradas y no
+    en una.
+    SECURITY (4e) — skip justificado: sin superficie nueva, sin credenciales y sin datos nuevos al canal.
+    El cambio solo quita filas de un cálculo.
+    FUERA DE ALCANCE A PROPÓSITO: que "ser el mejor del día" exija muestra mínima. 25 de los 447 créditos
+    históricos salen de días con menos de cinco jugadores y esta regla solo tapa 10. Es una regla distinta
+    y la decide el grupo; anotada como abierta en el brief.
+    CRON A LUNES-VIERNES, decidido a mitad de la fase y por un hallazgo del propio cierre: comprobando el
+    comportamiento del resumen del sábado se vio que seccion_de_medallas devuelve el MISMO texto tres veces
+    seguidas sobre los mismos datos, porque la jornada se deriva de max(wordle_id) y en fin de semana no
+    llegan filas nuevas. Un cron dominical republicaba la jornada del viernes con sus medallas. El bug era
+    PREEXISTENTE, no lo introduce la regla. post_ranking.yml pasa a '0 17 * * 1-5'; update_stats.yml (la
+    ingesta horaria) se queda los siete días, que es lo que sostiene la decisión de seguir capturando el fin
+    de semana. Quedan los dos mecanismos —cron y filtro— porque el filtro sigue haciendo falta para
+    workflow_dispatch y para el sábado en que alguien publique.
+    RESIDUAL DECLARADO: si un lunes a las 17:00 UTC nadie ha publicado aún, la última jornada con datos es
+    la del viernes y el mensaje repetiría sus medallas. Exige decidir qué publica el resumen un día sin
+    jornada nueva; es resumen-diario-compuesto, no este slice.
+    PENDIENTE: llevar la regla al canal. Las temporadas mensuales se votaron allí (6-0); esta no.

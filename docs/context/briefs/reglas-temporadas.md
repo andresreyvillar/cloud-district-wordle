@@ -9,6 +9,30 @@
 **Las temporadas son mensuales y el marcador se reinicia el día 1.** Votado en el canal, 6 a favor y
 0 en contra ([fuente](../sources/2026-08-04-hilo-reglas-temporadas.md)).
 
+**Una temporada son sus días laborables: de lunes a viernes.** Acordado con el dueño del proyecto el
+2026-08-04 — **no votado en el canal**, a diferencia de la regla anterior. Sábado y domingo no fijan la
+dificultad de un día, no cuentan para ningún umbral y no son días que un jugador pueda faltar. La regla
+alcanza a **los tres ejes**: puntuación, medallas y álbum de figuras.
+
+Los resultados de fin de semana **se siguen capturando y guardando**: la exclusión vive en el cálculo, no
+en la ingesta, así que la decisión es reversible sin haber perdido nada.
+
+Medido sobre el histórico, la regla es casi un no-op y arregla un fallo:
+
+| Efecto | Medida |
+|---|---|
+| Volumen afectado | 13 resultados de 1533 (**0,85%**) en 10 jornadas; 9 de esas 10 son **un único jugador** |
+| Dificultad del día, día imposible, superviviente, días de la temporada | **sin cambio**: ninguna jornada de fin de semana llega a los 5 jugadores del umbral de muestra |
+| `Pleno` | **de 0 a 6** de 123 parejas jugador-mes. Ver abajo |
+
+**Lo que arregla.** Los días de la temporada se derivan de los datos, así que mientras el fin de semana
+contaba, **una sola persona jugando un domingo convertía ese domingo en día de la temporada y se lo
+bloqueaba a todo el grupo**. Cinco de los nueve meses del histórico tienen una jornada así.
+
+**El límite de la medida.** El efecto es casi nulo *porque hoy nadie juega en fin de semana* (1,3 jugadores
+de media frente a 8,8 en laborable). Si el grupo empezara a jugar los sábados, esta regla pasaría de
+formalidad a decisión con consecuencias. El 0,85% es de hoy, no una propiedad del juego.
+
 **La participación se valora imputando resultado a los días no jugados**, en función de lo que el
 grupo sufrió ese día. Acordado en conversación de diseño, sobre datos de producción.
 
@@ -54,7 +78,7 @@ volvería la fórmula circular.
 |---|---|---|
 | `margen` | 0,5 | Con 0,5 y con 1,0 el campeón es **el mismo en los 8 meses** del histórico; solo cambian las distancias. 0,5 mueve menos a quien juega a diario |
 | muestra mínima para medir dificultad | 5 jugadores | Con menos, la media del día no calibra nada. Los días por debajo del mínimo no forman parte de la temporada |
-| días que forman la temporada | los días con muestra suficiente | Evita penalizar ausencias en días en que el grupo tampoco jugó (los fines de semana, sobre todo) |
+| días que forman la temporada | los días **laborables** con muestra suficiente | Dos filtros independientes, y hacen falta los dos: el de día laborable excluye el fin de semana por regla, y el de muestra absorbe los laborables en que el grupo tampoco jugó (festivos, agosto). Antes solo estaba el segundo, y excluía los fines de semana **por accidente**: si un sábado jugaran cinco personas, contaría |
 
 ## Efecto medido sobre el histórico
 

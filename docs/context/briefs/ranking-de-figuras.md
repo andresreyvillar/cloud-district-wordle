@@ -12,6 +12,11 @@ categorías se acumulan en un álbum por jugador.
 
 **No influye en el ranking de puntuación general** (decisión explícita, "por el momento").
 
+**Solo cuentan los días laborables**, igual que los otros dos ejes (decisión de alcance del 2026-08-04,
+ver [reglas-temporadas](reglas-temporadas.md)). Un patrón de sábado se captura, se guarda y se puede
+mirar, pero no cuenta para el ranking de belleza ni para las medallas de figuras. Afecta a 13 patrones del
+histórico de 1533 resultados.
+
 ## Lo acordado
 
 ### Categorías y emojis

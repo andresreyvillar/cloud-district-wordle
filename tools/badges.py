@@ -20,6 +20,8 @@ import statistics
 from collections import defaultdict
 from dataclasses import dataclass
 
+from calendario import solo_laborables
+
 #: un día solo cuenta como difícil si jugaron al menos estas personas: con menos, su media no dice nada.
 #: Es el mismo criterio que el modelo de participación, para no tener dos definiciones de "día difícil".
 MUESTRA_MINIMA_DEL_DIA = 5
@@ -90,8 +92,12 @@ def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, l
     """Las medallas de temporada de cada jugador en esa temporada.
 
     `resultados` puede abarcar varias temporadas: la ventana la fija el parámetro, no el reloj.
+
+    Solo cuentan los días laborables, y el filtro va **aquí** y no en cada recuento: así todo lo derivado
+    queda limpio de una vez —la dificultad del día, el mejor del día, el número de partidas y, el que
+    importa, el conjunto de días que forman la temporada del que depende `Pleno`.
     """
-    del_mes = _de_la_temporada(resultados, temporada)
+    del_mes = _de_la_temporada(solo_laborables(resultados), temporada)
     if not del_mes:
         return {}
 
@@ -141,7 +147,11 @@ def medallas_permanentes(
 
     Con `jornada`, solo devuelve las conseguidas **en** esa jornada: es lo que permite anunciarlas el día
     que ocurren y no repetirlas después.
+
+    Filtra por día laborable igual que el cálculo de temporada. Consecuencia buscada: en sábado o domingo
+    no se gana nada, ni siquiera una gesta permanente.
     """
+    resultados = solo_laborables(resultados)
     dificultad = _dificultad_por_dia(resultados)
     palmares: dict[str, list[str]] = defaultdict(list)
 
