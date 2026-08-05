@@ -182,3 +182,47 @@ def test_el_ensayo_cuenta_igual_pero_no_escribe():
     assert informe.rellenadas == 1
     assert tabla.escrituras == []
     assert tabla.filas[0]["pattern"] is None
+
+
+# @scenarios correspondencia-por-identificador
+def test_el_autor_de_una_entrada_es_el_identificador_no_el_nombre():
+    """El acoplamiento que rompió el backfill tras canonizar la identidad.
+
+    Los siete escenarios de `rellenar()` reciben el autor por parámetro y les da igual si es un nombre o un
+    identificador, así que pasaban en verde mientras la ejecución real resolvía 0 de 299 filas. El
+    emparejamiento tiene que mirar lo mismo que la tabla guarda.
+    """
+    from tools.backfill_patterns import entrada_de_mensaje
+
+    entrada = entrada_de_mensaje(
+        {"user": "U0ZGXL725", "text": "La palabra del día #1671 3/6"}
+    )
+
+    assert entrada["autor"] == "U0ZGXL725"
+    assert entrada["texto"] == "La palabra del día #1671 3/6"
+
+
+# @scenarios correspondencia-por-identificador
+def test_un_mensaje_sin_autor_o_de_sistema_no_entra_en_el_recorrido():
+    from tools.backfill_patterns import entrada_de_mensaje
+
+    assert entrada_de_mensaje({"text": "sin autor"}) is None
+    assert entrada_de_mensaje({"user": "U0ZGXL725", "subtype": "channel_join", "text": ""}) is None
+
+
+# @scenarios correspondencia-por-identificador
+def test_el_indice_localiza_la_fila_por_puzzle_e_identificador():
+    """Dos jugadores en el mismo puzzle y el mismo jugador en dos puzzles: la clave necesita las dos partes."""
+    from tools.backfill_patterns import indexar
+
+    filas = [
+        {"id": 1, "wordle_id": 1671, "slack_user_id": "U_UNO"},
+        {"id": 2, "wordle_id": 1671, "slack_user_id": "U_DOS"},
+        {"id": 3, "wordle_id": 1670, "slack_user_id": "U_UNO"},
+    ]
+    indice = indexar(filas)
+
+    assert indice[(1671, "U_UNO")]["id"] == 1
+    assert indice[(1671, "U_DOS")]["id"] == 2
+    assert indice[(1670, "U_UNO")]["id"] == 3
+    assert len(indice) == 3

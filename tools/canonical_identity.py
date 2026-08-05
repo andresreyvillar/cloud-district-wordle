@@ -69,11 +69,19 @@ def es_identificador(valor) -> bool:
 def canonizar(directorio, tabla, dry_run: bool = False) -> Informe:
     """Canoniza la identidad de todas las filas. Idempotente.
 
-    **El nombre mostrado es la señal fiable**, no la columna de identidad. Cuando los dos discrepan es
-    porque el identificador vino de un mapeo roto, y la fila se reatribuye a quien dice el nombre. Medido
-    en producción: las 8 filas con el identificador de una persona y el nombre de otra son partidas
-    jugadas de verdad, y dos de ellas no existen bajo el identificador correcto — borrarlas, como decía
-    la primera versión de la especificación, habría perdido esas dos partidas.
+    **Una atribución cruzada se declara y no se toca.** Cuando el identificador y el nombre señalan a
+    personas distintas, ni se reatribuye ni se borra:
+
+    - **Reatribuir fabrica partidas.** Se intentó, apoyándose en que el nombre parecía la señal fiable.
+      El canal lo desmintió: de las tres filas cruzadas que no eran duplicados, dos correspondían a días
+      en los que la persona del nombre **no publicó nada** y la tercera era copia exacta de la cuadrícula
+      de otra. Reatribuir les dio partidas que nadie jugó.
+    - **Borrar destruye datos por heurística.** Que un nombre no cuadre con un identificador no demuestra
+      que la fila sea falsa; lo demostró el canal, y este cálculo no lo consulta.
+
+    Así que se cuentan y se dejan quietas. Siguen ocupando su clave, lo que puede bloquear a su dueño
+    legítimo — y eso también se declara (`bloqueadas`). Quien decida qué hacer con ellas tiene una prueba
+    barata: **una fila sin mensaje en el canal se queda sin patrón** tras el backfill.
 
     Dos pasadas, y el orden importa. La primera decide el **objetivo** de cada fila sin escribir; la
     segunda agrupa por (objetivo, puzzle) y decide quién se queda. Hacerlo en una sola pasada escribiendo
@@ -89,9 +97,14 @@ def canonizar(directorio, tabla, dry_run: bool = False) -> Informe:
         nombre = fila.get("player_name")
         resuelto = directorio.get(nombre) if nombre else None
 
+        if es_identificador(identidad) and resuelto is not None and identidad != resuelto:
+            # Atribución cruzada: se declara y se deja quieta. No entra en los grupos, así que no puede
+            # ganarle la clave a nadie ni fusionar a nadie — pero sigue ocupándola en la tabla, y por eso
+            # aparece en `ocupado` unas líneas más abajo.
+            informe.cruzadas += 1
+            continue
+
         if resuelto is not None:
-            if es_identificador(identidad) and identidad != resuelto:
-                informe.cruzadas += 1
             objetivo = resuelto
         elif es_identificador(identidad):
             # El nombre no dice quién es, pero la identidad ya es canónica: no hay nada que decidir, y

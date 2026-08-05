@@ -30,10 +30,11 @@ nombre en la columna que debería llevar un identificador. Eso tiene tres consec
 - Un jugador que se cambia el nombre **se convierte en dos jugadores**. Ya pasó: dos identidades
   distintas que resuelven al mismo ID de Slack, con las mismas puntuaciones registradas dos veces.
 - Ocho filas llevan el identificador de **otra persona**, producto de un cruce en el diccionario de
-  mapeos: su nombre mostrado dice un jugador y su identificador pertenece a otro. **Son partidas jugadas
-  de verdad**: seis duplican filas que el dueño real ya tiene y dos no existen bajo su identificador, así
-  que se reatribuyen en lugar de borrarse. La primera versión de este slice decía eliminarlas, y el ensayo
-  demostró que eso perdía dos partidas.
+  mapeos: su nombre mostrado dice un jugador y su identificador pertenece a otro. **Este comando no decide
+  qué son**: las declara y las deja intactas. Se intentó reatribuirlas al dueño del nombre y fue un error
+  que fabricó partidas — el canal demostró que dos correspondían a días en que esa persona no publicó nada
+  y una tercera era copia exacta de la cuadrícula de otra jugadora. Y borrarlas por sospecha tampoco vale:
+  lo que las delata es el canal, que este cálculo no consulta.
 - Cualquier clasificación mensual con umbral de participación **cuenta mal** a quien esté partido en dos,
   porque reparte sus días entre dos jugadores.
 
@@ -44,8 +45,9 @@ reprocesado se duplicarían — 32 de las 40 últimas, medido.
 ## Trigger técnico
 
 Un comando manual, repetible sin daño. Resuelve cada nombre mostrado contra el directorio del workspace,
-escribe el identificador en las filas que llevan un nombre, fusiona lo que resulte duplicado y elimina lo
-que resulte de una atribución cruzada. Como toda migración de este repo, exige un ensayo previo.
+escribe el identificador en las filas que llevan un nombre y fusiona lo que resulte duplicado. Lo que no
+puede resolver —atribuciones cruzadas y claves bloqueadas— lo declara y lo deja intacto. Como toda
+migración de este repo, exige un ensayo previo.
 
 ## Comportamiento observable
 
@@ -63,11 +65,9 @@ workspace
 con la misma puntuación
 **THEN** queda una sola fila para ese jugador y ese puzzle.
 
-### atribucion-cruzada-se-reatribuye
+### atribucion-cruzada-se-declara-y-no-se-toca
 **WHEN** una fila lleva el identificador de una persona distinta de la que indica su nombre mostrado
-**THEN** la fila se reatribuye a quien dice el nombre, porque el nombre es la señal fiable y la partida se
-jugó de verdad; si el dueño real ya tiene ese puzzle con la misma puntuación, queda una sola fila, y si la
-puntuación difiere la fila se declara conflictiva y no se toca.
+**THEN** la fila se declara en el recuento y no se modifica: ni se reatribuye ni se elimina.
 
 ### clave-ocupada-se-declara-y-no-se-fuerza
 **WHEN** la identidad que hay que escribir en una fila choca con la de otra fila del mismo puzzle
@@ -95,8 +95,9 @@ declara ambigua y sus filas quedan como no resueltas.
 
 Todas las filas resolubles guardan un identificador de Slack en lugar de un nombre. El censo baja **por una
 sola causa declarada: las fusiones**, y una fusión exige que las dos filas coincidan en jugador, puzzle y
-puntuación. Nada se elimina por otro motivo. El comando informa de cuántas fusiona, cuántas reatribuye y
-cuántas deja conflictivas, y ese informe es la única forma legítima de explicar el censo nuevo.
+puntuación. Nada se elimina por otro motivo. El comando informa de cuántas resuelve, cuántas fusiona y
+cuántas deja sin tocar por cruzadas o bloqueadas, y ese informe es la única forma legítima de explicar el
+censo nuevo.
 
 `player_name` sigue conteniendo el nombre mostrado, así que la web publicada no nota nada
 ([ADR 0005](../../decisions/0005-hosting-y-convivencia-v1-v2.md)).

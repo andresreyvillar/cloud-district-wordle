@@ -127,3 +127,33 @@
     idempotente y fusiona los duplicados— pero exige el slice ingesta-por-id-de-slack ya.
     PENDIENTE: backfill_patterns.py busca la fila por nombre mostrado y ahora no encuentra ninguna
     (0 rellenadas de 299). Hay que cambiarlo a buscar por identificador, que es lo que la columna guarda.
+
+- run: '2026-08-05T08:40:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: identidad-canonica-de-jugador
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    security: pass
+  rondas_correccion: 1
+  notas: >-
+    CORRECCIÓN DE UN ERROR PROPIO YA EJECUTADO EN PRODUCCIÓN. La decisión de reatribuir las filas cruzadas
+    en lugar de eliminarlas era equivocada, y la destapó el backfill de patrones: tras barrer el histórico
+    completo quedaron exactamente 2 filas sin patrón, y eran las 2 que la reatribución había dado a un
+    jugador. Comprobado contra el canal —la fuente de registro, disponible desde el principio— esa persona
+    NO publicó los puzzles #1477 ni #1488, y la tercera fila afectada (#1481) era copia byte a byte de la
+    cuadrícula de otra jugadora.
+    ARREGLO EN DATOS: copia de seguridad nueva fuera del repo (1524 filas, md5 3f0dc066), borrado de las 3
+    filas fantasma por id explícito, y reejecución de la migración. Resultado: resueltas=1 (la fila que
+    estaba bloqueada por la fantasma), ya_canonicas=1520, todo lo demás a 0.
+    ESTADO FINAL VERIFICADO: 1521 filas, 1521 con identificador, 1521 con patrón, 21 jugadores. El censo
+    coincide exactamente con lo que predecía el análisis original (1533 - 4 fusiones - 8 eliminaciones), que
+    era la cifra correcta; la 1524 que produjo la reatribución era la equivocada.
+    ARREGLO EN ESPECIFICACIÓN: el escenario pasa a atribucion-cruzada-se-declara-y-no-se-toca. Ni
+    reatribuir (fabrica partidas, probado) ni eliminar (destruye datos por heurística): se declara y se
+    deja quieta, con la consecuencia dicha de que puede bloquear a su dueño legítimo. 9 escenarios, 14
+    tests, suite completa en verde.

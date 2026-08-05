@@ -107,6 +107,30 @@ def contexto_tls() -> ssl.SSLContext:
     return ssl.create_default_context(cafile=certifi.where())
 
 
+def entrada_de_mensaje(mensaje: dict) -> dict | None:
+    """La entrada del recorrido para un mensaje, o `None` si no debe recorrerse.
+
+    **El autor es el identificador**, no el nombre que mostraba. La primera versión traducía a nombre
+    porque la columna de identidad guardaba nombres; tras la canonización guarda identificadores y
+    emparejar por nombre no encontraba ninguna fila (0 de 299).
+    """
+    if mensaje.get("subtype") is not None:
+        return None
+    identificador = mensaje.get("user")
+    if not identificador:
+        return None
+    return {"autor": identificador, "texto": mensaje.get("text", "")}
+
+
+def indexar(filas: list[dict]) -> dict[tuple, dict]:
+    """`(puzzle, identificador) → fila`.
+
+    La clave necesita las dos partes: en un puzzle juegan varias personas y una persona juega muchos
+    puzzles.
+    """
+    return {(fila["wordle_id"], fila.get("slack_user_id")): fila for fila in filas}
+
+
 class CanalSlack:
     """Histórico del canal, paginado con el cursor de la API."""
 
@@ -117,25 +141,6 @@ class CanalSlack:
 
         self.canal = canal
         self.cliente = WebClient(token=token, ssl=contexto_tls())
-        self.autores = self._mapa_de_autores()
-
-    def _mapa_de_autores(self) -> dict:
-        """id de Slack → nombre mostrado, paginando: el workspace tiene más de una página."""
-        mapa, cursor = {}, None
-        while True:
-            respuesta = self.cliente.users_list(limit=self.PAGINA, cursor=cursor)
-            for miembro in respuesta["members"]:
-                perfil = miembro.get("profile", {})
-                mapa[miembro["id"]] = (
-                    perfil.get("display_name")
-                    or perfil.get("real_name")
-                    or miembro.get("real_name")
-                    or miembro.get("name")
-                    or miembro["id"]
-                )
-            cursor = respuesta.get("response_metadata", {}).get("next_cursor")
-            if not cursor:
-                return mapa
 
     def paginar(self):
         cursor = None
@@ -143,11 +148,8 @@ class CanalSlack:
             respuesta = self.cliente.conversations_history(
                 channel=self.canal, limit=self.PAGINA, cursor=cursor
             )
-            yield [
-                {"autor": self.autores.get(m.get("user"), m.get("user")), "texto": m.get("text", "")}
-                for m in respuesta["messages"]
-                if "subtype" not in m
-            ]
+            entradas = [entrada_de_mensaje(m) for m in respuesta["messages"]]
+            yield [entrada for entrada in entradas if entrada is not None]
             cursor = respuesta.get("response_metadata", {}).get("next_cursor")
             if not cursor:
                 return
@@ -168,9 +170,7 @@ class TablaSupabase:
 
         self.cliente = create_client(url, clave)
         self.filas = self._cargar()
-        self._indice: dict = {}
-        for fila in self.filas:
-            self._indice.setdefault(fila["wordle_id"], []).append(fila)
+        self._indice = indexar(self.filas)
 
     def _cargar(self) -> list[dict]:
         filas, desplazamiento = [], 0
@@ -194,17 +194,12 @@ class TablaSupabase:
         return [fila for fila in self.filas if not fila.get("pattern")]
 
     def buscar(self, wordle_id: int, autor: str) -> dict | None:
-        """La fila de ese puzzle cuyo autor coincide.
+        """La fila de ese puzzle y ese identificador.
 
-        La comparación se hace contra `slack_user_id` y contra `player_name` porque la columna de
-        identidad contiene un nombre mostrado en cuatro de cada cinco filas. **No se traduce nada**:
-        la identidad se arregla en su propio slice, y lo que aquí no coincide se declara como no
+        Una sola comparación, contra la columna de identidad. Lo que no coincide se declara como no
         resuelto en lugar de adivinarse.
         """
-        for fila in self._indice.get(wordle_id, []):
-            if autor and autor in (fila.get("slack_user_id"), fila.get("player_name")):
-                return fila
-        return None
+        return self._indice.get((wordle_id, autor))
 
     def actualizar(self, fila_id, campos: dict) -> None:
         self.cliente.table("wordle_results").update(campos).eq("id", fila_id).execute()

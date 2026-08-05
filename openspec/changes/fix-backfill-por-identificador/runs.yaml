@@ -1,0 +1,20 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T07:50:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: backfill-de-patrones
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    El backfill emparejaba mensaje y fila por nombre mostrado y tras la canonización de identidad dejó de
+    encontrar nada: 0 rellenadas de 299 sin patrón. Era la incógnita que el propio slice documentaba con un
+    `?`; al resolverse la identidad, toca actualizarla.
+    El pack añade dos funciones puras (entrada_de_mensaje, indexar) en vez de arreglar el adaptador en su
+    sitio, porque los siete escenarios de rellenar() son agnósticos del tipo de autor: pasaban en verde
+    mientras la ejecución real no encontraba una sola fila. Es el mismo patrón que la lección del
+    2026-08-05 sobre dobles más permisivos que producción.
+    De paso desaparece _mapa_de_autores y con él una llamada a users.list por ejecución.

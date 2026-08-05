@@ -135,13 +135,14 @@ def test_dos_puzzles_distintos_del_mismo_jugador_no_se_fusionan():
     assert len(tabla.filas) == 2
 
 
-# @scenarios atribucion-cruzada-se-reatribuye
-def test_una_fila_cuyo_id_y_nombre_son_de_personas_distintas_se_reatribuye():
-    """El caso real: 8 filas con el identificador de Paula y el nombre de Carlos H.
+# @scenarios atribucion-cruzada-se-declara-y-no-se-toca
+def test_una_fila_cuyo_id_y_nombre_son_de_personas_distintas_se_declara_y_se_deja_quieta():
+    """El caso real: 8 filas con el identificador de una persona y el nombre de otra.
 
-    El nombre mostrado es la señal fiable —el identificador vino de un mapeo roto— y son partidas
-    jugadas de verdad. Se reatribuyen, no se borran: dos de las ocho reales no existen bajo el
-    identificador de Carlos, y borrarlas perdería la partida.
+    Ni se reatribuyen ni se borran. **Reatribuir se intentó y fabricó partidas**: el canal demostró que
+    dos de esas filas correspondían a días en los que la persona del nombre no publicó nada, y una tercera
+    era copia exacta de la cuadrícula de otra jugadora. Borrar, en cambio, destruiría datos apoyándose en
+    que un nombre no cuadra, que no es prueba de nada.
     """
     from tools.canonical_identity import canonizar
 
@@ -155,49 +156,32 @@ def test_una_fila_cuyo_id_y_nombre_son_de_personas_distintas_se_reatribuye():
 
     assert informe.cruzadas == 1
     assert tabla.borrados == []
-    assert tabla.por_id(2)["slack_user_id"] == "U_CARLOSH"
+    assert tabla.escrituras == []
+    assert tabla.por_id(2)["slack_user_id"] == "U_PAULA"  # intacta: no se le da a nadie
     assert tabla.por_id(1)["slack_user_id"] == "U_PAULA"
 
 
-# @scenarios atribucion-cruzada-se-reatribuye
-def test_una_cruzada_que_duplica_una_partida_ya_registrada_se_fusiona():
-    """Reatribuir no puede duplicar: si el dueño real ya tiene esa partida, queda una sola fila."""
-    from tools.canonical_identity import canonizar
+# @scenarios atribucion-cruzada-se-declara-y-no-se-toca
+def test_una_cruzada_no_se_fusiona_con_la_partida_del_dueno_del_nombre():
+    """Aunque coincida en puzzle y puntuación con una fila de la persona del nombre.
 
-    tabla = TablaFalsa(
-        [
-            fila(1, "U_CARLOSH", "Carlos H.", 1478, score=4),
-            fila(2, "U_PAULA", "Carlos H.", 1478, score=4),  # la misma partida con el id equivocado
-        ]
-    )
-    informe = canonizar(DIRECTORIO, tabla)
-
-    assert informe.cruzadas == 1
-    assert informe.fusionadas == 1
-    assert [f["id"] for f in tabla.filas] == [1]
-
-
-# @scenarios atribucion-cruzada-se-reatribuye
-def test_una_cruzada_con_puntuacion_distinta_se_declara_y_no_se_toca():
-    """El caso del puzzle 1481: la fila cruzada dice 5 y la del dueño real dice 3.
-
-    Fusionar elegiría una puntuación a dedo y escribir el identificador violaría el índice único. Se
-    cuenta como conflictiva y se deja intacta, que es lo que permite decidirlo con datos delante.
+    Esa coincidencia es lo que hizo creer que eran duplicados suyos, y en cinco de ocho casos lo eran —
+    pero en los otros tres no, y el cálculo no puede distinguirlos. Quien lo distingue es el canal.
     """
     from tools.canonical_identity import canonizar
 
     tabla = TablaFalsa(
         [
-            fila(1, "U_CARLOSH", "Carlos H.", 1481, score=3),
-            fila(2, "U_PAULA", "Carlos H.", 1481, score=5),
+            fila(1, "U_CARLOSH", "Carlos H.", 1478, score=4),
+            fila(2, "U_PAULA", "Carlos H.", 1478, score=4),
         ]
     )
     informe = canonizar(DIRECTORIO, tabla)
 
-    assert informe.conflictivas == 1
+    assert informe.cruzadas == 1
     assert informe.fusionadas == 0
     assert tabla.borrados == []
-    assert tabla.por_id(2)["slack_user_id"] == "U_PAULA"  # sigue como estaba
+    assert [f["id"] for f in tabla.filas] == [1, 2]
 
 
 # @scenarios nombre-desconocido-se-declara
@@ -292,50 +276,49 @@ def test_si_las_dos_han_publicado_la_forma_se_declara_ambigua():
 
 
 # @scenarios clave-ocupada-se-declara-y-no-se-fuerza
-def test_la_escritura_espera_a_que_se_libere_la_clave_que_necesita():
-    """La forma exacta que reventó la migración real, en el puzzle 1478.
+def test_una_fusion_libera_la_clave_que_otra_fila_necesita():
+    """La forma que reventó la migración real: se borra antes de escribir.
 
-    La fila de Paula necesita su propia clave, pero en ese instante la ocupa la fila cruzada — que se va
-    a borrar por fusión unas líneas después. Borrar antes de escribir la libera.
+    La fila que se queda necesita una clave que, en ese instante, ocupa la que va a fusionarse. Escribir
+    primero violaba el índice único a mitad de la migración.
     """
     from tools.canonical_identity import canonizar
 
     tabla = TablaFalsa(
         [
-            fila(1, "Paula Granado", "Paula Granado", 1478, score=5),
-            fila(2, "U_PAULA", "Carlos H.", 1478, score=4),      # cruzada, duplica la de Carlos
-            fila(3, "U_CARLOSH", "Carlos H.", 1478, score=4),    # el dueño real ya la tiene
+            # dos identidades del mismo jugador; la segunda ya es canónica y ocupa la clave destino
+            fila(1, "Marcos Granado", "Marcos Granado", 1586, score=4),
+            fila(2, "U_MARCOS", "Marcos Granado", 1586, score=4),
         ]
     )
     informe = canonizar(DIRECTORIO, tabla)
 
     assert informe.fusionadas == 1
     assert informe.bloqueadas == 0
-    assert tabla.por_id(1)["slack_user_id"] == "U_PAULA"
-    assert [f["id"] for f in tabla.filas] == [1, 3]
+    assert [f["id"] for f in tabla.filas] == [2]
 
 
 # @scenarios clave-ocupada-se-declara-y-no-se-fuerza
-def test_una_clave_ocupada_por_una_fila_que_no_se_mueve_bloquea_y_se_declara():
+def test_una_cruzada_que_ocupa_la_clave_de_su_dueno_la_bloquea_y_se_declara():
     """La forma del puzzle 1481, que ningún orden de escritura puede resolver.
 
-    La cruzada es conflictiva —su puntuación no coincide con la del dueño real— así que se queda donde
-    está, y donde está es la clave que necesita la fila de Paula. No se fuerza ni se borra nada: la fila
-    de Paula conserva su identidad y el informe lo declara.
+    La fila cruzada se queda donde está por diseño, y donde está es la clave que necesita su dueña
+    legítima. Ni se fuerza ni se borra nada: la fila de Paula conserva su identidad y el informe declara
+    las dos cosas, la cruzada y el bloqueo. Lo prudente no es neutral, y por eso se dice.
     """
     from tools.canonical_identity import canonizar
 
     tabla = TablaFalsa(
         [
             fila(1, "Paula Granado", "Paula Granado", 1481, score=5),
-            fila(2, "U_PAULA", "Carlos H.", 1481, score=5),      # cruzada
-            fila(3, "U_CARLOSH", "Carlos H.", 1481, score=3),    # misma partida, OTRA puntuación
+            fila(2, "U_PAULA", "Carlos H.", 1481, score=5),  # cruzada, ocupa la clave de Paula
         ]
     )
     informe = canonizar(DIRECTORIO, tabla)
 
-    assert informe.conflictivas == 1
+    assert informe.cruzadas == 1
     assert informe.bloqueadas == 1
     assert informe.fusionadas == 0
     assert tabla.borrados == []
+    assert tabla.escrituras == []
     assert tabla.por_id(1)["slack_user_id"] == "Paula Granado"  # intacta, no forzada

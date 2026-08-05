@@ -41,10 +41,13 @@ Un comando que se ejecuta a mano una vez (y se puede repetir sin daño). Recorre
 paginando, extrae el patrón de cada mensaje de resultado con las mismas reglas que la ingesta, y lo
 escribe en la fila correspondiente.
 
-La correspondencia entre mensaje y fila se establece por el número de puzzle y el autor del mensaje. La
-resolución de identidad es la que ya usa la ingesta hoy: este slice no la mejora ni la cambia `?` — si un
-mensaje pertenece a un jugador que la tabla registró con otro nombre, la fila no se encuentra y se
-reporta como no resuelta.
+La correspondencia entre mensaje y fila se establece por el número de puzzle y **el identificador** de
+quien publicó el mensaje. No por el nombre: un nombre cambia, y emparejar por nombre dejaba sin resolver a
+quien se hubiera renombrado.
+
+La primera versión emparejaba por nombre mostrado, porque la columna de identidad guardaba nombres. Tras
+[[identidad-canonica-de-jugador]] guarda identificadores, y emparejar por nombre pasó a no encontrar
+**ninguna** fila: 0 de 299. El emparejamiento tiene que mirar lo mismo que la tabla guarda.
 
 ## Comportamiento observable
 
@@ -64,6 +67,10 @@ reporta como no resuelta.
 **WHEN** el histórico del canal excede el tamaño de una página de respuesta
 **THEN** el comando continúa por las páginas siguientes hasta agotar el histórico, sin quedarse en la
 primera.
+
+### correspondencia-por-identificador
+**WHEN** el comando busca a qué fila pertenece un mensaje
+**THEN** la empareja por el identificador de quien lo publicó, no por el nombre que mostraba entonces.
 
 ### fila-sin-mensaje-se-reporta
 **WHEN** una fila sin patrón no tiene mensaje localizable en el canal

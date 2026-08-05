@@ -187,3 +187,28 @@
   **bloquear** a otras. La fila conflictiva del puzzle 1481 se queda donde está por diseño, y donde está es
   la clave que necesita su dueña legítima. Lo prudente no es neutral: hay que declararlo (`bloqueadas`) en
   lugar de suponer que no tocar nada no tiene consecuencias.
+
+### 2026-08-05 — Cambié a quién pertenecen unas partidas razonando sobre la base de datos en vez de mirar la fuente
+- **Qué pasó:** el slice de identidad especificaba **eliminar** las 8 filas con el identificador de una
+  persona y el nombre de otra, por ser "producto de un cruce de mapeo y no de una partida jugada". Lo
+  cambié a **reatribuirlas** al dueño del nombre, apoyándome en que 5 de las 6 que ese dueño ya tenía
+  registradas coincidían en puntuación exacta. Ejecutado contra producción, aquello **fabricó dos partidas**
+  (puzzles #1477 y #1488, de días en que esa persona no publicó nada) y dejó una tercera (#1481) como copia
+  byte a byte de la cuadrícula de otra jugadora.
+- **Causa raíz:** deduje la propiedad de una fila de la **coherencia interna de la tabla** en lugar de
+  consultar el sistema de registro, que es el canal de Slack y estaba disponible todo el tiempo: una sola
+  búsqueda por `"#1477"` lo habría zanjado antes de escribir. La coincidencia de puntuaciones era evidencia
+  real para 5 filas, y la extendí a 3 que no la tenían.
+- **Regla:** antes de cambiar **a quién pertenece** un dato, se verifica contra la fuente de registro, no
+  contra la consistencia interna del almacén. Y para contradecir una especificación que declara un dato
+  espurio hace falta evidencia del mismo tipo que la produjo, no una inferencia estadística sobre lo ya
+  guardado.
+- **Codificada en:** `openspec/slices/identidad/identidad-canonica-de-jugador.md` (el escenario pasa a
+  `atribucion-cruzada-se-declara-y-no-se-toca`: ni reatribuir ni borrar, porque las dos alternativas se
+  probaron y las dos fallan) y el delta de `resultados`, que documenta las dos y por qué ·
+  **estado:** codificada
+- **El detector que apareció solo:** el backfill de patrones barrió el histórico completo y dejó
+  **exactamente 2 filas sin patrón** — las 2 que yo había fabricado. Una partida real deja su cuadrícula en
+  el canal; una fila fantasma no. *Destino mecánico: un probe que reporte las filas sin patrón tras un
+  backfill completo como candidatas a fila fantasma, que es un detector barato y objetivo de un problema
+  que hasta hoy solo se veía a mano.*
