@@ -56,8 +56,23 @@ jugador-mes. Dos de las cifras anteriores estaban mal: ver más abajo.
 
 | Medalla | Condición | Logran | Nivel |
 |---|---|---|---|
-| **Pleno** | no faltar ni un solo **día laborable** del mes | 4,9% | raro |
+| **Metrónom@** | no faltar ni un solo **día laborable** del mes | 4,9% | raro |
 | **Fondista** | 15 partidas o más en el mes | 47,2% | común |
+
+### Nombres reconciliados con el diseño de la liga arcade
+
+El [diseño](../sources/2026-08-05-diseno-liga-arcade.md) trae nombres propios, y el brief ya declaraba los
+nombres como abiertos. Se adoptan los suyos **salvo cuando adoptarlos redefiniría una regla existente**:
+
+| Antes | Ahora | Por qué |
+|---|---|---|
+| `Pleno` | **`Metrónom@`** | El nombre estaba abierto y el de la maqueta dice mejor lo que premia |
+| `Abstract@` | **`Fontaner@`** | Igual, y con más gracia |
+| `Impecable` | **`Impecable`** (sin cambio) | La maqueta llama `Superviviente` al mes sin fallo, pero ese nombre **ya está** en otra regla (resolver en ≤4 tres días duros). Adoptarlo dejaría dos reglas distintas con el mismo nombre, así que se rechaza |
+
+Pendiente de la maqueta y **no adoptado todavía**: `Rajad@` (tres o más ausencias en los días duros), que
+sería el primer logro explícitamente negativo — el "muro de la vergüenza" que el grupo pidió entre bromas.
+Necesita que lo confirmen, porque señala a una persona por no jugar.
 
 ### Dos cifras que estaban mal
 
@@ -83,7 +98,13 @@ hay que rehacerlos junto a la calibración, no por separado.
 | **Arquitect@** | 4 escuadras en un mes | 2% | legendario |
 | **Florista** | 5 flores en un mes | 8% | raro |
 | **Coleccionista** | las cuatro figuras en el mismo mes | 32% | común |
-| **Abstract@** | 12 cacas en un mes | 24% | común |
+| **Fontaner@** | 12 cacas en un mes | 24% | común |
+
+**Los umbrales son los calibrados, no los de la maqueta de diseño.** El
+[diseño de la liga arcade](../sources/2026-08-05-diseno-liga-arcade.md) pide "más de 10" en cada figura, que
+es la propuesta original y **no la logra nadie**: máximo histórico 6, media 1,1, cero de 123 parejas
+jugador-mes. Decisión del usuario el 2026-08-05: se asumen los calibrados. Los nombres sí se toman de la
+maqueta (`Fontaner@` en lugar de `Abstract@`).
 
 El máximo histórico observado por categoría y mes: loro 6, flor 8, escuadra 6, caca 18. Los umbrales
 están puestos justo por debajo de lo que alguien ha llegado a hacer, que es donde un logro es difícil sin

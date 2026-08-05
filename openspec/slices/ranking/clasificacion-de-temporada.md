@@ -1,7 +1,7 @@
 ---
 slice: clasificacion-de-temporada
 status: proposed
-kind: interactive
+kind: action
 actor: grupo
 trigger:
   type: ui

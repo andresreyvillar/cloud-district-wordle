@@ -241,21 +241,21 @@ def test_un_domingo_con_muestra_suficiente_tampoco_es_un_dia_dificil():
     assert "dia-imposible" in medallas_permanentes(en_laborable)["Dominguera"]
 
 
-# @scenarios pleno-solo-exige-los-dias-laborables
-def test_el_pleno_no_lo_bloquea_el_domingo_de_otra_persona():
+# @scenarios metronomo-solo-exige-los-dias-laborables
+def test_el_metronomo_no_lo_bloquea_el_domingo_de_otra_persona():
     """El fallo que la regla arregla: los días de la temporada salen de los datos.
 
     Mientras el fin de semana contaba, una sola persona jugando un domingo convertía ese domingo en día
-    de la temporada y se lo bloqueaba a todos los demás. Medido en producción: 0 plenos de 123 parejas
+    de la temporada y se lo bloqueaba a todos los demás. Medido en producción: 0 de 123 parejas
     jugador-mes.
     """
     from tools.badges import medallas_de_temporada
 
-    # diez días laborables jugados: el mínimo para que el Pleno se evalúe
+    # diez días laborables jugados: el mínimo para que Metrónom@ se evalúe
     filas = [r("Constante", 1600 + i, 4, dia=dia_laborable(i)) for i in range(10)]
     filas.append(r("Dominguero", 1620, 4, dia=dia_de_finde(1)))
 
-    assert "pleno" in medallas_de_temporada(filas, TEMPORADA)["Constante"]
+    assert "metronomo" in medallas_de_temporada(filas, TEMPORADA)["Constante"]
 
 
 # @scenarios jornada-de-fin-de-semana-no-anuncia-medallas
@@ -293,3 +293,19 @@ def test_el_mensaje_conserva_el_saludo_y_el_enlace():
     # y sin medallas el mensaje no deja un hueco donde iría la sección
     assert "\n\n\n" not in sin
     assert sin.count("\n\n") == 1
+
+
+# @scenarios umbral-exacto-otorga
+def test_dos_medallas_nunca_comparten_nombre():
+    """El diseño de la liga arcade propuso llamar `Superviviente` al mes sin fallo.
+
+    Ese nombre ya estaba en otra regla —resolver en ≤4 tres días duros—, así que adoptarlo habría dejado dos
+    medallas distintas llamadas igual. Se rechazó, y este test impide que vuelva a colarse.
+    """
+    from tools.badges import CATALOGO
+
+    nombres = [medalla.nombre for medalla in CATALOGO]
+    claves = [medalla.clave for medalla in CATALOGO]
+
+    assert len(set(nombres)) == len(nombres), f"nombres repetidos: {nombres}"
+    assert len(set(claves)) == len(claves), f"claves repetidas: {claves}"

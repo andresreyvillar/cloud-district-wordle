@@ -38,7 +38,7 @@ recalcula el palmarés histórico sin migrar nada.
 
 **Solo cuentan los días laborables** (regla de temporada acordada, ver
 [brief](../../../docs/context/briefs/reglas-temporadas.md)). Las partidas de sábado y domingo se siguen
-capturando y guardando, pero no cuentan para ninguna medalla. Sin esta regla, `Pleno` es inganable: los
+capturando y guardando, pero no cuentan para ninguna medalla. Sin esta regla, `Metrónom@` es inganable: los
 días de la temporada se derivan de los datos, así que **una sola persona jugando un domingo se lo bloquea
 a todo el grupo** — medido, 0 de 123 parejas jugador-mes lo logran; con la regla, 6.
 
@@ -96,9 +96,9 @@ resolvió rápido
 **THEN** ese día tampoco cuenta como difícil: la regla no depende de que el fin de semana tenga poca
 muestra, sino de que no es día de temporada.
 
-### pleno-solo-exige-los-dias-laborables
+### metronomo-solo-exige-los-dias-laborables
 **WHEN** un jugador juega todos los días laborables de la temporada, y otra persona además jugó un domingo
-**THEN** obtiene Pleno, porque el domingo no es un día de la temporada que él haya faltado.
+**THEN** obtiene Metrónom@, porque el domingo no es un día de la temporada que él haya faltado.
 
 ### jornada-de-fin-de-semana-no-anuncia-medallas
 **WHEN** la jornada que se publica cae en sábado o domingo

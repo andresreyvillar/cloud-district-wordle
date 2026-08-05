@@ -36,7 +36,7 @@ MINIMO_SUPERVIVIENTE = 3
 MINIMO_VERDUGO = 5
 MINIMO_IMPECABLE = 10
 MINIMO_FONDISTA = 15
-MINIMO_DIAS_PARA_PLENO = 10
+MINIMO_DIAS_PARA_METRONOMO = 10
 
 
 @dataclass(frozen=True)
@@ -52,7 +52,7 @@ CATALOGO: tuple[Medalla, ...] = (
     Medalla("suertudo", "Suertud@", "🍀", "legendario", "permanente"),
     Medalla("dia-imposible", "El día imposible", "🗿", "legendario", "permanente"),
     Medalla("superviviente", "Superviviente", "🛡️", "legendario", "temporada"),
-    Medalla("pleno", "Pleno", "📅", "raro", "temporada"),
+    Medalla("metronomo", "Metrónom@", "📅", "raro", "temporada"),
     Medalla("verdugo", "Verdugo", "🎯", "comun", "temporada"),
     Medalla("impecable", "Impecable", "✨", "comun", "temporada"),
     Medalla("fondista", "Fondista", "💪", "comun", "temporada"),
@@ -95,7 +95,7 @@ def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, l
 
     Solo cuentan los días laborables, y el filtro va **aquí** y no en cada recuento: así todo lo derivado
     queda limpio de una vez —la dificultad del día, el mejor del día, el número de partidas y, el que
-    importa, el conjunto de días que forman la temporada del que depende `Pleno`.
+    importa, el conjunto de días que forman la temporada del que depende `Metrónom@`.
     """
     del_mes = _de_la_temporada(solo_laborables(resultados), temporada)
     if not del_mes:
@@ -123,8 +123,8 @@ def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, l
         if dias_duros_resueltos >= MINIMO_SUPERVIVIENTE:
             ganadas.append("superviviente")
 
-        if len(dias_de_la_temporada) >= MINIMO_DIAS_PARA_PLENO and jugados >= dias_de_la_temporada:
-            ganadas.append("pleno")
+        if len(dias_de_la_temporada) >= MINIMO_DIAS_PARA_METRONOMO and jugados >= dias_de_la_temporada:
+            ganadas.append("metronomo")
 
         if sum(1 for fila in filas if fila["score"] == mejor[fila["wordle_id"]]) >= MINIMO_VERDUGO:
             ganadas.append("verdugo")
