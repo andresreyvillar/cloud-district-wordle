@@ -83,3 +83,13 @@ test('cada sección se contiene a sí misma y la ruta desconocida a ninguna', ()
   }
   assert.equal(seccionDe(VISTAS.DESCONOCIDA), null);
 });
+
+test('las reglas viven dentro del eje de la temporada', () => {
+  // Sin la temporada en la ruta, mirar las reglas de una temporada cerrada es imposible: lo cazó el
+  // navegador, que mostraba las de agosto estando en marzo.
+  assert.deepEqual(resolver('/reglas'), { vista: VISTAS.REGLAS, temporada: null });
+  assert.deepEqual(resolver('/t/2026-03/reglas'), { vista: VISTAS.REGLAS, temporada: '2026-03' });
+  assert.equal(rutaDe(resolver('/t/2026-03/reglas')), '/t/2026-03/reglas');
+  assert.equal(rutaDe(resolver('/reglas')), '/reglas');
+  assert.equal(resolver('/t/2026-13/reglas').vista, VISTAS.DESCONOCIDA);
+});

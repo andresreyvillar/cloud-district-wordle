@@ -99,6 +99,9 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
     la clasificación y las medallas llegan con sus propios slices y añaden claves a esta carga útil, que es
     justo la razón de que sea JSONB y no columnas.
     """
+    # Import local para no crear un ciclo: `rules` importa de este módulo para leer sus constantes.
+    from rules import catalogo, como_json
+
     dias = dias_de_temporada(resultados, temporada)
     cuentan = resultados_de_temporada(resultados, temporada)
     lista = temporadas(resultados)
@@ -110,4 +113,7 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
         "dias": dias,
         "resultados": len(cuentan),
         "jugadores": sorted({fila["slack_user_id"] for fila in cuentan}),
+        # Las reglas viajan con la temporada: una cerrada conserva las que se le aplicaron, así que
+        # mirar marzo explica marzo y no el mes que viene.
+        "reglas": como_json(catalogo()),
     }

@@ -6,7 +6,8 @@
  */
 
 import { resolver, VISTAS } from './router.js';
-import { cargarResultados } from './data/results.js';
+import { cargarResultados, cargarInstantaneas } from './data/results.js';
+import { pintarReglas } from './ui/reglas.js';
 import {
   pintarCargando,
   pintarDesconocida,
@@ -48,7 +49,7 @@ function elementos() {
   };
 }
 
-function pintar(destino, resultados) {
+function pintar(destino, resultados, instantaneas) {
   const { navegacion, selector, vista } = elementos();
   const temporadas = temporadasDe(resultados);
   const actual = temporadaEfectiva(destino, temporadas);
@@ -60,13 +61,20 @@ function pintar(destino, resultados) {
     pintarDesconocida(vista, destino);
     return;
   }
+  if (destino.vista === VISTAS.REGLAS) {
+    // Las reglas viajan con la temporada: se leen de la que se esté mirando, así que una cerrada
+    // explica las que se le aplicaron y no las de hoy.
+    const carga = instantaneas.get(actual);
+    pintarReglas(vista, carga?.reglas, actual);
+    return;
+  }
   pintarPendiente(vista, { ...destino, temporada: actual }, PENDIENTES[destino.vista]);
 }
 
 /** Navega sin recargar y vuelve a pintar. */
-function navegar(ruta, resultados) {
+function navegar(ruta, resultados, instantaneas) {
   window.history.pushState({}, '', ruta);
-  pintar(resolver(ruta), resultados);
+  pintar(resolver(ruta), resultados, instantaneas);
 }
 
 export async function arrancar() {
@@ -74,30 +82,31 @@ export async function arrancar() {
   pintarCargando(vista);
 
   let resultados;
+  let instantaneas;
   try {
-    resultados = await cargarResultados();
+    [resultados, instantaneas] = await Promise.all([cargarResultados(), cargarInstantaneas()]);
   } catch (error) {
     pintarError(vista, error.message);
     return;
   }
 
-  pintar(resolver(window.location.pathname), resultados);
+  pintar(resolver(window.location.pathname), resultados, instantaneas);
 
   // Los enlaces internos se interceptan para que el router los resuelva sin ir al servidor.
   document.addEventListener('click', (evento) => {
     const enlace = evento.target.closest('a[href^="/"]');
     if (!enlace || enlace.target === '_blank' || evento.metaKey || evento.ctrlKey) return;
     evento.preventDefault();
-    navegar(enlace.getAttribute('href'), resultados);
+    navegar(enlace.getAttribute('href'), resultados, instantaneas);
   });
 
   document.querySelector('[data-selector-temporada]').addEventListener('change', (evento) => {
     const temporada = evento.target.value;
-    navegar(temporada ? `/t/${temporada}` : '/', resultados);
+    navegar(temporada ? `/t/${temporada}` : '/', resultados, instantaneas);
   });
 
   window.addEventListener('popstate', () => {
-    pintar(resolver(window.location.pathname), resultados);
+    pintar(resolver(window.location.pathname), resultados, instantaneas);
   });
 }
 

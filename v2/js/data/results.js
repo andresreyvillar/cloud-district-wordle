@@ -67,3 +67,22 @@ export async function cargarResultados() {
   );
   return leerTodo(createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY));
 }
+
+
+/** Las instantáneas de temporada, indexadas por temporada. Es de donde salen las reglas y el cálculo. */
+export async function leerInstantaneas(cliente) {
+  const { data, error } = await cliente
+    .from('season_snapshots')
+    .select('temporada,payload,updated_at')
+    .order('temporada', { ascending: false });
+
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return new Map((data ?? []).map((fila) => [fila.temporada, { ...fila.payload, updated_at: fila.updated_at }]));
+}
+
+export async function cargarInstantaneas() {
+  const { createClient } = await import(
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+  );
+  return leerInstantaneas(createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY));
+}

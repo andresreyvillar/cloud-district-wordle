@@ -12,6 +12,7 @@ const SECCIONES = [
   { vista: VISTAS.TEMPORADAS, etiqueta: 'Temporadas' },
   { vista: VISTAS.HOY, etiqueta: 'Hoy' },
   { vista: VISTAS.DATOS, etiqueta: 'Datos' },
+  { vista: VISTAS.REGLAS, etiqueta: 'Reglas' },
 ];
 
 /** Escapa lo que venga de datos antes de meterlo en el DOM. Nombres de jugador incluidos. */
@@ -26,6 +27,7 @@ export function pintarNavegacion(contenedor, destino) {
   const activa_ = seccionDe(destino.vista);
   contenedor.innerHTML = SECCIONES.map((seccion) => {
     const activa = seccion.vista === activa_ ? ' aria-current="page"' : '';
+    // `destino.temporada` es la efectiva, así que los enlaces conservan la temporada que se está mirando.
     const ruta = rutaDe({ vista: seccion.vista, temporada: destino.temporada });
     return `<a href="${ruta}"${activa}>${seccion.etiqueta}</a>`;
   }).join('');

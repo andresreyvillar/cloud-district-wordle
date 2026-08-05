@@ -9,6 +9,8 @@
  *     /temporadas               archivo + medallero
  *     /hoy                      el día en curso
  *     /datos                    tabla cruda
+ *     /reglas                   las reglas de la temporada en curso
+ *     /t/<AAAA-MM>/reglas       las reglas con las que se calculó esa temporada
  *
  * Función **pura**: entra una cadena, sale un objeto. No toca el DOM, no lee `location` y no consulta la
  * red, y por eso se verifica con `node --test` sin navegador.
@@ -28,6 +30,7 @@ export const VISTAS = Object.freeze({
   TEMPORADAS: 'temporadas',
   HOY: 'hoy',
   DATOS: 'datos',
+  REGLAS: 'reglas',
   JUGADOR: 'jugador',
   DESCONOCIDA: 'desconocida',
 });
@@ -63,6 +66,9 @@ export function resolver(ruta) {
   if (primero === 'datos' && resto.length === 0) {
     return { vista: VISTAS.DATOS };
   }
+  if (primero === 'reglas' && resto.length === 0) {
+    return { vista: VISTAS.REGLAS, temporada: null };
+  }
 
   if (primero === 't' && TEMPORADA_RE.test(resto[0] || '')) {
     const temporada = resto[0];
@@ -71,6 +77,11 @@ export function resolver(ruta) {
     }
     if (resto.length === 3 && resto[1] === 'j' && IDENTIFICADOR_RE.test(resto[2])) {
       return { vista: VISTAS.JUGADOR, temporada, jugador: resto[2] };
+    }
+    // Las reglas viven dentro del eje de la temporada: una cerrada conserva las que se le aplicaron, y sin
+    // la temporada en la ruta ese escenario es inalcanzable.
+    if (resto.length === 2 && resto[1] === 'reglas') {
+      return { vista: VISTAS.REGLAS, temporada };
     }
   }
 
@@ -105,6 +116,8 @@ export function rutaDe(destino) {
       return '/hoy';
     case VISTAS.DATOS:
       return '/datos';
+    case VISTAS.REGLAS:
+      return destino.temporada ? `/t/${destino.temporada}/reglas` : '/reglas';
     default:
       return '/';
   }
