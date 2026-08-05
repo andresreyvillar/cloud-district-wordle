@@ -33,24 +33,43 @@ verified-by:
 
 ## ADDED Requirements
 
-### Requirement: La temporada 0 se ordena por media de partidas jugadas, sin imputar
+### Requirement: La temporada 0 se rige por las reglas que estaban en vigor cuando se jugó
 
-La clasificación de la temporada 0 usa la media de lo que cada jugador jugó de verdad. **No se imputan
-ausencias.**
+La clasificación de la temporada 0 replica las reglas de la v1 (`js/script.js`):
 
-Dos motivos, y el primero está medido: de los 159 días válidos anteriores al límite, **siete de veinte
-jugadores tendrían más del 70% de la temporada imputada** —a una persona que se incorporó el 22 de julio se
-le contarían 156 ausencias desde noviembre—, lo que produce un artefacto y no una clasificación. Y el
-segundo: las reglas nuevas no estaban en vigor entonces, así que aplicarlas hacia atrás cambiaría el
-resultado de un partido ya jugado.
+| Regla | Temporada 0 (legacy) | Temporada numerada |
+|---|---|---|
+| Jornadas que cuentan | **todas** las que tengan algún resultado | laborables con ≥5 jugadores |
+| Media | de las partidas jugadas | con las ausencias imputadas |
+| Mínimo para clasificar | **5 partidas** (`MIN_GAMES_FOR_BEST_AVG`) | ninguno: la imputación ya lo hace |
 
-La instantánea de la temporada 0 **declara que no está imputada**, para que la vista no presente su media
-como comparable con la de las numeradas.
+Aplicar hacia atrás las reglas nuevas cambiaría el resultado de un partido ya jugado. Y está medido lo que
+pasaría: de los 159 días que quedarían filtrando, **siete de veinte jugadores tendrían más del 70% de la
+temporada imputada** —a quien se incorporó el 22 de julio se le contarían 156 ausencias desde noviembre—, lo
+que produce un artefacto y no una clasificación.
+
+**Única desviación del legacy, y es deliberada:** se agrupa por **identidad de Slack** y no por nombre
+mostrado. El legacy agrupaba por nombre, lo que partía en dos a quien se hubiera renombrado — y con los datos
+reales eso coronaba a la mitad de una identidad partida (9 partidas de un lado, 6 del otro). El arreglo de
+identidad es una corrección de datos, no un cambio de regla.
+
+La instantánea **declara que no está imputada**, para que la vista no presente su media como comparable con
+la de las numeradas.
 
 #### Scenario: la temporada 0 no imputa ausencias
 - GIVEN un jugador que solo jugó unos pocos días del periodo anterior al límite
 - WHEN se calcula la clasificación de la temporada 0
 - THEN su media es la de sus partidas jugadas, y no se le añade ninguna ausencia
+
+#### Scenario: la temporada 0 no filtra jornadas
+- GIVEN una jornada de fin de semana y otra con dos jugadores, las dos anteriores al límite
+- WHEN se determinan los días de la temporada 0
+- THEN las dos cuentan, como hacía la v1
+
+#### Scenario: por debajo del mínimo del legacy no se clasifica
+- GIVEN un jugador con menos de cinco partidas en la temporada 0
+- WHEN se calcula la clasificación
+- THEN aparece en la tabla sin puesto, aunque su media sea la mejor
 
 #### Scenario: la instantánea declara el criterio
 - GIVEN la instantánea de la temporada 0

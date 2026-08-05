@@ -88,6 +88,7 @@ function hud(carga) {
 function podio(tabla) {
   const colores = [COLOR.bueno, COLOR.medio, COLOR.malo];
   return tabla
+    .filter((fila) => fila.clasificado !== false)
     .slice(0, 3)
     .map(
       (fila, i) => `
@@ -107,11 +108,16 @@ function podio(tabla) {
 function marcador(tabla, imputada) {
   const filas = tabla
     .map((fila) => {
-      const acento = fila.posicion <= 3 ? COLOR.bueno : 'rgba(43,39,51,.12)';
+      const sinClasificar = fila.clasificado === false;
+      const acento = sinClasificar
+        ? 'transparent'
+        : fila.posicion <= 3
+          ? COLOR.bueno
+          : 'rgba(43,39,51,.12)';
       return `
-      <div class="fila">
+      <div class="fila${sinClasificar ? ' sin-clasificar' : ''}">
         <i class="acento" style="background:${acento}"></i>
-        <span class="pos">${fila.posicion}</span>
+        <span class="pos">${sinClasificar ? '—' : fila.posicion}</span>
         <span class="nom">${escapar(fila.nombre)}</span>
         <span class="tiras">${fila.por_dia.length <= 40 ? tira(fila.por_dia, 14) : ''}</span>
         <span class="num fuerte">${escapar(cifra(fila.media_temporada))}</span>
@@ -130,6 +136,13 @@ function marcador(tabla, imputada) {
         <span class="der">Media temp.</span><span class="der">Media jugada</span><span class="der">Jorn.</span>
       </div>
       ${filas}
+      ${
+        tabla.some((f) => f.clasificado === false)
+          ? `<p class="nota aviso">Las filas sin puesto no llegan al mínimo de partidas para clasificar.
+             Aparecen porque su resultado cuenta y se puede ver, pero no ocupan posición: sin ese mínimo, y
+             sin imputación, la temporada la lideraría quien apenas jugó.</p>`
+          : ''
+      }
       <p class="nota">${
         imputada
           ? 'A las jornadas no jugadas se les imputa min( max( dificultad del día , tu media ) + 0,5 ; 7 ). El denominador es el mismo para todos, así que las medias se comparan sin más reglas.'
@@ -217,8 +230,9 @@ export function pintarTemporada(contenedor, carga, temporada) {
     return;
   }
 
-  const lider = tabla[0];
-  const segundo = tabla[1];
+  const clasificados = tabla.filter((fila) => fila.clasificado !== false);
+  const lider = clasificados[0] ?? tabla[0];
+  const segundo = clasificados[1];
   const diferencia = segundo ? segundo.media_temporada - lider.media_temporada : 0;
 
   contenedor.innerHTML = `

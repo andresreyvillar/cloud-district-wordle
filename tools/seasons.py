@@ -98,10 +98,18 @@ def _por_jornada(resultados: list[dict]) -> dict[int, list[dict]]:
 def dias_de_temporada(resultados: list[dict], temporada: str) -> list[int]:
     """Las jornadas que forman una temporada, ordenadas.
 
-    Dos filtros independientes, y hacen falta los dos: **día laborable** excluye el fin de semana por regla,
-    y **muestra mínima** excluye los laborables en que el grupo tampoco jugó (festivos, agosto).
+    En una temporada **numerada**, dos filtros independientes y hacen falta los dos: **día laborable**
+    excluye el fin de semana por regla, y **muestra mínima** excluye los laborables en que el grupo tampoco
+    jugó (festivos, agosto).
+
+    En la **temporada 0 no se filtra nada**: cuenta toda jornada con algún resultado. Es lo que hacía la v1
+    (`js/script.js`: `totalDays = new Set(results.map(r => r.wordleNumber)).size`), y la temporada 0 se rige
+    por las reglas que estaban en vigor cuando se jugó. Son 181 jornadas frente a las 159 que quedarían
+    filtrando.
     """
     del_mes = [fila for fila in resultados if temporada_de(fila["date"]) == temporada]
+    if temporada == TEMPORADA_CERO:
+        return sorted(_por_jornada(del_mes))
     return sorted(
         jornada
         for jornada, filas in _por_jornada(del_mes).items()

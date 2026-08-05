@@ -68,6 +68,17 @@ almacenado.
 **THEN** cada jugador sale con la media de lo que jugó de verdad, sin ausencias imputadas, y la instantánea
 declara que no está imputada.
 
+### la-temporada-cero-usa-las-reglas-del-legacy
+**WHEN** se calcula la temporada 0
+**THEN** cuentan **todas** las jornadas con algún resultado —fines de semana incluidos y sin mínimo de
+jugadores por día—, la media es la de las partidas jugadas sin imputar, y hacen falta **cinco** partidas para
+clasificar: quien no llega aparece en la tabla pero sin puesto.
+
+Son las reglas que la v1 tenía en vigor cuando se jugó ese periodo, incluido el mínimo de cinco
+(`js/script.js`, `MIN_GAMES_FOR_BEST_AVG`). La única desviación es que se agrupa por **identidad** y no por
+nombre mostrado: el legacy agrupaba por nombre y eso partía en dos a quien se hubiera renombrado, lo que
+habría coronado a la mitad de una identidad.
+
 ### solo-los-dias-laborables-forman-la-temporada
 **WHEN** se determinan los días que forman una temporada
 **THEN** solo entran los de lunes a viernes.

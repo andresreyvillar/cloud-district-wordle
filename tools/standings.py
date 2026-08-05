@@ -37,6 +37,17 @@ from seasons import dias_de_temporada, imputa, resultados_de_temporada
 #: 0,5 mueve menos a quien juega a diario, así que es el que menos castiga por el borde de la regla.
 MARGEN = 0.5
 
+#: Partidas mínimas para clasificar en la temporada 0. **Es el umbral del legacy**, no uno inventado: la v1
+#: exigía cinco partidas para coronar la "Mejor Media" (`js/script.js`, `MIN_GAMES_FOR_BEST_AVG = 5`).
+#:
+#: La temporada 0 se rige por las reglas que estaban en vigor cuando se jugó, y esa era una de ellas. En una
+#: temporada numerada no aplica: la imputación ya impide que unos pocos días buenos ganen el mes.
+#:
+#: Quien no llega al umbral **no desaparece**: sale en la tabla marcado como sin clasificar, porque verse en
+#: su sitio informa más que no verse. Es también lo que hacía la v1, cuyo umbral afectaba a la tarjeta de
+#: campeón pero no a la tabla.
+MINIMO_PARA_CLASIFICAR = 5
+
 #: Los decimales con los que se comparan dos medias. Sin redondear, el ruido del coma flotante decidiría
 #: empates que a la vista son idénticos.
 PRECISION = 6
@@ -126,13 +137,25 @@ def clasificacion(resultados: list[dict], temporada: str) -> list[dict]:
             }
         )
 
+    # Sin imputación hace falta un mínimo para clasificar; con imputación no, porque la propia imputación
+    # ya impide que unos pocos días buenos ganen la temporada.
+    minimo = 1 if con_imputacion else MINIMO_PARA_CLASIFICAR
+    for fila in filas:
+        fila["clasificado"] = fila["jugados"] >= minimo
+
     filas.sort(
         key=lambda fila: (
+            not fila["clasificado"],  # los que no clasifican, al final
             round(fila["media_temporada"], PRECISION),
             -fila["jugados"],
             fila["nombre"].lower(),
         )
     )
-    for posicion, fila in enumerate(filas, start=1):
-        fila["posicion"] = posicion
+    posicion = 0
+    for fila in filas:
+        if fila["clasificado"]:
+            posicion += 1
+            fila["posicion"] = posicion
+        else:
+            fila["posicion"] = None
     return filas

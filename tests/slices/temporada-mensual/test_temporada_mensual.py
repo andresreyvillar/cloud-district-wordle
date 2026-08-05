@@ -279,7 +279,10 @@ def test_la_temporada_cero_no_imputa_ausencias():
     assert tabla["recien"]["media_temporada"] == tabla["recien"]["media_jugada"] == 2.0
     assert tabla["recien"]["jugados"] == 1
     assert len(tabla["recien"]["por_dia"]) == 1, "sin imputar, solo aparecen sus días jugados"
-    assert tabla["recien"]["posicion"] == 1, "con su media real es el primero"
+    # Su media es la real (2,00, la mejor de la tabla) y aun así no lidera: con una sola partida no llega
+    # al mínimo para clasificar. Las dos cosas juntas son el comportamiento buscado.
+    assert tabla["recien"]["clasificado"] is False
+    assert tabla["recien"]["posicion"] is None
 
 
 # @scenarios la-temporada-cero-no-imputa
@@ -293,3 +296,82 @@ def test_la_instantanea_declara_si_la_temporada_esta_imputada():
     assert instantanea(viejas, TEMPORADA_CERO)["imputada"] is False
     assert instantanea(nuevas, "2026-08")["imputada"] is True
     assert instantanea(nuevas, "2026-08")["etiqueta"] == "Temporada 1 · agosto 2026"
+
+
+# @scenarios la-temporada-cero-usa-las-reglas-del-legacy
+def test_el_umbral_minimo_de_la_temporada_cero_impide_liderar_con_pocas_partidas():
+    """El umbral es el del legacy: la v1 exigía cinco partidas para coronar la mejor media.
+
+    Medido en producción: sin umbral, alguien con UNA partida de 181 salía primero de la temporada 0.
+    """
+    from tools.seasons import TEMPORADA_CERO
+    from tools.standings import MINIMO_PARA_CLASIFICAR, clasificacion
+
+    assert MINIMO_PARA_CLASIFICAR == 5, "es el MIN_GAMES_FOR_BEST_AVG de js/script.js"
+
+    base = {"r1": 4, "r2": 4, "r3": 4, "r4": 4, "r5": 4}
+    dias = [dia_laborable(i, "2026-05") for i in range(MINIMO_PARA_CLASIFICAR + 1)]
+    filas: list[dict] = []
+    for indice, dia in enumerate(dias):
+        scores = {"constante": 4, **base}
+        if indice < MINIMO_PARA_CLASIFICAR - 1:
+            scores["justo_por_debajo"] = 1  # la mejor media posible, con una partida menos de las que hacen falta
+        if indice < MINIMO_PARA_CLASIFICAR:
+            scores["justo_en_el_umbral"] = 2
+        filas += jornada_con(1500 + indice, "2026-05", dia, scores)
+
+    tabla = {f["nombre"]: f for f in clasificacion(filas, TEMPORADA_CERO)}
+
+    # el que se queda a una partida: mejor media que nadie, y sin clasificar
+    assert tabla["justo_por_debajo"]["jugados"] == MINIMO_PARA_CLASIFICAR - 1
+    assert tabla["justo_por_debajo"]["media_jugada"] == 1.0
+    assert tabla["justo_por_debajo"]["clasificado"] is False
+    assert tabla["justo_por_debajo"]["posicion"] is None
+
+    # el que llega justo al umbral sí clasifica, y lidera
+    assert tabla["justo_en_el_umbral"]["jugados"] == MINIMO_PARA_CLASIFICAR
+    assert tabla["justo_en_el_umbral"]["clasificado"] is True
+    assert tabla["justo_en_el_umbral"]["posicion"] == 1
+
+
+# @scenarios la-temporada-cero-usa-las-reglas-del-legacy
+def test_la_temporada_cero_no_filtra_dias_como_hacia_la_v1():
+    """El legacy contaba toda jornada con algún resultado: ni excluía el fin de semana ni exigía muestra."""
+    from tools.seasons import TEMPORADA_CERO, dias_de_temporada
+
+    sabado = jornada_con(1490, "2026-05", dia_de_finde(0, "2026-05"), {"a": 4, "b": 3})
+    flojo = jornada_con(1491, "2026-05", dia_laborable(0, "2026-05"), {"a": 4, "b": 3})
+    lleno = jornada_con(1492, "2026-05", dia_laborable(1, "2026-05"), {f"j{i}": 4 for i in range(6)})
+
+    # los tres cuentan: fin de semana, dos jugadores y jornada completa
+    assert dias_de_temporada(sabado + flojo + lleno, TEMPORADA_CERO) == [1490, 1491, 1492]
+
+    # y en una temporada numerada, los dos primeros no contarían
+    sabado8 = jornada_con(1690, "2026-08", dia_de_finde(0, "2026-08"), {"a": 4, "b": 3})
+    flojo8 = jornada_con(1691, "2026-08", dia_laborable(0, "2026-08"), {"a": 4, "b": 3})
+    lleno8 = jornada_con(1692, "2026-08", dia_laborable(1, "2026-08"), {f"j{i}": 4 for i in range(6)})
+    assert dias_de_temporada(sabado8 + flojo8 + lleno8, "2026-08") == [1692]
+
+
+# @scenarios la-temporada-cero-usa-las-reglas-del-legacy
+def test_una_temporada_numerada_no_aplica_umbral_porque_la_imputacion_ya_lo_hace():
+    from tools.standings import clasificacion
+
+    # Diez jornadas, no cuatro. Con cuatro, una ausencia es un cuarto de la nota y una única partida
+    # excelente gana: es la volatilidad que el propio modelo declara para la primera semana del mes, no un
+    # fallo. Con diez, la constancia ya gana, que es lo que la imputación promete.
+    base = {"r1": 4, "r2": 4, "r3": 4, "r4": 4, "r5": 4}
+    dias = [dia_laborable(i, "2026-08") for i in range(10)]
+    filas: list[dict] = []
+    for indice, dia in enumerate(dias):
+        scores = {"constante": 4, **base}
+        if indice == 0:
+            scores["esporadico"] = 1  # la mejor partida posible, y nada más
+        filas += jornada_con(1670 + indice, "2026-08", dia, scores)
+
+    tabla = {f["nombre"]: f for f in clasificacion(filas, "2026-08")}
+
+    assert tabla["esporadico"]["clasificado"] is True, "en una temporada numerada todos clasifican"
+    assert tabla["esporadico"]["posicion"] is not None
+    # y aun clasificando, la imputación le impide ganar con una sola partida
+    assert tabla["constante"]["posicion"] < tabla["esporadico"]["posicion"]

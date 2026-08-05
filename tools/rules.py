@@ -28,6 +28,7 @@ from dataclasses import asdict, dataclass, field
 import badges
 import calendario
 import seasons
+import standings
 
 EJES = ("temporada", "clasificacion", "medallas", "figuras", "datos")
 
@@ -206,6 +207,27 @@ def catalogo() -> tuple[Regla, ...]:
             parametros=(
                 _p("margen", 0.5, "rules.MARGEN_DE_IMPUTACION", "intentos"),
                 _p("tope", badges.FALLO, "badges.FALLO", "intentos"),
+            ),
+        ),
+        Regla(
+            id="minimo-en-la-temporada-cero",
+            eje="clasificacion",
+            titulo="La temporada 0 se rige por las reglas con las que se jugó",
+            que_hace=(
+                "Cuentan todas las jornadas, fines de semana incluidos y sin mínimo de jugadores por día. "
+                "La media es la de las partidas jugadas, sin imputar. Y hacen falta cinco partidas para "
+                "clasificar: quien no llega aparece en la tabla, pero sin puesto."
+            ),
+            por_que=(
+                "Son las reglas que la web tenía cuando se jugó ese periodo, incluido el mínimo de cinco "
+                "partidas para coronar la mejor media. Aplicar hacia atrás las reglas nuevas cambiaría el "
+                "resultado de un partido ya jugado; y sin el mínimo la lideraría quien apenas jugó."
+            ),
+            estado=APLICADA,
+            votada=False,
+            parametros=(
+                _p("partidas mínimas", standings.MINIMO_PARA_CLASIFICAR,
+                   "standings.MINIMO_PARA_CLASIFICAR", "partidas"),
             ),
         ),
         Regla(

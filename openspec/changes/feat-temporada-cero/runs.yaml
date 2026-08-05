@@ -34,3 +34,37 @@
     temporada 0 la lidera quien apenas jugó — Carmen 1ª con 2,00 y UNA partida de 159, Sandra 2ª con 3.
     Es exactamente lo que el modelo de imputación venía a evitar, reintroducido al quitarle la imputación a
     la 0. El brief ya avisaba de que el umbral mínimo existía para eso.
+
+- run: '2026-08-05T16:00:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: temporada-mensual
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 3
+    supervivientes: 0
+  notas: >-
+    CORRECCIÓN DE CRITERIO A PETICIÓN DEL USUARIO: la temporada 0 se rige por las reglas del código legacy,
+    no por unas inventadas. Leído js/script.js en lugar de suponerlas, y resultaron ser distintas de lo que
+    había implementado: cuentan TODAS las jornadas (sin excluir fin de semana ni exigir muestra mínima), la
+    media es la de las partidas jugadas, y el umbral para coronar es de CINCO partidas
+    (MIN_GAMES_FOR_BEST_AVG), no de tres. Con las reglas del legacy la temporada 0 tiene 181 jornadas y 1502
+    resultados, frente a las 159 y 1527 que daba filtrando.
+    UN HALLAZGO AL LEER EL LEGACY: agrupa por player_name, no por identidad. Con los datos reales eso parte a
+    un jugador renombrado en dos (Marcos Granado 9 partidas y marcos.granado 6) y CORONABA A LA MITAD DE UNA
+    IDENTIDAD con 3,44 en 9 partidas. Única desviación deliberada del legacy: se agrupa por identidad de
+    Slack, porque el arreglo de identidad es una corrección de datos y no un cambio de regla. Con la
+    identidad corregida Marcos aparece una vez con 15 partidas y 3,80.
+    RESULTADO VERIFICADO EN EL NAVEGADOR: campeona de la temporada 0 es Claire con 3,56 en 102 de 181
+    jornadas; Andrés R. 3,58 en 135 y Flavia Venturi 3,58 en 45. Sin clasificar por no llegar a cinco
+    partidas: Javi Calvo, Carmen y Sandra. 21 jugadores, media del grupo 3,98.
+    Antes de esto el umbral era 3 y coronaba a Sandra con 3 partidas de 159, que es prácticamente la misma
+    patología que se quería evitar. El umbral del legacy la resuelve porque estaba puesto para eso.
+    MUTACIÓN — 3 mutantes, 0 supervivientes: la temporada 0 filtrando días como las numeradas, el umbral
+    bajado a 1, y el umbral aplicándose también a las temporadas numeradas.
