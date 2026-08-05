@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle CloudDistrict</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="cabecera">
+    <div class="marca">
+      <h1>Wordle <span>CloudDistrict</span></h1>
+      <label class="temporada">
+        <span>Temporada</span>
+        <select data-selector-temporada aria-label="Temporada"></select>
+      </label>
+    </div>
+    <nav data-navegacion aria-label="Secciones"></nav>
+  </header>
+
+  <main data-vista></main>
+
+  <footer class="pie">
+    <p>v2.0 · el marcador se reinicia el día 1 de cada mes · solo cuentan los días laborables</p>
+  </footer>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

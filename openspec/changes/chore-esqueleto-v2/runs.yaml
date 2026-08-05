@@ -1,0 +1,40 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T09:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    validate: n/a
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    Esqueleto de la v2.0 en v2/: router puro, borde de datos con paginación explícita, armazón de UI,
+    documento y CSS con modo claro y oscuro. js/domain/ nace vacío a propósito: cada regla del juego llega
+    con su slice, y meterla aquí la traería sin escenarios ni prueba de mutación.
+    ARRANQUE LOCAL: tools/serve_v2.py replica el fallback SPA del Worker. Necesario, no cómodo: `python3 -m
+    http.server` devuelve 404 en /t/2026-07 y el router nunca se ejecutaría, así que no se podría probar en
+    local lo que se va a publicar.
+    RONDA DE CORRECCIÓN, y la destapó el navegador: en /t/2026-07/j/U… no se marcaba ninguna sección activa,
+    porque la navegación comparaba la vista con las cuatro secciones y `jugador` no es una de ellas. El
+    jugador vive DENTRO de una temporada, así que la sección activa es Temporada. Se extrajo seccionDe()
+    como función pura con dos tests. Ningún unitario lo habría visto: era una consecuencia de pintar.
+    VERIFICADO EN NAVEGADOR con Playwright, las siete rutas: vista correcta, sección activa correcta, 11
+    opciones en el selector de temporada —prueba de que la carga real de Supabase funciona desde el
+    navegador—, navegación por click sin recarga, y CERO errores de consola.
+    CONVIVENCIA CON LA V1: v2/ y wrangler.v2.jsonc entran en .assetsignore. El Worker de la v1 publica la
+    raíz del repo, así que sin esa línea habría servido la v2 a medio hacer en /v2/index.html.
+    ADR 0006 ACTUALIZADO: su incógnita `?` sobre el identificador de la ruta de jugador queda resuelta —es
+    el identificador de Slack— y con ella la sección Jugador deja de tener dependencia dura y entra en el
+    MVP.
+    MUTACIÓN — 4 mutantes, 0 supervivientes: mes inexistente aceptado como temporada, jugador fuera de su
+    sección, segmento de jugador permisivo, y rutas transversales ignorando segmentos de sobra.
+    PENDIENTE: crear el Worker en Cloudflare es la Fase 0.2 y va al final, por decisión explícita.

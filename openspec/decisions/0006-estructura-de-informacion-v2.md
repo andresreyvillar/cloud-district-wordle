@@ -72,6 +72,15 @@ jugador **no** es el nombre mostrado: eso es exactamente lo que la Fase 1 del ro
 Hasta que exista un identificador estable, la ruta de jugador queda bloqueada por
 `identidad-estable-por-id-de-slack` `?` — la forma final del segmento se decide en ese slice.
 
+> **Actualización 2026-08-05 — incógnita resuelta.** El segmento de jugador es **el identificador de Slack**
+> (`U…`). Lo cierran [`identidad-canonica-de-jugador`](../slices/identidad/identidad-canonica-de-jugador.md),
+> que migró las 1521 filas del histórico, e
+> [`ingesta-por-id-de-slack`](../slices/ingesta/ingesta-por-id-de-slack.md), que hace que las nuevas nazcan
+> así. La ruta queda `/t/<AAAA-MM>/j/<U…>`. Consecuencia aceptada: la URL no es legible por una persona. Se
+> descartó usar el nombre —que cambia y rompería enlaces compartidos en el canal— y se descartó un slug
+> derivado del nombre, que tendría el mismo problema con una capa más de indirección. La sección Jugador
+> deja de tener dependencia dura y entra en el MVP.
+
 ### Fuera del MVP
 
 | Fuera | Disparador que lo traería |

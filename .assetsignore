@@ -34,6 +34,11 @@ requirements-dev.txt
 # Snapshots de sesión (contexto de trabajo, no de producto)
 context-snapshot-*.md
 
+# La v2.0 tiene su propio Worker (wrangler.v2.jsonc). El de la v1 publica la raíz del repo, así que sin
+# esta línea serviría la v2 a medio hacer en /v2/index.html.
+v2/
+wrangler.v2.jsonc
+
 # Repo metadata
 .git/
 .gitignore

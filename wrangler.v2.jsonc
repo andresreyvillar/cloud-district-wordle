@@ -1,0 +1,14 @@
+// Worker de la v2.0. La v1 sigue en wrangler.jsonc y no se toca (ADR 0005).
+//
+//   npx wrangler deploy --config wrangler.v2.jsonc
+//
+// `not_found_handling: single-page-application` es lo que hace que /t/2026-07 devuelva index.html con 200
+// en lugar de un 404, y por tanto lo que permite tener una URL por vista sin build (ADR 0006).
+{
+  "name": "cloud-district-wordle-2",
+  "compatibility_date": "2026-08-05",
+  "assets": {
+    "directory": "./v2",
+    "not_found_handling": "single-page-application"
+  }
+}

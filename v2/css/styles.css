@@ -1,0 +1,159 @@
+/* Armazón visual de la v2.0. Solo el esqueleto: cada vista trae lo suyo con su slice.
+   Modo claro y oscuro desde el principio, porque decidirlo después obliga a revisar cada vista. */
+
+:root {
+  --verde: #2f9e44;
+  --amarillo: #e8b923;
+  --tinta: #1b1b1f;
+  --tinta-suave: #5c5f66;
+  --fondo: #fbfbfd;
+  --superficie: #ffffff;
+  --borde: #e4e5e9;
+  --radio: 10px;
+  --sombra: 0 1px 2px rgb(0 0 0 / 6%), 0 8px 24px rgb(0 0 0 / 4%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tinta: #ecedf0;
+    --tinta-suave: #9a9ea6;
+    --fondo: #14151a;
+    --superficie: #1c1e25;
+    --borde: #2c2f38;
+    --sombra: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 24%);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 3rem;
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--tinta);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
+}
+
+.cabecera,
+main,
+.pie { max-width: 60rem; margin: 0 auto; }
+
+/* --- cabecera ------------------------------------------------------------ */
+
+.cabecera { padding: 2rem 0 0; }
+
+.marca {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.marca h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.marca h1 span { color: var(--verde); }
+
+.temporada {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--tinta-suave);
+}
+
+.temporada select {
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+nav[data-navegacion] {
+  display: flex;
+  gap: 0.25rem;
+  margin: 1.5rem 0 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--borde);
+}
+
+nav[data-navegacion] a {
+  padding: 0.6rem 0.9rem;
+  color: var(--tinta-suave);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+nav[data-navegacion] a:hover { color: var(--tinta); }
+
+nav[data-navegacion] a[aria-current="page"] {
+  font-weight: 600;
+  color: var(--tinta);
+  border-bottom-color: var(--verde);
+}
+
+/* --- vistas -------------------------------------------------------------- */
+
+main { padding: 2rem 0; }
+
+.pendiente {
+  padding: 2rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.pendiente .etiqueta {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.pendiente h2 {
+  margin: 0.35rem 0 0;
+  font-size: 1.6rem;
+  font-weight: 650;
+}
+
+.pendiente .parametros { margin: 0.75rem 0 0; }
+
+.pendiente code {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.8rem;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+.pendiente .nota {
+  margin: 1rem 0 0;
+  color: var(--tinta-suave);
+}
+
+.pendiente.error { border-color: var(--amarillo); }
+
+.pendiente a { color: var(--verde); }
+
+/* --- pie ----------------------------------------------------------------- */
+
+.pie {
+  padding-top: 2rem;
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+  border-top: 1px solid var(--borde);
+}
+
+.pie p { margin: 0; }
