@@ -8,6 +8,7 @@
 import { resolver, VISTAS } from './router.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarReglas } from './ui/reglas.js';
+import { pintarTemporada } from './ui/temporada.js';
 import {
   pintarCargando,
   pintarDesconocida,
@@ -59,6 +60,10 @@ function pintar(destino, resultados, instantaneas) {
 
   if (destino.vista === VISTAS.DESCONOCIDA) {
     pintarDesconocida(vista, destino);
+    return;
+  }
+  if (destino.vista === VISTAS.TEMPORADA) {
+    pintarTemporada(vista, instantaneas.get(actual), actual);
     return;
   }
   if (destino.vista === VISTAS.REGLAS) {

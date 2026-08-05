@@ -99,13 +99,35 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
     la clasificación y las medallas llegan con sus propios slices y añaden claves a esta carga útil, que es
     justo la razón de que sea JSONB y no columnas.
     """
-    # Import local para no crear un ciclo: `rules` importa de este módulo para leer sus constantes.
+    # Imports locales para no crear ciclos: los dos módulos importan de este.
+    from badges import medallas_de_temporada, medallas_permanentes
     from rules import catalogo, como_json
+    from standings import clasificacion, dificultad_por_dia
 
     dias = dias_de_temporada(resultados, temporada)
     cuentan = resultados_de_temporada(resultados, temporada)
     lista = temporadas(resultados)
     estado = next((e["estado"] for e in lista if e["temporada"] == temporada), CERRADA)
+
+    tabla = clasificacion(resultados, temporada)
+    dificultad = dificultad_por_dia(resultados, temporada)
+    ordenadas = sorted(dificultad.items(), key=lambda par: (par[1], par[0]))
+    mas_facil = ordenadas[0][0] if ordenadas else None
+    mas_dificil = ordenadas[-1][0] if ordenadas else None
+    media_grupo = (
+        round(sum(fila["score"] for fila in cuentan) / len(cuentan), 2) if cuentan else 0.0
+    )
+
+    # Los logros, invertidos a `clave -> [quiénes]`, que es como los pinta la vista. Las permanentes se
+    # calculan sobre los resultados de ESTA temporada: el palmarés completo es cosa de la ficha de jugador.
+    ganadores: dict[str, list[str]] = defaultdict(list)
+    for jugador, claves in medallas_de_temporada(resultados, temporada).items():
+        for clave in claves:
+            ganadores[clave].append(jugador)
+    for jugador, claves in medallas_permanentes(cuentan).items():
+        for clave in claves:
+            if jugador not in ganadores[clave]:
+                ganadores[clave].append(jugador)
 
     return {
         "temporada": temporada,
@@ -116,4 +138,12 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
         # Las reglas viajan con la temporada: una cerrada conserva las que se le aplicaron, así que
         # mirar marzo explica marzo y no el mes que viene.
         "reglas": como_json(catalogo()),
+        # El cálculo y el contexto que la vista necesita para ser legible. La web lee y pinta: no
+        # recalcula, así que no puede divergir de lo que publica el bot (ADR 0008).
+        "clasificacion": tabla,
+        "dificultad": {str(jornada): media for jornada, media in dificultad.items()},
+        "mas_dificil": mas_dificil,
+        "mas_facil": mas_facil,
+        "media_grupo": media_grupo,
+        "logros": {clave: sorted(quienes) for clave, quienes in ganadores.items()},
     }
