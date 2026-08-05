@@ -26,7 +26,10 @@ ANCHO_FILA = 5
 PATTERN_ROW_SEPARATOR = "/"
 
 CELDA_RE = re.compile(r":[a-z_]+square:")
-HEADER_RE = re.compile(r"^USER_START\|(.*?)\|(.*?)\|(.*)$")
+#: `USER_START|<identificador>|<nombre>|<hora>|<texto>`. El identificador va primero porque es lo que
+#: identifica; el nombre solo se muestra. El último grupo llega hasta el final de la línea, así que un
+#: mensaje que contenga `|` no descuadra los campos.
+HEADER_RE = re.compile(r"^USER_START\|(.*?)\|(.*?)\|(.*?)\|(.*)$")
 RESULTADO_RE = re.compile(r"La palabra del día #(\d+) (X|\d)/6", re.IGNORECASE)
 
 
@@ -64,12 +67,17 @@ def puntuacion(marcador: str) -> int:
 
 @dataclass
 class BloqueResultado:
-    """Un resultado con las filas de cuadrícula que lo acompañan."""
+    """Un resultado con las filas de cuadrícula que lo acompañan.
+
+    `usuario` es **el identificador de Slack** de quien lo publicó y `nombre` lo que muestra. La identidad
+    no puede depender del nombre: cambia, y un renombre partía al jugador en dos.
+    """
 
     usuario: str | None
     numero: int
     score: int
     texto_resultado: str
+    nombre: str | None = None
     filas: list[str] = field(default_factory=list)
 
     @property
@@ -85,13 +93,15 @@ def bloques_de_resultado(lineas: list[str]):
     cierra el bloque anterior: las filas de un mensaje distinto no pertenecen al resultado previo.
     """
     usuario_actual: str | None = None
+    nombre_actual: str | None = None
     pendiente: BloqueResultado | None = None
 
     for linea in lineas:
         encabezado = HEADER_RE.match(linea)
-        contenido = encabezado.group(3) if encabezado else linea
+        contenido = encabezado.group(4) if encabezado else linea
         if encabezado:
             usuario_actual = encabezado.group(1).strip()
+            nombre_actual = encabezado.group(2).strip() or None
 
         resultado = RESULTADO_RE.search(contenido)
         if resultado:
@@ -102,6 +112,7 @@ def bloques_de_resultado(lineas: list[str]):
                 numero=int(resultado.group(1)),
                 score=puntuacion(resultado.group(2)),
                 texto_resultado=contenido,
+                nombre=nombre_actual,
             )
             continue
 

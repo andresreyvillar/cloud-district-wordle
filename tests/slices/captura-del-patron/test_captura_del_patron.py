@@ -64,7 +64,7 @@ def test_los_dos_temas_producen_el_mismo_patron():
 def test_mensaje_sin_cuadricula_no_produce_patron_pero_si_resultado():
     from tools.patterns import normalizar_patron, patrones_por_resultado
 
-    lote = ["USER_START|Jugador|09:00|La palabra del día #1671 4/6"]
+    lote = ["USER_START|U_JUGADOR|Jugador|09:00|La palabra del día #1671 4/6"]
     resultados = patrones_por_resultado(lote)
     assert len(resultados) == 1
     numero, patron = resultados[0]
@@ -78,12 +78,12 @@ def test_dos_resultados_seguidos_no_mezclan_sus_cuadriculas():
     from tools.patterns import patrones_por_resultado
 
     lote = [
-        "USER_START|Uno|09:00|La palabra del día #1671 3/6",
+        "USER_START|U_UNO|Uno|09:00|La palabra del día #1671 3/6",
         "",
         fila(NEGRO, NEGRO, NEGRO, AMARILLO, AMARILLO),
         fila(NEGRO, VERDE, NEGRO, AMARILLO, AMARILLO),
         fila(VERDE, VERDE, VERDE, VERDE, VERDE),
-        "USER_START|Dos|09:05|La palabra del día #1671 2/6",
+        "USER_START|U_DOS|Dos|09:05|La palabra del día #1671 2/6",
         "",
         fila(AMARILLO, AMARILLO, NEGRO, NEGRO, NEGRO),
         fila(VERDE, VERDE, VERDE, VERDE, VERDE),
@@ -98,11 +98,11 @@ def test_un_mensaje_de_conversacion_no_contamina_el_resultado_anterior():
     from tools.patterns import patrones_por_resultado
 
     lote = [
-        "USER_START|Uno|09:00|La palabra del día #1671 2/6",
+        "USER_START|U_UNO|Uno|09:00|La palabra del día #1671 2/6",
         "",
         fila(AMARILLO, AMARILLO, NEGRO, NEGRO, NEGRO),
         fila(VERDE, VERDE, VERDE, VERDE, VERDE),
-        f"USER_START|Dos|09:03|mirad qué cuadrícula tan bonita",
+        f"USER_START|U_DOS|Dos|09:03|mirad qué cuadrícula tan bonita",
         fila(NEGRO, NEGRO, NEGRO, NEGRO, NEGRO),
     ]
     resultados = patrones_por_resultado(lote)
@@ -114,7 +114,7 @@ def test_las_celdas_sin_resultado_previo_no_producen_patron():
     from tools.patterns import patrones_por_resultado
 
     lote = [
-        "USER_START|Alguien|09:00|vaya día llevo",
+        "USER_START|U_ALGUIEN|Alguien|09:00|vaya día llevo",
         fila(NEGRO, NEGRO, NEGRO, NEGRO, NEGRO),
     ]
     assert patrones_por_resultado(lote) == []
