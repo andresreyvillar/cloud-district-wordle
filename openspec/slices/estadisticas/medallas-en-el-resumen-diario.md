@@ -96,6 +96,15 @@ resolvió rápido
 **THEN** ese día tampoco cuenta como difícil: la regla no depende de que el fin de semana tenga poca
 muestra, sino de que no es día de temporada.
 
+### la-temporada-cero-tambien-reparte-medallas
+**WHEN** se piden las medallas de la temporada 0
+**THEN** se calculan sobre **todo el histórico anterior al límite**, no sobre ningún mes concreto: la
+temporada 0 no es un `AAAA-MM`, y comparar su identificador con el prefijo de una fecha no encuentra nada.
+
+Sin esto, 181 jornadas de historia se quedaban sin una sola medalla de temporada — nadie con Fondista tras
+jugar cientos de partidas— mientras las permanentes sí aparecían, que es la pista de que el filtro era el
+problema y no los umbrales.
+
 ### metronomo-solo-exige-los-dias-laborables
 **WHEN** un jugador juega todos los días laborables de la temporada, y otra persona además jugó un domingo
 **THEN** obtiene Metrónom@, porque el domingo no es un día de la temporada que él haya faltado.

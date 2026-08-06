@@ -25,6 +25,7 @@ from calendario import solo_laborables
 # El umbral de muestra vive en `seasons` porque es parte de qué es un día de temporada. Se importa en lugar
 # de copiarse: el docstring de este módulo ya decía que quería ser el mismo criterio, y ahora lo es.
 from seasons import MUESTRA_MINIMA_DEL_DIA  # noqa: F401  (se re-exporta: los tests lo leen de aquí)
+from seasons import temporada_de
 
 FALLO = 7
 
@@ -85,7 +86,15 @@ def _mejor_del_dia(resultados: list[dict]) -> dict[int, int]:
 
 
 def _de_la_temporada(resultados: list[dict], temporada: str) -> list[dict]:
-    return [fila for fila in resultados if str(fila["date"]).startswith(temporada)]
+    """Las filas de esa temporada, **según el modelo** y no según el prefijo de la fecha.
+
+    Comparar el identificador con el principio de la fecha funcionaba mientras toda temporada era un
+    `AAAA-MM`. Con la temporada 0 dejó de funcionar en silencio: ninguna fecha empieza por `0`, así que 181
+    jornadas de histórico se quedaron sin una sola medalla de temporada mientras las permanentes seguían
+    apareciendo. `temporada_de` es la misma función que decide a qué temporada pertenece un resultado en el
+    ranking, así que las dos cosas no pueden volver a divergir.
+    """
+    return [fila for fila in resultados if temporada_de(fila["date"]) == temporada]
 
 
 def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, list[str]]:

@@ -149,12 +149,17 @@ def test_resolver_rapido_un_dia_duro_si_da_la_medalla():
 def test_la_misma_medalla_en_dos_temporadas_cuenta_dos_veces():
     from tools.badges import medallas_de_temporada
 
-    julio = [r("Constante", 1500 + i, 4, mes="2026-07", dia=dia_laborable(i, "2026-07")) for i in range(15)]
+    # Dos temporadas NUMERADAS. Antes este test usaba julio y agosto, y dejó de valer con la temporada 0:
+    # julio es anterior al límite, así que ya no es una temporada propia sino parte del bloque histórico.
+    # Se corrigió el fixture al modelo vigente, no la aserción.
     agosto = [r("Constante", 1600 + i, 4, mes="2026-08", dia=dia_laborable(i, "2026-08")) for i in range(15)]
-    filas = julio + agosto
+    septiembre = [
+        r("Constante", 1700 + i, 4, mes="2026-09", dia=dia_laborable(i, "2026-09")) for i in range(15)
+    ]
+    filas = agosto + septiembre
 
-    assert "fondista" in medallas_de_temporada(filas, "2026-07")["Constante"]
     assert "fondista" in medallas_de_temporada(filas, "2026-08")["Constante"]
+    assert "fondista" in medallas_de_temporada(filas, "2026-09")["Constante"]
 
 
 # @scenarios calculo-determinista
@@ -239,6 +244,31 @@ def test_un_domingo_con_muestra_suficiente_tampoco_es_un_dia_dificil():
         r("Dominguera", 1651, 4, dia=laborable)
     ]
     assert "dia-imposible" in medallas_permanentes(en_laborable)["Dominguera"]
+
+
+# @scenarios la-temporada-cero-tambien-reparte-medallas
+def test_la_temporada_cero_reparte_medallas_sobre_todo_el_historico():
+    """La temporada 0 no es un `AAAA-MM`, y comparar su id con el prefijo de la fecha no encontraba nada.
+
+    Con el filtro roto, 181 jornadas de histórico se quedaban sin una sola medalla de temporada: nadie con
+    Fondista después de cientos de partidas, mientras las permanentes sí salían. Ese contraste era la pista.
+    """
+    from tools.badges import MINIMO_FONDISTA, medallas_de_temporada
+
+    # partidas repartidas por meses anteriores al límite de temporadas: todas son temporada 0
+    filas = []
+    for i in range(MINIMO_FONDISTA):
+        # días 1-15 de mayo de 2026, saltando el fin de semana (mayo de 2026 empieza en viernes)
+        dia = [4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22][i]
+        filas.append(
+            {"player_name": "Fondista", "wordle_id": 1500 + i, "score": 4, "date": f"2026-05-{dia:02d}"}
+        )
+
+    palmares = medallas_de_temporada(filas, "0")
+
+    assert "fondista" in palmares.get("Fondista", []), (
+        "la temporada 0 tiene que repartir medallas sobre todo el histórico anterior al límite"
+    )
 
 
 # @scenarios metronomo-solo-exige-los-dias-laborables
