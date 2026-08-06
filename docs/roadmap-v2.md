@@ -71,7 +71,7 @@ El corazón de la v2.0 y lo imprescindible para el 1 de septiembre.
 | 2.1 | `temporada-mensual` | ranking · resultados | — | El modelo: qué es una temporada, cómo se deriva del histórico, reset el día 1. **Lo único cerrado por el grupo** |
 | 2.2 | `clasificacion-de-temporada` | ranking · estadisticas · dashboard | `/` · `/t/<AAAA-MM>` | La vista del mes: clasificación y podio, con el **modelo de imputación** ya acordado ([brief](context/briefs/reglas-temporadas.md)) |
 | 2.3 | `archivo-de-temporadas` | ranking · dashboard | `/temporadas` | Las 9 cerradas con su ganador + medallero acumulado |
-| 2.4 | `resultado-del-dia` | estadisticas · dashboard | `/hoy` | Quién ha jugado, quién falta, cómo se ha dado la palabra |
+| ~~2.4~~ | ~~`resultado-del-dia`~~ | estadisticas · dashboard | `/hoy` | **HECHO el 2026-08-06**: quién ha jugado, quién falta, el veredicto del día y **si la jornada cuenta ya** |
 | ~~2.5~~ | ~~`ficha-de-jugador`~~ | estadisticas · identidad · dashboard | `/t/<AAAA-MM>/j/<x>` | **HECHO el 2026-08-06**: puesto, coste de faltar, desglose jornada a jornada, distribución, medallas y palmarés. La evolución espera la escala fija (4.4) |
 | 2.6 | `ruta-invalida` | dashboard | cualquiera | Con el fallback SPA el 404 desaparece: la ruta inválida se detecta en cliente o el usuario ve una página vacía |
 | 2.7 | `tabla-de-datos` | dashboard | `/datos` | Portar la tabla cruda de la v1 |

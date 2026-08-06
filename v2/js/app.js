@@ -8,6 +8,7 @@
 import { resolver, VISTAS } from './router.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarReglas } from './ui/reglas.js';
+import { pintarHoy } from './ui/hoy.js';
 import { pintarJugador } from './ui/jugador.js';
 import { pintarTemporada } from './ui/temporada.js';
 import {
@@ -23,7 +24,6 @@ import {
 const PENDIENTES = {
   [VISTAS.TEMPORADA]: 'clasificacion-de-temporada',
   [VISTAS.TEMPORADAS]: 'archivo-de-temporadas',
-  [VISTAS.HOY]: 'resultado-del-dia',
   [VISTAS.DATOS]: 'tabla-de-datos',
 };
 
@@ -71,6 +71,11 @@ function pintar(destino, resultados, instantaneas) {
   }
   if (destino.vista === VISTAS.TEMPORADA) {
     pintarTemporada(vista, instantaneas.get(actual), actual);
+    return;
+  }
+  if (destino.vista === VISTAS.HOY) {
+    // La jornada abierta no está materializada: esta vista lee las filas crudas (excepción del ADR 0008).
+    pintarHoy(vista, resultados, instantaneas, actual);
     return;
   }
   if (destino.vista === VISTAS.JUGADOR) {

@@ -598,3 +598,54 @@ main { padding: 2rem 0; }
   .ficha .bloque .fila, .ficha .bloque a.fila { grid-template-columns: 1fr 4.5rem 4.5rem; }
   .ficha .cabeza.tres, .ficha .cabeza.cuatro { display: none; }
 }
+
+/* ── la jornada en curso ──────────────────────────────────────────────────────────────────────── */
+.hoy { display: flex; flex-direction: column; gap: 2rem; color: var(--liga-tinta); }
+.hoy .titular {
+  display: flex; flex-wrap: wrap; gap: 1.5rem;
+  align-items: flex-end; justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--liga-tinta);
+}
+.hoy .titular h1 {
+  margin: 0.35rem 0 0;
+  font-size: 2.2rem; font-weight: 700; letter-spacing: -0.04em;
+}
+.hoy .titular .serif { margin: 0.2rem 0 0; font-family: var(--serif); color: var(--liga-suave); }
+
+.veredicto {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
+  padding: 0.9rem 1.1rem;
+  background: var(--superficie); border-left: 4px solid var(--liga-suave);
+  font-size: 0.85rem; font-weight: 300;
+}
+.veredicto b { font-family: var(--mono); font-size: 1.15rem; font-weight: 600; }
+.veredicto.dura { border-left-color: var(--liga-morado); }
+.veredicto.facil { border-left-color: var(--liga-verde); }
+
+.resultados { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.5rem; }
+.resultado {
+  display: grid; grid-template-columns: 1.6rem 1fr auto;
+  gap: 0.6rem; align-items: center;
+  padding: 0.6rem 0.8rem;
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-left-width: 5px;
+  color: inherit; text-decoration: none;
+}
+.resultado:hover { border-color: var(--liga-verde); }
+.resultado .orden { font-family: var(--mono); font-size: 0.7rem; color: var(--liga-suave); }
+.resultado .quien { font-size: 0.95rem; font-weight: 600; }
+.resultado .marca { font-family: var(--mono); font-size: 1.35rem; font-weight: 600; line-height: 1; }
+.resultado .marca em { font-size: 0.7rem; font-style: normal; color: var(--liga-suave); }
+
+.ausentes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ausentes a {
+  padding: 4px 10px;
+  background: transparent; border: 2px dashed var(--borde);
+  font-size: 0.85rem; color: var(--liga-suave); text-decoration: none;
+}
+.ausentes a:hover { color: var(--liga-tinta); border-color: var(--liga-tinta); }
+
+@media (max-width: 860px) {
+  .hoy .titular h1 { font-size: 1.7rem; }
+}
