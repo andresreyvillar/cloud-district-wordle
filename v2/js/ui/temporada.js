@@ -11,6 +11,7 @@
  * juego sin decidir, dos de ellas bloqueadas por el grupo.
  */
 
+import { rutaDeFicha } from '../data/ficha.js';
 import { escapar } from './shell.js';
 
 /** La paleta de la maqueta: el color dice el resultado de un vistazo. */
@@ -85,7 +86,7 @@ function hud(carga) {
     .join('');
 }
 
-function podio(tabla) {
+function podio(tabla, temporada) {
   const colores = [COLOR.bueno, COLOR.medio, COLOR.malo];
   return tabla
     .filter((fila) => fila.clasificado !== false)
@@ -97,7 +98,7 @@ function podio(tabla) {
           <span class="pos">${fila.posicion}º</span>
           <span class="avg">${escapar(cifra(fila.media_temporada))}</span>
         </div>
-        <span class="nombre">${escapar(fila.nombre)}</span>
+        <a class="nombre" href="${escapar(rutaDeFicha(temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
         ${fila.por_dia.length <= 40 ? `<div class="tiras">${tira(fila.por_dia, 20)}</div>` : ''}
         <span class="detalle">${fila.jugados} de ${fila.dias} jornadas · media jugada ${escapar(cifra(fila.media_jugada))}</span>
       </div>`,
@@ -105,27 +106,33 @@ function podio(tabla) {
     .join('');
 }
 
-function marcador(tabla, imputada) {
-  const filas = tabla
-    .map((fila) => {
-      const sinClasificar = fila.clasificado === false;
-      const acento = sinClasificar
-        ? 'transparent'
-        : fila.posicion <= 3
-          ? COLOR.bueno
-          : 'rgba(43,39,51,.12)';
-      return `
+/**
+ * Una fila del marcador. **El nombre enlaza a la ficha de esa misma temporada.**
+ *
+ * Está exportada porque es comportamiento observable del slice `ficha-de-jugador` —el marcador es la puerta
+ * de entrada a la ficha— y así el enlace se verifica sin navegador.
+ */
+export function filaDeMarcador(fila, temporada) {
+  const sinClasificar = fila.clasificado === false;
+  const acento = sinClasificar
+    ? 'transparent'
+    : fila.posicion <= 3
+      ? COLOR.bueno
+      : 'rgba(43,39,51,.12)';
+  return `
       <div class="fila${sinClasificar ? ' sin-clasificar' : ''}">
         <i class="acento" style="background:${acento}"></i>
         <span class="pos">${sinClasificar ? '—' : fila.posicion}</span>
-        <span class="nom">${escapar(fila.nombre)}</span>
+        <a class="nom" href="${escapar(rutaDeFicha(temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
         <span class="tiras">${fila.por_dia.length <= 40 ? tira(fila.por_dia, 14) : ''}</span>
         <span class="num fuerte">${escapar(cifra(fila.media_temporada))}</span>
         <span class="num suave">${escapar(cifra(fila.media_jugada))}</span>
         <span class="num suave">${fila.jugados}/${fila.dias}</span>
       </div>`;
-    })
-    .join('');
+}
+
+function marcador(tabla, imputada, temporada) {
+  const filas = tabla.map((fila) => filaDeMarcador(fila, temporada)).join('');
 
   return `
     <section class="bloque">
@@ -269,11 +276,11 @@ export function pintarTemporada(contenedor, carga, temporada) {
         </div>
         <div class="podio">
           <span class="mono etiqueta">Podio de la temporada</span>
-          ${podio(tabla)}
+          ${podio(tabla, temporada)}
         </div>
       </div>
 
-      ${marcador(tabla, carga.imputada !== false)}
+      ${marcador(tabla, carga.imputada !== false, temporada)}
       ${logros(carga)}
       ${estadisticas(carga)}
     </div>`;

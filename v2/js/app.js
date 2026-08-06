@@ -8,6 +8,7 @@
 import { resolver, VISTAS } from './router.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarReglas } from './ui/reglas.js';
+import { pintarJugador } from './ui/jugador.js';
 import { pintarTemporada } from './ui/temporada.js';
 import {
   pintarCargando,
@@ -24,7 +25,6 @@ const PENDIENTES = {
   [VISTAS.TEMPORADAS]: 'archivo-de-temporadas',
   [VISTAS.HOY]: 'resultado-del-dia',
   [VISTAS.DATOS]: 'tabla-de-datos',
-  [VISTAS.JUGADOR]: 'ficha-de-jugador',
 };
 
 /**
@@ -71,6 +71,11 @@ function pintar(destino, resultados, instantaneas) {
   }
   if (destino.vista === VISTAS.TEMPORADA) {
     pintarTemporada(vista, instantaneas.get(actual), actual);
+    return;
+  }
+  if (destino.vista === VISTAS.JUGADOR) {
+    // La ficha necesita TODAS las instantáneas, no solo la de la temporada: el palmarés se arma cruzándolas.
+    pintarJugador(vista, instantaneas, actual, destino.jugador);
     return;
   }
   if (destino.vista === VISTAS.REGLAS) {

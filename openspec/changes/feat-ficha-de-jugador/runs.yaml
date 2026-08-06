@@ -1,0 +1,37 @@
+- run: '2026-08-06T11:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: ficha-de-jugador
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Punto 2.5 de la Fase 2. La vista existe para una cosa: con imputación, parte de tu media son jornadas
+    que no jugaste, y el marcador no lo enseñaba. La ficha pone las dos medias juntas y publica la
+    diferencia con su signo (3,50 → 3,87 · +0,37 en un caso real), que es la regla aplicada a una persona.
+    Cuando la temporada no imputa lo declara en lugar de publicar un cero, porque un cero se lee como
+    "faltar no te costó nada" y lo cierto es que entonces faltar no se medía.
+    NO TOCA PYTHON NI EL ESQUEMA: todo lo que pinta está ya en la instantánea (ADR 0008), así que la ficha y
+    lo que publica el bot no pueden divergir. Lo único que arma es el palmarés, cruzando instantáneas ya
+    cargadas, y lo cruza POR IDENTIDAD DE SLACK: por nombre reaparecería el fallo que partió a un jugador en
+    dos.
+    UN FIXTURE CORREGIDO ANTES DEL CÓDIGO: la temporada 0 del fixture traía una jornada imputada, que Python
+    no puede producir porque esa temporada no imputa. Se arregló el fixture en lugar de doblar el código para
+    aceptar un dato imposible.
+    EL ENLACE ES COMPORTAMIENTO, NO DECORACIÓN: la fila del marcador se extrajo a `filaDeMarcador(fila,
+    temporada)` y se exporta, así que "cada jugador enlaza a su ficha de esa temporada" se verifica con
+    `node --test` y no con una captura. Un mutante que quitaba la temporada de la ruta cae en dos tests.
+    VERIFICADO EN NAVEGADOR sobre datos reales: temporada 0 → Claire 1º con 3,56 en 102 de 181, distribución
+    que suma 102, desglose agrupado MES A MES porque 181 jornadas no caben en una tira. Identificador
+    inexistente: estado declarado, sin error. Cero errores de consola.
+    HALLAZGO AJENO AL SLICE, ANOTADO: el cron de `main` ha vuelto a escribir identidades-nombre desde el
+    31 de julio (39 filas, 33 de ellas en agosto; 26 duplican a un jugador que ya está en su jornada). La
+    migración en seco lo confirma con 13 a resolver y 26 a fusionar. Afecta a la temporada 1, no a este
+    slice, y no se ha ejecutado nada en producción: es una escritura que decide el humano.
