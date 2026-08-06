@@ -10,7 +10,8 @@
 0 en contra ([fuente](../sources/2026-08-04-hilo-reglas-temporadas.md)).
 
 **Una temporada son sus días laborables: de lunes a viernes.** Acordado con el dueño del proyecto el
-2026-08-04 — **no votado en el canal**, a diferencia de la regla anterior. Sábado y domingo no fijan la
+2026-08-04 y **votado en el canal** después (confirmado por el dueño el 2026-08-06; el hilo no está
+volcado al repo, así que aquí no consta el recuento). Sábado y domingo no fijan la
 dificultad de un día, no cuentan para ningún umbral y no son días que un jugador pueda faltar. La regla
 alcanza a **los tres ejes**: puntuación, medallas y álbum de figuras.
 

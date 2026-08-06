@@ -2,8 +2,8 @@
 
 Slice: `temporada-mensual` (openspec/slices/ranking/temporada-mensual.md).
 
-**Las temporadas son mensuales y el marcador se reinicia el día 1.** Es la única regla del juego decidida
-por votación del grupo (6 a favor, 0 en contra).
+**Las temporadas son mensuales y el marcador se reinicia el día 1.** El grupo la votó en el canal: 6 a
+favor, 0 en contra. Es una de las dos reglas votadas; la otra es que solo cuenten los días laborables.
 
 Funciones puras: los resultados y la temporada entran por parámetro y nada lee el reloj (§10 del protocolo).
 La temporada en curso se deriva **de los datos**, no de la fecha del sistema, y por eso el cálculo es

@@ -7,7 +7,7 @@
 La temporada de un resultado es el mes de su fecha, en formato `AAAA-MM`. El marcador se reinicia el día 1:
 un resultado del día 1 pertenece a la temporada nueva, sin periodo de gracia ni solapamiento.
 
-Es la única regla del juego decidida por votación del grupo (6 a favor, 0 en contra).
+El grupo la decidió por votación: 6 a favor, 0 en contra.
 
 #### Scenario: un resultado del día 1 pertenece a la temporada nueva
 - GIVEN un resultado con fecha del día 1 de un mes

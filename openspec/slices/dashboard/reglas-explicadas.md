@@ -89,8 +89,8 @@ materializa.
 
 ## Edge cases
 
-- **Una regla implementada que el grupo no ha votado** —hoy, la de días laborables y el modelo de
-  imputación— aparece como aplicada **y** marcada como no votada. Es la información más útil de la página:
+- **Una regla implementada que el grupo no ha votado** —hoy, la temporada 0 y los umbrales de las
+  medallas— aparece como aplicada **y** marcada como no votada. Es la información más útil de la página:
   es lo que el grupo tiene que ratificar o tumbar.
 - **Una regla con dos consumidores** (el bot y la web) se enuncia una vez: el parámetro sale del mismo sitio
   que el cálculo, así que no puede divergir.

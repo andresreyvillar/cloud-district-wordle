@@ -68,17 +68,19 @@ def test_una_regla_sin_decidir_dice_que_falta_decidir():
 def test_hay_reglas_aplicadas_que_el_grupo_no_ha_votado_y_se_declara():
     """La información más incómoda de la página, y la más útil.
 
-    Hoy solo una regla está votada —las temporadas mensuales, 6 a 0— y sin embargo se aplican varias más.
-    Esconderlo sería el peor uso posible de una página de reglas.
+    El grupo ha votado dos reglas —las temporadas mensuales (6 a 0) y que solo cuenten los días
+    laborables— y sin embargo se aplican muchas más. Esconderlo sería el peor uso posible de una página de
+    reglas.
     """
     from tools.rules import busca, catalogo
 
     assert busca("temporada-mensual").votada is True
+    assert busca("solo-dias-laborables").votada is True
 
     aplicadas_sin_votar = [r for r in catalogo() if r.estado == "aplicada" and not r.votada]
     assert aplicadas_sin_votar, "si esto sale vacío, o se votó todo o el catálogo está maquillado"
     ids = {r.id for r in aplicadas_sin_votar}
-    assert "solo-dias-laborables" in ids
+    assert "temporada-cero" in ids
 
 
 # @scenarios los-parametros-son-los-que-el-calculo-usa

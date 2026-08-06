@@ -123,7 +123,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "que penalizar una ausencia de sábado sería castigar por no estar donde no había nadie."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
         ),
         Regla(
             id="dia-con-muestra-minima",

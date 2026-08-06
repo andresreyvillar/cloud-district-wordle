@@ -34,8 +34,8 @@ Cada regla lleva **dos marcadores independientes**:
 - **estado**: `aplicada` · `acordada-sin-aplicar` · `sin-decidir`;
 - **votada**: si el grupo la aprobó en el canal.
 
-Son independientes a propósito, porque hoy hay reglas **aplicadas y no votadas** —la de días laborables y el
-modelo de imputación— y esconderlo sería el peor uso posible de esta página.
+Son independientes a propósito, porque hoy hay reglas **aplicadas y no votadas** —la temporada 0 y los
+umbrales de las medallas— y esconderlo sería el peor uso posible de esta página.
 
 Una regla `sin-decidir` dice además **qué falta decidir**.
 

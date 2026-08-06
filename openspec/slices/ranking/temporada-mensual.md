@@ -24,9 +24,9 @@ blocked: null
 
 ## Contexto
 
-Es **lo único que el grupo cerró por votación**: 6 a favor y 0 en contra
-([fuente](../../../docs/context/sources/2026-08-04-hilo-reglas-temporadas.md)). Todo lo demás del hilo son
-ideas sin decidir.
+Es una de las **dos reglas que el grupo cerró por votación**: 6 a favor y 0 en contra
+([fuente](../../../docs/context/sources/2026-08-04-hilo-reglas-temporadas.md)). La otra es que solo cuenten
+los días laborables. Todo lo demás del hilo son ideas sin decidir.
 
 Hoy no existe el concepto: el ranking agrega todo el histórico desde el wordle #1419 y no hay forma de mirar
 un mes concreto.
