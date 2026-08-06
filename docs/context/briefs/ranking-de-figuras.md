@@ -103,15 +103,19 @@ mandaba el 37% de las partidas a la papelera por construcción.
 Tres de las treinta etiquetas (fichas 01, 03 y 06) tienen exactamente dos filas sobre la base y son
 **flores**. El número de filas no decide nada: lo que decide es la densidad y la limpieza del dibujo.
 
-### La tensión entre los dos rankings — HAY QUE VOLVER A MEDIRLA
+### La tensión entre los dos rankings — REMEDIDA: el signo aguanta, la fuerza no
 
 El brief afirmaba una **correlación −0,37 entre media de intentos y número de cacas**: quien juega mejor
 acumula más papelera, porque resuelve pronto y no deja lienzo. Era el mejor efecto del diseño, la razón por
-la que los dos rankings premian a gente distinta.
+la que los dos rankings premian a gente distinta. Estaba medida con el clasificador desmentido.
 
-**Esa cifra se midió con el clasificador desmentido**, el que mandaba el 69% a la papelera por contar filas.
-Con el número de filas descartado como criterio, el signo puede mantenerse, atenuarse o desaparecer. Queda
-**pendiente de remedir** cuando el clasificador esté calibrado, y hasta entonces no se cita como hecho.
+Con el clasificador calibrado (2026-08-06), sobre los 18 jugadores con 10+ partidas: **−0,22**. El signo se
+mantiene, pero **por tramos de media no hay tendencia monótona** —33% de abstractos por debajo de 3,7 de
+media, 44% entre 3,7 y 4,0, 31% entre 4,0 y 4,3, 34% por encima—, y con 18 jugadores eso es ruido tanto como
+efecto. **Se cita como señal débil, no como argumento.**
+
+Lo que sostiene el diseño de dos premios separados no es esta correlación sino la medida del 94% de más
+abajo, que no depende del clasificador.
 
 Lo que sí sigue en pie, porque no depende del clasificador, es la diferencia de intentos entre partidas con
 y sin lienzo (2,9 frente a 4,7): la figura sale de las partidas que salen mal. La *intuición* de que los dos
@@ -154,10 +158,46 @@ generar todas es inviable; lo razonable es una al día (la obra del día) o solo
 |---|---|
 | ~~¿Las partidas sin lienzo son categoría aparte?~~ | **CERRADO por las etiquetas**: el número de filas no decide nada, así que la pregunta desaparece. Hay flores de dos filas sobre la base |
 | Puntuación del álbum | Recuento absoluto de figuras reconocibles, o ponderado por rareza. Medido: 🦜 8%, 📐 11%, 🌷 12% — el loro es la pieza rara |
-| Calibración del clasificador | **Desbloqueado**: hay 30 patrones etiquetados ([conjunto dorado](../sources/2026-08-05-etiquetado-de-patrones.md)). Falta escribir el clasificador y medir su acierto contra ellos |
+| ~~Calibración del clasificador~~ | **CERRADO el 2026-08-06**: `tools/figures.py` acierta **24 de las 30** (80%) y el acuerdo es un gate de la suite. Ver abajo |
 | La categoría `loto` | Apareció una vez al etiquetar (ficha 29: dos masas verdes con un canal vertical en medio). **Plegada en `flores` por ahora**: con un ejemplo no se calibra nada, se acertaría por azar. Si al mirar más patrones sale a menudo, se separa |
 | Capability | La clasificación es un dominio nuevo (`patrones`?). Crear capability requiere acuerdo explícito |
 | Qué pasa con la captura de Playwright | Sustituir la imagen por texto elimina el navegador del workflow diario: menos dependencias y más rápido, pero se pierde el gráfico |
+
+## El clasificador calibrado (2026-08-06)
+
+`tools/figures.py`. Cuatro reglas en cascada; `tools/calibrate_figures.py` rehace las medidas.
+
+**Se calibró contra dos criterios independientes, y el segundo es el que decidió.** El primer candidato
+sacaba 83% de acuerdo con las 30 fichas y marcaba flor el **55%** de los 1521 patrones reales: acertaba el
+examen y no generalizaba, porque su regla —«hay una fila verde ancha y algún amarillo»— se cumple cada vez
+más según crece la cuadrícula, así que se comía las partidas largas. Se descartó por el reparto.
+
+| Criterio | Resultado |
+|---|---|
+| **Acuerdo** con las 30 etiquetas humanas | **24/30 = 80%** · 2 ruidos ascendidos a figura, 4 figuras degradadas a abstracto |
+| **Reparto** sobre los 1521 patrones reales | flores 47% · abstracto 32% · loro 14% · geometrico 7% (humano: 37/33/17/13, desvío total 10%) |
+
+Los dos rasgos que lo resolvieron salen de mirar qué separa las etiquetas, no de intuir cómo mira un humano:
+
+- **el amarillo del loro toca el cuerpo.** Es el pico. Un amarillo flotando en negro es un pétalo, y sin esa
+  distinción el loro se comía dos flores del conjunto.
+- **la flor necesita pétalos libres**: una fila de amarillos sin verde, o tres amarillos flotando. Es lo que
+  el humano describe —el suelo verde y los pétalos encima— y no crece con el tamaño de la cuadrícula.
+
+Los seis desacuerdos que quedan, para que estén a la vista y no en un log:
+
+| Ficha | Humano | Clasificador | Qué pasa |
+|---|---|---|---|
+| 01 | flores | abstracto | dos amarillos en las esquinas, uno pegado al verde: se queda a un pétalo |
+| 16 | abstracto | flores | tallo verde con tres amarillos sueltos; para el clasificador son pétalos |
+| 17 | abstracto | flores | igual que la 16, con los dos amarillos en la misma columna |
+| 26 | flores | abstracto | macizo verde con los amarillos pegados: solo un pétalo libre |
+| 29 | flores | abstracto | es la `loto`: dos masas verdes con un canal, y un solo amarillo |
+| 30 | geometrico | abstracto | columna llena más un bloque de 3×2; el humano vio una escalera |
+
+**Ninguno es caro.** El álbum no toca el ranking de puntuación, así que una figura mal puesta es una gracia
+perdida, no una injusticia en la tabla. Y el límite honesto sigue en pie: con 30 fichas el margen es de ±9
+puntos, así que este 80% distingue «80 o 60», no «80 u 84».
 
 ## Cómo funciona el etiquetado en la práctica
 

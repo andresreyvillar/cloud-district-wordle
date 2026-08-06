@@ -1,0 +1,38 @@
+- run: '2026-08-06T09:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Paso 5.0 del roadmap: calibrar el clasificador de figuras antes de especificar el álbum. La pregunta era
+    si una función determinista puede reconocer la figura tan bien como el humano que etiquetó las 30
+    cuadrículas. Respuesta medida: 24 de 30, el 80%.
+    DOS CRITERIOS, Y EL SEGUNDO DECIDIÓ. El primer candidato sacó 83% de acuerdo con las 30 y marcaba flor
+    el 55% de los 1521 patrones reales, cuando el humano etiqueta el 37%. Acertaba el examen y no
+    generalizaba: su regla —una fila verde ancha y algún amarillo— se cumple cada vez más según crece la
+    cuadrícula, así que se comía las partidas largas. Descartado por el reparto, no por el acuerdo. El
+    adoptado saca 80% y reparto 47/32/14/7 frente al 37/33/17/13 humano (desvío total 10%).
+    LOS DOS RASGOS QUE LO RESOLVIERON salen de mirar qué separa las etiquetas humanas, no de intuir: el
+    amarillo del loro TOCA EL CUERPO (un amarillo flotando en negro es pétalo, no pico) y la flor necesita
+    PÉTALOS LIBRES (una fila de amarillos sin verde, o tres amarillos flotando). Ninguno de los dos crece
+    con el tamaño de la cuadrícula, que era el defecto del candidato descartado.
+    UN MUTANTE SOBREVIVIÓ Y ERA UN HUECO REAL. Bajar el mínimo de pétalos libres de 3 a 1 dejaba la suite
+    verde porque SUBE el acuerdo a 25/30; lo que justifica el 3 es el reparto en producción, y ese criterio
+    necesita red y no cabe en la suite. Corregido con el caso discriminante (ficha 11: dos amarillos
+    perdidos no hacen una flor) y con la propiedad de que alargar la cuadrícula no puede convertir ruido en
+    flor. Lección registrada: cuando un criterio de calibración no puede ejecutarse en la suite, el caso que
+    lo discrimina se fija como test propio.
+    CIFRA REMEDIDA: la correlación entre media de intentos y tasa de abstractos, que el brief tenía en -0,37
+    medida con el clasificador desmentido y marcada como pendiente, sale -0,22 con el calibrado. El signo se
+    mantiene —quien juega mejor deja menos lienzo— pero por tramos de media no hay tendencia monótona
+    (33% · 44% · 31% · 34%) y con 18 jugadores no es un hecho sólido. Se publica como señal débil, no como
+    argumento.
+    NADA EN PRODUCCIÓN: el clasificador no se llama desde ningún sitio y la columna `pattern` solo se lee.
+    Desbloquea 5.1-5.7 y las cinco medallas de figuras de 6.2.

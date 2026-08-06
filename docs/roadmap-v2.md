@@ -112,7 +112,7 @@ en [`context/briefs/ranking-de-figuras.md`](context/briefs/ranking-de-figuras.md
 
 | # | Slice candidato | Capabilities | Qué resuelve |
 |---|---|---|---|
-| 5.0 | *(previo, sin slice)* calibrar el clasificador con 20-30 patrones etiquetados | — | **Bloquea todo lo demás.** Hoy la heurística falla en el único patrón etiquetado y produce 50% de ambiguos |
+| ~~5.0~~ | ~~*(previo, sin slice)* calibrar el clasificador~~ | pack `feat-calibracion-de-figuras` | **HECHO el 2026-08-06**: `tools/figures.py` acierta 24/30 (80%) y el acuerdo es un gate. Desbloquea el resto de la fase |
 | 5.1 | `captura-del-patron` | ingesta · resultados | Columna nueva con el patrón crudo (aditivo). Hoy se descarta: solo se guarda la primera línea del mensaje |
 | 5.2 | `backfill-de-patrones` | ingesta · resultados | Recuperar el histórico del canal: comprobado que Slack conserva las cuadrículas a 240 días |
 | 5.3 | `clasificacion-de-figuras` | patrones `?` | 🦜 🌷 📐 💩 y 🤔 (no puntúa). Determinista y con golden tests |

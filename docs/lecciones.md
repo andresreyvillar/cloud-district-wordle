@@ -231,10 +231,31 @@
 - **Codificada en:** `docs/context/briefs/ranking-de-figuras.md` (los dos supuestos tachados y marcados como
   DESMENTIDOS, con las cuadrículas que lo demuestran) y
   `docs/context/sources/2026-08-05-etiquetado-de-patrones.md`, que pasa a ser el conjunto dorado contra el
-  que se mide cualquier cambio de peso · **estado:** pendiente —
-  *destino: que el slice del clasificador tenga un test que ejecute las 30 etiquetas y falle si el acuerdo
-  baja de un umbral declarado, de modo que la calibración sea un gate y no una promesa*
+  que se mide cualquier cambio de peso · **estado:** codificada (2026-08-06) —
+  `tests/figuras/test_clasificador.py::test_el_acuerdo_con_las_etiquetas_humanas_no_baja` ejecuta las 30
+  etiquetas en cada suite y falla por debajo de `ACUERDO_MINIMO = 24`. El conjunto dorado **no se copia**:
+  el test lo parsea del source, así que reetiquetar una ficha mueve el examen. La calibración ya es un gate.
 - **Y una tercera cifra a remedir:** la correlación −0,37 entre media de intentos y número de cacas —el
   argumento de que los dos rankings premian a gente distinta— **se midió con el clasificador desmentido**.
-  Queda marcada como pendiente en el brief en lugar de seguir citándose. Es la tercera vez en dos días que
+  Quedó marcada como pendiente en el brief en lugar de seguir citándose. Es la tercera vez en dos días que
   una cifra derivada se hereda sin volver a medirla; el patrón ya no es casualidad.
+  **Remedida el 2026-08-06 con el clasificador calibrado: −0,22**, y por tramos de media sin tendencia
+  monótona (33% · 44% · 31% · 34% de abstractos). El signo aguanta, la fuerza no: pasa a citarse como señal
+  débil. El diseño de dos premios separados se sostiene en la otra medida, la del 94%, que no depende del
+  clasificador.
+
+### 2026-08-06 — Un umbral que solo justifica un criterio fuera de la suite queda sin proteger
+- **Qué pasó:** el clasificador de figuras se calibró contra dos criterios: el acuerdo con las 30 etiquetas
+  humanas (en la suite) y el reparto sobre los 1521 patrones reales (necesita red, no cabe en la suite). El
+  Gate 4c mutó el umbral de pétalos libres de 3 a 1 y **la suite siguió verde**, porque ese cambio *sube* el
+  acuerdo a 25/30. Solo empeoraba el segundo criterio, que ningún test podía ejecutar.
+- **Causa raíz:** el criterio que decidía el valor del umbral vivía en un informe, no en un test. El gate de
+  acuerdo medía el agregado, y un agregado puede mejorar mientras el caso que discrimina el umbral se rompe.
+- **Regla:** cuando un parámetro se elige por un criterio que **no puede ejecutarse en la suite** (necesita
+  red, datos de producción o un humano), hay que fijar en un test el **caso concreto que lo discrimina**, y
+  además la **propiedad** que el criterio protege. Un agregado no sustituye al caso: puede subir mientras el
+  caso cae.
+- **Codificada en:** `tests/figuras/test_clasificador.py::test_dos_amarillos_perdidos_no_hacen_una_flor` (el
+  caso de la ficha 11, que el umbral decide) y `::test_alargar_la_cuadricula_no_convierte_el_ruido_en_flor`
+  (la propiedad: una regla de figura no puede volverse más probable porque la partida sea larga, que es
+  exactamente cómo falló el candidato descartado) · **estado:** codificada
