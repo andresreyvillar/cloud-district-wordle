@@ -178,3 +178,60 @@ mutantes muertos, y la ejecución real reventó a mitad. Un doble imita las *res
 sustituye, no solo su interfaz. El segundo: **dejar una fila intacta por prudencia no es neutral**. La fila
 conflictiva del puzzle 1481 se queda donde está por diseño, y donde está es la clave que necesita su dueña
 legítima. Lo prudente tiene consecuencias, y hay que declararlas en lugar de suponer que no existen.
+
+## El clasificador de figuras: dos criterios, y el segundo tumbó al primer candidato
+
+**Qué.** `tools/figures.py` convierte una cuadrícula de emojis en una figura —loro, flores, geométrico o
+abstracto— con reglas deterministas. Acierta **24 de las 30** etiquetas humanas (80%) y el acuerdo es un gate
+de la suite: `ACUERDO_MINIMO = 24`, y el conjunto dorado se parsea del source en lugar de copiarse.
+
+**Por qué importa.** Bloqueaba el eje de figuras entero: el álbum, el resumen diario compuesto y cinco
+medallas. Y era una pregunta con un no posible — el brief ya declaraba la alternativa: si el determinista no
+llega, un modelo mirando el dibujo, que deja de ser gratis y no se cubre con golden tests.
+
+**La decisión que cambia el método.** El primer candidato sacó **83% de acuerdo y 55% de flores sobre los
+1521 patrones reales**, cuando el humano etiqueta el 37%. Acertaba el examen y no generalizaba: su regla
+—«hay una fila verde ancha y algún amarillo»— se cumple cada vez más según crece la cuadrícula, así que se
+comía las partidas largas. Se descartó por el **reparto**, no por el acierto. De ahí que la calibración se
+mida contra dos criterios independientes y el informe publique los dos.
+
+Los dos rasgos que lo resolvieron salieron de mirar qué separa las etiquetas, no de intuir: **el amarillo del
+loro toca el cuerpo** (uno flotando en negro es pétalo, no pico) y **la flor necesita pétalos libres**.
+Ninguno crece con el tamaño de la cuadrícula.
+
+**Aprendizaje.** Un mutante sobrevivió, y era un hueco real: bajar el mínimo de pétalos de 3 a 1 dejaba la
+suite verde porque **sube** el acuerdo a 25/30. Lo que justifica el 3 es el reparto, que necesita red y no
+cabe en un test. Cuando un parámetro se elige por un criterio que la suite no puede ejecutar, hay que fijar
+el **caso concreto que lo discrimina** y la **propiedad** que el criterio protege; un agregado puede mejorar
+mientras el caso se rompe. Y una cifra heredada menos: la correlación entre jugar bien y acumular abstractos
+baja de −0,37 a **−0,22**, sin tendencia monótona por tramos. El signo aguanta, la fuerza no.
+
+## Tres vistas y el fallo que encontró la última
+
+**Qué.** La ficha de jugador (`/t/<AAAA-MM>/j/<U…>`), la jornada en curso (`/hoy`) y el archivo de
+temporadas (`/temporadas`). Con eso la Fase 2 queda cerrada salvo la tabla cruda.
+
+**Por qué importa.** La ficha existe por una razón concreta: con imputación, **parte de tu media son
+jornadas que no jugaste**, y el marcador no lo enseñaba. La ficha pone las dos medias juntas y publica la
+diferencia con su signo —3,50 → 3,87 · +0,37 en un caso real—, que es la regla aplicada a una persona. Y
+`/hoy` es la única vista de una jornada abierta, así que es la única que tiene que admitir que **hoy puede no
+contar todavía**.
+
+**Decisiones.**
+- **Excepción declarada al ADR 0008.** La jornada abierta no está materializada y el cron corre cada hora, así
+  que la media del día se calcula en el navegador. Lo que **no** se duplica es el umbral: la muestra mínima se
+  lee de las reglas que viajan en la instantánea, y un test lo fija —mismo dato, umbral 5 no cuenta, umbral 3
+  sí, sin tocar la vista—. Sin umbral publicado, la vista dice que no puede afirmarlo.
+- **El enlace es comportamiento, no decoración.** La fila del marcador se extrajo a `filaDeMarcador()` y se
+  exporta, así que «cada jugador enlaza a su ficha de esa temporada» se verifica con `node --test` y no con
+  una captura.
+- **Una temporada en curso no tiene campeón, tiene quien va ganando.** Dos mutantes distintos cazan esa
+  distinción.
+
+**Aprendizaje.** El archivo encontró un fallo que llevaba días escondido: `_de_la_temporada` filtraba con
+`str(fila["date"]).startswith(temporada)`, y **ninguna fecha empieza por `0`**, así que la temporada 0 se
+quedó sin una sola medalla de temporada —nadie con Fondista tras 181 jornadas— mientras las permanentes sí
+aparecían. Ese contraste fue la pista. Eran **dos definiciones de pertenecer a una temporada**, una en
+`seasons.temporada_de` y otra escrita a mano; ahora hay una. El medallero pasó de 6 filas a 17. La lección
+general: un cambio de modelo (la temporada 0) rompe en silencio todo el código que reimplementaba el modelo
+a mano, y lo que lo delata no es un test sino **una vista que enseña el agregado**.
