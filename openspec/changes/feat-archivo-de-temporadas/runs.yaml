@@ -1,0 +1,28 @@
+- run: '2026-08-06T13:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: archivo-de-temporadas
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Punto 2.3 de la Fase 2. Es la vista que da sentido a reiniciar el marcador: sin archivo, ganar agosto no
+    deja rastro en septiembre.
+    DOS FILAS, Y ESTÁ BIEN: la temporada 0 como bloque del histórico y agosto. El roadmap hablaba de "las 9
+    cerradas" porque se escribió antes de la decisión de la temporada 0. La 0 va marcada como bloque
+    histórico jugado con otras reglas: sin esa marca la vista invita a comparar 181 jornadas sin imputar con
+    un mes de 20 imputada.
+    UNA TEMPORADA EN CURSO NO TIENE CAMPEÓN, tiene quien va ganando. Dos mutantes distintos cazan esa
+    distinción, que es la que evita coronar a alguien a mitad de mes.
+    ESTE SLICE ENCONTRÓ UN FALLO AJENO: al pintar el medallero, la temporada 0 salía con una sola medalla por
+    jugador. Arreglado aparte en `fix-medallas-temporada-cero`; el medallero real pasó de 6 filas a 17,
+    encabezado por Andrés R. con cinco.
+    VERIFICADO EN NAVEGADOR: agosto EN CURSO con "va ganando Andrés R. 3,00"; temporada 0 CERRADA con
+    "campeón Claire 3,56" sobre 181 jornadas y 1502 resultados. Cero errores de consola.
