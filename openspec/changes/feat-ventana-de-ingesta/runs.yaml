@@ -1,0 +1,29 @@
+- run: '2026-08-07T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: ingesta-por-id-de-slack
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 0
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Punto 4.2. Medido antes de tocar: sobre 1200 mensajes reales el canal tiene mediana de 10 mensajes al día
+    y máximo 27, la ventana de 50 cubre 5 días de media y la peor racha de 3 días son 52 mensajes, que no
+    caben. Contar mensajes hace que la cobertura dependa de lo hablador que esté el grupo.
+    La ventana pasa a medirse en DÍAS (14) y a paginar hasta el corte. Es barato porque reingerir no duplica:
+    el upsert va por (slack_user_id, wordle_id), que ya era un escenario de este slice.
+    UN FALLO A MITAD DE LA PAGINACIÓN ABORTA en lugar de devolver lo leído: un lote incompleto se ingiere sin
+    ruido y deja huecos que nadie ve, mientras que un fallo lo reporta el workflow. Es la decisión menos
+    obvia del cambio y tiene su mutante.
+    NO ES UN SLICE NUEVO aunque el roadmap lo llamara `ventana-de-ingesta-robusta`: su trigger sería el mismo
+    cron horario que `ingesta-por-id-de-slack`, y el protocolo prefiere modificar a duplicar (§3).
+    LA OTRA MITAD DEL PUNTO 4.2 YA ESTABA HECHA: `users_list` pagina desde el slice de identidad. El roadmap
+    estaba desactualizado, no el código.
+    VERIFICADO CONTRA SLACK REAL (solo lectura, sin volcar texto al repo): 123 mensajes en dos páginas, 81
+    resultados, jornadas #1660 a #1674, frente a los ~5 días de la ventana anterior.

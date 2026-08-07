@@ -9,6 +9,8 @@ real. Un doble más permisivo que producción ya dejó pasar un fallo que revent
 
 from __future__ import annotations
 
+import datetime
+
 import pytest
 
 MOTIVO = "TDD rojo — la ingesta todavía emite el nombre mostrado"
@@ -201,3 +203,126 @@ def test_la_fila_no_lleva_columnas_que_no_le_corresponden():
         "raw_text",
         "pattern",
     }
+
+
+# ── la ventana de ingesta ───────────────────────────────────────────────────────────────────────
+#
+# Doble del cliente de Slack. Imita lo que importa de `conversations.history`: que devuelve del más nuevo
+# al más viejo, que pagina con cursor, y que respeta `oldest` como corte.
+
+
+class SlackFalso:
+    """Un canal con mensajes fechados, paginado como lo hace Slack de verdad."""
+
+    def __init__(self, mensajes: list[dict], por_pagina: int = 100, falla_en: int | None = None) -> None:
+        #: del más nuevo al más viejo, que es el orden en que la API los devuelve
+        self.mensajes = sorted(mensajes, key=lambda m: float(m["ts"]), reverse=True)
+        self.por_pagina = por_pagina
+        self.falla_en = falla_en  # número de página (1-indexado) en la que revienta
+        self.llamadas = 0
+
+    def conversations_history(self, channel: str, limit: int = 100, cursor=None, oldest=None, **resto):
+        self.llamadas += 1
+        if self.falla_en is not None and self.llamadas == self.falla_en:
+            from slack_sdk.errors import SlackApiError
+
+            raise SlackApiError("boom", {"error": "ratelimited"})
+
+        visibles = [m for m in self.mensajes if oldest is None or float(m["ts"]) >= float(oldest)]
+        desde = int(cursor or 0)
+        pagina = visibles[desde : desde + min(limit, self.por_pagina)]
+        siguiente = desde + len(pagina)
+        hay_mas = siguiente < len(visibles)
+        return {
+            "messages": pagina,
+            "response_metadata": {"next_cursor": str(siguiente) if hay_mas else ""},
+        }
+
+
+def mensaje(ts: float, texto: str = "La palabra del día #1700 3/6", usuario: str = "U0ZGXL725") -> dict:
+    return {"ts": f"{ts:.6f}", "user": usuario, "text": texto}
+
+
+AHORA = datetime.datetime(2026, 8, 7, 12, 0, tzinfo=datetime.timezone.utc)
+
+
+def hace(dias: float) -> float:
+    return (AHORA - datetime.timedelta(days=dias)).timestamp()
+
+
+# @scenarios la-ventana-se-mide-en-dias-no-en-mensajes
+def test_la_ventana_es_una_fecha_de_corte_y_no_un_numero_de_mensajes():
+    """El canal tiene mediana de 10 mensajes al día y máximo 27: contar mensajes hace que la cobertura
+    dependa de lo hablador que esté el grupo. La peor racha de tres días son 52 mensajes."""
+    from tools.extract_slack import VENTANA_EN_DIAS, corte_de_la_ventana
+
+    corte = corte_de_la_ventana(AHORA)
+
+    assert float(corte) == pytest.approx(hace(VENTANA_EN_DIAS), abs=1)
+    assert VENTANA_EN_DIAS >= 7, "menos de una semana no sobrevive a un puente con el cron caído"
+
+
+# @scenarios la-fecha-de-corte-entra-por-parametro
+def test_el_corte_no_lee_el_reloj():
+    from tools.extract_slack import corte_de_la_ventana
+
+    otra = datetime.datetime(2025, 1, 15, 8, 30, tzinfo=datetime.timezone.utc)
+
+    assert corte_de_la_ventana(AHORA) != corte_de_la_ventana(otra)
+    assert corte_de_la_ventana(AHORA) == corte_de_la_ventana(AHORA)
+
+
+# @scenarios la-ventana-pagina-hasta-cubrir-los-dias
+def test_la_ventana_pagina_hasta_el_corte():
+    """120 mensajes en la ventana no caben en una página: sin paginar se perderían los más viejos."""
+    from tools.extract_slack import mensajes_de_la_ventana
+
+    canal = SlackFalso([mensaje(hace(i * 0.05), f"#{1700 + i}") for i in range(120)], por_pagina=50)
+
+    mensajes = mensajes_de_la_ventana(canal, "C1", AHORA)
+
+    assert len(mensajes) == 120, f"se han quedado {120 - len(mensajes)} mensajes sin leer"
+    assert canal.llamadas >= 3, "con 50 por página hacen falta al menos tres llamadas"
+    tiempos = [float(m["ts"]) for m in mensajes]
+    assert tiempos == sorted(tiempos), "el orden cronológico importa: la cuadrícula sigue al resultado"
+
+
+# @scenarios la-ventana-se-mide-en-dias-no-en-mensajes
+def test_lo_anterior_al_corte_no_entra():
+    from tools.extract_slack import VENTANA_EN_DIAS, mensajes_de_la_ventana
+
+    canal = SlackFalso(
+        [mensaje(hace(1)), mensaje(hace(VENTANA_EN_DIAS - 1)), mensaje(hace(VENTANA_EN_DIAS + 30))]
+    )
+
+    mensajes = mensajes_de_la_ventana(canal, "C1", AHORA)
+
+    assert len(mensajes) == 2, "el de hace más de la ventana no entra"
+
+
+# @scenarios la-ventana-se-mide-en-dias-no-en-mensajes
+def test_un_dia_muy_hablador_no_desplaza_a_los_dias_anteriores():
+    """El fallo que la ventana por mensajes tenía: un día con 27 mensajes se comía los días previos."""
+    from tools.extract_slack import mensajes_de_la_ventana
+
+    ruido = [mensaje(hace(0.1 + i * 0.001), "vaya palabra") for i in range(60)]
+    resultado_viejo = mensaje(hace(4), "La palabra del día #1669 4/6")
+    canal = SlackFalso(ruido + [resultado_viejo], por_pagina=50)
+
+    mensajes = mensajes_de_la_ventana(canal, "C1", AHORA)
+
+    assert any(m["text"].startswith("La palabra del día #1669") for m in mensajes), (
+        "60 mensajes de charla en un día no pueden tapar un resultado de hace cuatro"
+    )
+
+
+# @scenarios un-fallo-a-mitad-de-la-paginacion-no-emite-un-lote-a-medias
+def test_un_fallo_en_la_segunda_pagina_aborta_en_lugar_de_emitir_medio_lote():
+    from slack_sdk.errors import SlackApiError
+
+    from tools.extract_slack import mensajes_de_la_ventana
+
+    canal = SlackFalso([mensaje(hace(i * 0.05)) for i in range(120)], por_pagina=50, falla_en=2)
+
+    with pytest.raises(SlackApiError):
+        mensajes_de_la_ventana(canal, "C1", AHORA)

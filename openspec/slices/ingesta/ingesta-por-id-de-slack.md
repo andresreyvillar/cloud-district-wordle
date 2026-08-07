@@ -63,6 +63,29 @@ acordada para ella
 **WHEN** el mismo mensaje se procesa dos veces, como ocurre cada hora con la ventana de 50
 **THEN** sigue habiendo una sola fila para ese jugador y ese puzzle.
 
+### la-ventana-se-mide-en-dias-no-en-mensajes
+**WHEN** se decide qué mensajes leer del canal
+**THEN** el corte es **una fecha**, no un número de mensajes: se leen todos los del canal desde hace N días.
+
+Medido sobre el histórico: el canal tiene una mediana de 10 mensajes al día y un máximo de 27, así que una
+ventana de 50 mensajes cubre cinco días **de media** y **no cubre tres** en la peor racha, que son 52
+mensajes. Contar mensajes hace que la cobertura dependa de lo hablador que esté el grupo, que es justo lo
+contrario de lo que se quiere de una ventana de seguridad.
+
+### la-ventana-pagina-hasta-cubrir-los-dias
+**WHEN** los mensajes de la ventana no caben en una página de la API
+**THEN** se piden las páginas necesarias hasta llegar al corte, en lugar de quedarse con la primera.
+
+### la-fecha-de-corte-entra-por-parametro
+**WHEN** se calcula el corte de la ventana
+**THEN** la fecha actual entra por parámetro y no se lee del reloj dentro del cálculo, de modo que el corte
+es verificable con una fecha fija (§10).
+
+### un-fallo-a-mitad-de-la-paginacion-no-emite-un-lote-a-medias
+**WHEN** la API falla al pedir una página que no es la primera
+**THEN** la ejecución falla en lugar de emitir los mensajes que sí llegaron: un lote incompleto se ingiere
+sin ruido y deja huecos que nadie ve, mientras que un fallo lo reporta el workflow.
+
 ### mensaje-sin-autor-no-inventa-identidad
 **WHEN** un mensaje de resultado no trae autor
 **THEN** no se guarda con una identidad inventada; se descarta y se declara en el recuento.

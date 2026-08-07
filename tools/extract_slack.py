@@ -14,10 +14,10 @@ jugador en dos.
 lo necesitan: creado al importar, el módulo no se podía importar en un test.
 """
 
+import datetime as dt
 import os
 import ssl
 import sys
-from datetime import datetime
 
 from dotenv import load_dotenv
 from slack_sdk import WebClient
@@ -28,8 +28,18 @@ load_dotenv()
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
 
-#: la ventana de la ejecución horaria. Cubre unos 5 días de resultados; ampliarla es la Fase 4.2.
-VENTANA = 50
+#: La ventana de la ejecución horaria, **en días**. No en mensajes: medido sobre el histórico, el canal
+#: tiene una mediana de 10 mensajes al día y un máximo de 27, así que una ventana de 50 mensajes cubre cinco
+#: días de media y **no cubre tres** en la peor racha (52 mensajes). Contar mensajes hace que la cobertura
+#: dependa de lo hablador que esté el grupo, que es lo contrario de lo que se le pide a una red de seguridad.
+#:
+#: Catorce días cubren la peor racha de siete del histórico (79 mensajes) con margen, y sobreviven a un
+#: puente con Actions caído. Reingerir lo mismo no duplica —el upsert va por `(slack_user_id, wordle_id)`—,
+#: así que el único coste de una ventana ancha son un par de páginas más de API.
+VENTANA_EN_DIAS = 14
+
+#: Mensajes por página. Es el máximo cómodo de `conversations.history`.
+POR_PAGINA = 100
 
 CAMPO = "|"
 MARCA = "USER_START"
@@ -101,25 +111,59 @@ def linea_de_mensaje(mensaje: dict, nombres: dict) -> str | None:
     if not identificador:
         return None
 
-    hora = datetime.fromtimestamp(float(mensaje.get("ts", 0))).strftime("%H:%M")
+    hora = dt.datetime.fromtimestamp(float(mensaje.get("ts", 0))).strftime("%H:%M")
     nombre = nombres.get(identificador, identificador)
     texto = mensaje.get("text", "")
     return CAMPO.join([MARCA, identificador, nombre, hora, texto])
 
 
-def fetch_messages() -> str:
-    """El lote de líneas del canal, en orden cronológico."""
+def corte_de_la_ventana(ahora: dt.datetime, dias: int = VENTANA_EN_DIAS) -> str:
+    """El `oldest` de la ventana, como marca de tiempo de Slack.
+
+    `ahora` entra por parámetro: sin eso el corte no se puede verificar con una fecha fija (§10).
+    """
+    return f"{(ahora - dt.timedelta(days=dias)).timestamp():.6f}"
+
+
+def mensajes_de_la_ventana(cli, canal: str, ahora: dt.datetime) -> list[dict]:
+    """Todos los mensajes del canal desde el corte, en orden cronológico, paginando.
+
+    **Si una página falla, se propaga el error.** Devolver lo que ya se había leído emitiría un lote
+    incompleto que se ingiere sin ruido y deja huecos que nadie ve; un fallo lo reporta el workflow.
+    """
+    oldest = corte_de_la_ventana(ahora)
+    mensajes: list[dict] = []
+    cursor = None
+
+    while True:
+        respuesta = cli.conversations_history(
+            channel=canal, limit=POR_PAGINA, cursor=cursor, oldest=oldest
+        )
+        mensajes += respuesta["messages"]
+        cursor = (respuesta.get("response_metadata") or {}).get("next_cursor")
+        if not cursor:
+            break
+
+    # Slack devuelve del más nuevo al más viejo; el orden cronológico importa porque las filas de la
+    # cuadrícula se asocian al último resultado leído.
+    return sorted(mensajes, key=lambda m: float(m["ts"]))
+
+
+def fetch_messages(ahora: dt.datetime | None = None) -> str:
+    """El lote de líneas del canal, en orden cronológico.
+
+    `ahora` se resuelve aquí, que es el borde del sistema: de aquí para dentro la fecha viaja por parámetro.
+    """
+    ahora = ahora or dt.datetime.now(dt.timezone.utc)
     cli = cliente()
     nombres = directorio(cli)
     try:
-        respuesta = cli.conversations_history(channel=CHANNEL_ID, limit=VENTANA)
+        mensajes = mensajes_de_la_ventana(cli, CHANNEL_ID, ahora)
     except SlackApiError as error:
         print(f"Error conectando a Slack: {error.response['error']}", file=sys.stderr)
         sys.exit(1)
 
-    # Slack devuelve del más nuevo al más viejo; el orden cronológico importa porque las filas de la
-    # cuadrícula se asocian al último resultado leído.
-    lineas = [linea_de_mensaje(mensaje, nombres) for mensaje in reversed(respuesta["messages"])]
+    lineas = [linea_de_mensaje(mensaje, nombres) for mensaje in mensajes]
     return "\n".join(linea for linea in lineas if linea is not None)
 
 
