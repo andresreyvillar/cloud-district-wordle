@@ -51,10 +51,15 @@ def test_cada_objetivo_trae_su_url_y_sus_dos_selectores():
 def test_el_enlace_del_mensaje_es_el_del_objetivo_capturado():
     from tools.post_ranking import OBJETIVOS, comentario
 
-    texto = comentario("", OBJETIVOS["v2"])
+    # `in` dejó de servir el 2026-08-07: la v2 se publica en /2/ del mismo host, así que la URL de la v1 es
+    # **prefijo** de la de la v2 y "no está contenida" es imposible de exigir. Se comprueba el enlace exacto,
+    # que es más fuerte: dice que el enlace ES el del objetivo, no solo que lo menciona.
+    de_la_v2 = comentario("", OBJETIVOS["v2"])
+    de_la_v1 = comentario("", OBJETIVOS["v1"])
 
-    assert OBJETIVOS["v2"].url in texto
-    assert OBJETIVOS["v1"].url not in texto, "una foto de una web y un enlace a otra"
+    assert f"👉 {OBJETIVOS['v2'].url}" in de_la_v2
+    assert f"👉 {OBJETIVOS['v1'].url}" in de_la_v1
+    assert OBJETIVOS["v2"].url not in de_la_v1, "capturando la v1 y enlazando a la v2"
 
 
 # @scenarios el-enlace-del-mensaje-apunta-a-donde-la-captura

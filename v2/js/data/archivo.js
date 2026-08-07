@@ -7,6 +7,8 @@
  * viene materializado (ADR 0008)—; agrupan y suman lo que ya está publicado.
  */
 
+import { conBase } from '../router.js';
+
 /** El identificador de la temporada histórica. El mismo que `tools/seasons.py::TEMPORADA_CERO`. */
 const TEMPORADA_CERO = '0';
 
@@ -27,7 +29,7 @@ export function archivo(instantaneas) {
 
       return {
         temporada,
-        ruta: `/t/${temporada}`,
+        ruta: conBase(`/t/${temporada}`),
         etiqueta: carga.etiqueta ?? temporada,
         ordinal: carga.ordinal ?? 0,
         estado: carga.estado ?? null,

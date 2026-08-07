@@ -1,7 +1,22 @@
+// El Worker que publica las DOS webs desde el mismo host:
+//
+//     https://cloud-district-wordle.clouddistrict.workers.dev/      → la v1
+//     https://cloud-district-wordle.clouddistrict.workers.dev/2/    → la v2
+//
+//   npx wrangler deploy
+//
+// `main` reparte por ruta (worker/index.js) y **solo se ejecuta en las rutas que no encajan con un asset**,
+// así que la v1 se sigue sirviendo sin pasar por código. `binding` es lo que permite que el script pida
+// assets; sin él, `env.ASSETS` no existe.
+//
+// NO se pone `not_found_handling: single-page-application`: aplicaría al Worker entero y una ruta inexistente
+// de la v1 devolvería una página con 200. El fallback de SPA se hace en el script, y solo para /2/.
 {
   "name": "cloud-district-wordle",
   "compatibility_date": "2026-01-26",
+  "main": "worker/index.js",
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS"
   }
 }

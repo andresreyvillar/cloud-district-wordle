@@ -1,6 +1,6 @@
 """Servidor local de la v2.0, con el mismo fallback que el Worker.
 
-    python3 tools/serve_v2.py            # http://localhost:8788
+    python3 tools/serve_v2.py            # http://localhost:8788/2/
     python3 tools/serve_v2.py --puerto 9000
 
 Existe porque `python3 -m http.server` **no sirve para probar esto**: devuelve 404 en `/t/2026-07` y el
@@ -23,10 +23,23 @@ RAIZ = Path(__file__).resolve().parent.parent / "v2"
 PUERTO = 8788
 
 
+#: El prefijo bajo el que se publica la v2. **Tiene que ser el mismo aquí y en producción**: si en local
+#: colgara de la raíz, una ruta profunda (`/2/t/2026-08`) resolvería los recursos contra otro sitio y el
+#: fallo solo aparecería al desplegar.
+PREFIJO = "/2/"
+
+
 class ManejadorSPA(SimpleHTTPRequestHandler):
-    """Sirve archivos reales y, para todo lo demás, `index.html` con 200."""
+    """Sirve archivos reales bajo el prefijo y, para todo lo demás, `index.html` con 200."""
 
     def send_head(self):  # noqa: N802 - la firma es de la clase base
+        if self.path in ("/", "/2"):
+            self.send_response(301)
+            self.send_header("Location", PREFIJO)
+            self.end_headers()
+            return None
+        if self.path.startswith(PREFIJO):
+            self.path = "/" + self.path[len(PREFIJO):]
         ruta = Path(self.translate_path(self.path))
         if not ruta.exists() or (ruta.is_dir() and not (ruta / "index.html").exists()):
             self.path = "/index.html"

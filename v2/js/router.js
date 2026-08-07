@@ -19,6 +19,41 @@
  * los enlaces que la gente comparte en el canal (ADR 0006, actualización del 2026-08-05).
  */
 
+/**
+ * El prefijo bajo el que se sirve la web, con barra final. `/2/` en producción, y **también `/2/` en local**:
+ * si difirieran, los recursos de una ruta profunda (`/2/t/2026-08`) se resolverían contra el sitio
+ * equivocado y la parity local-producción se perdería justo donde más duele.
+ *
+ * Vive en estado de módulo y lo fija el borde (`app.js`, desde `document.baseURI`) en lugar de viajar como
+ * parámetro por seis módulos: es un detalle de despliegue, no un dato del dominio, y enhebrarlo por todas
+ * las firmas ensuciaría el código del juego para hablar de dónde está montado.
+ */
+let base = "/";
+
+/** Fija el prefijo. Lo llama el borde una vez, y los tests cuando quieren comprobar el otro caso. */
+export function configurarBase(valor) {
+  base = valor.endsWith("/") ? valor : `${valor}/`;
+}
+
+/** El prefijo actual, con barra final. */
+export function baseActual() {
+  return base;
+}
+
+/** Quita el prefijo de una ruta del navegador. `/2/hoy` → `/hoy`. */
+export function sinBase(ruta) {
+  const limpia = String(ruta || "/");
+  if (base !== "/" && (limpia === base.slice(0, -1) || limpia.startsWith(base))) {
+    return `/${limpia.slice(base.length)}`;
+  }
+  return limpia;
+}
+
+/** La ruta de un recurso estático, bajo el prefijo. `assets/icons/x.svg` → `/2/assets/icons/x.svg`. */
+export function recurso(relativa) {
+  return `${base}${String(relativa).replace(/^\//, "")}`;
+}
+
 /** Una temporada es `AAAA-MM` con mes real, o `0` — la temporada histórica. `2026-13` no es una temporada. */
 export const TEMPORADA_RE = /^(0|\d{4}-(0[1-9]|1[0-2]))$/;
 
@@ -45,7 +80,7 @@ export const VISTAS = Object.freeze({
  * desaparece —cualquier ruta devuelve el documento con 200— así que detectarla es cosa del cliente.
  */
 export function resolver(ruta) {
-  const segmentos = String(ruta || '/')
+  const segmentos = sinBase(ruta)
     .split('?')[0]
     .split('#')[0]
     .split('/')
@@ -105,6 +140,16 @@ export function seccionDe(vista) {
 
 /** La ruta canónica de una vista. Es la inversa de `resolver`, y sirve para construir enlaces. */
 export function rutaDe(destino) {
+  return conBase(_rutaInterna(destino));
+}
+
+/** La ruta con el prefijo puesto. `/hoy` → `/2/hoy`, y `/` → `/2/`. */
+export function conBase(interna) {
+  const limpia = String(interna).replace(/^\//, "");
+  return `${base}${limpia}`;
+}
+
+function _rutaInterna(destino) {
   switch (destino.vista) {
     case VISTAS.TEMPORADA:
       return destino.temporada ? `/t/${destino.temporada}` : '/';

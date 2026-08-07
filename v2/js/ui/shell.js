@@ -5,7 +5,7 @@
  * el contenedor que este módulo prepara.
  */
 
-import { VISTAS, rutaDe, seccionDe } from '../router.js';
+import { VISTAS, conBase, rutaDe, seccionDe } from '../router.js';
 
 const SECCIONES = [
   { vista: VISTAS.TEMPORADA, etiqueta: 'Temporada' },
@@ -78,7 +78,7 @@ export function pintarDesconocida(contenedor, destino) {
       <p class="etiqueta">ruta no reconocida</p>
       <h2>${escapar(destino.ruta ?? '')}</h2>
       <p class="nota">Con el fallback SPA no hay 404, así que esto lo detecta el cliente.
-      <a href="/">Volver a la temporada en curso</a>.</p>
+      <a href="${conBase('/')}">Volver a la temporada en curso</a>.</p>
     </section>`;
 }
 

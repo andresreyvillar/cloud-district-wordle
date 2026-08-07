@@ -34,10 +34,13 @@ requirements-dev.txt
 # Snapshots de sesión (contexto de trabajo, no de producto)
 context-snapshot-*.md
 
-# La v2.0 tiene su propio Worker (wrangler.v2.jsonc). El de la v1 publica la raíz del repo, así que sin
-# esta línea serviría la v2 a medio hacer en /v2/index.html.
-v2/
+# La v2.0 se publica en /2/ del MISMO Worker (worker/index.js reescribe /2/… → /v2/…), así que sus ficheros
+# sí se suben. Consecuencia declarada: quedan también accesibles en /v2/…, porque esas rutas encajan con un
+# asset y el script no llega a verlas. Son los mismos ficheros públicos, no un agujero.
 wrangler.v2.jsonc
+
+# El script del Worker se empaqueta como código, no se sirve como fichero.
+worker/
 
 # Repo metadata
 .git/

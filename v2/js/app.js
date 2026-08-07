@@ -5,7 +5,7 @@
  * calcula recibe la temporada y los resultados por parámetro, y por eso se puede verificar con datos fijos.
  */
 
-import { resolver, VISTAS } from './router.js';
+import { conBase, configurarBase, resolver, VISTAS } from './router.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarReglas } from './ui/reglas.js';
 import { pintarDatos } from './ui/datos.js';
@@ -108,6 +108,11 @@ function navegar(ruta, resultados, instantaneas) {
 }
 
 export async function arrancar() {
+  // El prefijo se lee del propio documento: `<base href="/2/">` lo declara y aquí se recoge, así que la web
+  // funciona montada donde sea sin recompilar nada ni configurar nada. Es lo primero que pasa, antes de que
+  // cualquier vista construya un enlace.
+  configurarBase(new URL('.', document.baseURI).pathname);
+
   const { vista } = elementos();
   pintarCargando(vista);
 
@@ -132,7 +137,7 @@ export async function arrancar() {
 
   document.querySelector('[data-selector-temporada]').addEventListener('change', (evento) => {
     const temporada = evento.target.value;
-    navegar(temporada ? `/t/${temporada}` : '/', resultados, instantaneas);
+    navegar(conBase(temporada ? `/t/${temporada}` : '/'), resultados, instantaneas);
   });
 
   window.addEventListener('popstate', () => {

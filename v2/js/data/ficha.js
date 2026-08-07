@@ -12,6 +12,7 @@
  * arma es el palmarés, cruzando las instantáneas que la web ya tiene cargadas.
  */
 
+import { conBase } from '../router.js';
 import { escalaDeDistribucion } from './escala.js';
 
 /** Los decimales con los que se publica una diferencia de medias. Más no significan nada al leerlas. */
@@ -24,7 +25,7 @@ function redondear(valor, decimales = DECIMALES) {
 
 /** La ruta canónica de una ficha. El identificador es el de Slack: un renombre no rompe el enlace. */
 export function rutaDeFicha(temporada, jugador) {
-  return `/t/${temporada}/j/${jugador}`;
+  return conBase(`/t/${temporada}/j/${jugador}`);
 }
 
 function filaDe(carga, jugador) {

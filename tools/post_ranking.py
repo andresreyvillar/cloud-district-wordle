@@ -62,7 +62,8 @@ OBJETIVOS: dict[str, Objetivo] = {
     ),
     "v2": Objetivo(
         nombre="v2",
-        url=_url("cloud-district-wordle-2"),
+        # La v2 no es otro host: es /2/ del mismo Worker (decisión del 2026-08-07, ver worker/index.js).
+        url=_url("cloud-district-wordle") + "2/",
         espera=".liga .fila",
         captura=".liga",
     ),

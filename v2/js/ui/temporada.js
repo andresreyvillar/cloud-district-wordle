@@ -11,6 +11,7 @@
  * juego sin decidir, dos de ellas bloqueadas por el grupo.
  */
 
+import { recurso } from '../router.js';
 import { alturaDeIntentos } from '../data/escala.js';
 import { rutaDeFicha } from '../data/ficha.js';
 import { escapar } from './shell.js';
@@ -167,7 +168,7 @@ function logros(carga) {
     return `
       <article class="logro ${quienes.length ? 'ganado' : ''}">
         <header>
-          <svg class="icono" width="30" height="30" aria-hidden="true"><use href="/assets/icons/logros.svg#${logro.id}"></use></svg>
+          <svg class="icono" width="30" height="30" aria-hidden="true"><use href="${recurso(`assets/icons/logros.svg#${logro.id}`)}"></use></svg>
           <span class="estado">${escapar(estado)}</span>
         </header>
         <h3>${escapar(logro.nombre)}</h3>

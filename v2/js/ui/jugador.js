@@ -8,6 +8,7 @@
  * jornadas que no jugaste. Aquí sí.
  */
 
+import { conBase, recurso } from '../router.js';
 import { alturaEnEscala, escalaDeDistribucion } from '../data/escala.js';
 import { ficha } from '../data/ficha.js';
 import { escapar } from './shell.js';
@@ -201,7 +202,7 @@ function medallas(f) {
       (clave) => `
       <article class="logro ganado">
         <header>
-          <svg class="icono" width="30" height="30" aria-hidden="true"><use href="/assets/icons/logros.svg#${escapar(clave)}"></use></svg>
+          <svg class="icono" width="30" height="30" aria-hidden="true"><use href="${recurso(`assets/icons/logros.svg#${escapar(clave)}`)}"></use></svg>
         </header>
         <h3>${escapar(LOGROS[clave] ?? clave)}</h3>
       </article>`,
@@ -219,7 +220,7 @@ function palmaresBloque(lista) {
   const filas = lista
     .map(
       (t) => `
-      <a class="fila${t.actual ? ' actual' : ''}" href="/t/${escapar(t.temporada)}/j/${escapar(t.jugador ?? '')}">
+      <a class="fila${t.actual ? ' actual' : ''}" href="${escapar(conBase(`/t/${t.temporada}/j/${t.jugador ?? ''}`))}">
         <span class="pos">${t.clasificado ? `${t.posicion}º` : '—'}</span>
         <span class="nom">${escapar(t.etiqueta)}</span>
         <span class="num suave">${t.jugados}/${t.dias}</span>
@@ -243,7 +244,7 @@ export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
   if (!f.existe) {
     const otras = f.otras.length
       ? `<p>Sí tiene resultados en ${f.otras
-          .map((t) => `<a href="/t/${escapar(t.temporada)}/j/${escapar(jugador)}">${escapar(t.etiqueta)}</a>`)
+          .map((t) => `<a href="${escapar(conBase(`/t/${t.temporada}/j/${jugador}`))}">${escapar(t.etiqueta)}</a>`)
           .join(' · ')}.</p>`
       : '<p>No hay resultados suyos en ninguna temporada.</p>';
     contenedor.innerHTML = `
@@ -251,7 +252,7 @@ export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
         <h1>${escapar(f.nombre)}</h1>
         <p class="serif">No jugó ninguna jornada de ${escapar(f.etiqueta)}.</p>
         ${otras}
-        <p><a href="/t/${escapar(temporada)}">Volver al marcador</a></p>
+        <p><a href="${escapar(conBase(`/t/${temporada}`))}">Volver al marcador</a></p>
       </section>`;
     return;
   }
@@ -282,6 +283,6 @@ export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
       ${desglose(f)}
       ${medallas(f)}
       ${palmaresBloque(conJugador)}
-      <p class="volver"><a href="/t/${escapar(temporada)}">← Volver al marcador de ${escapar(f.etiqueta)}</a></p>
+      <p class="volver"><a href="${escapar(conBase(`/t/${temporada}`))}">← Volver al marcador de ${escapar(f.etiqueta)}</a></p>
     </section>`;
 }
