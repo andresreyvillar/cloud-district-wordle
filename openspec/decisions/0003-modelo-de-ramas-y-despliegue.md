@@ -12,7 +12,15 @@ afecta: [todas]
 En `pga-cms` el flujo es `feat/… → develop → main`, con `main` protegida y el despliegue por pipeline
 aprobado. Aquí la situación es distinta y hay que decirla con precisión:
 
-- **Cloudflare publica al push a `main`**: los assets estáticos de la raíz se despliegan sin
+> **CORRECCIÓN del 2026-08-07.** La premisa «Cloudflare publica al push a `main`» **es falsa**, y se
+> escribió sin comprobarla. Verificado contra Cloudflare: no hay Workers Builds, ningún workflow
+> despliega, y los diez despliegues del Worker son `wrangler deploy` lanzados a mano. Lo que sí corre
+> desde `main` son los dos cron de GitHub Actions. Es decir: **mergear cambia lo que el pipeline ejecuta
+> —y eso escribe en producción— pero no publica la web.** El resto del ADR (una rama por change, merge
+> `--no-ff`, nunca trabajar en `main`) se mantiene: sus motivos no dependen de esta premisa. Detalle y
+> pruebas en el [ADR 0005](0005-hosting-y-convivencia-v1-v2.md).
+
+- **Cloudflare publica al push a `main`** ~~(falso, ver corrección arriba)~~: los assets estáticos de la raíz se despliegan sin
   intervención (`wrangler.jsonc` + `.assetsignore`).
 - **Los workflows programados corren desde `main`**: `update_stats.yml` (cada hora) y
   `post_ranking.yml` (17:00 UTC) ejecutan la versión de `main`, con los secrets del repo. Es decir,

@@ -108,17 +108,32 @@ La ausencia de políticas de escritura es lo que sostiene la seguridad del model
 clave publicable y con ella solo se puede leer. Cualquier política nueva de escritura rompería esa
 garantía y necesita su propio ADR.
 
-**Mecanismo de deploy: pendiente de confirmar.** El repo no tiene workflow de despliegue, así que el
-deploy lo dispara Cloudflare al detectar el push (Workers Builds conectado al repositorio) `?`. Hay
-dos formas de montar el segundo Worker y la elección depende de cómo esté configurado hoy:
+**Mecanismo de deploy: CONFIRMADO el 2026-08-07 contra Cloudflare.** La suposición de este ADR era
+falsa: no hay Workers Builds, y **el push a `main` no despliega nada**.
 
-- **Environment** en `wrangler.jsonc` (`[env.v2] name = "wordle-v2"`), desplegado con
-  `wrangler deploy --env v2`. Requiere que el proyecto de Workers Builds ejecute ese comando `?`.
-- **Segundo proyecto de Workers Builds** apuntando a la rama de la v2.0 con su propio nombre de
-  Worker. Más simple si el deploy actual es el `wrangler deploy` por defecto `?`.
+| Comprobado | Cómo |
+|---|---|
+| Cuenta `Andres.rey@clouddistrict.com's Account` (`c266e401…`), subdominio `andres-rey` | `wrangler whoami` |
+| Los 10 despliegues del Worker figuran como `Source: Unknown (deployment)`, que es lo que muestra un `wrangler deploy` desde una máquina. Ninguno viene de un build | `wrangler deployments list` |
+| **Ningún workflow del repo despliega**: `.github/workflows/` solo tiene los dos cron del pipeline | `grep` |
+| El último deploy (2026-05-26 15:25 UTC) es de minutos después del último commit de `main` (17:24 CEST), así que lo publicado **coincide** con `main` — por costumbre de quien despliega, no por automatismo | `git log` + deployments |
 
-Los tres `?` se resuelven mirando la configuración real en Cloudflare (dashboard o MCP autenticado)
-antes de escribir el pack que lo implemente. **No se elige el mecanismo a ciegas.**
+**Consecuencia, y es la importante:** *mergear a `main` NO publica la web*. Los cron sí corren desde
+`main` (son GitHub Actions), pero los assets solo se publican cuando alguien ejecuta `wrangler deploy`.
+Corrige lo que afirmaban el [ADR 0003](0003-modelo-de-ramas-y-despliegue.md) y `CLAUDE.md`.
+
+**Decisión del segundo Worker, ya con datos:** un Worker aparte con su propio config
+(`wrangler.v2.jsonc`, `npx wrangler deploy --config wrangler.v2.jsonc`). La objeción que tenía la
+opción —«requiere que Workers Builds ejecute ese comando»— **desaparece**, porque no hay Workers Builds:
+el deploy es un comando que se lanza a mano, y admite un `--config` sin ceremonia. La alternativa del
+`[env.v2]` se descarta: comparte nombre base y `.assetsignore` con la v1, y el objetivo es no tocarla.
+
+**El tercer `?`, el del subdominio, sigue abierto y no se puede cerrar por CLI.** `andres-rey` es el
+subdominio **de la cuenta**, no del Worker: cambiarlo renombra el host de todos los Workers de la cuenta
+y rompe la URL que el bot publica cada día. Además es único globalmente, y no hay endpoint que consulte
+disponibilidad sin escribir. Si se quiere una URL corporativa, el camino es un **dominio propio**
+(`wordle.clouddistrict.com`) sobre una zona que CloudDistrict gestione en Cloudflare — eso sí permite
+repartir por ruta, que `workers.dev` no.
 
 ## Consecuencias
 
@@ -136,8 +151,8 @@ borrando `player_name`. Y hay dos deploys que vigilar.
 es reversible en un commit. Hasta entonces la v2.0 existe, es visitable y no molesta a nadie.
 
 **Queda pendiente y con dueño:**
-1. Confirmar el mecanismo de deploy actual en Cloudflare (los tres `?` de arriba) **antes** de escribir
-   el pack que cree el segundo Worker. Nada de elegir el mecanismo a ciegas.
+1. ~~Confirmar el mecanismo de deploy actual en Cloudflare~~ — **hecho el 2026-08-07**, ver arriba. Queda
+   solo la pregunta del subdominio, que es de dominio propio y no bloquea el segundo Worker.
 2. La URL de la captura de Slack está hardcodeada en un script; al pasar a la v2.0 conviene que sea
    configurable (variable de entorno) en lugar de una constante — candidato a Requirement de
    `publicacion`, no a decisión de este ADR.

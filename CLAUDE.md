@@ -15,8 +15,11 @@ verdad; el código es una derivada demostrada por tests. Ver [ADR 0001](openspec
 - **Los datos son de personas reales.** La tabla tiene los resultados de compañeros identificables y
   el repositorio es **público**. Nada de escrituras exploratorias en producción, nada de volcar
   conversaciones del canal al repo.
-- **Mergear a `main` despliega**: Cloudflare publica los assets y los cron corren desde `main`
-  ([ADR 0003](openspec/decisions/0003-modelo-de-ramas-y-despliegue.md)).
+- **Mergear a `main` cambia lo que el pipeline ejecuta, pero NO publica la web.** Los dos cron son
+  GitHub Actions y corren desde `main`, así que al mergear el siguiente cron escribe en Supabase con el
+  código nuevo. Los assets, en cambio, se publican **a mano** con `npx wrangler deploy` — comprobado
+  contra Cloudflare el 2026-08-07: no hay Workers Builds ni workflow de despliegue
+  ([ADR 0005](openspec/decisions/0005-hosting-y-convivencia-v1-v2.md), mecanismo confirmado).
 - Specs, slices y documentación en español; identificadores y código en inglés. Palabras reservadas
   del esquema sin traducir (`WHEN`, `THEN`, `## ADDED Requirements`, claves de frontmatter).
 
@@ -113,7 +116,8 @@ Presente atemporal, honesto con los errores.
 Decisión completa en [ADR 0003](openspec/decisions/0003-modelo-de-ramas-y-despliegue.md).
 
 ```
-feat/<change-id> · chore/openspec-slice-<slug>  ──PR──▶  main  ──▶  despliegue automático
+feat/<change-id> · chore/openspec-slice-<slug>  ──PR──▶  main  ──▶  los cron ya corren con el código nuevo
+                                                             (la web se publica a mano: wrangler deploy)
 ```
 
 - **Nunca se trabaja en `main`.** Toda autoría e implementación va en su rama.
