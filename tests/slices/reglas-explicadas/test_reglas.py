@@ -46,11 +46,37 @@ def test_el_estado_de_cada_regla_es_uno_de_los_tres_declarados():
 
 
 # @scenarios cada-regla-dice-si-se-aplica
-def test_el_modelo_de_imputacion_consta_como_acordado_sin_aplicar():
-    """No está implementado, y presentarlo como vigente sería mentir sobre cómo se calcula la tabla."""
-    from tools.rules import busca
+def test_el_modelo_de_imputacion_consta_como_aplicado_y_lo_esta_de_verdad():
+    """El estado de una regla no se cree: se comprueba contra el cálculo.
 
-    assert busca("imputacion-por-dificultad").estado == "acordada-sin-aplicar"
+    Este test decía lo contrario —que la imputación estaba acordada sin aplicar— y era cierto cuando se
+    escribió. Se implementó el 2026-08-05 y el catálogo se quedó atrás durante dos días diciendo que la
+    tabla no imputaba mientras imputaba. Por eso ahora no basta con afirmar el estado: hay que demostrarlo.
+    """
+    from tools.rules import busca
+    from tools.standings import MARGEN, clasificacion, imputar
+
+    assert busca("imputacion-por-dificultad").estado == "aplicada"
+
+    # Y el cálculo la usa de verdad: faltar un día deja una jornada imputada en la tabla.
+    #
+    # SEIS jugadores, no cinco: al quitar a uno, el día tiene que seguir llegando a la muestra mínima. Con
+    # cinco, quitar a uno dejaba la jornada en cuatro, el día salía de la temporada y no se imputaba nada
+    # — el test habría fallado por el motivo equivocado.
+    dias = ["2026-09-01", "2026-09-02"]  # martes y miércoles: los dos laborables
+    filas = [
+        {"slack_user_id": f"U{n}", "player_name": n, "wordle_id": 1700 + i, "score": 4, "date": dias[i]}
+        for i in range(2)
+        for n in ("a", "b", "c", "d", "e", "f")
+    ]
+    filas = [f for f in filas if not (f["player_name"] == "f" and f["wordle_id"] == 1701)]
+
+    tabla = {f["nombre"]: f for f in clasificacion(filas, "2026-09")}
+    ausente = tabla["f"]
+    assert ausente["dias"] == 2 and ausente["jugados"] == 1, "el fixture no produce una ausencia"
+
+    assert any(dia["imputado"] for dia in ausente["por_dia"]), "la tabla dice que imputa y no imputa"
+    assert imputar(4.0, 4.0) == 4.0 + MARGEN
 
 
 # @scenarios las-reglas-sin-decidir-se-declaran
@@ -68,19 +94,23 @@ def test_una_regla_sin_decidir_dice_que_falta_decidir():
 def test_hay_reglas_aplicadas_que_el_grupo_no_ha_votado_y_se_declara():
     """La información más incómoda de la página, y la más útil.
 
-    El grupo ha votado dos reglas —las temporadas mensuales (6 a 0) y que solo cuenten los días
-    laborables— y sin embargo se aplican muchas más. Esconderlo sería el peor uso posible de una página de
-    reglas.
+    El grupo ratificó las trece reglas del reglamento el 2026-08-07. Las **dos del modelo de participación**
+    siguen sin votar y el cálculo ya las usa: son justo las que cambian quién gana el mes.
+
+    **Este test es un cable trampa a propósito.** Si el grupo vota esas dos, se pone rojo y alguien tiene
+    que venir a actualizarlo, que es exactamente lo que debe pasar cuando cambia lo que la página afirma.
     """
     from tools.rules import busca, catalogo
 
-    assert busca("temporada-mensual").votada is True
-    assert busca("solo-dias-laborables").votada is True
+    for votada in ("temporada-mensual", "solo-dias-laborables", "temporada-cero", "fallo-cuenta-como-siete"):
+        assert busca(votada).votada is True, f"{votada} consta como no votada"
 
-    aplicadas_sin_votar = [r for r in catalogo() if r.estado == "aplicada" and not r.votada]
-    assert aplicadas_sin_votar, "si esto sale vacío, o se votó todo o el catálogo está maquillado"
-    ids = {r.id for r in aplicadas_sin_votar}
-    assert "temporada-cero" in ids
+    aplicadas_sin_votar = {r.id for r in catalogo() if r.estado == "aplicada" and not r.votada}
+
+    assert aplicadas_sin_votar == {"imputacion-por-dificultad", "sin-minimo-para-clasificar"}, (
+        f"lo aplicado sin votar ha cambiado: {aplicadas_sin_votar}. Si el grupo las ha votado, actualiza "
+        "el catálogo y este test; si no, es que alguien ha marcado como votada una regla que no lo está."
+    )
 
 
 # @scenarios los-parametros-son-los-que-el-calculo-usa

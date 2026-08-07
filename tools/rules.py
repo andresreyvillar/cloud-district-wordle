@@ -18,7 +18,9 @@ web— reintroduce exactamente el desfase que este módulo existe para evitar, a
   o si el grupo la tiene sobre la mesa (`sin-decidir`);
 - `votada`: si el grupo la aprobó en el canal.
 
-Hoy hay reglas **aplicadas y no votadas**. Esconderlo sería el peor uso posible de esta página.
+Hoy hay dos reglas **aplicadas y no votadas**, y son las dos del modelo de participación: el cálculo las usa
+y el grupo no las ha ratificado. Son justo las que cambian quién gana el mes, así que esconderlo sería el
+peor uso posible de esta página.
 """
 
 from __future__ import annotations
@@ -104,7 +106,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "que es castigar por no jugar antes de estar."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
             parametros=(
                 _p("la temporada 1 empieza", seasons.INICIO_TEMPORADAS, "seasons.INICIO_TEMPORADAS"),
             ),
@@ -138,7 +140,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "un puente. Y sin ese filtro, faltar un día en que el grupo tampoco jugó penalizaría igual."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
             parametros=(
                 _p("jugadores mínimos", seasons.MUESTRA_MINIMA_DEL_DIA, "seasons.MUESTRA_MINIMA_DEL_DIA",
                    "personas"),
@@ -156,7 +158,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "cuela en la temporada siguiente por publicarlo el 1."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
         ),
         Regla(
             id="identidad-por-id-de-slack",
@@ -171,7 +173,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "jugadores y repartía tus días entre los dos. Le pasó a alguien de verdad."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
         ),
         Regla(
             id="fallo-cuenta-como-siete",
@@ -183,7 +185,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "castiga el fallo sin convertirlo en una catástrofe."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
             parametros=(_p("valor de un fallo", badges.FALLO, "badges.FALLO", "intentos"),),
         ),
         # ── la clasificación ─────────────────────────────────────────────────────────────────────
@@ -202,10 +204,10 @@ def catalogo() -> tuple[Regla, ...]:
                 "actual jugó menos de la mitad de los días. El medio intento de margen impide que callarse "
                 "un mal resultado salga mejor que publicarlo."
             ),
-            estado=ACORDADA_SIN_APLICAR,
+            estado=APLICADA,
             votada=False,
             parametros=(
-                _p("margen", 0.5, "rules.MARGEN_DE_IMPUTACION", "intentos"),
+                _p("margen", standings.MARGEN, "standings.MARGEN", "intentos"),
                 _p("tope", badges.FALLO, "badges.FALLO", "intentos"),
             ),
         ),
@@ -224,7 +226,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "resultado de un partido ya jugado; y sin el mínimo la lideraría quien apenas jugó."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
             parametros=(
                 _p("partidas mínimas", standings.MINIMO_PARA_CLASIFICAR,
                    "standings.MINIMO_PARA_CLASIFICAR", "partidas"),
@@ -239,7 +241,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "La imputación ya impide que jugar tres días gane el mes, así que un umbral sobraría. Y "
                 "verte en tu puesto informa más que no verte."
             ),
-            estado=ACORDADA_SIN_APLICAR,
+            estado=APLICADA,
             votada=False,
         ),
         # ── las medallas ─────────────────────────────────────────────────────────────────────────
@@ -253,7 +255,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "reconocen lo que la media no ve: constancia, un día heroico, acertar a la primera."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
         ),
         Regla(
             id="medallas-se-calculan-no-se-guardan",
@@ -265,7 +267,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "declarado: si una regla cambia, tu pasado cambia con ella."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
         ),
         Regla(
             id="fondista",
@@ -277,7 +279,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "grupo: una medalla que nadie gana no la intenta nadie."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
             parametros=(
                 _p("partidas", badges.MINIMO_FONDISTA, "badges.MINIMO_FONDISTA", "partidas"),
             ),
@@ -295,7 +297,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "tres jornadas."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
             parametros=(
                 _p("días mínimos del mes", badges.MINIMO_DIAS_PARA_METRONOMO,
                    "badges.MINIMO_DIAS_PARA_METRONOMO", "días"),
@@ -313,7 +315,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "porque una gesta ya está hecha."
             ),
             estado=APLICADA,
-            votada=False,
+            votada=True,
             parametros=(
                 _p("media del día", badges.UMBRAL_DIA_IMPOSIBLE, "badges.UMBRAL_DIA_IMPOSIBLE", "intentos"),
                 _p("tus intentos", badges.RESOLVER_RAPIDO, "badges.RESOLVER_RAPIDO", "intentos o menos"),
@@ -397,11 +399,6 @@ def catalogo() -> tuple[Regla, ...]:
             falta_decidir="Quién la concede y con qué criterio, para que no sea una puerta abierta.",
         ),
     )
-
-
-#: El margen del modelo de imputación. Vive aquí porque el modelo todavía no está implementado; cuando
-#: `clasificacion-de-temporada` lo implemente, esta constante se muda a su módulo y la regla apuntará allí.
-MARGEN_DE_IMPUTACION = 0.5
 
 
 def busca(identificador: str) -> Regla:
