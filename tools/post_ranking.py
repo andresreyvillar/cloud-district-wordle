@@ -42,16 +42,27 @@ class Objetivo:
     captura: str  # el que se fotografía
 
 
+#: El subdominio de Workers. **Es de la cuenta de Cloudflare, no de cada Worker**: cambiarlo renombra el
+#: host de todos los Workers de la cuenta a la vez y **la URL anterior deja de resolver**, sin redirección.
+#: Está aquí, una sola vez, porque el renombrado tiene que poder hacerse sin dejarse una URL a medias — que
+#: es la forma en que este proyecto se ha equivocado ya tres veces (docs/lecciones.md, 2026-08-07).
+SUBDOMINIO = "andres-rey"
+
+
+def _url(worker: str) -> str:
+    return f"https://{worker}.{SUBDOMINIO}.workers.dev/"
+
+
 OBJETIVOS: dict[str, Objetivo] = {
     "v1": Objetivo(
         nombre="v1",
-        url="https://cloud-district-wordle.andres-rey.workers.dev/",
+        url=_url("cloud-district-wordle"),
         espera=".summary-cards",
         captura=".container",
     ),
     "v2": Objetivo(
         nombre="v2",
-        url="https://cloud-district-wordle-2.andres-rey.workers.dev/",
+        url=_url("cloud-district-wordle-2"),
         espera=".liga .fila",
         captura=".liga",
     ),

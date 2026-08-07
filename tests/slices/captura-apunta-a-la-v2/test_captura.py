@@ -138,3 +138,17 @@ def test_una_publicacion_correcta_termina_bien():
 
     assert codigo == 0
     assert visto["objetivo"].url in visto["texto"], "el enlace del texto es el del objetivo capturado"
+
+
+# @scenarios cada-objetivo-trae-sus-selectores
+def test_los_dos_objetivos_comparten_el_subdominio_de_la_cuenta():
+    """El subdominio es de la cuenta, no de cada Worker.
+
+    Si algún día se renombra —y el dueño ya ha dicho que le vale—, tiene que cambiar **en los dos a la vez**.
+    Con las URL escritas a mano, renombrar dejaba una apuntando a un host que ya no resuelve, y la v2 es
+    justo la que nadie mira hasta que falla.
+    """
+    from tools.post_ranking import SUBDOMINIO, OBJETIVOS
+
+    for nombre, objetivo in OBJETIVOS.items():
+        assert f".{SUBDOMINIO}.workers.dev/" in objetivo.url, f"{nombre} no usa el subdominio de la cuenta"
