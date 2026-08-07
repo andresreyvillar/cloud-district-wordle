@@ -50,7 +50,7 @@ Sin producto visible. Desbloquea todo lo demás.
 |---|---|---|---|
 | 0.1 | Confirmar el mecanismo de deploy actual en Cloudflare | investigación | Los tres `?` del [ADR 0005](../openspec/decisions/0005-hosting-y-convivencia-v1-v2.md). **Nada se escribe hasta cerrarlos** |
 | 0.2 | Crear el Worker `cloud-district-wordle-2` con fallback SPA | change pack `Slice: N/A` | `not_found_handling: single-page-application`. La v1 no se toca |
-| 0.3 | Esqueleto de la v2.0: módulos, router, arranque | change pack `Slice: N/A` | Separado del primer slice a propósito, para que el Gate 4c distinga plantilla de comportamiento |
+| ~~0.3~~ | ~~Esqueleto de la v2.0: módulos, router, arranque~~ | change pack `chore-esqueleto-v2` | **HECHO**. | Separado del primer slice a propósito, para que el Gate 4c distinga plantilla de comportamiento |
 
 ## Fase 1 — Identidad
 
