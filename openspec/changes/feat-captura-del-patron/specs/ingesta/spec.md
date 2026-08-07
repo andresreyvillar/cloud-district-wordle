@@ -14,7 +14,10 @@ se normalizan al mismo símbolo.
 
 ```yaml
 checks:
+  # Le faltaban `file:` y `pattern:`, así que el probe no podía decidir: lo cazó `checks-probe`.
   - type: regex
+    file: tools/patterns.py
+    pattern: 'CELDA_RE = re\.compile'
     describe: la fila de cuadrícula exige cinco celdas exactas
 ```
 

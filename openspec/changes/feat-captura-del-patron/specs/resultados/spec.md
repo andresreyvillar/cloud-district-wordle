@@ -46,8 +46,12 @@ recalibrará, y un veredicto persistido haría irrecuperable el histórico en ca
 
 ```yaml
 checks:
-  - type: config-key
-    key: PATTERN_ROW_SEPARATOR
+  # Era un `config-key` sin `file:`, así que no verificaba nada — lo cazó el gate `checks-probe` el
+  # 2026-08-07. Y el tipo era el equivocado: no es una clave de configuración, es una constante de Python.
+  - type: regex
+    file: tools/patterns.py
+    pattern: '^PATTERN_ROW_SEPARATOR = "/"$'
+    describe: el separador de filas del patrón es la barra
 ```
 
 #### Scenario: el patrón conserva el orden de los intentos
@@ -73,13 +77,21 @@ La unicidad la garantiza un **índice único**, no una constraint — verificado
 `idx_slack_user_wordle_unique` sobre `(slack_user_id, wordle_id)`. Es lo que hace funcionar el
 `on_conflict` del upsert. La clave primaria es `id` (uuid).
 
+El **doble que imita ese índice** no vive aquí: los tests de este slice solo parsean patrones y no escriben
+en ninguna tabla. Vive en los slices que escriben —`ingesta-por-id-de-slack` e
+`identidad-canonica-de-jugador`—, y ahí es donde el `checks:` de tipo `index` está declarado. Lo que este
+slice puede demostrar por su cuenta es que el upsert usa esa pareja como clave de conflicto, y eso es lo que
+declara:
+
 ```yaml
+# Antes había aquí un `checks: - type: index`, y el gate `checks-probe` lo tumbó el 2026-08-07 con razón:
+# reclamaba un doble que impusiera el índice en un tests_root donde no se escribe nada. La invariante es
+# cierta, pero este slice no es quien la demuestra.
 checks:
-  - type: index
-    table: wordle_results
-    name: idx_slack_user_wordle_unique
-    kind: unique
-    columns: [slack_user_id, wordle_id]
+  - type: regex
+    file: tools/add_results.py
+    pattern: '^CLAVE_DE_CONFLICTO = \("slack_user_id", "wordle_id"\)$'
+    describe: el upsert usa la pareja jugador-puzzle como clave de conflicto
 ```
 
 **Límite conocido de esa unicidad:** `slack_user_id` es nullable, y en Postgres dos `NULL` no colisionan

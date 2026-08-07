@@ -1,0 +1,30 @@
+- run: '2026-08-07T17:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    validate: pass
+    tests: pass
+    checks-probe: pass
+  rondas_correccion: 2
+  notas: >-
+    Los `checks:` de §4 se parseaban y devolvían `indeterminate` para todos, así que declarar una invariante
+    mecánica no comprobaba nada. Ahora hay siete probes que se deciden leyendo el repositorio.
+    CORRIJO ALGO QUE DIJE: prometí que "un probe cancela cuatro lecciones". Al leer los destinos, tres de las
+    cuatro necesitan la base de datos o un formato de cifras que no existe. Se cierran DOS —la del gate que
+    se satisface con un regex y la del doble más permisivo que la tabla— y las otras dos siguen pendientes
+    con el motivo afinado y el mecanismo listo para colgarlas.
+    LO QUE JUSTIFICA EL MÓDULO son dos fallos de esta misma semana, los dos silenciosos y los dos
+    encontrados a mano días después: el workflow que no pasaba SUPABASE_URL al paso que publica (y por eso
+    el mensaje diario nunca llevó medallas) y el selector `.summary-cards` que no existe en la v2. Los dos
+    los caza un probe de dos líneas.
+    TRES HALLAZGOS EN LA PRIMERA EJECUCIÓN DEL GATE, ninguno visible leyendo: un `config-key` sin `file:`
+    que no verificaba nada y además era del tipo equivocado; un `regex` con solo un `describe:`; y un
+    `checks: index` declarado en un slice cuyos tests no escriben en ninguna tabla — la invariante es cierta
+    pero ese slice no es quien la demuestra.
+    DECISIÓN MENOS OBVIA: un check en rojo tumba el Requirement aunque su `verified-by` esté verde. Si una
+    invariante se puede decidir y sale falsa, un test verde no la arregla: significa que no la cubría.
+    DOS TRAMPAS CONOCIDAS, LAS DOS REPETIDAS: la caché de bytecode de `tools/wslice/__pycache__` hizo creer
+    que el gate no se ejecutaba, y `set -- $par` no parte la variable en zsh, así que el bucle de
+    comprobación medía cero en todos los packs. Las dos ya tienen lección en este repo.

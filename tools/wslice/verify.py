@@ -14,6 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .coverage import ScenarioCoverage, report_slice_coverage
+from .probes import ejecutar as ejecutar_probe
+from .probes import resumen as resumen_de_probes
 from .discover import find_slice_by_name
 from .spec_parser import parse_spec_file
 from .validate import validate_all_slices
@@ -95,26 +97,51 @@ def verify_slice(ws: Workspace, name: str, strict: bool = False) -> VerifySliceR
         for requirement in spec.requirements:
             existing = [ref for ref in requirement.verified_by if ws.abs(ref.split("#")[0]).exists()]
             missing = [ref for ref in requirement.verified_by if not ws.abs(ref.split("#")[0]).exists()]
-            if missing:
+
+            # Los probes se ejecutan SIEMPRE, aunque haya verified-by. Un `checks:` que se puede decidir y
+            # sale falso es una invariante demostrablemente incumplida, y un test verde no la arregla: solo
+            # significa que el test no la cubría. Por eso un probe en rojo manda sobre el verified-by.
+            veredictos = [ejecutar_probe(ws, check) for check in requirement.checks]
+            rotos = [v for v in veredictos if v.estado == "fail"]
+            estado_probes = resumen_de_probes(veredictos) if veredictos else None
+            detalle_probes = "; ".join(f"{v.tipo}: {v.detalle}" for v in veredictos)
+
+            if rotos:
+                requirements.append(
+                    RequirementResult(
+                        capability,
+                        requirement.title,
+                        "fail",
+                        f"check en rojo — {'; '.join(f'{v.tipo}: {v.detalle}' for v in rotos)}",
+                    )
+                )
+            elif missing:
                 requirements.append(
                     RequirementResult(
                         capability, requirement.title, "fail", f"verified-by roto: {', '.join(missing)}"
                     )
                 )
             elif existing:
+                detalle = f"verified-by: {', '.join(existing)}"
                 requirements.append(
                     RequirementResult(
-                        capability, requirement.title, "pass", f"verified-by: {', '.join(existing)}"
+                        capability,
+                        requirement.title,
+                        "pass",
+                        detalle + (f" · checks: {detalle_probes}" if veredictos else ""),
                     )
                 )
+            elif estado_probes == "pass":
+                requirements.append(
+                    RequirementResult(capability, requirement.title, "pass", f"checks: {detalle_probes}")
+                )
             elif requirement.checks:
-                kinds = ", ".join(str(check.get("type", "?")) for check in requirement.checks)
                 requirements.append(
                     RequirementResult(
                         capability,
                         requirement.title,
                         "indeterminate",
-                        f"checks ({kinds}) sin probe implementado y sin verified-by — añade verified-by (§4)",
+                        f"checks sin decidir y sin verified-by ({detalle_probes}) — añade verified-by (§4)",
                     )
                 )
             else:

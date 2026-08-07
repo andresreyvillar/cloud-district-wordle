@@ -105,7 +105,9 @@
   vuelve a medir cuando el documento que la cita se revisa.
 - **Codificada en:** este registro y la corrección de los cuatro documentos afectados ·
   **estado:** pendiente — *destino: probe `row-count` en `tools/wslice` que verifique las cifras
-  declaradas en los `checks:` de un delta contra la base de datos*
+  declaradas en los `checks:` de un delta contra la base de datos. **El mecanismo ya existe** desde el
+  2026-08-07 (`tools/wslice/probes.py`, gate `checks-probe`): falta el probe, que necesita credenciales y un
+  tipo nuevo en §4 para declarar la cifra esperada*
 
 ### 2026-08-04 — Un test pendiente contaba como cubierto y verde
 - **Qué pasó:** el primer slice escribió sus siete tests en rojo usando `pytestmark = pytest.mark.skip`
@@ -151,7 +153,8 @@
   `openspec/changes/feat-solo-dias-laborables/tasks.md`, que ejecuta el catálogo contra producción y
   declara el resultado esperado · **estado:** pendiente — *destino: extender el probe `row-count` ya
   propuesto para que verifique también las cifras declaradas en un brief ejecutando el módulo del dominio,
-  no una consulta paralela*
+  no una consulta paralela. Mismo bloqueo que la anterior: el mecanismo está, falta el probe y un formato
+  para declarar la cifra*
 - **Relación:** es la segunda vez que una cifra escrita en un documento se hereda sin volver a medirla (ver
   la lección de la página única de PostgREST). El patrón repetido no es el error de medida, es **que nadie
   vuelve a medir lo que ya está escrito**.
@@ -163,9 +166,12 @@
 - **Regla:** el `ok` de `verify gates` no sustituye a la ejecución real de la suite; los Validation
   Gates de cada proposal listan los comandos que hay que ejecutar y el reporte de la Fase 4 debe
   incluir su salida.
-- **Codificada en:** `openspec/slice-system.md` §7 (comandos deterministas) + nota de honestidad en
-  el proposal del pack de adopción · **estado:** pendiente — *destino: probe en `tools/wslice` que
-  ejecute los comandos declarados en lugar de buscarlos*
+- **Codificada en:** `openspec/slice-system.md` §7 (comandos deterministas), nota de honestidad en el
+  proposal del pack de adopción y —el 2026-08-07— el gate **`checks-probe`** de `tools/wslice/gates.py`, que
+  **ejecuta** los `checks:` de los deltas contra el repositorio en lugar de buscar cadenas. Siete probes
+  implementados; los que necesitan la base de datos devuelven `indeterminate` diciendo por qué ·
+  **estado:** codificada — *el gate de `test-commands` sigue siendo un regex y se declara como tal; lo que
+  cambia es que ya no es el único gate mecánico de un pack*
 
 ### 2026-08-05 — El doble en memoria era más permisivo que la tabla real y la migración reventó a mitad
 - **Qué pasó:** los 10 tests de `identidad-canonica-de-jugador` en verde, 6 mutantes muertos, y la
@@ -180,9 +186,12 @@
   doble se leen las restricciones reales del objeto que sustituye.
 - **Codificada en:** `tests/slices/identidad-canonica-de-jugador/test_identidad_canonica.py`
   (`TablaFalsa` impone el índice único y lanza `ViolacionDeIndiceUnico`) y el escenario
-  `clave-ocupada-se-declara-y-no-se-fuerza` del slice · **estado:** pendiente —
-  *destino: check en `wslice verify slice` que compare los `checks:` de tipo `index` declarados en los
-  deltas con lo que imponen los dobles del `tests_root`, y avise si un índice declarado no se imita*
+  `clave-ocupada-se-declara-y-no-se-fuerza` del slice, y —el 2026-08-07— el **probe `index`** de
+  `tools/wslice/probes.py`: compara el índice declarado en un delta con lo que imponen los dobles del
+  `tests_root` y falla si ningún doble lo impone lanzando · **estado:** codificada — *en su primera
+  ejecución encontró una segunda instancia: un `checks: index` declarado en un slice cuyos tests no escriben
+  en ninguna tabla, así que reclamaba un doble que no podía existir. La invariante era cierta y el sitio,
+  equivocado*
 - **Segunda lección de la misma ejecución:** una migración que deja filas "intactas" por prudencia puede
   **bloquear** a otras. La fila conflictiva del puzzle 1481 se queda donde está por diseño, y donde está es
   la clave que necesita su dueña legítima. Lo prudente no es neutral: hay que declararlo (`bloqueadas`) en
