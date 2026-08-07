@@ -1,9 +1,19 @@
+"""Publica en el canal la captura del ranking con su comentario.
+
+Slices: `medallas-en-el-resumen-diario` (lo que dice el mensaje) y `captura-apunta-a-la-v2` (de dónde sale
+la imagen y a dónde lleva el enlace).
+
+**Este módulo escribe en Slack delante de todo el grupo.** Los tests no lo ejecutan: le pasan dobles.
+"""
+
+import asyncio
 import os
 import sys
-import asyncio
+from dataclasses import dataclass
+
+from dotenv import load_dotenv
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from dotenv import load_dotenv
 from supabase import create_client
 
 from badges import texto_de_medallas
@@ -15,7 +25,57 @@ SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-WEB_URL = "https://cloud-district-wordle.andres-rey.workers.dev/" # URL de tu web
+
+
+@dataclass(frozen=True)
+class Objetivo:
+    """De dónde se saca la captura: **los tres datos van juntos a propósito**.
+
+    Cambiar solo la URL dejaba el workflow esperando quince segundos un `.summary-cards` que la v2 no tiene,
+    y el resumen sin publicar. Yendo juntos, el estado roto —URL de una web con selectores de la otra— deja
+    de ser expresable.
+    """
+
+    nombre: str
+    url: str
+    espera: str   # el selector que confirma que la página ya tiene datos
+    captura: str  # el que se fotografía
+
+
+OBJETIVOS: dict[str, Objetivo] = {
+    "v1": Objetivo(
+        nombre="v1",
+        url="https://cloud-district-wordle.andres-rey.workers.dev/",
+        espera=".summary-cards",
+        captura=".container",
+    ),
+    "v2": Objetivo(
+        nombre="v2",
+        url="https://cloud-district-wordle-2.andres-rey.workers.dev/",
+        espera=".liga .fila",
+        captura=".liga",
+    ),
+}
+
+#: El objetivo por defecto es **lo que está desplegado**. El corte a la v2 lo decide esta variable de
+#: entorno, no un despliegue de código: `CAPTURA_OBJETIVO=v2` y el grupo deja de ver la v1.
+OBJETIVO_POR_DEFECTO = "v1"
+
+
+def objetivo_de_captura() -> Objetivo:
+    """El objetivo configurado. Uno desconocido **aborta**.
+
+    Caer en el objetivo por defecto ante una errata dejaría el bot publicando la web vieja indefinidamente
+    sin que nadie se entere, que es la clase de fallo silencioso que esta fase existe para quitar.
+    """
+    nombre = os.environ.get("CAPTURA_OBJETIVO", OBJETIVO_POR_DEFECTO)
+    if nombre not in OBJETIVOS:
+        print(
+            f"Error: CAPTURA_OBJETIVO={nombre!r} no existe. Objetivos: {', '.join(OBJETIVOS)}",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    return OBJETIVOS[nombre]
 
 #: PostgREST devuelve 1000 filas por página: hay que paginar de forma explícita.
 #: Contar sobre una sola página ya produjo una cifra falsa una vez (docs/lecciones.md).
@@ -59,77 +119,92 @@ def seccion_de_medallas(resultados):
     return texto_de_medallas(resultados, temporada, jornada)
 
 
-def comentario(seccion_medallas: str) -> str:
-    """El texto que acompaña a la captura. Las medallas se añaden; el enlace no se toca."""
+def comentario(seccion_medallas: str, objetivo: Objetivo) -> str:
+    """El texto que acompaña a la captura.
+
+    El enlace es **el del objetivo que se ha fotografiado**: mandar una foto de una web y un enlace a otra
+    es la forma más rápida de que nadie se fíe de ninguna de las dos.
+    """
     partes = ["¡Aquí tenéis el ranking actualizado! 🔥"]
     if seccion_medallas:
         partes.append(seccion_medallas)
-    partes.append(f"Podéis ver todas las estadísticas detalladas aquí:\n👉 {WEB_URL}")
+    partes.append(f"Podéis ver todas las estadísticas detalladas aquí:\n👉 {objetivo.url}")
     return "\n\n".join(partes)
 
-async def capture_ranking():
+async def capture_ranking(objetivo: Objetivo) -> str:
+    """La captura del objetivo. Cada objetivo trae sus selectores."""
     # Import diferido: la captura necesita un navegador, pero componer el mensaje no.
     from playwright.async_api import async_playwright
 
-    print("Iniciando navegador para captura...")
+    print(f"Iniciando navegador para captura de {objetivo.nombre}...")
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        # Configurar un viewport Widescreen
-        page = await browser.new_page(viewport={'width': 1280, 'height': 800})
-        
-        print(f"Cargando {WEB_URL}...")
-        await page.goto(WEB_URL)
-        
-        # Esperar a que el elemento del ranking esté visible y tenga datos
-        await page.wait_for_selector(".summary-cards", timeout=15000)
-        
-        # Esperar un poco más para que las gráficas de Plotly se dibujen bien en panorámico
-        await asyncio.sleep(3)
-        
-        # Hacer captura de la zona principal
-        screenshot_path = "ranking_snapshot.png"
-        
-        # Capturamos la zona del contenedor principal
-        container = await page.query_selector(".container")
-        await container.screenshot(path=screenshot_path)
-        
-        await browser.close()
-        print("Captura widescreen realizada con éxito.")
-        return screenshot_path
+        page = await browser.new_page(viewport={"width": 1280, "height": 800})
 
-def upload_to_slack(file_path, texto):
+        print(f"Cargando {objetivo.url}...")
+        await page.goto(objetivo.url)
+
+        # El selector confirma que la página ya tiene datos, no solo que ha cargado.
+        await page.wait_for_selector(objetivo.espera, timeout=15000)
+        await asyncio.sleep(3)  # margen para que terminen de dibujarse los gráficos
+
+        ruta = "ranking_snapshot.png"
+        contenedor = await page.query_selector(objetivo.captura)
+        await contenedor.screenshot(path=ruta)
+
+        await browser.close()
+        print("Captura realizada con éxito.")
+        return ruta
+
+
+def upload_to_slack(file_path: str, texto: str) -> bool:
+    """Sube la captura. Devuelve si se ha publicado: el que llama decide qué hacer con el fallo."""
     client = WebClient(token=SLACK_TOKEN)
     try:
         print(f"Subiendo captura a Slack (Canal: {CHANNEL_ID})...")
-        response = client.files_upload_v2(
+        client.files_upload_v2(
             channel=CHANNEL_ID,
             file=file_path,
             title="Ranking Wordle del Día 🏆",
-            initial_comment=texto
+            initial_comment=texto,
         )
         print("Imagen publicada correctamente.")
+        return True
     except SlackApiError as e:
-        print(f"Error subiendo a Slack: {e.response['error']}")
+        print(f"Error subiendo a Slack: {e.response['error']}", file=sys.stderr)
+        return False
 
-async def main():
-    if not SLACK_TOKEN or not CHANNEL_ID:
-        print("Error: Faltan credenciales en el .env")
-        return
+
+async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=None) -> int:
+    """El flujo de publicación, con la captura y la subida por parámetro para poder doblarlas.
+
+    **Devuelve el código de salida.** Antes cualquier fallo se imprimía y la ejecución terminaba bien: el
+    grupo dejaba de recibir el resumen y en Actions estaba todo verde.
+    """
+    objetivo = objetivo_de_captura()
+    medallas = seccion_de_medallas(leer_resultados() if resultados is None else resultados)
+    print("Medallas de hoy:" if medallas else "Hoy no hay medallas nuevas.")
+    if medallas:
+        print(medallas)
 
     try:
-        medallas = seccion_de_medallas(leer_resultados())
-        if medallas:
-            print("Medallas de hoy:"); print(medallas)
-        else:
-            print("Hoy no hay medallas nuevas.")
+        ruta = await capturar(objetivo)
+    except Exception as error:  # noqa: BLE001 — cualquier fallo de navegador es un fallo de publicación
+        print(f"Error capturando {objetivo.nombre}: {error}", file=sys.stderr)
+        return 1
 
-        path = await capture_ranking()
-        upload_to_slack(path, comentario(medallas))
-        # Limpiar archivo temporal
-        if os.path.exists(path):
-            os.remove(path)
-    except Exception as e:
-        print(f"Error en el proceso: {e}")
+    publicado = subir(ruta, comentario(medallas, objetivo))
+    if os.path.exists(ruta):
+        os.remove(ruta)
+    return 0 if publicado else 1
+
+
+async def main() -> int:
+    if not SLACK_TOKEN or not CHANNEL_ID:
+        print("Error: Faltan credenciales en el .env", file=sys.stderr)
+        return 1
+    return await publicar()
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(asyncio.run(main()))

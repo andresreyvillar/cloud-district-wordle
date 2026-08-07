@@ -1,0 +1,32 @@
+- run: '2026-08-07T13:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: captura-apunta-a-la-v2
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Punto 4.3, el corte real hacia la v2. El roadmap decía "una línea en post_ranking.py" y no lo es: la
+    captura espera `.summary-cards` y fotografía `.container`, que son marcado de la v1. Cambiar solo la URL
+    dejaba el workflow esperando quince segundos un elemento inexistente y el resumen sin publicar. Por eso
+    lo configurable es el OBJETIVO ENTERO —URL y los dos selectores—, y el estado roto deja de ser
+    expresable.
+    DOS FALLOS SILENCIOSOS AL TIRAR DEL HILO. Uno: cualquier fallo terminaba en éxito, así que si la captura
+    reventaba el grupo se quedaba sin resumen y en Actions estaba todo verde; ahora `publicar()` devuelve
+    código de salida. Dos, y es el gordo: el workflow NO le pasa las credenciales de Supabase al paso que
+    publica, así que `leer_resultados()` devuelve vacío y EL MENSAJE DIARIO NUNCA HA LLEVADO MEDALLAS —
+    implementadas desde el 2026-08-05, sin salir ni un día. Añadidas al env del paso.
+    UN OBJETIVO DESCONOCIDO ABORTA en lugar de caer en el por defecto: una errata dejaría el bot publicando
+    la web vieja indefinidamente sin que nadie se entere.
+    DOS TESTS DEL SLICE HERMANO ACTUALIZADOS, NO RELAJADOS: llamaban `comentario(seccion)` y ahora pasan el
+    objetivo. Se descartó darle valor por defecto al parámetro, que era lo cómodo: el acoplamiento entre la
+    foto y el enlace es justo lo que este slice fija. De paso la aserción comprueba la URL del objetivo en
+    lugar de un "workers.dev" que valía para las dos webs.
+    NO SE HA EJECUTADO post_ranking.py. Publica en el canal delante de todo el grupo.

@@ -301,22 +301,30 @@ def test_una_jornada_de_sabado_no_anuncia_nada_y_el_mensaje_queda_intacto():
     assert seccion == ""
 
     # y el resumen del sábado sigue saliendo, solo que sin medallas
-    mensaje = comentario(seccion)
+    from post_ranking import objetivo_de_captura
+
+    objetivo = objetivo_de_captura()
+    mensaje = comentario(seccion, objetivo)
     assert "ranking actualizado" in mensaje
-    assert "workers.dev" in mensaje
+    assert objetivo.url in mensaje
 
 
 # @scenarios el-resumen-conserva-lo-que-ya-publicaba
 def test_el_mensaje_conserva_el_saludo_y_el_enlace():
-    """Las medallas se añaden al mensaje; no lo sustituyen."""
-    from post_ranking import comentario
+    """Las medallas se añaden al mensaje; no lo sustituyen.
 
-    con = comentario("🏅 *Medallas de hoy*\n💪 Fondista — Alguien")
-    sin = comentario("")
+    `comentario` pide el objetivo desde `captura-apunta-a-la-v2`: el enlace tiene que ser el de la web que
+    se ha fotografiado, así que no puede componerse sin saber cuál es.
+    """
+    from post_ranking import comentario, objetivo_de_captura
+
+    objetivo = objetivo_de_captura()
+    con = comentario("🏅 *Medallas de hoy*\n💪 Fondista — Alguien", objetivo)
+    sin = comentario("", objetivo)
 
     for texto in (con, sin):
         assert "ranking actualizado" in texto
-        assert "workers.dev" in texto
+        assert objetivo.url in texto
     assert "Fondista" in con
     assert "Medallas" not in sin
 

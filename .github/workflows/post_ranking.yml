@@ -34,4 +34,10 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          # Sin estas dos, `leer_resultados()` devuelve vacío y el mensaje sale SIN MEDALLAS. Faltaban:
+          # las medallas están implementadas desde el 2026-08-05 y no han salido ni un solo día.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # El corte a la v2: se cambia la variable del repositorio, no el código.
+          CAPTURA_OBJETIVO: ${{ vars.CAPTURA_OBJETIVO || 'v1' }}
         run: python3 tools/post_ranking.py
