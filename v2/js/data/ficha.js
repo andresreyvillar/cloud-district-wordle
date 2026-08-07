@@ -12,6 +12,8 @@
  * arma es el palmarés, cruzando las instantáneas que la web ya tiene cargadas.
  */
 
+import { escalaDeDistribucion } from './escala.js';
+
 /** Los decimales con los que se publica una diferencia de medias. Más no significan nada al leerlas. */
 const DECIMALES = 2;
 
@@ -121,6 +123,8 @@ export function ficha(instantaneas, temporada, jugador) {
     mejor: fila.mejor,
     peor: fila.peor,
     distribucion: fila.distribucion ?? [],
+    // La escala del gráfico sale de la temporada entera, para que dos fichas se puedan comparar.
+    escala_distribucion: escalaDeDistribucion(carga.clasificacion),
     por_dia: fila.por_dia,
     medallas: medallasDe(carga, fila.nombre),
     palmares: palmares(instantaneas, jugador, temporada),

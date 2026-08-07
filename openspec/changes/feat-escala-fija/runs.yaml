@@ -1,0 +1,30 @@
+- run: '2026-08-07T14:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: escala-fija-comparable
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Punto 4.4, lo pidió el grupo en el canal. Las dos gráficas se autoescalaban: la dificultad al máximo del
+    propio mes —un mes cuya jornada más dura fue 4,2 se veía igual de dramático que otro que llegó a 6,0— y
+    la distribución al máximo del propio jugador —102 partidas y 1 partida dibujaban la misma silueta—.
+    Un gráfico autoescalado no miente en sus números, miente en lo que sugiere de un vistazo, que es como se
+    lee. La escala de la dificultad es 1-7 porque es el rango real de una puntuación, y la v1 ya la usaba en
+    su gráfica de evolución. La de la distribución es el mayor recuento de la temporada: el eje compartido de
+    un conjunto de gráficos pequeños.
+    LA ESCALA SE ANUNCIA en la cabecera. Una escala fija que no se declara es indistinguible de una
+    automática, así que no arreglaría la lectura de un vistazo, que era el problema.
+    DOS MUTANTES SOBREVIVIERON Y LOS DOS ERAN TESTS FLOJOS. El fixture de la distribución ponía el máximo en
+    el primer jugador, así que mirar solo la primera fila acertaba por casualidad. Y la guarda de escala cero
+    parecía cubierta por un `Number.isFinite`, pero el recorte convertía el infinito en 100 —una barra llena
+    a partir de nada— y 100 es finito: la aserción medía finitud en lugar del valor. Corregidos los dos.
+    VERIFICADO EN NAVEGADOR: temporada 0 al 83% y agosto al 56%, cuando antes las dos tocaban el techo;
+    Claire al 70% y Javi Calvo, con una partida de 181, al 1%.

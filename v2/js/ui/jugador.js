@@ -8,6 +8,7 @@
  * jornadas que no jugaste. Aquí sí.
  */
 
+import { alturaEnEscala, escalaDeDistribucion } from '../data/escala.js';
 import { ficha } from '../data/ficha.js';
 import { escapar } from './shell.js';
 
@@ -108,7 +109,9 @@ function costeDeFaltar(f) {
 
 function distribucion(f) {
   const total = f.distribucion.reduce((a, b) => a + b, 0) || 1;
-  const alto = Math.max(...f.distribucion, 1);
+  // La escala es la de TODA la temporada, no la del jugador: escalada a su propio máximo, quien jugó cien
+  // partidas y quien jugó diez dibujaban la misma silueta (slice `escala-fija-comparable`).
+  const escala = f.escala_distribucion;
   const barras = f.distribucion
     .map((cuantas, i) => {
       const intentos = i + 1;
@@ -116,7 +119,7 @@ function distribucion(f) {
       const etiqueta = intentos >= FALLO ? 'X' : `${intentos}`;
       return `
         <div class="barra" title="${escapar(`${cuantas} de ${total}`)}">
-          <b style="height:${Math.round((cuantas / alto) * 100)}%;background:${fondo}"></b>
+          <b style="height:${alturaEnEscala(cuantas, escala)}%;background:${fondo}"></b>
           <span class="n">${cuantas || ''}</span>
           <span class="eje">${etiqueta}</span>
         </div>`;
@@ -124,7 +127,8 @@ function distribucion(f) {
     .join('');
   return `
     <section class="bloque">
-      <header class="bloque-cab"><h2>DISTRIBUCIÓN</h2><span>${total} partidas jugadas</span></header>
+      <header class="bloque-cab"><h2>DISTRIBUCIÓN</h2>
+        <span>${total} ${total === 1 ? 'partida jugada' : 'partidas jugadas'} · ${escapar(escalaDeDistribucion.leyenda(escala))}</span></header>
       <div class="distribucion">${barras}</div>
     </section>`;
 }

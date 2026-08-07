@@ -128,14 +128,15 @@ distinta, y eso es deliberado.
 
 ## Fase 4 — Robustez del pipeline
 
-Independiente de todo lo anterior. No se ve, pero es donde se pierden datos.
+Independiente de todo lo anterior. No se ve, pero es donde se pierden datos. **Cerrada el 2026-08-07**:
+tres puntos hechos y uno desmentido por la medida.
 
 | # | Slice candidato | Capabilities | Qué resuelve |
 |---|---|---|---|
-| 4.1 | `resultados-publicados-en-hilos` | ingesta | Un resultado dentro de un hilo no se captura: `conversations.history` solo devuelve mensajes raíz, y el grupo usa hilos a diario |
-| 4.2 | `ventana-de-ingesta-robusta` | ingesta | La ventana de 50 mensajes y `users_list` sin paginar. Cubre ~5 días: un puente largo con Actions caído pierde días |
-| 4.3 | `captura-apunta-a-la-v2` | publicacion | El corte real: una línea en `tools/post_ranking.py`. Aprovechar para que la URL sea configurable |
-| 4.4 | `escala-fija-comparable` | dashboard | Misma escala horizontal en todos los gráficos, requisito previo de cualquier animación |
+| 4.1 | ~~`resultados-publicados-en-hilos`~~ | ingesta | **SUPUESTO DESMENTIDO el 2026-08-07.** Medido sobre 1200 mensajes: el grupo usa hilos (51, con 209 respuestas) pero **ninguna respuesta contiene un resultado ni una cuadrícula**. Cero de 209. El riesgo existe —`conversations.history` no las devuelve— pero no ha ocurrido nunca. Se desprioriza hasta que ocurra |
+| ~~4.2~~ | ~~`ventana-de-ingesta-robusta`~~ → modificación de `ingesta-por-id-de-slack` | ingesta | **HECHO el 2026-08-07**: la ventana pasa a 14 **días** y pagina. `users_list` ya paginaba. Medido: la peor racha de 3 días son 52 mensajes y no cabía en 50 |
+| ~~4.3~~ | ~~`captura-apunta-a-la-v2`~~ | publicacion | **HECHO el 2026-08-07**: no era una línea —los selectores de la captura son de la v1—, así que lo configurable es el objetivo entero. Se acciona con `CAPTURA_OBJETIVO=v2` |
+| ~~4.4~~ | ~~`escala-fija-comparable`~~ | dashboard | **HECHO el 2026-08-07**: dificultad en escala fija 1-7 y distribución con la escala de la temporada. Las dos gráficas se autoescalaban |
 
 ## Fase 6 — Medallas
 
