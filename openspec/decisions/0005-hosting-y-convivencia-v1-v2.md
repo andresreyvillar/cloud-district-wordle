@@ -12,7 +12,8 @@ afecta: [dashboard, resultados, publicacion]
 La v1 **no está en Cloudflare Pages**, como se asumía: es un **Worker con Static Assets**. La
 evidencia es concluyente:
 
-- La URL es `cloud-district-wordle.andres-rey.workers.dev` — dominio de Workers. Un proyecto Pages
+- La URL es `cloud-district-wordle.clouddistrict.workers.dev` — dominio de Workers. (Era
+  `…andres-rey.workers.dev` hasta el 2026-08-07; ver abajo.) Un proyecto Pages
   serviría en `*.pages.dev`, y ni `cloud-district-wordle.pages.dev` ni
   `cloud-district-wordle.andres-rey.pages.dev` resuelven.
 - `wrangler.jsonc` declara `"assets": { "directory": "." }`, que es la configuración de Workers
@@ -74,7 +75,7 @@ divergir sin que nadie se dé cuenta.
 ## Decisión
 
 **Hosting: opción A.** La v2.0 vive en un Worker nuevo llamado **`cloud-district-wordle-2`**
-(`cloud-district-wordle-2.andres-rey.workers.dev`), y la v1 **no se mueve**: sigue exactamente donde
+(`cloud-district-wordle-2.clouddistrict.workers.dev`), y la v1 **no se mueve**: sigue exactamente donde
 está, con su nombre y su URL.
 
 Se descarta A' (que la v2.0 heredase la URL actual) por una razón de riesgo, no de estética:
@@ -128,12 +129,32 @@ opción —«requiere que Workers Builds ejecute ese comando»— **desaparece**
 el deploy es un comando que se lanza a mano, y admite un `--config` sin ceremonia. La alternativa del
 `[env.v2]` se descarta: comparte nombre base y `.assetsignore` con la v1, y el objetivo es no tocarla.
 
-**El tercer `?`, el del subdominio, sigue abierto y no se puede cerrar por CLI.** `andres-rey` es el
-subdominio **de la cuenta**, no del Worker: cambiarlo renombra el host de todos los Workers de la cuenta
-y rompe la URL que el bot publica cada día. Además es único globalmente, y no hay endpoint que consulte
-disponibilidad sin escribir. Si se quiere una URL corporativa, el camino es un **dominio propio**
-(`wordle.clouddistrict.com`) sobre una zona que CloudDistrict gestione en Cloudflare — eso sí permite
-repartir por ruta, que `workers.dev` no.
+**El tercer `?`, el del subdominio: CERRADO el 2026-08-07 cambiándolo.** El subdominio de la cuenta pasó
+de `andres-rey` a `clouddistrict`, así que la URL publicada es
+`cloud-district-wordle.clouddistrict.workers.dev`.
+
+Se cambia en el dashboard, en **Workers & Pages → panel Account Details → Subdomain**, con el icono de
+editar. No hay comando de wrangler ni endpoint que consulte disponibilidad sin escribir: el nombre es único
+globalmente y `clouddistrict` estaba libre.
+
+Lo comprobado después del cambio:
+
+| | |
+|---|---|
+| `cloud-district-wordle.clouddistrict.workers.dev` | **200**, sirviendo la v1 completa. No hizo falta redesplegar: el host es de cuenta, así que el Worker responde en el nuevo al instante |
+| `cloud-district-wordle.andres-rey.workers.dev` | **NXDOMAIN**. La URL vieja no redirige: desaparece |
+
+**Alcance real del cambio, menor de lo que este ADR temía:** en la cuenta hay tres aplicaciones, y las otras
+dos son proyectos de **Pages** (`tetonor-1xj.pages.dev`, `fuelwatch.pages.dev`). Pages tiene su propio
+espacio de nombres, `*.pages.dev`, que **no depende del subdominio de Workers**, así que el renombrado
+afectó a un solo host: el de esta web.
+
+**Precio pagado, y era conocido:** los enlaces de todos los mensajes que el bot publicó en el canal durante
+meses apuntan a un host que ya no existe. No hay redirección posible.
+
+Para una URL con dominio propio (`wordle.clouddistrict.com`) el camino sigue siendo `Add Domain` / `Add
+Route` en la pestaña Domains del Worker, y exige que la zona esté **en esta cuenta**. Es además la única
+forma de repartir por ruta —`/2` para la v2—, que `workers.dev` no permite.
 
 ## Consecuencias
 

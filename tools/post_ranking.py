@@ -46,7 +46,7 @@ class Objetivo:
 #: host de todos los Workers de la cuenta a la vez y **la URL anterior deja de resolver**, sin redirección.
 #: Está aquí, una sola vez, porque el renombrado tiene que poder hacerse sin dejarse una URL a medias — que
 #: es la forma en que este proyecto se ha equivocado ya tres veces (docs/lecciones.md, 2026-08-07).
-SUBDOMINIO = "andres-rey"
+SUBDOMINIO = "clouddistrict"
 
 
 def _url(worker: str) -> str:
