@@ -56,25 +56,26 @@ Sin producto visible. Desbloquea todo lo demás.
 
 | # | Slice candidato | Capabilities | Qué resuelve |
 |---|---|---|---|
-| 1.1 | `identidad-estable-por-id-de-slack` | ingesta · identidad · resultados | El extractor emite el ID de Slack, no el nombre mostrado. Hoy 1234 de 1532 filas guardan un nombre en la columna de ID. Define el identificador de la ruta `/j/<jugador>` |
-| 1.2 | `fusion-de-jugadores-duplicados` | identidad · resultados | Un jugador partido en dos por un renombre; 8 filas atribuidas al jugador equivocado; 6 filas duplicadas |
+| ~~1.1~~ | ~~`identidad-estable-por-id-de-slack`~~ → `ingesta-por-id-de-slack` | ingesta · identidad · resultados | El extractor emite el ID de Slack, no el nombre mostrado. Hoy 1234 de 1532 filas guardan un nombre en la columna de ID. Define el identificador de la ruta `/j/<jugador>` |
+| ~~1.2~~ | ~~`fusion-de-jugadores-duplicados`~~ → `identidad-canonica-de-jugador` | identidad · resultados | Un jugador partido en dos por un renombre; 8 filas atribuidas al jugador equivocado; 6 filas duplicadas |
 
 Restricción del [ADR 0005](../openspec/decisions/0005-hosting-y-convivencia-v1-v2.md): **el esquema
 solo crece**. La fusión no puede hacerse borrando `player_name` — la v1 lo lee.
 
 ## Fase 2 — La web nueva
 
-El corazón de la v2.0 y lo imprescindible para el 1 de septiembre.
+El corazón de la v2.0 y lo imprescindible para el 1 de septiembre. **Cerrada el 2026-08-07**: las
+siete vistas existen sobre datos reales.
 
 | # | Slice candidato | Capabilities | Ruta | Qué resuelve |
 |---|---|---|---|---|
-| 2.1 | `temporada-mensual` | ranking · resultados | — | El modelo: qué es una temporada, cómo se deriva del histórico, reset el día 1. **Lo único cerrado por el grupo** |
-| 2.2 | `clasificacion-de-temporada` | ranking · estadisticas · dashboard | `/` · `/t/<AAAA-MM>` | La vista del mes: clasificación y podio, con el **modelo de imputación** ya acordado ([brief](context/briefs/reglas-temporadas.md)) |
+| ~~2.1~~ | ~~`temporada-mensual`~~ | ranking · resultados | — | El modelo: qué es una temporada, cómo se deriva del histórico, reset el día 1. **Lo único cerrado por el grupo** |
+| ~~2.2~~ | ~~`clasificacion-de-temporada`~~ | ranking · estadisticas · dashboard | `/` · `/t/<AAAA-MM>` | La vista del mes: clasificación y podio, con el **modelo de imputación** ya acordado ([brief](context/briefs/reglas-temporadas.md)) |
 | ~~2.3~~ | ~~`archivo-de-temporadas`~~ | ranking · dashboard | `/temporadas` | **HECHO el 2026-08-06**: cada temporada con su campeón (o quién va ganando) + medallero acumulado. Son dos filas, no nueve: la temporada 0 es un bloque |
 | ~~2.4~~ | ~~`resultado-del-dia`~~ | estadisticas · dashboard | `/hoy` | **HECHO el 2026-08-06**: quién ha jugado, quién falta, el veredicto del día y **si la jornada cuenta ya** |
 | ~~2.5~~ | ~~`ficha-de-jugador`~~ | estadisticas · identidad · dashboard | `/t/<AAAA-MM>/j/<x>` | **HECHO el 2026-08-06**: puesto, coste de faltar, desglose jornada a jornada, distribución, medallas y palmarés. La evolución espera la escala fija (4.4) |
-| 2.6 | `ruta-invalida` | dashboard | cualquiera | Con el fallback SPA el 404 desaparece: la ruta inválida se detecta en cliente o el usuario ve una página vacía |
-| 2.7 | `tabla-de-datos` | dashboard | `/datos` | Portar la tabla cruda de la v1 |
+| ~~2.6~~ | ~~`ruta-invalida`~~ | dashboard | cualquiera | **HECHO el 2026-08-07**: el comportamiento venía del esqueleto; este slice lo fija con escenarios y 4 mutantes |
+| ~~2.7~~ | ~~`tabla-de-datos`~~ | dashboard | `/datos` | **HECHO el 2026-08-07**: la tabla cruda + una columna nueva, si la fila cuenta para su temporada |
 
 **Lo que NO entra en la Fase 2** aunque parezca que toca: los podios separados por intentos y por
 participación (¿cuál es el criterio del podio principal?), el umbral de elegibilidad y la nota
@@ -113,8 +114,8 @@ en [`context/briefs/ranking-de-figuras.md`](context/briefs/ranking-de-figuras.md
 | # | Slice candidato | Capabilities | Qué resuelve |
 |---|---|---|---|
 | ~~5.0~~ | ~~*(previo, sin slice)* calibrar el clasificador~~ | pack `feat-calibracion-de-figuras` | **HECHO el 2026-08-06**: `tools/figures.py` acierta 24/30 (80%) y el acuerdo es un gate. Desbloquea el resto de la fase |
-| 5.1 | `captura-del-patron` | ingesta · resultados | Columna nueva con el patrón crudo (aditivo). Hoy se descarta: solo se guarda la primera línea del mensaje |
-| 5.2 | `backfill-de-patrones` | ingesta · resultados | Recuperar el histórico del canal: comprobado que Slack conserva las cuadrículas a 240 días |
+| ~~5.1~~ | ~~`captura-del-patron`~~ | ingesta · resultados | Columna nueva con el patrón crudo (aditivo). Hoy se descarta: solo se guarda la primera línea del mensaje |
+| ~~5.2~~ | ~~`backfill-de-patrones`~~ | ingesta · resultados | Recuperar el histórico del canal: comprobado que Slack conserva las cuadrículas a 240 días |
 | 5.3 | `clasificacion-de-figuras` | patrones `?` | 🦜 🌷 📐 💩 y 🤔 (no puntúa). Determinista y con golden tests |
 | 5.4 | `album-de-figuras` | ranking · dashboard | El ranking de belleza y la tira de emojis por jugador |
 | 5.5 | `resumen-diario-compuesto` | publicacion | Sustituye la captura por texto: jugador del día, obra del día, top 5, álbum y comentarios |
@@ -143,8 +144,8 @@ Tercer eje de juego, independiente del ranking y del álbum. Diseño y umbrales 
 
 | # | Slice candidato | Capabilities | Qué resuelve |
 |---|---|---|---|
-| 6.1 | `medallas-de-rendimiento-y-constancia` | estadisticas · ranking · dashboard | Las siete que **no** dependen del clasificador: Suertud@, El día imposible, Superviviente, Verdugo, Impecable, Pleno, Fondista. Umbrales firmes, calculados sobre puntuaciones y fechas |
-| 6.2 | `medallas-de-figuras` | estadisticas · dashboard | Ornitólog@, Arquitect@, Florista, Coleccionista, Abstract@. **Bloqueadas por la calibración del clasificador** (5.0) |
+| ~~6.1~~ | ~~`medallas-de-rendimiento-y-constancia`~~ → `medallas-en-el-resumen-diario` | estadisticas · ranking · dashboard | Las siete que **no** dependen del clasificador: Suertud@, El día imposible, Superviviente, Verdugo, Impecable, Pleno, Fondista. Umbrales firmes, calculados sobre puntuaciones y fechas |
+| 6.2 | `medallas-de-figuras` | estadisticas · dashboard | Ornitólog@, Arquitect@, Florista, Coleccionista, Abstract@. **Desbloqueadas el 2026-08-06**: el clasificador está calibrado |
 | 6.3 | `anuncio-de-medalla` | publicacion | Anunciar en el resumen diario la medalla que alguien acaba de ganar |
 
 Las medallas son **derivadas, no almacenadas**: se calculan a partir de los resultados. Eso permite

@@ -29,7 +29,9 @@ export function normalizar(fila) {
     jornada: Number(fila.wordle_id),
     intentos: Number(fila.score),
     fecha: String(fila.date).slice(0, 10),
-    temporada: String(fila.date).slice(0, 7),
+    // `mes` y no `temporada`: son cosas distintas desde que existe la temporada 0, y llamarlo
+    // temporada invitaba a usarlo como tal. Quien necesite la temporada usa `data/temporada.js`.
+    mes: String(fila.date).slice(0, 7),
     patron: fila.pattern ?? null,
   };
 }

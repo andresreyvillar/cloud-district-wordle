@@ -8,6 +8,7 @@
 import { resolver, VISTAS } from './router.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarReglas } from './ui/reglas.js';
+import { pintarDatos } from './ui/datos.js';
 import { pintarHoy } from './ui/hoy.js';
 import { pintarJugador } from './ui/jugador.js';
 import { pintarTemporada } from './ui/temporada.js';
@@ -24,7 +25,6 @@ import {
 /** Qué slice traerá cada vista. Se va vaciando a medida que se implementan. */
 const PENDIENTES = {
   [VISTAS.TEMPORADA]: 'clasificacion-de-temporada',
-  [VISTAS.DATOS]: 'tabla-de-datos',
 };
 
 /**
@@ -71,6 +71,10 @@ function pintar(destino, resultados, instantaneas) {
   }
   if (destino.vista === VISTAS.TEMPORADA) {
     pintarTemporada(vista, instantaneas.get(actual), actual);
+    return;
+  }
+  if (destino.vista === VISTAS.DATOS) {
+    pintarDatos(vista, resultados, instantaneas);
     return;
   }
   if (destino.vista === VISTAS.TEMPORADAS) {
