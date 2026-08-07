@@ -259,3 +259,27 @@
   caso de la ficha 11, que el umbral decide) y `::test_alargar_la_cuadricula_no_convierte_el_ruido_en_flor`
   (la propiedad: una regla de figura no puede volverse más probable porque la partida sea larga, que es
   exactamente cómo falló el candidato descartado) · **estado:** codificada
+
+### 2026-08-07 — El mismo fallo dos veces: derivar la temporada de una fecha por tu cuenta
+- **Qué pasó:** la tabla cruda decía «1543 resultados · **70** cuentan para su temporada». Buscaba la
+  instantánea con el mes de la fecha, y las 1502 filas anteriores a agosto tienen meses (`2026-05`, `2026-06`…)
+  que **no existen como temporada**: todas son la temporada 0. Un día antes, exactamente la misma causa había
+  dejado 181 jornadas sin una sola medalla en `tools/badges.py`.
+- **Causa raíz:** el modelo de temporadas cambió (la 0 dejó de ser un `AAAA-MM`) y **todo el código que
+  reimplementaba «a qué temporada pertenece esto» siguió compilando**. Comparar cadenas no lanza: devuelve
+  vacío. Y el borde de datos ayudaba, porque llamaba `temporada` a un campo que era el mes.
+- **Regla:** una pregunta del modelo se le hace **al modelo**. Ni `startswith`, ni `slice(0,7)`, ni comparar
+  el identificador de una temporada con una fecha. Cada lenguaje tiene **una** función que responde, y sus
+  parámetros —el límite— se leen de las reglas publicadas, no se copian. Si el dato para responder no está,
+  se devuelve `null` y **no se adivina**: las dos veces el fallo fue silencioso porque algo asumió un valor.
+  Y un campo se llama por lo que es: `mes` no es `temporada`.
+- **Codificada en:** `v2/js/data/temporada.js` (única definición en la web, con el límite leído de las reglas
+  y `null` cuando no hay límite), `tools/badges.py::_de_la_temporada` (usa `seasons.temporada_de`),
+  `v2/js/data/results.js` (`normalizar()` devuelve `mes`, no `temporada`) y los tests
+  `la-temporada-de-una-fila-la-decide-el-modelo` y `la-temporada-cero-tambien-reparte-medallas` ·
+  **estado:** codificada
+- **Y una observación sobre cómo se cazó:** ninguna de las dos veces lo encontró un test. Las dos las
+  encontró **una vista enseñando un agregado absurdo** —cero medallas en 181 jornadas, 70 filas de 1543—. Un
+  agregado a la vista es un detector de fallos silenciosos que ningún unitario sustituye, y es un argumento
+  para que las vistas publiquen totales aunque nadie los haya pedido.
+
