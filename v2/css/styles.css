@@ -771,3 +771,47 @@ main { padding: 2rem 0; }
 
 /* la figura que cada uno dibujó hoy, en su tarjeta de /hoy */
 .resultado .figura-hoy { font-size: 1.1rem; line-height: 1; }
+
+/* ── Nombres pulsables ────────────────────────────────────────────────────────────────────────────
+   Un nombre en el marcador no es un enlace de texto: es una fila que se puede pulsar. Con el estilo
+   por defecto del navegador salía azul y subrayado, que en esta paleta no existe y además compite con
+   los colores de puntuación, que son los que tienen que llamar la atención.
+
+   Se pintan como botón: tinta heredada, borde del tablero y relleno corto. Al pasar por encima, el
+   verde de la liga — el mismo acento que ya usan la fila del podio y las tarjetas de /hoy.
+
+   `justify-self: start` es imprescindible: sin él, el botón se estira a todo el ancho de su columna de
+   la rejilla y deja de parecer un botón para parecer una barra. */
+.nom, .podio-card .nombre, .ganador, .temporada-card .etiqueta, .ausentes a {
+  /* `justify-self` vale en una rejilla y `align-self` en un flex: hacen falta las dos, porque estos
+     botones viven en los dos sitios. Sin la segunda, el título de la tarjeta de temporada se estiraba a
+     todo el ancho y parecía un campo de texto. */
+  display: inline-flex; align-items: center;
+  justify-self: start; align-self: start; width: fit-content; max-width: 100%;
+  padding: 3px 9px;
+  color: inherit; text-decoration: none;
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-radius: 999px;
+  transition: border-color .12s, background-color .12s, color .12s;
+}
+.nom:hover, .podio-card .nombre:hover, .ganador:hover,
+.temporada-card .etiqueta:hover, .ausentes a:hover {
+  color: var(--liga-tinta);
+  background: var(--liga-verde);
+  border-color: var(--liga-verde);
+}
+/* El foco de teclado tiene que verse: son los mismos botones y se recorren con el tabulador. */
+.nom:focus-visible, .podio-card .nombre:focus-visible, .ganador:focus-visible,
+.temporada-card .etiqueta:focus-visible, .ausentes a:focus-visible {
+  outline: 2px solid var(--liga-morado); outline-offset: 2px;
+}
+
+/* El nombre largo no puede romper la rejilla del marcador: se recorta con puntos suspensivos. */
+.fila .nom { display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Los enlaces de prosa (volver, "sí jugó en…") sí son enlaces, pero en la tinta del sitio, no en azul. */
+.volver a, .vacio a, .bloque .nota a {
+  color: inherit; text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: var(--liga-verde); text-decoration-thickness: 2px;
+}
+.volver a:hover, .vacio a:hover, .bloque .nota a:hover { color: var(--liga-verde); }

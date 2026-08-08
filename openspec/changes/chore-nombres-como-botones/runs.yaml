@@ -1,0 +1,19 @@
+- run: '2026-08-08T16:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    validate: pass
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Cambio de presentación, sin comportamiento nuevo. Los nombres del marcador salían azules y subrayados
+    porque la v2 no tenía ninguna regla para enlaces y se colaba el estilo por defecto del navegador, que
+    además competía con los colores de puntuación. El dueño pidió que parecieran pulsables sin parecer
+    hipervínculos: botón de píldora con la tinta heredada y hover verde.
+    HIZO FALTA `align-self` ADEMÁS DE `justify-self`: la primera vale en una rejilla y la segunda en un
+    flex, y estos botones viven en los dos sitios. Con solo una, el título de la tarjeta de temporada se
+    estiraba a todo el ancho y parecía un campo de texto. Lo enseñó la captura, no el CSS.
+    Los enlaces de prosa se dejan como enlaces —ahí el subrayado es la señal correcta— pero en la tinta del
+    sitio y con el subrayado verde.
