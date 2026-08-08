@@ -9,7 +9,7 @@
  * sistema miente.
  */
 
-import { diaEnCurso } from '../data/dia.js';
+import { diaEnCurso, figurasDeLaJornada } from '../data/dia.js';
 import { rutaDeFicha } from '../data/ficha.js';
 import { escapar } from './shell.js';
 
@@ -63,18 +63,38 @@ function siCuenta(dia) {
     entonces no fija dificultad ni penaliza a quien falta.</p>`;
 }
 
-function tarjetas(dia, temporada) {
-  return dia.jugaron
-    .map(
-      (j, i) => `
+/**
+ * Las tarjetas de quienes han jugado, cada una con la figura que dibujó.
+ *
+ * Exportada porque es el comportamiento observable del slice `figuras-de-la-jornada`, y así se verifica sin
+ * navegador.
+ *
+ * **El desfase se declara.** La figura llega en la instantánea, que el cron materializa cada hora, mientras
+ * que la puntuación se lee de las filas crudas: quien publique entre dos pasadas aparece con su nota y sin
+ * figura. Se dice, en lugar de dejar un hueco que parece un fallo.
+ */
+export function tarjetasDeHoy(dia, temporada, carga) {
+  const figuras = figurasDeLaJornada(carga, dia.jornada);
+  const tarjetas = dia.jugaron
+    .map((j, i) => {
+      const figura = figuras.get(j.jugador);
+      return `
       <a class="resultado" href="${escapar(rutaDeFicha(temporada, j.jugador))}"
          style="border-left-color:${color(j.intentos)}">
         <span class="orden">${i + 1}</span>
         <span class="quien">${escapar(j.nombre)}</span>
+        ${figura ? `<span class="figura-hoy">${escapar(figura)}</span>` : ''}
         <span class="marca">${j.fallo ? 'X' : j.intentos}<em>/6</em></span>
-      </a>`,
-    )
+      </a>`;
+    })
     .join('');
+
+  const sinFigura = figuras.size > 0 && dia.jugaron.some((j) => !figuras.has(j.jugador));
+  const aviso = sinFigura
+    ? `<p class="nota">Quien no tiene dibujo todavía publicó después del último cálculo: su figura llega
+       con la siguiente actualización.</p>`
+    : '';
+  return tarjetas + aviso;
 }
 
 export function pintarHoy(contenedor, resultados, instantaneas, temporada) {
@@ -143,7 +163,7 @@ export function pintarHoy(contenedor, resultados, instantaneas, temporada) {
 
       <section class="bloque">
         <header class="bloque-cab"><h2>HAN JUGADO</h2><span>${dia.jugaron.length}</span></header>
-        <div class="resultados">${tarjetas(dia, temporada)}</div>
+        <div class="resultados">${tarjetasDeHoy(dia, temporada, carga)}</div>
       </section>
 
       <section class="bloque">

@@ -88,6 +88,34 @@ def album(resultados: list[dict], temporada: str) -> dict:
         "reparto": {categoria: reparto[categoria] for categoria in CATEGORIAS},
         "categorias": categorias(),
         "jugadores": _ranking(recuentos, nombre_de),
+        "ultima_jornada": _ultima_jornada(resultados, temporada),
+    }
+
+
+def _ultima_jornada(resultados: list[dict], temporada: str) -> dict:
+    """La jornada más reciente de la temporada, con la figura de cada quien publicó cuadrícula.
+
+    **Se calcula sobre todos los resultados de la temporada, cuenten o no sus días.** El álbum de arriba solo
+    cuenta lo que puntúa; esto responde otra pregunta —qué se ha dibujado hoy— y una jornada abierta todavía
+    no alcanza la muestra mínima a media mañana. Sus dibujos existen igual.
+
+    Se publica **una sola jornada**. Publicar el histórico añadiría miles de entradas que nadie lee: la vista
+    de hoy mira hoy.
+    """
+    from seasons import temporada_de
+
+    de_la_temporada = [fila for fila in resultados if temporada_de(fila["date"]) == temporada]
+    if not de_la_temporada:
+        return {"jornada": None, "figuras": {}}
+
+    jornada = max(fila["wordle_id"] for fila in de_la_temporada)
+    return {
+        "jornada": jornada,
+        "figuras": {
+            fila["slack_user_id"]: figura(fila["pattern"])
+            for fila in de_la_temporada
+            if fila["wordle_id"] == jornada and fila.get("pattern")
+        },
     }
 
 

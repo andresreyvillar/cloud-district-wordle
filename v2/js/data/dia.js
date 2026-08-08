@@ -34,6 +34,32 @@ function redondear(valor, decimales = 2) {
  * Devolver `null` en lugar de un valor por defecto es deliberado: un número inventado aquí afirmaría que la
  * jornada cuenta (o que no) con un umbral que el cálculo no usa.
  */
+/**
+ * Las figuras de una jornada: `jugador → emoji`, tal y como las publica la instantánea.
+ *
+ * **La web no clasifica.** `results.js` trae la cuadrícula cruda y la tentación es interpretarla aquí, pero
+ * serían 120 líneas de reglas calibradas contra 30 fichas etiquetadas: una copia que divergiría del álbum y
+ * del bot en la primera recalibración.
+ *
+ * Devuelve un mapa vacío si la instantánea no las trae —el estado de cualquier instantánea anterior a este
+ * slice— o si las que trae **son de otra jornada**: publicar la de ayer sobre la de hoy sería peor que no
+ * publicar nada.
+ */
+export function figurasDeLaJornada(carga, jornada) {
+  const ultima = carga?.album?.ultima_jornada;
+  if (!ultima || ultima.jornada !== jornada) return new Map();
+
+  const emojiDe = new Map(
+    (carga.album.categorias ?? []).map((c) => [c.clave, c.emoji ?? c.clave]),
+  );
+  return new Map(
+    Object.entries(ultima.figuras ?? {}).map(([jugador, categoria]) => [
+      jugador,
+      emojiDe.get(categoria) ?? categoria,
+    ]),
+  );
+}
+
 export function minimoDeLaMuestra(reglas) {
   const regla = (reglas ?? []).find((r) => r.id === REGLA_DE_LA_MUESTRA);
   const parametro = (regla?.parametros ?? []).find((p) => typeof p.valor === 'number');

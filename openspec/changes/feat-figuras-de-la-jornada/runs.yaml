@@ -1,0 +1,28 @@
+- run: '2026-08-08T15:40:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: figuras-de-la-jornada
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 6
+    supervivientes: 0
+  notas: >-
+    Lo pidió el dueño al ver que `/hoy` no decía qué había dibujado cada uno. La decisión que manda es que
+    LA WEB NO CLASIFICA: `results.js` ya trae la cuadrícula cruda y clasificar en el navegador era lo fácil,
+    pero serían 120 líneas de reglas calibradas contra 30 fichas que divergirían del álbum y del bot en la
+    primera recalibración. La figura la calcula Python y viaja en la instantánea.
+    Y NO SALEN DEL ÁLBUM: el álbum cuenta solo lo que puntúa, y una jornada abierta no alcanza la muestra
+    mínima a media mañana. Son dos preguntas distintas y se responden por separado; un mutante lo confirma.
+    SE PUBLICA UNA SOLA JORNADA. El histórico completo añadiría miles de entradas que nadie lee.
+    EL DESFASE SE DECLARA: la nota se lee de las filas crudas y la figura de la instantánea horaria, así que
+    quien publique entre dos pasadas sale sin dibujo. La vista lo dice.
+    UN COMENTARIO `//` EN EL CSS se corrigió antes de llegar a ninguna parte: no es sintaxis válida y habría
+    roto la regla entera de la tarjeta sin que ningún test lo viera.
+    LA VISTA DEJA A LA LUZ LAS IDENTIDADES PARTIDAS: ocho personas salen dos veces en la jornada y la mitad
+    de sus tarjetas sin figura. No es de este slice; se arregla con `canonical_identity.py`.

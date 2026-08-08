@@ -652,7 +652,8 @@ main { padding: 2rem 0; }
 
 .resultados { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.5rem; }
 .resultado {
-  display: grid; grid-template-columns: 1.6rem 1fr auto;
+  /* cuatro columnas: la figura de hoy va entre el nombre y la nota; su columna colapsa si no la hay. */
+  display: grid; grid-template-columns: 1.6rem 1fr auto auto;
   gap: 0.6rem; align-items: center;
   padding: 0.6rem 0.8rem;
   background: var(--superficie);
@@ -767,3 +768,6 @@ main { padding: 2rem 0; }
 .tabla-cruda .no, .tabla-cruda .sin-dato {
   font-size: 0.68rem; color: var(--liga-suave);
 }
+
+/* la figura que cada uno dibujó hoy, en su tarjeta de /hoy */
+.resultado .figura-hoy { font-size: 1.1rem; line-height: 1; }
