@@ -1,0 +1,769 @@
+/* Armazón visual de la v2.0. Solo el esqueleto: cada vista trae lo suyo con su slice.
+   Modo claro y oscuro desde el principio, porque decidirlo después obliga a revisar cada vista. */
+
+:root {
+  --verde: #2f9e44;
+  --amarillo: #e8b923;
+  --tinta: #1b1b1f;
+  --tinta-suave: #5c5f66;
+  --fondo: #fbfbfd;
+  --superficie: #ffffff;
+  --borde: #e4e5e9;
+  --radio: 10px;
+  --sombra: 0 1px 2px rgb(0 0 0 / 6%), 0 8px 24px rgb(0 0 0 / 4%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tinta: #ecedf0;
+    --tinta-suave: #9a9ea6;
+    --fondo: #14151a;
+    --superficie: #1c1e25;
+    --borde: #2c2f38;
+    --sombra: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 24%);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 3rem;
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--tinta);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
+}
+
+.cabecera,
+main,
+.pie { max-width: 60rem; margin: 0 auto; }
+
+/* --- cabecera ------------------------------------------------------------ */
+
+.cabecera { padding: 2rem 0 0; }
+
+.marca {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.marca h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.marca h1 span { color: var(--verde); }
+
+.temporada {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--tinta-suave);
+}
+
+.temporada select {
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+nav[data-navegacion] {
+  display: flex;
+  gap: 0.25rem;
+  margin: 1.5rem 0 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--borde);
+}
+
+nav[data-navegacion] a {
+  padding: 0.6rem 0.9rem;
+  color: var(--tinta-suave);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+nav[data-navegacion] a:hover { color: var(--tinta); }
+
+nav[data-navegacion] a[aria-current="page"] {
+  font-weight: 600;
+  color: var(--tinta);
+  border-bottom-color: var(--verde);
+}
+
+/* --- vistas -------------------------------------------------------------- */
+
+main { padding: 2rem 0; }
+
+.pendiente {
+  padding: 2rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.pendiente .etiqueta {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.pendiente h2 {
+  margin: 0.35rem 0 0;
+  font-size: 1.6rem;
+  font-weight: 650;
+}
+
+.pendiente .parametros { margin: 0.75rem 0 0; }
+
+.pendiente code {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.8rem;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+.pendiente .nota {
+  margin: 1rem 0 0;
+  color: var(--tinta-suave);
+}
+
+.pendiente.error { border-color: var(--amarillo); }
+
+.pendiente a { color: var(--verde); }
+
+/* --- pie ----------------------------------------------------------------- */
+
+.pie {
+  padding-top: 2rem;
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+  border-top: 1px solid var(--borde);
+}
+
+.pie p { margin: 0; }
+
+/* --- la vista de reglas -------------------------------------------------- */
+
+.reglas { display: flex; flex-direction: column; gap: 2.5rem; }
+
+.reglas-cabecera h1 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 2rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.reglas-cabecera .etiqueta {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.reglas-cabecera .resumen {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--tinta-suave);
+}
+
+.reglas-cabecera .resumen strong { color: var(--tinta); }
+
+.eje { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.eje h2 {
+  margin: 0;
+  padding-bottom: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 650;
+  border-bottom: 2px solid var(--verde);
+}
+
+.eje .entradilla {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--tinta-suave);
+}
+
+.regla {
+  padding: 1.25rem 1.4rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+/* El borde izquierdo dice el estado de un vistazo, y el color no va solo:
+   la etiqueta de texto lo repite, que es lo que hace que funcione sin ver color. */
+.regla.aplicada { border-left-color: var(--verde); }
+.regla.acordada { border-left-color: var(--amarillo); }
+.regla.abierta { border-left-color: var(--tinta-suave); }
+
+.regla header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.regla h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 620;
+  line-height: 1.3;
+}
+
+.regla .marcadores { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.regla .estado,
+.regla .voto {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+}
+
+.regla.aplicada .estado { color: #17a356; border-color: #17a35644; }
+.regla.acordada .estado { color: #a87400; border-color: #a8740044; }
+.regla.abierta .estado { color: var(--tinta-suave); }
+
+.regla .voto.si { color: #17a356; border-color: #17a35644; }
+.regla .voto.no { color: var(--tinta-suave); }
+
+.regla .que { margin: 0.75rem 0 0; max-width: 70ch; }
+
+.regla .porque {
+  margin: 0.6rem 0 0;
+  max-width: 70ch;
+  font-size: 0.92rem;
+  color: var(--tinta-suave);
+}
+
+.regla .porque span {
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.regla .parametros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.regla .parametros li {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+.regla .parametros .pnombre { color: var(--tinta-suave); }
+.regla .parametros .pvalor { font-weight: 650; font-variant-numeric: tabular-nums; }
+
+.regla .falta {
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.8rem;
+  max-width: 70ch;
+  font-size: 0.88rem;
+  color: var(--tinta-suave);
+  background: var(--fondo);
+  border-left: 2px solid var(--amarillo);
+}
+
+.regla .falta strong { color: var(--tinta); }
+
+/* --- la liga arcade ------------------------------------------------------ */
+/* Dirección visual de docs/context/sources/2026-08-05-diseno-liga-arcade.md:
+   plano, sin sombras, bordes gruesos, reglas de color separando secciones, y tres tipografías con
+   trabajos distintos — Poppins para leer, DM Mono para cifras, Silkscreen para la marca. */
+
+:root {
+  --liga-verde: #3DE07A;
+  --liga-amarillo: #FFD23F;
+  --liga-morado: #8B5CFF;
+  --liga-rojo: #FF4D6D;
+  --liga-tinta: #2B2733;
+  --liga-media: #57516B;
+  --liga-suave: #7C7690;
+  --liga-tablero: #F6F6F1;
+  --mono: "DM Mono", ui-monospace, monospace;
+  --pixel: "Silkscreen", monospace;
+  --serif: "Libre Baskerville", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --liga-tinta: #ECEDF0;
+    --liga-media: #B8B4C4;
+    --liga-suave: #9A94A8;
+    --liga-tablero: #1A1B21;
+  }
+}
+
+.liga { display: flex; flex-direction: column; gap: 2rem; color: var(--liga-tinta); }
+.liga .mono { font-family: var(--mono); }
+.liga .etiqueta {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--liga-suave);
+}
+
+/* barra superior con HUD */
+.barra {
+  display: flex; flex-wrap: wrap; gap: 1rem;
+  align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--superficie);
+  border-bottom: 3px solid var(--liga-tinta);
+}
+.marca-liga { display: flex; gap: 0.5rem; align-items: center; }
+.pixel { font-family: var(--pixel); font-size: 1.1rem; letter-spacing: 0.02em; }
+.pixel.resalte { padding: 2px 7px; color: #14072B; background: var(--liga-verde); }
+.hud { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+.kpi { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.kpi span {
+  font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--liga-suave);
+}
+.kpi b { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; line-height: 1; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.55fr 1fr; gap: 2rem; align-items: start; }
+@media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+.hero-texto { display: flex; flex-direction: column; gap: 0.85rem; }
+.hero-meta { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; }
+.hero-meta .chip {
+  font-family: var(--mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em;
+  padding: 4px 8px; color: #14072B; background: var(--liga-verde);
+}
+.hero-meta .mono {
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--liga-suave);
+}
+.hero h1 {
+  margin: 0; font-size: clamp(1.6rem, 3.6vw, 2.7rem); font-weight: 700;
+  letter-spacing: -0.03em; line-height: 1.06; text-wrap: pretty;
+}
+.hero .serif {
+  margin: 0; max-width: 42rem;
+  font-family: var(--serif); font-style: italic; font-size: 1.02rem; line-height: 1.5;
+  color: var(--liga-media);
+}
+.hero-tira {
+  display: flex; flex-direction: column; gap: 0.7rem;
+  padding: 1rem; margin-top: 0.25rem;
+  border: 2px solid var(--borde);
+}
+
+/* casillas
+   La tira reparte el ancho disponible entre sus casillas en lugar de darles un ancho fijo: con 23 jornadas
+   y una columna estrecha, el ancho fijo partía la tira en dos líneas. Así encaja siempre, tenga la
+   temporada 3 días o 23. */
+.tiras { display: flex; gap: 2px; line-height: 1; min-width: 0; }
+.casilla { flex: 1 1 0; min-width: 3px; }
+.tiras.grande { gap: 3px; }
+.leyenda { display: flex; flex-wrap: wrap; gap: 1rem; }
+.leyenda span {
+  display: inline-flex; gap: 6px; align-items: center;
+  font-family: var(--mono); font-size: 0.62rem; color: var(--liga-suave);
+}
+.leyenda .casilla { flex: none; width: 13px; }
+
+/* podio */
+.podio { display: flex; flex-direction: column; gap: 0.7rem; }
+.podio-card {
+  display: flex; flex-direction: column; gap: 0.55rem;
+  padding: 1rem 1.1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-left: 6px solid var(--liga-verde);
+}
+.podio-alto { display: flex; align-items: baseline; justify-content: space-between; }
+.podio-card .pos { font-family: var(--mono); font-size: 0.95rem; font-weight: 500; }
+.podio-card .avg { font-family: var(--mono); font-size: 1.7rem; font-weight: 600; line-height: 1; }
+.podio-card .nombre { font-size: 1.15rem; font-weight: 600; line-height: 1.15; }
+.podio-card .detalle { font-size: 0.72rem; font-weight: 300; color: var(--liga-suave); }
+
+/* bloques con regla de color */
+.bloque { display: flex; flex-direction: column; gap: 0.6rem; }
+.bloque-cab {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  align-items: baseline; justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid var(--liga-tinta);
+}
+.bloque-cab h2 { margin: 0; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+.bloque-cab span {
+  font-family: var(--mono); font-size: 0.65rem; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--liga-suave);
+}
+.bloque-cab.amarillo { border-bottom-color: var(--liga-amarillo); }
+.bloque-cab.morado { border-bottom-color: var(--liga-morado); }
+.bloque-cab.verde { border-bottom-color: var(--liga-verde); }
+
+/* álbum de figuras: la tira agrupada, una entrada por categoría */
+.tiras.figuras { flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.figura {
+  display: inline-flex; align-items: baseline; gap: 2px;
+  font-size: 0.95rem; line-height: 1;
+}
+.figura b { font-family: var(--mono); font-size: 0.78rem; font-weight: 600; }
+/* El ruido se apaga: está para que el recuento sea honesto, no para competir con las figuras. */
+.figura.ruido { opacity: 0.45; }
+.tiras.figuras.grande { gap: 0.9rem; }
+.tiras.figuras.grande .figura { font-size: 1.6rem; }
+.tiras.figuras.grande .figura b { font-size: 1rem; }
+.cabeza.album-cabeza, .fila.album-fila {
+  grid-template-columns: 6px 34px minmax(7rem, 1fr) minmax(9rem, 1.6fr) 5rem 5rem;
+}
+/* «83 %» lleva espacio por tipografía, y en la columna estrecha de móvil se partía en dos líneas. Se
+   resuelve aquí y no con un espacio duro en el fuente: un carácter invisible en el código es una trampa. */
+.fila.album-fila .num, .album-cifra b { white-space: nowrap; }
+.album-ficha { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; padding: 0.4rem 0; }
+.album-cifra { display: flex; flex-direction: column; gap: 2px; }
+.album-cifra b { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.album-cifra span { font-size: 0.75rem; font-weight: 300; color: var(--liga-suave); }
+
+/* marcador */
+.cabeza, .fila {
+  display: grid;
+  grid-template-columns: 6px 34px minmax(7rem, 1fr) minmax(6rem, 1.3fr) 6rem 6.5rem 4rem;
+  gap: 0.5rem; align-items: center;
+}
+.cabeza { padding-bottom: 6px; border-bottom: 1px solid var(--borde); }
+.cabeza span {
+  font-family: var(--mono); font-size: 0.55rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--liga-suave);
+}
+.cabeza .der, .fila .num { text-align: right; }
+.fila { padding: 8px 0; border-bottom: 1px solid var(--borde); }
+.fila .acento { height: 26px; }
+.fila .pos { font-family: var(--mono); font-size: 1rem; font-weight: 600; }
+.fila .nom { font-size: 0.98rem; font-weight: 600; }
+.fila .num.fuerte { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; }
+.fila .num.suave { font-family: var(--mono); font-size: 0.78rem; color: var(--liga-suave); }
+.bloque .nota {
+  margin: 0.5rem 0 0; max-width: 60rem;
+  font-size: 0.75rem; font-weight: 300; line-height: 1.5; color: var(--liga-suave);
+}
+@media (max-width: 860px) {
+  .cabeza { display: none; }
+  .fila { grid-template-columns: 6px 30px 1fr 5rem; row-gap: 4px; }
+  .fila .tiras, .fila .num.suave { display: none; }
+  /* La tira de figuras sí cabe en móvil: son cuatro entradas, no 181 casillas. */
+  .fila.album-fila { grid-template-columns: 6px 30px 1fr 4rem; }
+  .fila.album-fila .tiras.figuras { display: flex; grid-column: 2 / -1; }
+  .leyenda { gap: 0.6rem; }
+}
+
+/* logros */
+.logros { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.85rem; }
+.logro {
+  display: flex; flex-direction: column; gap: 0.55rem;
+  padding: 1rem;
+  background: var(--superficie);
+  border: 2px solid var(--borde);
+}
+.logro.ganado { border-color: var(--liga-verde); }
+.logro header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.logro .icono { color: var(--liga-tinta); flex: none; }
+.logro .estado {
+  font-family: var(--mono); font-size: 0.55rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--liga-suave); text-align: right;
+}
+.logro.ganado .estado { color: #17a356; }
+.logro h3 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.25; }
+.logro p { margin: 0; font-size: 0.75rem; font-weight: 300; line-height: 1.45; color: var(--liga-media); }
+.logro .quienes {
+  margin-top: auto; padding-top: 0.4rem;
+  font-family: var(--mono); font-size: 0.72rem; font-weight: 500; color: var(--liga-tinta);
+}
+
+/* estadísticas */
+.columnas {
+  display: flex; gap: 3px; align-items: flex-end;
+  height: 120px; padding: 0.5rem 0;
+}
+.columnas i { flex: 1; min-width: 4px; display: block; }
+.extremos { display: flex; gap: 2rem; flex-wrap: wrap; }
+.extremos div { display: flex; flex-direction: column; gap: 2px; }
+.extremos span {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.extremos .dura { color: #DC1436; }
+.extremos .facil { color: #17a356; }
+.extremos b { font-family: var(--mono); font-size: 1.4rem; font-weight: 600; line-height: 1.1; }
+
+/* Las filas sin clasificar se ven, pero se distinguen: el resultado cuenta y el puesto no. */
+.fila.sin-clasificar { opacity: 0.62; }
+.fila.sin-clasificar .pos { color: var(--liga-suave); }
+.bloque .nota.aviso {
+  padding: 0.6rem 0.8rem;
+  border-left: 2px solid var(--liga-amarillo);
+  background: var(--fondo);
+}
+
+/* ── ficha de jugador ─────────────────────────────────────────────────────────────────────────── */
+.ficha { display: flex; flex-direction: column; gap: 2rem; color: var(--liga-tinta); }
+.ficha .titular {
+  display: flex; flex-wrap: wrap; gap: 1.5rem;
+  align-items: flex-end; justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--liga-tinta);
+}
+.ficha .titular h1 { margin: 0.2rem 0 0; font-size: 2.4rem; font-weight: 700; letter-spacing: -0.04em; }
+.ficha .titular .serif { margin: 0.2rem 0 0; font-family: var(--serif); color: var(--liga-suave); }
+.ficha .puesto {
+  display: inline-block; padding: 2px 9px;
+  font-family: var(--pixel); font-size: 1rem;
+  color: #14072B; background: var(--liga-verde);
+}
+.ficha .puesto.sin { color: var(--liga-tinta); background: transparent; border: 2px solid var(--borde); }
+.ficha a { color: inherit; text-decoration: none; border-bottom: 2px solid var(--liga-verde); }
+.ficha a:hover { color: var(--liga-verde); }
+.ficha .volver { margin: 0; font-size: 0.85rem; }
+
+/* el coste de faltar: las dos medias y el salto entre ellas */
+.coste {
+  display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+  padding: 1rem 1.2rem;
+  background: var(--superficie); border: 2px solid var(--borde);
+}
+.coste > div { display: flex; flex-direction: column; gap: 2px; }
+.coste span {
+  font-family: var(--mono); font-size: 0.6rem; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--liga-suave);
+}
+.coste b { font-family: var(--mono); font-size: 1.6rem; font-weight: 600; line-height: 1; }
+.coste .flecha { font-size: 1.3rem; color: var(--liga-suave); }
+.coste .delta {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-family: var(--mono); font-size: 1.3rem; font-weight: 600;
+  color: #14072B; background: var(--liga-amarillo);
+}
+
+/* distribución de intentos */
+.distribucion { display: flex; gap: 0.5rem; align-items: flex-end; height: 150px; }
+.distribucion .barra {
+  position: relative; flex: 1 1 0;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  height: 100%; gap: 3px;
+  background: none; border: 0;                    /* .barra de la maqueta es otra cosa */
+}
+.distribucion .barra b { width: 100%; min-height: 2px; }
+.distribucion .barra .n {
+  order: -1;
+  font-family: var(--mono); font-size: 0.7rem; font-weight: 600; color: var(--liga-suave);
+}
+.distribucion .barra .eje {
+  font-family: var(--mono); font-size: 0.7rem; font-weight: 600; color: var(--liga-suave);
+}
+
+/* jornada a jornada */
+.desglose {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.3rem; margin: 0.5rem 0 0; padding: 0; list-style: none;
+}
+.desglose li {
+  display: grid; grid-template-columns: 3.2rem 1fr 2.4rem;
+  gap: 0.4rem; align-items: baseline;
+  padding: 5px 8px;
+  background: var(--superficie); border-left: 3px solid var(--liga-verde);
+  font-family: var(--mono); font-size: 0.72rem;
+}
+.desglose li.imputada { border-left-style: dashed; border-left-color: var(--liga-suave); opacity: 0.85; }
+.desglose .jor { font-weight: 600; }
+.desglose .fec { color: var(--liga-suave); }
+.desglose .val { text-align: right; font-weight: 600; }
+.desglose .tipo { display: none; }
+
+/* las tablas de la ficha no son el marcador: menos columnas */
+.ficha .cabeza.tres, .ficha .cabeza.cuatro { grid-template-columns: none; }
+.ficha .cabeza.tres { display: grid; grid-template-columns: 1fr 6rem 6rem; }
+.ficha .cabeza.cuatro { display: grid; grid-template-columns: 3.5rem 1fr 6rem 6rem; }
+.ficha .bloque .fila { grid-template-columns: 1fr 6rem 6rem; }
+.ficha .bloque .fila.actual, .ficha .bloque a.fila.actual { background: var(--superficie); }
+.ficha .bloque a.fila { grid-template-columns: 3.5rem 1fr 6rem 6rem; border-bottom: 1px solid var(--borde); }
+.ficha .bloque a.fila { text-decoration: none; border-bottom: 1px solid var(--borde); color: inherit; }
+.ficha .bloque a.fila:hover { color: var(--liga-verde); }
+.ficha .bloque a.fila .pos { font-family: var(--mono); font-weight: 600; }
+
+@media (max-width: 860px) {
+  .ficha .titular h1 { font-size: 1.8rem; }
+  .coste .delta { margin-left: 0; }
+  .ficha .bloque .fila, .ficha .bloque a.fila { grid-template-columns: 1fr 4.5rem 4.5rem; }
+  .ficha .cabeza.tres, .ficha .cabeza.cuatro { display: none; }
+}
+
+/* ── la jornada en curso ──────────────────────────────────────────────────────────────────────── */
+.hoy { display: flex; flex-direction: column; gap: 2rem; color: var(--liga-tinta); }
+.hoy .titular {
+  display: flex; flex-wrap: wrap; gap: 1.5rem;
+  align-items: flex-end; justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--liga-tinta);
+}
+.hoy .titular h1 {
+  margin: 0.35rem 0 0;
+  font-size: 2.2rem; font-weight: 700; letter-spacing: -0.04em;
+}
+.hoy .titular .serif { margin: 0.2rem 0 0; font-family: var(--serif); color: var(--liga-suave); }
+
+.veredicto {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline;
+  padding: 0.9rem 1.1rem;
+  background: var(--superficie); border-left: 4px solid var(--liga-suave);
+  font-size: 0.85rem; font-weight: 300;
+}
+.veredicto b { font-family: var(--mono); font-size: 1.15rem; font-weight: 600; }
+.veredicto.dura { border-left-color: var(--liga-morado); }
+.veredicto.facil { border-left-color: var(--liga-verde); }
+
+.resultados { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.5rem; }
+.resultado {
+  display: grid; grid-template-columns: 1.6rem 1fr auto;
+  gap: 0.6rem; align-items: center;
+  padding: 0.6rem 0.8rem;
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-left-width: 5px;
+  color: inherit; text-decoration: none;
+}
+.resultado:hover { border-color: var(--liga-verde); }
+.resultado .orden { font-family: var(--mono); font-size: 0.7rem; color: var(--liga-suave); }
+.resultado .quien { font-size: 0.95rem; font-weight: 600; }
+.resultado .marca { font-family: var(--mono); font-size: 1.35rem; font-weight: 600; line-height: 1; }
+.resultado .marca em { font-size: 0.7rem; font-style: normal; color: var(--liga-suave); }
+
+.ausentes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ausentes a {
+  padding: 4px 10px;
+  background: transparent; border: 2px dashed var(--borde);
+  font-size: 0.85rem; color: var(--liga-suave); text-decoration: none;
+}
+.ausentes a:hover { color: var(--liga-tinta); border-color: var(--liga-tinta); }
+
+@media (max-width: 860px) {
+  .hoy .titular h1 { font-size: 1.7rem; }
+}
+
+/* ── el archivo de temporadas ─────────────────────────────────────────────────────────────────── */
+.archivo { display: flex; flex-direction: column; gap: 2rem; color: var(--liga-tinta); }
+.archivo .titular { padding-bottom: 1rem; border-bottom: 3px solid var(--liga-tinta); }
+.archivo .titular h1 { margin: 0; font-size: 2.4rem; font-weight: 700; letter-spacing: -0.04em; }
+.archivo .titular .serif { margin: 0.2rem 0 0; font-family: var(--serif); color: var(--liga-suave); }
+
+.temporadas { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.85rem; }
+.temporada-card {
+  display: flex; flex-direction: column; gap: 0.7rem;
+  padding: 1.1rem;
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-top: 5px solid var(--liga-verde);
+}
+.temporada-card.abierta { border-top-color: var(--liga-amarillo); }
+.temporada-card.historica { border-top-color: var(--liga-morado); }
+.temporada-card header { display: flex; flex-direction: column; gap: 2px; }
+.temporada-card .etiqueta {
+  font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em;
+  color: inherit; text-decoration: none; border-bottom: 2px solid transparent;
+}
+.temporada-card .etiqueta:hover { border-bottom-color: var(--liga-verde); }
+.temporada-card .estado {
+  font-family: var(--mono); font-size: 0.6rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--liga-suave);
+}
+.temporada-card .marca-historica {
+  margin: 0; padding: 5px 8px;
+  background: rgba(139, 95, 255, 0.10);
+  font-size: 0.68rem; font-weight: 400; line-height: 1.35; color: var(--liga-tinta);
+}
+.temporada-card .campeon { display: flex; flex-direction: column; gap: 4px; }
+.temporada-card .campeon .quien { display: flex; gap: 0.6rem; align-items: baseline; }
+.temporada-card .ganador { font-size: 1.25rem; font-weight: 600; color: inherit; text-decoration: none; }
+.temporada-card .ganador:hover { color: var(--liga-verde); }
+.temporada-card .ganador.vacia { color: var(--liga-suave); font-weight: 400; font-size: 1rem; }
+.temporada-card .media { font-family: var(--mono); font-size: 1.35rem; font-weight: 600; }
+.temporada-card .totales { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.9rem; margin: 0; }
+.temporada-card .totales div { display: flex; justify-content: space-between; gap: 0.5rem; }
+.temporada-card .totales dt {
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--liga-suave);
+}
+.temporada-card .totales dd { margin: 0; font-family: var(--mono); font-size: 0.85rem; font-weight: 600; }
+.temporada-card .nota { margin: 0; font-size: 0.7rem; color: var(--liga-suave); }
+
+.archivo .cabeza.cuatro-med, .archivo .bloque .fila {
+  display: grid; grid-template-columns: minmax(6rem, 1fr) minmax(8rem, 2fr) 6rem 4rem;
+}
+.archivo .bloque .fila .detalle { font-size: 0.75rem; font-weight: 300; color: var(--liga-suave); }
+
+@media (max-width: 860px) {
+  .archivo .cabeza.cuatro-med { display: none; }
+  .archivo .bloque .fila { grid-template-columns: 1fr 4rem; }
+  .archivo .bloque .fila .detalle, .archivo .bloque .fila .num.suave { display: none; }
+}
+
+/* ── la tabla cruda ───────────────────────────────────────────────────────────────────────────── */
+.datos { display: flex; flex-direction: column; gap: 1.2rem; color: var(--liga-tinta); }
+.datos .titular { padding-bottom: 1rem; border-bottom: 3px solid var(--liga-tinta); }
+.datos .titular h1 { margin: 0; font-size: 2.4rem; font-weight: 700; letter-spacing: -0.04em; }
+.datos .titular .serif { margin: 0.2rem 0 0; font-family: var(--serif); color: var(--liga-suave); }
+.datos > .nota {
+  margin: 0; max-width: 60rem;
+  font-size: 0.78rem; font-weight: 300; line-height: 1.5; color: var(--liga-suave);
+}
+
+.tabla-cruda { max-height: 34rem; overflow: auto; border: 2px solid var(--borde); }
+.tabla-cruda table { width: 100%; border-collapse: collapse; }
+.tabla-cruda thead th {
+  position: sticky; top: 0; z-index: 1;
+  padding: 0.5rem 0.7rem;
+  background: var(--superficie);
+  border-bottom: 2px solid var(--liga-tinta);
+  font-family: var(--mono); font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; text-align: left; color: var(--liga-suave);
+}
+.tabla-cruda td {
+  padding: 0.4rem 0.7rem;
+  border-bottom: 1px solid var(--borde);
+  font-size: 0.82rem;
+}
+.tabla-cruda .mono { font-family: var(--mono); font-size: 0.76rem; }
+.tabla-cruda .der { text-align: right; }
+.tabla-cruda th.der { text-align: right; }
+.tabla-cruda td.fallo { color: #FF4D6D; font-weight: 700; }
+.tabla-cruda tr.descartada { opacity: 0.62; }
+.tabla-cruda .si { font-size: 0.68rem; color: #17a356; }
+.tabla-cruda .no, .tabla-cruda .sin-dato {
+  font-size: 0.68rem; color: var(--liga-suave);
+}

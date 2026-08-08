@@ -1,0 +1,30 @@
+- run: '2026-08-07T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: tabla-de-datos
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    Punto 2.7: portar la tabla cruda de la v1, más una columna que allí no cabía: si la fila cuenta para su
+    temporada, con el motivo cuando no.
+    EL NAVEGADOR CAZÓ UN FALLO QUE LOS TESTS NO: la tabla decía "1543 resultados · 70 cuentan". Buscaba la
+    instantánea por el mes de la fecha, y para las 1502 filas anteriores a agosto ese mes no existe como
+    temporada: todas son la temporada 0. No fallaba, simplemente no afirmaba nada.
+    ES EL MISMO ERROR QUE EL DÍA ANTERIOR EN badges.py, donde el síntoma fue cero medallas en 181 jornadas.
+    Dos veces, en dos lenguajes, la misma causa. Arreglado con tres decisiones y no con una línea:
+    `v2/js/data/temporada.js` como única definición en la web; el límite leído de las reglas publicadas en
+    lugar de escrito (sería la tercera copia de seasons.INICIO_TEMPORADAS); y el borde de datos deja de
+    llamar `temporada` al mes, que es lo que invitaba al error.
+    LOS DOS TESTS NUEVOS son los que faltaban: una fila anterior al límite se compara con la temporada 0, y
+    sin límite publicado no se adivina.
+    DERIVA MEDIDA, NO TOCADA: la tabla tiene 1572 filas cuando la migración de ayer dejó 1543. El cron de
+    `main` ha metido 29 filas en menos de un día y las 29 duplican a alguien en su jornada. Se ve a simple
+    vista en la tabla. Producción no se ha tocado.

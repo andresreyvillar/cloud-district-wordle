@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iconos de logros — hoja de contactos</title>
+  <style>
+    :root { color-scheme: light dark; --tinta: #2B2733; --fondo: #F6F6F1; --caja: #FFFFFF; --borde: rgba(43,39,51,.15); --suave: #7C7690; }
+    @media (prefers-color-scheme: dark) { :root { --tinta: #ECEDF0; --fondo: #14151A; --caja: #1C1E25; --borde: rgba(255,255,255,.14); --suave: #9A9EA6; } }
+    body { margin: 0; padding: 40px; font: 15px/1.5 "Poppins", system-ui, sans-serif; color: var(--tinta); background: var(--fondo); }
+    h1 { font-size: 22px; font-weight: 650; margin: 0 0 4px; }
+    p.intro { margin: 0 0 32px; color: var(--suave); max-width: 60ch; }
+    .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; max-width: 1100px; }
+    .celda { background: var(--caja); border: 2px solid var(--borde); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .fila { display: flex; align-items: flex-end; gap: 14px; }
+    .icono { color: var(--tinta); }
+    code { font: 11px ui-monospace, monospace; color: var(--suave); }
+    .nombre { font-weight: 650; font-size: 14px; }
+    .tamanos { color: var(--suave); font-size: 11px; }
+  </style>
+</head>
+<body>
+  <h1>Iconos de logros</h1>
+  <p class="intro">Pixel art sobre rejilla de 16×16, un sprite y un <code>&lt;use&gt;</code>. El trazo
+  principal hereda <code>currentColor</code>, así que el mismo icono vale en claro y en oscuro; el acento
+  lleva su color propio para que un loro no se confunda con una flor. Cada uno se muestra a 48, 32 y 20 px.</p>
+  <div class="rejilla" id="rejilla"></div>
+  <script>
+    const IDS = ['suertudo','dia-imposible','superviviente','pleno','verdugo','impecable','fondista',
+                 'ornitologo','florista','arquitecto','fontanero','rajado','metronomo','francotirador'];
+    document.getElementById('rejilla').innerHTML = IDS.map((id) => `
+      <div class="celda">
+        <div class="fila">
+          ${[48, 32, 20].map((t) => `<svg class="icono" width="${t}" height="${t}" aria-hidden="true"><use href="/assets/icons/logros.svg#${id}"></use></svg>`).join('')}
+        </div>
+        <div>
+          <div class="nombre">${id}</div>
+          <code>#${id}</code>
+        </div>
+      </div>`).join('');
+  </script>
+</body>
+</html>

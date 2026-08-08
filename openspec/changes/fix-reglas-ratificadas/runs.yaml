@@ -1,0 +1,30 @@
+- run: '2026-08-07T15:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: reglas-explicadas
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 3
+    supervivientes: 0
+  notas: >-
+    El grupo ratificó las trece reglas aplicadas. Al marcarlas, un test se puso rojo y destapó algo que
+    llevaba dos días mal: `imputacion-por-dificultad` constaba como "acordada sin aplicar" cuando
+    `standings.imputar()` se usa en la clasificación desde el 2026-08-05. La página decía que la tabla no
+    imputaba mientras imputaba, que es justo el fallo que esa página existe para no cometer. Igual con
+    `sin-minimo-para-clasificar`.
+    Quedan 15 aplicadas y 13 votadas: las dos sin votar son las del modelo de participación, que son las que
+    cambian quién gana el mes.
+    DESAPARECE `rules.MARGEN_DE_IMPUTACION`: el margen se lee de `standings.MARGEN`. Era la copia que el
+    propio módulo se había comprometido a borrar cuando el modelo se implementara.
+    UN TEST QUE AFIRMABA PASA A DEMOSTRAR: en lugar de comparar el estado con una cadena, monta una
+    temporada con una ausencia y comprueba que la tabla trae una jornada imputada. Un estado que solo se
+    afirma es lo que permitió el desfase.
+    FIXTURE CORREGIDO ANTES DE DARLO POR BUENO: con cinco jugadores, quitar a uno dejaba la jornada por
+    debajo de la muestra mínima, el día salía de la temporada y no se imputaba nada. El test habría pasado o
+    fallado por el motivo equivocado. Con seis, la ausencia es una ausencia.

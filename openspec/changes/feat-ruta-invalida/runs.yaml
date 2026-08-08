@@ -1,0 +1,26 @@
+- run: '2026-08-07T10:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: ruta-invalida
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 0
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    Punto 2.6. El comportamiento ya existía desde el esqueleto (pack Slice: N/A); lo que no existía era nada
+    que lo protegiera. Con el fallback SPA cualquier ruta devuelve 200, así que un enlace roto no falla:
+    simplemente no pinta nada, y la única señal es una vista que un refactor del router podía borrar sin que
+    ningún test se quejara.
+    PACK SIN ROJO PREVIO, DECLARADO: los siete tests pasan desde el principio porque describen algo que ya
+    funciona. Lo que demuestra que sirven es el Gate 4c, no el rojo: cuatro mutantes —el mes de dos dígitos,
+    el identificador libre, la sección marcada y la ruta sin escapar— y los cuatro caen. Sin esos mutantes
+    este pack sería decorativo, y así hay que leerlo.
+    NI UNA LÍNEA DE PRODUCCIÓN. Solo slice y tests.
+    Fija de paso la distinción que más se va a confundir: "no existe esa ruta" no es "ese jugador no jugó esa
+    temporada". Lo segundo tiene ficha; lo primero, no.

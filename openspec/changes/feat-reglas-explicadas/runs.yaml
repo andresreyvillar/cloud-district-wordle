@@ -1,0 +1,62 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T12:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: reglas-explicadas
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Página de reglas pedida por el usuario: los participantes tienen que poder leer todas las reglas que se
+    les aplican. Hoy están repartidas entre un hilo de Slack, dos conversaciones de diseño y cuatro briefs.
+    DECISIÓN DE DISEÑO CENTRAL: los parámetros NO se escriben a mano. Cada regla referencia la constante que
+    el cálculo usa, y un test comprueba que lo publicado es lo aplicado. Sin eso la página miente en cuanto
+    alguien recalibre un umbral, y una página de reglas equivocada es peor que no tenerla porque el grupo
+    confía en ella.
+    Dos marcadores independientes por regla, estado y votada, porque hoy hay reglas APLICADAS Y NO VOTADAS
+    —días laborables y el modelo de imputación— y esconderlo sería el peor uso posible de esta página.
+    Las reglas viajan dentro de la instantánea de la temporada, así que una cerrada conserva las suyas: mirar
+    marzo explica marzo. Es una clave más en la carga útil JSONB, que es para lo que se eligió.
+    RIESGO DECLARADO: bajo técnicamente, alto en percepción. Esta página le dice al grupo que se le aplican
+    reglas que no votó, y eso es el objetivo, no un efecto colateral. Conviene que alguien lo lleve al canal
+    en lugar de que lo descubran solos.
+
+- run: '2026-08-05T12:40:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: reglas-explicadas
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: n/a
+    adversarial: skip
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    tools/rules.py con 19 reglas en cinco ejes, la instantánea gana la clave `reglas`, y la vista /reglas en
+    la web. 7 escenarios, 12 tests. Verificado en navegador: cinco ejes, 19 reglas, los tres estados, los
+    ocho parámetros con su valor real y cero errores de consola.
+    DOS RONDAS DE CORRECCIÓN, las dos por mirar la página en vez de fiarse de los tests:
+    (1) MARKDOWN EN LA CARA DEL LECTOR. La prosa del catálogo llevaba `**Todavía no está activo.**` y la
+    vista escapa el texto en lugar de renderizarlo, así que salían los asteriscos literales. Arreglado y
+    cubierto con un test que prohíbe markdown en los campos de prosa.
+    (2) EL ESCENARIO DE LA TEMPORADA CERRADA ERA INALCANZABLE. La ruta /reglas no llevaba temporada, así que
+    estando en marzo y pulsando Reglas se mostraban las de agosto. No era un fallo de pintado: la ruta no
+    tenía dónde poner la temporada. Añadida /t/<AAAA-MM>/reglas, coherente con el ADR 0006 —la temporada es
+    el eje y las vistas se resuelven dentro— con su test de router. El escenario se corrigió para decir la
+    ruta.
+    MUTACIÓN — 4 mutantes, 0 supervivientes, y uno hubo que repetirlo: cambiar el valor por defecto de
+    `votada` en la dataclass no probaba nada, porque TODAS las reglas lo pasan explícitamente. Era un mutante
+    equivalente al original. Repetido poniendo votada=True en una regla concreta, cae el test que declara que
+    hay reglas aplicadas sin votar.
+    LO QUE ESTA PÁGINA DICE Y CONVIENE NO PERDER DE VISTA: 11 reglas en vigor y 10 de ellas sin votar en el
+    canal. Es el objetivo del slice, no un efecto colateral, pero alguien tiene que llevarlo al canal.

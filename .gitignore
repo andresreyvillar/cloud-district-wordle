@@ -3,3 +3,10 @@
 __pycache__/
 .vscode/
 .env
+
+# Entorno de desarrollo
+.venv/
+.pytest_cache/
+
+# Artefactos del pipeline
+ranking_snapshot.png

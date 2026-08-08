@@ -2,7 +2,9 @@ name: Daily Ranking Post
 
 on:
   schedule:
-    - cron: '0 17 * * *'
+    # Monday to Friday only: a season is its weekdays, so there is no weekend matchday to publish.
+    # Running on Saturday would re-publish Friday's, because the matchday comes from the data.
+    - cron: '0 17 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -26,10 +28,16 @@ jobs:
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python tools/extract_slack.py | python tools/add_results.py
+        run: python3 tools/extract_slack.py | python3 tools/add_results.py
 
       - name: Capture and Post Ranking
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-        run: python tools/post_ranking.py
+          # Sin estas dos, `leer_resultados()` devuelve vacío y el mensaje sale SIN MEDALLAS. Faltaban:
+          # las medallas están implementadas desde el 2026-08-05 y no han salido ni un solo día.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # El corte a la v2: se cambia la variable del repositorio, no el código.
+          CAPTURA_OBJETIVO: ${{ vars.CAPTURA_OBJETIVO || 'v1' }}
+        run: python3 tools/post_ranking.py

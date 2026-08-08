@@ -1,0 +1,29 @@
+- run: '2026-08-06T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: resultado-del-dia
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Punto 2.4 de la Fase 2. Es la única vista que habla de una jornada abierta, y por eso la única que tiene
+    que decir algo incómodo: hoy puede no contar todavía. Un día entra en la temporada si es laborable y lo
+    juegan cinco personas, así que a media mañana hay resultados y aún no puntúan. Callarlo hace que alguien
+    mire su nota, la vea cambiar y concluya que el sistema miente.
+    EXCEPCIÓN DECLARADA AL ADR 0008: la jornada abierta no está materializada y el cron corre cada hora, así
+    que la media del día se calcula en el navegador sobre las filas crudas. Lo que NO se duplica son los
+    umbrales: la muestra mínima se lee de las reglas que viajan dentro de la instantánea, que salen de la
+    constante de Python. Un test lo fija —mismo dato, umbral 5 no cuenta y umbral 3 sí, sin tocar la vista— y
+    otro comprueba que sin umbral publicado la vista dice que no puede afirmarlo en lugar de asumir un 5.
+    VERIFICADO EN NAVEGADOR con los datos ya migrados: jornada #1673, jueves 6 de agosto, 11 jugados y 1
+    ausente, media del día 3,91 frente a 4,17 de la temporada, «más fácil por 0,26», y el aviso de que la
+    jornada ya cuenta. Cero errores de consola.
+    UN FALLO QUE SOLO SE VE EN EL NAVEGADOR: `text-transform: capitalize` escribía «6 De Agosto». Arreglado
+    en el texto y no en el CSS, que es donde estaba la causa.

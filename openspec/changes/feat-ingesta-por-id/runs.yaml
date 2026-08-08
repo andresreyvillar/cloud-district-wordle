@@ -1,0 +1,69 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T07:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: ingesta-por-id-de-slack
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Cierra el círculo de la migración de identidad: el extractor pasa a emitir el identificador de Slack.
+    Sin esto la migración solo vale un día, porque el cron horario recrea identidades de nombre.
+    DECISIÓN MEDIDA: USER_IDENTITY no se reutiliza, se sustituye. Tiene 11 entradas y hoy casi nunca se
+    aplica (la búsqueda es por identificador y el extractor emitía nombres, así que solo alcanzaba a las
+    tres del NAME_TO_ID). Al resolver por identificador se aplicaría a todos y renombraría a SEIS personas,
+    una de ellas con el nombre de otra: U02TN4L9HEE es Clara y el diccionario la llama "Raquel".
+    Medido contra la tabla: para 18 de los 21 jugadores el display_name de Slack ES el player_name
+    guardado. Solo tres necesitan etiqueta, y es porque muestran un handle (carlos.h, ivan.antona,
+    Andres R). De ahí que la etiqueta acordada gane al nombre de Slack, y no al revés.
+    El encabezado de la línea gana un campo. Los dos scripts van encadenados en la misma invocación, así
+    que es un contrato interno sin ventana de compatibilidad. El escenario patron-se-sigue-capturando
+    protege la regresión sobre captura-del-patron, que comparte parser.
+
+- run: '2026-08-05T07:35:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: ingesta-por-id-de-slack
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    7 escenarios, 7/7 cubiertos, 11 tests. El encabezado pasa a
+    USER_START|<identificador>|<nombre>|<hora>|<texto>; add_results guarda el identificador como identidad
+    y el nombre legible aparte; USER_IDENTITY y NAME_TO_ID eliminados y sustituidos por ETIQUETAS con tres
+    entradas. Cliente de Supabase movido dentro de main y cliente de Slack dentro de las funciones: los dos
+    módulos ya se pueden importar en un test.
+    REGRESIÓN CAZADA POR EL ESCENARIO patron-se-sigue-capturando: al cambiar el formato del encabezado, los
+    fixtures de captura-del-patron dejaron de coincidir con HEADER_RE, así que sus líneas de conversación
+    pasaron a contar como contenido y una cuadrícula ajena se colaba en el resultado anterior
+    ('YY.../GGGGG/.....' en lugar de 'YY.../GGGGG'). Arreglado actualizando los fixtures al formato nuevo;
+    NINGUNA aserción se tocó.
+    TEST REFORZADO ANTES DE MUTAR: la comprobación de CLAVE_DE_CONFLICTO era tautológica —restaba el valor
+    de la constante— y no habría cazado un cambio de clave. Se añadió la comprobación de comportamiento:
+    dos personas distintas en el mismo puzzle son dos filas. Con ella, el mutante que deja la clave en solo
+    el puzzle tumba dos tests.
+    SEGURIDAD (4e): extract_slack.py usaba ssl.CERT_NONE, mandando el token del bot por una conexión sin
+    verificar. Cambiado a certifi. No era alcance del slice pero sí del gate, y el archivo se reescribía
+    entero. La identidad solo puede venir del campo `user` del mensaje; el último campo de la línea llega
+    hasta el final, así que un texto con `|` no descuadra el reparto; el upsert envía exactamente las siete
+    columnas declaradas.
+    MUTACIÓN — 4 mutantes, 0 supervivientes: nombre e identificador intercambiados en el encabezado, el
+    nombre de Slack ganando a la etiqueta, el mensaje sin autor guardándose igual, y la clave del upsert
+    reducida al puzzle.
+    ENSAYO END-TO-END CONTRA EL CANAL REAL, SIN ESCRIBIR: 306 líneas, 34 filas, 0 descartadas, 0 identidades
+    que no sean identificador y 0 filas cuyo nombre sea el identificador. Claire sale como "Claire" y no
+    como "Raquel", que es la regresión concreta que el diccionario viejo habría introducido.
+    PENDIENTE: mergear a main. Hasta entonces el cron horario sigue escribiendo identidades de nombre.

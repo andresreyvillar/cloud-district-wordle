@@ -1,0 +1,44 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T14:10:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: clasificacion-de-temporada
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: n/a
+    adversarial: skip
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 4
+    supervivientes: 0
+  notas: >-
+    tools/standings.py con el modelo de imputación, la instantánea ampliada con clasificación, dificultad por
+    jornada, extremos, media del grupo y ganadores de logros, y la vista v2/js/ui/temporada.js con la
+    dirección visual de la liga arcade. 8 escenarios, 10 tests.
+    RONDA 1 — TRES FIXTURES MÍOS MAL CONSTRUIDOS, no fallos del código. (a) el test del orden esperaba a
+    "malo" en tercera posición cuando es el último, porque los cuatro rellenos empatan con "medio"; (b) el
+    test de la ausencia en día duro tenía los nombres invertidos respecto a lo que el fixture construía; y
+    (c) el test del empate no podía producir empate: EL MARGEN DE 0,5 HACE IMPOSIBLE que quien falta iguale
+    a quien juega con la misma media, así que el que falta tiene que ser mejor en lo que juega. Recalculado
+    con los números a mano: media del día 4,5 y media personal 3 dan imputado 5,0 y empate en 4,0.
+    RONDA 2 — MUTANTE SUPERVIVIENTE POR CASUALIDAD DE NOMBRES. El mutante que quita el desempate por
+    participación sobrevivió: el fixture llamaba "mucho" al que jugó más y "poco" al que jugó menos, y
+    alfabéticamente "mucho" < "poco", así que el orden salía bien sin el desempate. Renombrados a "zoe" (más
+    días) y "ana" (menos días), de modo que el alfabético da el resultado CONTRARIO y el mutante muere. El
+    comentario del fixture lo explica para que nadie los vuelva a cambiar.
+    MUTACIÓN — 4 mutantes, 0 supervivientes: quitar el max (faltar mejoraría la media), quitar el margen,
+    quitar el desempate por participación, e invertir el orden.
+    DEFECTO VISUAL CAZADO EN EL NAVEGADOR: las tiras de 23 casillas se partían en dos líneas con ancho fijo.
+    Arreglado repartiendo el ancho con flex, así que la tira encaja tenga la temporada 3 días o 23.
+    VERIFICADO CON JULIO REAL: 14 jugadores, 23 días válidos, 205 resultados, media del grupo 3,96. Carlos
+    lidera con 3,39 y la jornada más dura fue la 1664 con 5,33. Cero errores de consola.
+    LO QUE EL DISEÑO TRAE Y NO SE IMPLEMENTA: los doce motes, los dorsales y el Δ de posición. Son reglas de
+    juego sin decidir —dos bloqueadas por el grupo— y el Δ exigiría versionar la clasificación.
+    EL DATO QUE EL GRUPO VA A DISCUTIR: Sandra jugó 3 de 23 días con media 3,33 y sale novena con 4,39. Es
+    el modelo funcionando como se diseñó, y es exactamente la conversación pendiente.

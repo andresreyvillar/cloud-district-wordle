@@ -1,0 +1,29 @@
+- run: '2026-08-06T13:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 1
+    supervivientes: 0
+  notas: >-
+    Fallo encontrado al pintar el medallero del archivo: la temporada 0 tenía una sola medalla por jugador y
+    siempre de las permanentes. Nadie con Fondista tras 181 jornadas, cuando el umbral son quince partidas.
+    CAUSA: `_de_la_temporada` filtraba con `str(fila["date"]).startswith(temporada)`. Con la temporada 0
+    ninguna fecha empieza por "0", así que la ventana salía vacía y la función devolvía {} sin quejarse. Las
+    permanentes seguían saliendo porque no pasan por ese filtro, y ese contraste fue la pista.
+    Es el error que el modelo de temporadas debía impedir: dos definiciones de "pertenecer a una temporada".
+    Arreglado usando `seasons.temporada_de`, la misma que usa el ranking.
+    UN FIXTURE OBSOLETO SALIÓ A LA LUZ: el test de "la misma medalla en dos temporadas" usaba julio y agosto,
+    y julio dejó de ser temporada propia al decidirse la temporada 0. Corregido el fixture a agosto y
+    septiembre, no la aserción.
+    EFECTO REAL: el medallero pasa de 6 jugadores con una medalla a 17 jugadores con hasta 5.
+    ANOTADO SIN RESOLVER: los umbrales están calibrados para un mes y sobre 181 jornadas se cumplen casi
+    todos (Verdugo y Fondista los tiene medio grupo). Si se quiere que el medallero de la temporada 0
+    discrimine, es una decisión de regla y no un arreglo.

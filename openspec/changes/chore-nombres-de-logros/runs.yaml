@@ -1,0 +1,30 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T11:10:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: n/a
+    security: n/a
+  rondas_correccion: 1
+  notas: >-
+    Renombrado de Pleno a Metrónom@ adoptando el nombre del diseño de la liga arcade, y de Abstract@ a
+    Fontaner@ en el brief (esa medalla no está implementada). Ninguna regla cambia.
+    RECHAZADO A PROPÓSITO: la maqueta llama Superviviente a "mes sin un solo fallo", y ese nombre ya está en
+    otra regla implementada (resolver en ≤4 tres días de media ≥4,5). Adoptarlo habría dejado dos medallas
+    distintas llamadas igual. Se añadió un test que lo impide para el futuro: dos medallas no pueden
+    compartir nombre ni clave.
+    UMBRALES: decisión del usuario de asumir los calibrados y no los de la maqueta, que pide "más de 10" en
+    cada figura y no lo logra nadie (máximo histórico 6 de 123 parejas jugador-mes).
+    DOS ERRORES QUE CAZÓ EL HARNESS, los dos legítimos: el slice clasificacion-de-temporada llevaba
+    kind: interactive, que no existe en el esquema (es action, porque el actor hace algo), y el gate
+    specs-coverage exigía delta de publicacion además de estadisticas — con razón, porque renombrar una
+    medalla cambia lo que lee el canal. El delta de publicacion documenta además la consecuencia permanente:
+    como el palmarés se calcula y no se guarda, cada renombrado reescribe el histórico de esa medalla.
+    Mutación: no aplica de forma útil a un renombrado; el riesgo es dejar una referencia al nombre viejo, y
+    eso lo cubre grep más la suite.

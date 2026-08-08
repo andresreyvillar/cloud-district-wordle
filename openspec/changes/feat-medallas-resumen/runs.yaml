@@ -1,0 +1,105 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-04T19:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Autoría del slice y de los deltas de estadisticas (3 Requirements) y publicacion (3 Requirements).
+    Las siete medallas que NO dependen del clasificador de figuras; las cinco que sí esperan la
+    calibración y van en otro pack.
+    Los umbrales salen de medir 123 pares jugador-mes del histórico: la propuesta original ("más de 10
+    figuras en un mes") era inalcanzable, con máximo histórico de 6 y mediana de 14 partidas al mes.
+    Este pack ACTIVA el límite declarado del ADR 0004: las medallas tienen dos consumidores previstos
+    (este resumen en Python y la ficha de jugador en JavaScript), que es el disparador explícito para
+    revisar dónde vive el dominio. Anotado en el proposal, no resuelto.
+
+- run: '2026-08-04T19:40:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    adversarial: skip
+  rondas_correccion: 3
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    tools/badges.py con el catálogo declarativo y el cálculo puro; los 8 escenarios iniciales pasaron de
+    pendiente a verde. Después, TRES rondas de corrección, y todas las provocó el ensayo o la mutación,
+    no un gate mecánico:
+    RONDA 1 — CAMBIO DE ESPECIFICACIÓN A PARTIR DEL ENSAYO. El slice decía que el resumen mostrase las
+    medallas de la temporada en curso. Con datos reales de julio eso produce tres líneas de hasta diez
+    nombres, idénticas veinte días seguidos, porque las medallas comunes las tiene entre el 34% y el 48%
+    del grupo. Se cambió a anunciar solo lo ganado EN la jornada: 12 jornadas con anuncio de 25, con una
+    a tres líneas cada una. El slice y el delta de publicacion se corrigieron; los escenarios
+    medallas-de-temporada-en-el-resumen y permanente-se-anuncia-el-dia-que-se-gana pasaron a ser
+    medalla-nueva-se-anuncia y medalla-ya-anunciada-no-se-repite.
+    RONDA 2 — BUG PROPIO QUE EL ENSAYO CAZÓ Y LOS TESTS NO. La primera versión de medallas_nuevas
+    comparaba el estado anterior contra TODOS los resultados, incluidas las jornadas posteriores, así que
+    anunciaba medallas que aún no se habían ganado: el ensayo seguía sacando el muro en 25 de 25
+    jornadas. Los tests no lo cazaron porque ningún fixture tenía datos posteriores a la jornada
+    evaluada. Arreglado cortando las dos ventanas en la jornada, y añadido un test de regresión con
+    futuro deliberado.
+    RONDA 3 — MUTANTE SUPERVIVIENTE Y UN TEST QUE NO PROBABA LO QUE DECÍA. El mutante que quitaba la
+    muestra mínima del día sobrevivió: ningún fixture tenía un día de pocos jugadores. Al escribir el
+    test, la primera versión tampoco lo cazaba porque su media (4.5) quedaba por debajo del umbral del
+    día imposible, así que la medalla se denegaba por el umbral y no por la muestra. Recalibrado a media
+    5.5 exacta, el mutante muere. El edge case ascendió a escenario propio
+    (dia-con-poca-muestra-no-cuenta): 9 escenarios, 9/9 cubiertos.
+    MUTACIÓN — 5 mutantes, 0 supervivientes al cerrar: umbral estricto en Fondista, día imposible sin
+    condición de dificultad, sin muestra mínima, sección vacía devuelta, y la ventana del "ahora"
+    mirando el futuro.
+    PENDIENTE: cablear tools/post_ranking.py (tarea 3 del pack). El dominio está listo y verificado
+    contra datos reales, pero el resumen todavía no lo publica.
+
+- run: '2026-08-04T20:30:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-en-el-resumen-diario
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 7
+    supervivientes: 0
+  notas: >-
+    Cableado de tools/post_ranking.py (tarea 3 del pack): lee los resultados paginando, deriva la
+    jornada y la temporada DE LOS DATOS —no del reloj, que es el borde del sistema— y añade la sección
+    al mensaje sin sustituir nada. Slice completo: 10 escenarios, 10/10 cubiertos.
+    DOS RONDAS DE CORRECCIÓN, las dos por problemas que el propio cableado destapó:
+    (1) TESTABILIDAD. post_ranking.py importaba playwright a nivel de módulo, así que las funciones que
+    componen el texto no se podían verificar sin un navegador instalado. Import diferido a la función
+    que lo usa: ahora el mensaje se compone y se prueba sin playwright. De paso, si el navegador
+    faltara, el módulo sigue siendo utilizable.
+    (2) EL ENTORNO DE TEST NO ERA EL DECLARADO. El venv se había creado con pytest y PyYAML a mano en
+    lugar de con requirements-dev.txt, y el desfase no se notó en cuatro slices porque sus tests solo
+    tocaban el harness y funciones puras. Apareció al primer test que importó código de producción.
+    Registrado como lección con destino mecánico.
+    MUTACIÓN — 7 mutantes acumulados, 0 supervivientes. Los dos del cableado necesitaron reforzar el
+    test: el que añadía la sección de medallas aunque estuviese vacía SOBREVIVIÓ, porque el test solo
+    comprobaba presencia de subcadenas y no el formato. Con la comprobación de que no queda un hueco
+    donde iría la sección, muere.
+    SECURITY (4e) — el texto solo contiene nombres de jugador, números y el enlace ya publicado: no hay
+    ningún campo libre que llegue al mensaje. Ningún dato nuevo sale al canal que no esté ya en la web.
+    PENDIENTE: la primera publicación real es la verificación final, y ocurre delante del grupo. Hoy no
+    hay medallas nuevas (agosto lleva dos días), así que el primer mensaje con sección llegará cuando
+    alguien cruce un umbral.

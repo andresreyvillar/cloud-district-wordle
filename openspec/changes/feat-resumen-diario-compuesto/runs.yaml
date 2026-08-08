@@ -1,0 +1,27 @@
+- run: '2026-08-08T16:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: resumen-diario-compuesto
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 6
+    supervivientes: 0
+  notas: >-
+    Punto 5.5. El mensaje diario pasa de una frase fija a un resumen con secciones: jugador del día, obra
+    del día, top 5 con el dibujo de cada uno y cabeza del álbum. La captura SE CONSERVA: sustituirla es una
+    pregunta abierta del brief y no la decide este slice.
+    DOS TESTS FLOJOS, LOS DOS CAZADOS MIDIENDO EN VEZ DE SUPONIENDO. El del límite de Slack comparaba 499
+    caracteres contra 3000: al medirlo se vio que el mensaje está acotado por construcción, así que el
+    recorte que había escrito era código para un caso imposible. Se quitó y el escenario pasó a afirmar lo
+    que de verdad ocurre. El del jugador del día afirmaba que un nombre aparecía en el mensaje, y ese nombre
+    sale también en el top y en el álbum: pasaba aunque el premio se lo llevara otro.
+    AL VER EL MENSAJE REAL SALIÓ UN FALLO DE PRODUCCIÓN AJENO A ESTE SLICE: el top 5 muestra a Juan
+    (Kokuma) DOS VECES. Diez jugadores están partidos en dos identidades desde el 2026-08-03, porque el cron
+    de `main` no tiene `ingesta-por-id-de-slack` y escribe el nombre en la columna del identificador. Se
+    reporta y no se toca: arreglar datos de producción es una decisión del dueño.

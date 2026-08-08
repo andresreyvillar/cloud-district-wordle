@@ -1,0 +1,5 @@
+# Runtime del pipeline (tools/*.py)
+slack_sdk>=3.27
+supabase>=2.4
+python-dotenv>=1.0
+PyYAML>=6.0

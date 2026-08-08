@@ -1,0 +1,60 @@
+# Run records del change pack (§11). Timestamps entrecomillados.
+
+- run: '2026-08-05T09:45:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: temporada-mensual
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Primer slice bajo el ADR 0008: el cálculo vive en Python y se materializa en season_snapshots. La
+    decisión se tomó justo antes de escribir este slice, porque es donde el disparador del ADR 0004 se
+    cumplía: el modelo de temporada necesita día laborable, muestra mínima y (en 2.2) imputación, y las dos
+    primeras ya estaban implementadas en Python para las medallas.
+    Trigger cron@pipeline y no ui@web, con el precedente de captura-del-patron: el efecto observable es que
+    la instantánea existe y contiene los días de la temporada. La web es el consumidor y llega en 2.2.
+    Alcance deliberadamente estrecho: define qué ES una temporada y no ordena a nadie. La clasificación, la
+    imputación y las medallas materializadas van en sus propios slices.
+    PENDIENTE DE MEDIR EN EL ENSAYO: la cifra de "9 temporadas cerradas" viene de un análisis anterior a la
+    regla de días laborables y a la limpieza de identidad. No se hereda; se vuelve a medir.
+
+- run: '2026-08-05T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: temporada-mensual
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    sintaxis: pass
+    mutacion: pass
+    security: pass
+    adversarial: skip
+  rondas_correccion: 0
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    tools/seasons.py con el modelo puro y tools/materialize_seasons.py con la escritura. 7 escenarios, 7/7
+    cubiertos, 10 tests. MUESTRA_MINIMA_DEL_DIA se movió a seasons.py y badges.py lo importa de allí: su
+    docstring ya decía que quería ser el mismo criterio y ahora lo es de verdad, no por coincidencia.
+    TABLA CREADA con RLS, y la RLS se COMPROBÓ en vez de suponerse (Gate 4e): con la clave publicable, el
+    select funciona y el insert queda bloqueado por la política. Sin esa comprobación, la clave que va en el
+    código de la web podría reescribir la instantánea.
+    CIFRA REMEDIDA, no heredada: 10 temporadas con datos y 9 cerradas. La cifra de "9 temporadas cerradas"
+    de los documentos SE CONFIRMA, pero los días por temporada de análisis anteriores no valían porque no
+    aplicaban el umbral de muestra: 2026-01 pasa de 18 días a 15, y 2025-11 de 4 a 3.
+    LA DERIVA DEL CRON, MEDIDA Y REPARADA EN CALIENTE: al leer para el ensayo aparecieron 1550 filas cuando
+    la tabla tenía 1521. El cron horario de main había reinsertado 28 filas con identidad de nombre, como
+    estaba previsto. Materializar así habría metido jugadores partidos en dos DENTRO de la instantánea, así
+    que se relanzó la migración de identidad antes: resueltas=5, fusionadas=23, todo lo demás a 0. Es la
+    confirmación de que la deriva es recuperable por diseño: 23 de las 28 eran duplicados del reprocesado y
+    5 eran partidas nuevas de hoy.
+    ESTADO FINAL: 1527 filas, todas con identificador, 21 jugadores, 10 instantáneas escritas. Los 6
+    resultados sin patrón son los de hoy, que main todavía ingiere sin cuadrícula.
+    MUTACIÓN — 5 mutantes, 0 supervivientes: sin filtro de día laborable, umbral estricto en la muestra, la
+    temporada recortada a 4 caracteres, la temporada en curso al revés, e ignorar dry_run.

@@ -1,0 +1,16 @@
+// NO ES EL PLAN ACTUAL. Desde el 2026-08-07 la v2 se publica en /2/ del Worker de la v1
+// (ver wrangler.jsonc y worker/index.js), que es lo que el dueño pidió: un solo host.
+//
+// Este config se conserva porque sigue siendo la alternativa si algún día conviene separar las dos webs en
+// hosts distintos —por ejemplo para retirar la v1 sin tocar la v2—. Desplegarlo hoy crearía un segundo
+// Worker que nadie mira.
+//
+//   npx wrangler deploy --config wrangler.v2.jsonc
+{
+  "name": "cloud-district-wordle-2",
+  "compatibility_date": "2026-08-05",
+  "assets": {
+    "directory": "./v2",
+    "not_found_handling": "single-page-application"
+  }
+}
