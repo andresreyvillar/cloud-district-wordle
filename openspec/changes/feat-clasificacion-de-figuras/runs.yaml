@@ -1,0 +1,38 @@
+- run: '2026-08-08T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: clasificacion-de-figuras
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    mutantes: 5
+    supervivientes: 0
+  notas: >-
+    Punto 5.3. Las tres piezas del ranking de figuras estaban hechas y ninguna se tocaba con las otras: el
+    patrón se guardaba, el histórico se recuperó y el clasificador estaba calibrado, pero nadie derivaba la
+    categoría. Este slice es el paso que las une, y solo por el lado de los datos.
+    EL CRITERIO SE MIDIÓ, NO SE ELIGIÓ. Cuatro candidatos sobre los 18 jugadores con 10+ partidas: el
+    recuento absoluto corona a quien más juega —un ranking de asistencia con otro nombre—; el ponderado por
+    rareza corona al SEGUNDO de la tabla de puntuación, que anula el propósito del segundo eje; y solo-loros
+    corona a quien tuvo suerte. La tasa por partida premia a otra gente, que es lo que el eje existe para
+    hacer. Comprobado después sobre los datos reales: los dos podios de la temporada 0 no comparten a nadie.
+    EL MÍNIMO TAMBIÉN. Con 3 partidas la temporada 0 la gana alguien con un 100% de tres; con 5, 8 y 10 el
+    líder es el mismo. Cinco es el umbral más bajo que mata la anomalía.
+    UNA PARTIDA SIN PATRÓN NO ES UN ABSTRACTO. Abstracto es un veredicto sobre un dibujo, y ahí no hay
+    dibujo. Contarla castigaría a quien jugó cuando el pipeline aún descartaba la cuadrícula: un fallo del
+    sistema cobrado al jugador. Sale del denominador y la cobertura se publica aparte, que es lo que hace
+    legible el estado de agosto —19 patrones de 80 filas— en lugar de disfrazarlo de ranking.
+    EL ÁLBUM NO TIENE SU PROPIA DEFINICIÓN DE QUÉ DÍA CUENTA: hereda `resultados_de_temporada`. Dos
+    definiciones de lo mismo ya divergieron dos veces en este repositorio, y las dos veces cambiaron quién
+    salía en una tabla.
+    UN TEST VERIFICA LOS FIXTURES CONTRA EL CLASIFICADOR antes de usarlos. Y el fixture del mínimo pasó a
+    cantidades literales, con la razón comprobada y no supuesta: rehecho en su forma original —derivada de
+    la constante— el mutante 5→3 pasa en verde. El fixture se ajustaba solo al umbral y dejaba de medir
+    cuál es, que es justo lo que el mutante tenía que cazar.
+    NO SE ESCRIBIÓ EN PRODUCCIÓN. El ensayo con `--dry-run` basta para verificar, y el cron de `main`
+    sobrescribiría la instantánea dentro de la hora con el código antiguo.

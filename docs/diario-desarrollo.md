@@ -235,3 +235,34 @@ aparecían. Ese contraste fue la pista. Eran **dos definiciones de pertenecer a 
 `seasons.temporada_de` y otra escrita a mano; ahora hay una. El medallero pasó de 6 filas a 17. La lección
 general: un cambio de modelo (la temporada 0) rompe en silencio todo el código que reimplementaba el modelo
 a mano, y lo que lo delata no es un test sino **una vista que enseña el agregado**.
+
+## 2026-08-08 — El álbum de figuras: tres piezas hechas que no se tocaban entre sí
+
+**Qué.** La instantánea de temporada pasa a publicar el **álbum**: cuántas partidas de cada categoría lleva
+cada jugador, qué proporción de ellas dejó una figura reconocible y en qué puesto queda. `tools/album.py`,
+puro, más una clave nueva en la carga útil.
+
+**Por qué importa.** El patrón ya se guardaba (5.1), el histórico ya se había recuperado (5.2) y el
+clasificador ya estaba calibrado (5.0) — y **ninguna de las tres piezas se tocaba con las otras**. Nadie
+derivaba la categoría, así que el álbum no existía para ningún consumidor. Tres cosas terminadas pueden
+sumar cero mientras falte el paso que las une, y ese paso no se ve en ninguna lista de tareas hechas.
+
+**Decisiones.**
+- **La puntuación se midió, no se eligió.** Cuatro criterios sobre los 18 jugadores con 10+ partidas: el
+  recuento absoluto corona a quien más juega —un ranking de asistencia con otro nombre—; el ponderado por
+  rareza corona al **segundo de la tabla de puntuación**, que anula el propósito del segundo eje; y
+  solo-loros corona a quien tuvo suerte. Gana la **tasa por partida**, y se comprobó después contra los
+  datos: los dos podios de la temporada 0 **no comparten a nadie**.
+- **El mínimo también.** Con 3 partidas la temporada 0 la gana alguien con un 100% de tres. Con 5, 8 y 10 el
+  líder es el mismo. Cinco es el umbral más bajo que mata la anomalía.
+- **Una partida sin patrón no es un abstracto.** Abstracto es un veredicto sobre un dibujo, y ahí no hay
+  dibujo: contarla castigaría a quien jugó cuando el pipeline aún descartaba la cuadrícula. Un fallo del
+  sistema cobrado al jugador. Sale del denominador y la cobertura se publica aparte.
+- **El álbum hereda los días de la temporada** en lugar de tener su propia regla. Cuesta una incoherencia
+  menor —13 patrones de fin de semana cuentan en la temporada 0— y evita la que ya ha mordido dos veces.
+
+**Aprendizaje.** Un test parametrizado sobre la constante que quiere probar deja de probarla. El fixture del
+mínimo decía `[FLOR] * (MINIMO - 1)`, que es elegante y se lee bien — y hacía que bajar el umbral de 5 a 3
+**siguiera pasando**, porque el fixture se ajustaba solo. Con literales (4 y 5) el mutante muere. La regla
+general: el valor que la decisión fija se escribe a mano en el test; derivarlo del código convierte la
+aserción en una tautología con buen aspecto.

@@ -36,7 +36,9 @@ TABLA = "season_snapshots"
 CLAVE = ("temporada",)
 
 PAGINA = 1000
-COLUMNAS = "slack_user_id,player_name,wordle_id,score,date"
+#: `pattern` entra aquí porque el álbum de figuras deriva la categoría del dibujo en cada materialización
+#: (slice `clasificacion-de-figuras`). Sin esta columna el álbum sale vacío y en silencio.
+COLUMNAS = "slack_user_id,player_name,wordle_id,score,date,pattern"
 
 
 @dataclass

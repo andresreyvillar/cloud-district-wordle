@@ -17,6 +17,13 @@ ver [reglas-temporadas](reglas-temporadas.md)). Un patrón de sábado se captura
 mirar, pero no cuenta para el ranking de belleza ni para las medallas de figuras. Afecta a 13 patrones del
 histórico de 1533 resultados.
 
+> **Matiz al implementarlo (2026-08-08):** el álbum no tiene su propia definición de qué jornada cuenta —
+> hereda la de la temporada. En una temporada numerada eso es exactamente lo de arriba; en la **temporada 0**
+> no, porque esa se rige por las reglas que estaban en vigor cuando se jugó y cuenta todas las jornadas,
+> fines de semana incluidos. Se prefiere esa incoherencia menor —13 patrones— a mantener dos definiciones de
+> "qué día cuenta", que en este repositorio ya divergieron dos veces y las dos cambiaron quién salía en una
+> tabla.
+
 ## Lo acordado
 
 ### Categorías y emojis
@@ -157,7 +164,7 @@ generar todas es inviable; lo razonable es una al día (la obra del día) o solo
 | Abierto | Qué falta decidir |
 |---|---|
 | ~~¿Las partidas sin lienzo son categoría aparte?~~ | **CERRADO por las etiquetas**: el número de filas no decide nada, así que la pregunta desaparece. Hay flores de dos filas sobre la base |
-| Puntuación del álbum | Recuento absoluto de figuras reconocibles, o ponderado por rareza. Medido: 🦜 8%, 📐 11%, 🌷 12% — el loro es la pieza rara |
+| ~~Puntuación del álbum~~ | **CERRADO el 2026-08-08**: es la **tasa de figuras por partida clasificada**, con un mínimo de 5 partidas. Ver abajo, con las cuatro alternativas medidas. Y ojo: las rarezas que citaba esta fila (🦜 8%, 📐 11%, 🌷 12%) eran del clasificador **desmentido** — la pieza rara no es el loro sino el **geométrico** (7,4%) |
 | ~~Calibración del clasificador~~ | **CERRADO el 2026-08-06**: `tools/figures.py` acierta **24 de las 30** (80%) y el acuerdo es un gate de la suite. Ver abajo |
 | La categoría `loto` | Apareció una vez al etiquetar (ficha 29: dos masas verdes con un canal vertical en medio). **Plegada en `flores` por ahora**: con un ejemplo no se calibra nada, se acertaría por azar. Si al mirar más patrones sale a menudo, se separa |
 | Capability | La clasificación es un dominio nuevo (`patrones`?). Crear capability requiere acuerdo explícito |
@@ -227,3 +234,39 @@ ejemplos por categoría, que es poco para ajustar umbrales finos.
 Si el clasificador se queda por debajo de un acierto razonable con la cuadrícula completa, la alternativa es
 un modelo mirando el dibujo — y eso cambia el trato: deja de ser determinista, deja de ser gratis y no se
 puede cubrir con golden tests. Esa decisión, si llega, es un ADR.
+
+## La puntuación del álbum (2026-08-08)
+
+**Tasa de figuras reconocibles por partida clasificada, con un mínimo de 5 partidas.** Implementado en
+`tools/album.py` (slice `clasificacion-de-figuras`) y publicado en la instantánea de cada temporada.
+
+Se midieron cuatro criterios sobre los 18 jugadores con 10+ partidas de la temporada 0, y **tres se
+descartan por lo mismo**: no premian a otra gente, que es lo único que justifica un segundo eje.
+
+| Criterio | Quién gana | Por qué se descarta |
+|---|---|---|
+| Recuento absoluto de figuras | quien más juega | es un ranking de asistencia con otro nombre |
+| Ponderado por rareza (el loro vale más) | **el segundo de la tabla de puntuación** | anula el propósito del eje |
+| Solo la pieza rara (loros) | quien tuvo suerte | una categoría no sostiene un ranking |
+| **Tasa de figuras por partida** | **otra persona** | ninguno |
+
+Comprobado sobre los datos reales: los dos podios de la temporada 0 **no comparten a nadie** — puntuación
+Claire, Andrés R. y Flavia Venturi; belleza Juan (Kokuma) 83%, Raquel 79% y Gabi 76%.
+
+El mínimo de 5 también es medido, no redondo:
+
+| Mínimo | Elegibles | Líder |
+|---|---|---|
+| 3 | 19 | Sandra, **100% de tres partidas** |
+| **5** | **18** | Juan (Kokuma), 83% de 86 |
+| 8 | 18 | Juan (Kokuma) |
+| 10 | 17 | Juan (Kokuma) |
+
+**Una partida sin patrón no cuenta como abstracta.** Abstracto es un veredicto sobre un dibujo, y ahí no hay
+dibujo: contarla castigaría a quien jugó cuando el pipeline todavía descartaba la cuadrícula. Sale del
+denominador, y la instantánea publica cuántas son para que la cobertura sea visible.
+
+Es lo que hace legible el estado de agosto de 2026: **19 patrones de 80 filas (24%)**, porque
+`captura-del-patron` aún no está en `main`. Nadie llega a cinco partidas clasificadas, así que el mes se
+publica **sin ranking de belleza** en lugar de con una tabla calculada sobre la cuarta parte de las
+partidas.

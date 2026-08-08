@@ -159,7 +159,8 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
     la clasificación y las medallas llegan con sus propios slices y añaden claves a esta carga útil, que es
     justo la razón de que sea JSONB y no columnas.
     """
-    # Imports locales para no crear ciclos: los dos módulos importan de este.
+    # Imports locales para no crear ciclos: los módulos importan de este.
+    from album import album
     from badges import medallas_de_temporada, medallas_permanentes
     from rules import catalogo, como_json
     from standings import clasificacion, dificultad_por_dia
@@ -209,4 +210,7 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
         "mas_facil": mas_facil,
         "media_grupo": media_grupo,
         "logros": {clave: sorted(quienes) for clave, quienes in ganadores.items()},
+        # El segundo ranking, el de figuras. Independiente del de puntuación por decisión explícita: no
+        # entra en `clasificacion` ni la altera.
+        "album": album(resultados, temporada),
     }
