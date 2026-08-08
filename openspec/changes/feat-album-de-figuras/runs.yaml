@@ -1,0 +1,35 @@
+- run: '2026-08-08T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: album-de-figuras
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 6
+    supervivientes: 0
+  notas: >-
+    Punto 5.4. La vista del álbum: el bloque del ranking de belleza en la temporada y la tarjeta en la ficha.
+    No calcula ni reordena — el orden, la tasa y el puesto llegan de Python (ADR 0008).
+    UN SUPUESTO DE 5.3 RESULTÓ FALSO Y SE VIO ANTES DE DEPENDER DE ÉL. El catálogo de categorías viajaba
+    como diccionario, y JSONB NO conserva el orden de las claves: comprobado contra la instantánea real,
+    Postgres las devuelve por longitud y luego alfabéticamente. Con ese orden `abstracto` (9) llega antes
+    que `geometrico` (10) y la web habría pintado el ruido en medio de las figuras que puntúan. Pasa a ser
+    una lista ordenada. El fallo no lo habría cazado ningún test de Python, porque allí el diccionario
+    conserva su orden de inserción: solo aparecía en producción.
+    TRES ASERCIONES DÉBILES CORREGIDAS ANTES DE LA MUTACIÓN. `/12/`, `/5/` y `/2/` casan con cualquier cifra
+    de la página, y el 12 era además el recuento de loros de un jugador del fixture. Atadas a la frase que
+    las explica, y las cifras del fixture cambiadas por otras que no aparecen en ningún otro sitio.
+    LA CABECERA ESTABA MAL Y LO ENSEÑÓ EL NAVEGADOR: las columnas decían «Figuras / De» sobre el porcentaje
+    y el recuento, al revés. Ningún test lo cazaba porque ninguno afirmaba sobre las etiquetas de columna.
+    «83 %» PARTÍA EN DOS LÍNEAS EN MÓVIL. Se arregló en CSS y no con un espacio duro en el fuente: el
+    carácter invisible llegó a estar puesto y la propia herramienta de edición no supo distinguirlo de un
+    espacio normal, que es exactamente la trampa que sería para el siguiente que lo lea.
+    DOS COSAS AJENAS ENCONTRADAS DE CAMINO: `local_stack.py` llevaba roto desde que el objetivo de captura
+    se hizo configurable —se arregló porque bloqueaba la verificación— y la vista de temporada desborda
+    horizontalmente en móvil por las 181 barras de ESTADÍSTICAS, con o sin álbum. Lo segundo queda
+    REPORTADO Y NO ARREGLADO: tocar esa vista sin slice es lo que el protocolo prohíbe.

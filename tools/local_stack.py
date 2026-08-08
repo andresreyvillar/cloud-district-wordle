@@ -125,12 +125,15 @@ def resumen(url: str, clave: str) -> None:
     """El texto que el bot publicaría hoy. No publica: eso es lo único que no se deshace."""
     aviso("3 · Resumen diario  (en seco, no se publica)")
     sys.path.insert(0, str(RAIZ / "tools"))
-    from post_ranking import comentario, leer_resultados, seccion_de_medallas
+    from post_ranking import comentario, leer_resultados, objetivo_de_captura, seccion_de_medallas
 
     filas = leer_resultados()
     medallas = seccion_de_medallas(filas)
+    # El comentario nombra la web de la que sale la captura, así que necesita el objetivo configurado
+    # (`CAPTURA_OBJETIVO`). Esta llamada se quedó atrás cuando el objetivo pasó a ser configurable.
+    objetivo = objetivo_de_captura()
     print("  ┌" + "─" * 76)
-    for linea in comentario(medallas).splitlines():
+    for linea in comentario(medallas, objetivo).splitlines():
         print(f"  │ {linea}")
     print("  └" + "─" * 76)
     if not medallas:

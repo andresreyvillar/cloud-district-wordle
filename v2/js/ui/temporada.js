@@ -12,6 +12,7 @@
  */
 
 import { recurso } from '../router.js';
+import { albumDeTemporada } from '../data/album.js';
 import { alturaDeIntentos } from '../data/escala.js';
 import { rutaDeFicha } from '../data/ficha.js';
 import { escapar } from './shell.js';
@@ -184,6 +185,69 @@ function logros(carga) {
     </section>`;
 }
 
+/** La tira agrupada, en HTML. `🦜8 🌷60 📐3 🌀15` con el ruido en gris para que no compita con las figuras. */
+export function tiraDeFiguras(entradas) {
+  return (entradas ?? [])
+    .map((entrada) => {
+      const clase = entrada.categoria === 'abstracto' ? ' ruido' : '';
+      return `<span class="figura${clase}" title="${escapar(entrada.categoria)}">${escapar(entrada.emoji)}<b>${entrada.partidas}</b></span>`;
+    })
+    .join('');
+}
+
+function porcentaje(tasa) {
+  return `${Math.round((tasa ?? 0) * 100)} %`;
+}
+
+/**
+ * El bloque del ranking de belleza. Devuelve `''` cuando la instantánea no trae álbum, que es el estado de
+ * producción hasta que el pipeline nuevo llegue a `main`.
+ *
+ * Está exportado porque es el comportamiento observable del slice, y así se verifica sin navegador.
+ */
+export function bloqueDeAlbum(carga) {
+  const album = albumDeTemporada(carga);
+  if (!album) return '';
+
+  const filas = album.jugadores
+    .map((fila) => {
+      const sinPuesto = !fila.clasificado;
+      return `
+      <div class="fila album-fila${sinPuesto ? ' sin-clasificar' : ''}">
+        <i class="acento" style="background:${sinPuesto ? 'transparent' : fila.posicion <= 3 ? COLOR.bueno : 'rgba(43,39,51,.12)'}"></i>
+        <span class="pos">${sinPuesto ? '—' : `${fila.posicion}º`}</span>
+        <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
+        <span class="tiras figuras">${tiraDeFiguras(fila.tira)}</span>
+        <span class="num fuerte">${escapar(porcentaje(fila.tasa))}</span>
+        <span class="num suave">${fila.figuras}/${fila.partidas}</span>
+      </div>`;
+    })
+    .join('');
+
+  // Sin nadie por encima del mínimo no hay ranking que enseñar, y la causa está en la cobertura: se dice, en
+  // lugar de una tabla con todo el mundo a raya.
+  const aviso = album.clasificados
+    ? ''
+    : `<p class="nota aviso">Todavía no hay ranking de belleza: hacen falta ${album.minimo} partidas con
+       dibujo y nadie llega. De las partidas de esta temporada, ${album.sin_patron} no tienen cuadrícula
+       guardada, así que hay poco que clasificar.</p>`;
+
+  return `
+    <section class="bloque">
+      <header class="bloque-cab verde"><h2>ÁLBUM DE FIGURAS</h2>
+        <span>Ordenado por proporción de partidas con figura reconocible</span></header>
+      <div class="cabeza album-cabeza">
+        <i></i><span>Pos</span><span>Jugador</span><span>Álbum</span>
+        <span class="der">Tasa</span><span class="der">Figuras</span>
+      </div>
+      ${filas}
+      ${aviso}
+      <p class="nota">Calculado sobre ${album.clasificadas} partidas con cuadrícula guardada;
+        ${album.sin_patron} de esta temporada no la tienen y quedan fuera del cálculo. El álbum
+        <b>no influye en el marcador</b>: es el otro premio, y premia a otra gente.</p>
+    </section>`;
+}
+
 function estadisticas(carga) {
   const dificultad = carga.dificultad ?? {};
   const jornadas = Object.keys(dificultad)
@@ -286,6 +350,7 @@ export function pintarTemporada(contenedor, carga, temporada) {
 
       ${marcador(tabla, carga.imputada !== false, temporada)}
       ${logros(carga)}
+      ${bloqueDeAlbum(carga)}
       ${estadisticas(carga)}
     </div>`;
 }

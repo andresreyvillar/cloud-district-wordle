@@ -429,6 +429,30 @@ main { padding: 2rem 0; }
 }
 .bloque-cab.amarillo { border-bottom-color: var(--liga-amarillo); }
 .bloque-cab.morado { border-bottom-color: var(--liga-morado); }
+.bloque-cab.verde { border-bottom-color: var(--liga-verde); }
+
+/* álbum de figuras: la tira agrupada, una entrada por categoría */
+.tiras.figuras { flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.figura {
+  display: inline-flex; align-items: baseline; gap: 2px;
+  font-size: 0.95rem; line-height: 1;
+}
+.figura b { font-family: var(--mono); font-size: 0.78rem; font-weight: 600; }
+/* El ruido se apaga: está para que el recuento sea honesto, no para competir con las figuras. */
+.figura.ruido { opacity: 0.45; }
+.tiras.figuras.grande { gap: 0.9rem; }
+.tiras.figuras.grande .figura { font-size: 1.6rem; }
+.tiras.figuras.grande .figura b { font-size: 1rem; }
+.cabeza.album-cabeza, .fila.album-fila {
+  grid-template-columns: 6px 34px minmax(7rem, 1fr) minmax(9rem, 1.6fr) 5rem 5rem;
+}
+/* «83 %» lleva espacio por tipografía, y en la columna estrecha de móvil se partía en dos líneas. Se
+   resuelve aquí y no con un espacio duro en el fuente: un carácter invisible en el código es una trampa. */
+.fila.album-fila .num, .album-cifra b { white-space: nowrap; }
+.album-ficha { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; padding: 0.4rem 0; }
+.album-cifra { display: flex; flex-direction: column; gap: 2px; }
+.album-cifra b { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.album-cifra span { font-size: 0.75rem; font-weight: 300; color: var(--liga-suave); }
 
 /* marcador */
 .cabeza, .fila {
@@ -456,6 +480,9 @@ main { padding: 2rem 0; }
   .cabeza { display: none; }
   .fila { grid-template-columns: 6px 30px 1fr 5rem; row-gap: 4px; }
   .fila .tiras, .fila .num.suave { display: none; }
+  /* La tira de figuras sí cabe en móvil: son cuatro entradas, no 181 casillas. */
+  .fila.album-fila { grid-template-columns: 6px 30px 1fr 4rem; }
+  .fila.album-fila .tiras.figuras { display: flex; grid-column: 2 / -1; }
   .leyenda { gap: 0.6rem; }
 }
 

@@ -39,6 +39,22 @@ PRECISION = 4
 CATEGORIAS: tuple[str, ...] = FIGURAS + (ABSTRACTO,)
 
 
+def categorias() -> list[dict]:
+    """El catálogo que viaja en la instantánea: clave, emoji y si puntúa, **en orden**.
+
+    Va como lista y no como diccionario porque **JSONB no conserva el orden de las claves**: Postgres las
+    devuelve ordenadas por longitud y luego alfabéticamente, así que un diccionario llegaría a la web con
+    `abstracto` antes que `geometrico`. Comprobado contra la instantánea real, no supuesto.
+
+    Y viaja con el álbum en lugar de vivir en la web porque un mapa de categoría a emoji escrito en
+    JavaScript sería una segunda verdad, que se queda atrás en cuanto se añada o renombre una categoría.
+    """
+    return [
+        {"clave": categoria, "emoji": VOCABULARIO[categoria], "puntua": categoria in FIGURAS}
+        for categoria in CATEGORIAS
+    ]
+
+
 def album(resultados: list[dict], temporada: str) -> dict:
     """El álbum de una temporada: reparto, cobertura y una fila por jugador con algo que clasificar.
 
@@ -70,9 +86,7 @@ def album(resultados: list[dict], temporada: str) -> dict:
         "clasificadas": sum(reparto.values()),
         "sin_patron": sin_patron,
         "reparto": {categoria: reparto[categoria] for categoria in CATEGORIAS},
-        # El vocabulario viaja con el álbum: si la web tuviera su propio mapa de emojis, sería una segunda
-        # verdad que se queda atrás en cuanto se añada o renombre una categoría.
-        "vocabulario": dict(VOCABULARIO),
+        "categorias": categorias(),
         "jugadores": _ranking(recuentos, nombre_de),
     }
 

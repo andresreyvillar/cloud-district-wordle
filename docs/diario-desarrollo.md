@@ -266,3 +266,32 @@ mínimo decía `[FLOR] * (MINIMO - 1)`, que es elegante y se lee bien — y hac�
 **siguiera pasando**, porque el fixture se ajustaba solo. Con literales (4 y 5) el mutante muere. La regla
 general: el valor que la decisión fija se escribe a mano en el test; derivarlo del código convierte la
 aserción en una tautología con buen aspecto.
+
+## 2026-08-08 — El álbum a la vista, y una trampa que solo existía en producción
+
+**Qué.** El bloque ÁLBUM DE FIGURAS en la vista de temporada y la tarjeta del álbum en la ficha. La tira va
+agrupada —`🦜8 🌷60 📐3 🌀15`— y el ruido se apaga al 45%: está para que el recuento sea honesto, no para
+competir con las figuras.
+
+**Por qué importa.** El segundo eje del juego solo cumple su función si se ve al lado del primero. La frase
+«los dos rankings premian a gente distinta» estaba medida y escrita en una spec; ahora el grupo la comprueba
+de un vistazo, porque el podio del marcador y el del álbum están en la misma página y no comparten a nadie.
+
+**Decisiones.**
+- **La vista tiene que funcionar sin álbum antes que con él.** La web publicada lee lo que escribe el cron de
+  `main`, que todavía no lo materializa, así que «instantánea sin álbum» no es un caso defensivo: es el
+  estado actual de producción, y es el primer escenario del slice.
+- **Un jugador sin partidas clasificadas no ve un 0%.** Un cero diría que dibujó mal; lo que pasa es que no
+  hay dibujos que mirar. Quien sí tiene partidas y ninguna figura sí ve su 0%, porque eso sí es verdad.
+- **El desbordamiento horizontal en móvil se reporta y no se arregla.** Lo causan las 181 barras de
+  ESTADÍSTICAS, con o sin álbum —comprobado quitándolo—. Tocar esa vista sin slice es lo que el protocolo
+  prohíbe, y «ya que estaba» es como se cuelan los cambios que nadie revisó.
+
+**Aprendizaje.** **JSONB no conserva el orden de las claves.** El álbum publicaba su vocabulario como
+diccionario `{loro, flores, geometrico, abstracto}`, y Postgres devuelve las claves de un `jsonb` ordenadas
+por longitud y luego alfabéticamente: `abstracto` (9) habría llegado antes que `geometrico` (10), y la web
+habría pintado el ruido en medio de las figuras que puntúan. Ningún test de Python podía cazarlo, porque
+allí el diccionario conserva su orden de inserción — **el fallo solo existía al otro lado de la base de
+datos**. Se vio porque antes de escribir la vista se miró qué devuelve de verdad una instantánea real. La
+regla que queda: cuando el orden importa, se publica una lista; un diccionario en JSONB es un conjunto con
+aspecto de secuencia.

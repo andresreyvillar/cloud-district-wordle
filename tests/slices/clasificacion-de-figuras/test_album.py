@@ -260,7 +260,7 @@ def test_una_temporada_sin_resultados_devuelve_un_album_vacio_y_no_revienta():
 
 
 # @scenarios figura-de-cada-partida
-def test_el_album_viaja_en_la_instantanea_con_el_vocabulario_de_emojis():
+def test_el_album_viaja_en_la_instantanea_con_el_catalogo_de_categorias():
     """La web pinta el emoji que dice Python: un mapa duplicado en JavaScript sería una segunda verdad."""
     from seasons import instantanea
 
@@ -269,4 +269,25 @@ def test_el_album_viaja_en_la_instantanea_con_el_vocabulario_de_emojis():
     carga = instantanea(filas, "0")
 
     assert carga["album"]["jugadores"][0]["recuento"]["loro"] == 1
-    assert carga["album"]["vocabulario"]["loro"] == "🦜"
+    assert carga["album"]["categorias"][0] == {"clave": "loro", "emoji": "🦜", "puntua": True}
+
+
+# @scenarios figura-de-cada-partida
+def test_el_catalogo_viaja_como_lista_porque_jsonb_no_conserva_el_orden_de_las_claves():
+    """Postgres devuelve las claves de un JSONB por longitud y luego alfabéticamente.
+
+    Comprobado contra la instantánea real: `logros` vuelve como `verdugo, fondista, suertudo, impecable,
+    dia-imposible, superviviente`. Con un diccionario, `abstracto` (9) llegaría antes que `geometrico` (10)
+    y la web pintaría el ruido entre las figuras que puntúan.
+    """
+    from album import categorias
+
+    catalogo = categorias()
+
+    assert isinstance(catalogo, list)
+    assert [c["clave"] for c in catalogo] == ["loro", "flores", "geometrico", "abstracto"]
+    assert [c["puntua"] for c in catalogo] == [True, True, True, False]
+    # El orden por longitud de clave, que es el que aplicaría JSONB, es OTRO:
+    assert sorted(["loro", "flores", "geometrico", "abstracto"], key=lambda c: (len(c), c)) != [
+        c["clave"] for c in catalogo
+    ]

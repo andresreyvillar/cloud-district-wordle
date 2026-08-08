@@ -117,7 +117,7 @@ en [`context/briefs/ranking-de-figuras.md`](context/briefs/ranking-de-figuras.md
 | ~~5.1~~ | ~~`captura-del-patron`~~ | ingesta · resultados | Columna nueva con el patrón crudo (aditivo). Hoy se descarta: solo se guarda la primera línea del mensaje |
 | ~~5.2~~ | ~~`backfill-de-patrones`~~ | ingesta · resultados | Recuperar el histórico del canal: comprobado que Slack conserva las cuadrículas a 240 días |
 | ~~5.3~~ | ~~`clasificacion-de-figuras`~~ | ranking · resultados | **HECHO el 2026-08-08**: la instantánea publica el álbum. Puntuación = **tasa de figuras por partida clasificada**, mínimo 5 — las dos cifras medidas, no elegidas. Sin capability nueva: `patrones` no hacía falta |
-| 5.4 | `album-de-figuras` | ranking · dashboard | El ranking de belleza y la tira de emojis por jugador |
+| ~~5.4~~ | ~~`album-de-figuras`~~ | dashboard · estadisticas | **HECHO el 2026-08-08**: el bloque ÁLBUM DE FIGURAS en la temporada y la tarjeta en la ficha, con la tira agrupada. De camino se cazó que **JSONB no conserva el orden de las claves**, que habría roto el orden de las categorías solo en producción |
 | 5.5 | `resumen-diario-compuesto` | publicacion | Sustituye la captura por texto: jugador del día, obra del día, top 5, álbum y comentarios |
 | 5.6 | `comentarios-de-la-jornada` | publicacion · estadisticas | Detectores deterministas (sospechoso, sembrado, no inspirado, rajado) + redacción generativa |
 | 5.7 | `imagen-de-la-obra-del-dia` | publicacion | Generación de la ilustración. Una al día por coste |

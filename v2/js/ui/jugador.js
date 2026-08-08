@@ -9,9 +9,11 @@
  */
 
 import { conBase, recurso } from '../router.js';
+import { albumDeJugador } from '../data/album.js';
 import { alturaEnEscala, escalaDeDistribucion } from '../data/escala.js';
 import { ficha } from '../data/ficha.js';
 import { escapar } from './shell.js';
+import { tiraDeFiguras } from './temporada.js';
 
 const COLOR = { bueno: '#3DE07A', medio: '#FFD23F', malo: '#8B5CFF', fallo: '#FF4D6D' };
 const FALLO = 7;
@@ -216,6 +218,48 @@ function medallas(f) {
     </section>`;
 }
 
+/**
+ * La tarjeta del álbum de ese jugador. Devuelve `''` cuando la instantánea no lo trae.
+ *
+ * Exportada porque es comportamiento observable del slice `album-de-figuras`, y así se verifica sin
+ * navegador.
+ */
+export function tarjetaDeAlbum(album) {
+  if (!album) return '';
+
+  // Sin ninguna partida clasificada no hay álbum, y decir "0%" sería otra cosa: diría que dibujó mal
+  // cuando lo que pasa es que no hay dibujos que mirar.
+  if (!album.existe) {
+    return `
+      <section class="bloque">
+        <header class="bloque-cab verde"><h2>ÁLBUM</h2><span>Todavía vacío</span></header>
+        <p class="nota">Ninguna de sus partidas de esta temporada tiene la cuadrícula guardada, así que no
+          hay nada que clasificar. No es un cero: es que aún no hay álbum.</p>
+      </section>`;
+  }
+
+  const puesto = album.clasificado ? `${album.posicion}º del álbum` : 'sin puesto';
+  const falta = album.clasificado
+    ? ''
+    : `<p class="nota aviso">Le faltan ${album.faltan} ${album.faltan === 1 ? 'partida' : 'partidas'} con
+       dibujo para entrar en el ranking de belleza: hacen falta ${album.minimo}.</p>`;
+
+  return `
+    <section class="bloque">
+      <header class="bloque-cab verde"><h2>ÁLBUM</h2><span>${escapar(puesto)}</span></header>
+      <div class="album-ficha">
+        <span class="tiras figuras grande">${tiraDeFiguras(album.tira)}</span>
+        <div class="album-cifra">
+          <b>${Math.round((album.tasa ?? 0) * 100)} %</b>
+          <span>${album.figuras} figuras de ${album.partidas} partidas con dibujo</span>
+        </div>
+      </div>
+      ${falta}
+      <p class="nota">El álbum no influye en el marcador: ordena por proporción de partidas con figura
+        reconocible, así que jugar más no sube la puntuación por sí solo.</p>
+    </section>`;
+}
+
 function palmaresBloque(lista) {
   const filas = lista
     .map(
@@ -281,6 +325,7 @@ export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
       ${costeDeFaltar(f)}
       ${distribucion(f)}
       ${desglose(f)}
+      ${tarjetaDeAlbum(albumDeJugador(instantaneas.get(temporada) ?? null, jugador))}
       ${medallas(f)}
       ${palmaresBloque(conJugador)}
       <p class="volver"><a href="${escapar(conBase(`/t/${temporada}`))}">← Volver al marcador de ${escapar(f.etiqueta)}</a></p>
