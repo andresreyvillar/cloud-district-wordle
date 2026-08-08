@@ -38,6 +38,12 @@ jobs:
           # las medallas están implementadas desde el 2026-08-05 y no han salido ni un solo día.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # El corte a la v2: se cambia la variable del repositorio, no el código.
+          # El corte a la v2: se cambia la variable del repositorio, no el código. Decide TRES cosas a la
+          # vez —qué web se fotografía, qué se recorta de ella y a dónde apunta el enlace— porque van
+          # juntas en el objetivo: una foto de una web con el enlace de otra es la forma más rápida de que
+          # nadie se fíe de ninguna de las dos.
           CAPTURA_OBJETIVO: ${{ vars.CAPTURA_OBJETIVO || 'v1' }}
+          # El resumen compuesto: jugador del día, obra del día, marcador, figuras y comentarios. Apagado
+          # por defecto para que mergear no cambie solo lo que el grupo lee en el canal.
+          RESUMEN_COMPUESTO: ${{ vars.RESUMEN_COMPUESTO }}
         run: python3 tools/post_ranking.py
