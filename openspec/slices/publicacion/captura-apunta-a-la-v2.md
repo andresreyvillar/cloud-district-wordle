@@ -69,6 +69,15 @@ despliegue de código.
 **THEN** la ejecución termina con error, para que el workflow lo marque en rojo. Hoy imprime el fallo y
 termina bien, así que el grupo deja de recibir el resumen y en Actions está todo verde.
 
+### la-captura-de-la-v2-es-el-titular
+**WHEN** el objetivo es la v2
+**THEN** se fotografía **el titular y el podio**, no la página entera: el texto del mensaje ya lleva el
+marcador y el álbum, y una captura de todo llega a Slack como una miniatura ilegible.
+
+### la-captura-fallida-se-declara
+**WHEN** el elemento que hay que fotografiar no existe en la página
+**THEN** el fallo dice qué selector faltaba y en qué URL, en lugar de un error genérico de objeto nulo.
+
 ## Estado después
 
 Ninguno en datos. Cambia **dónde mira** el bot, no lo que guarda.

@@ -70,8 +70,15 @@ OBJETIVOS: dict[str, Objetivo] = {
         nombre="v2",
         # La v2 no es otro host: es /2/ del mismo Worker (decisión del 2026-08-07, ver worker/index.js).
         url=_url("cloud-district-wordle") + "2/",
-        espera=".liga .fila",
-        captura=".liga",
+        # Se fotografía **el titular y el podio**, no la página entera. El texto del mensaje ya lleva el
+        # marcador y el álbum, así que capturar `.liga` los repetía —y una tira de marcador, logros, álbum
+        # y estadísticas llega a Slack como una miniatura ilegible. El titular es lo que la imagen aporta:
+        # quién lidera, por cuánto, y las tiras del podio de un vistazo.
+        #
+        # Se espera **al mismo selector que se fotografía**: esperar a uno y capturar otro deja la puerta
+        # abierta a fotografiar algo a medio pintar.
+        espera=".hero",
+        captura=".hero",
     ),
 }
 
@@ -208,6 +215,12 @@ async def capture_ranking(objetivo: Objetivo) -> str:
 
         ruta = "ranking_snapshot.png"
         contenedor = await page.query_selector(objetivo.captura)
+        if contenedor is None:
+            # Sin esto, un selector que no encaja daba `AttributeError: 'NoneType' has no attribute
+            # 'screenshot'`, que no dice qué faltaba ni en qué página.
+            raise RuntimeError(
+                f"no se encontró {objetivo.captura!r} en {objetivo.url} — nada que fotografiar"
+            )
         await contenedor.screenshot(path=ruta)
 
         await browser.close()

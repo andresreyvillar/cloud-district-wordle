@@ -157,3 +157,42 @@ def test_los_dos_objetivos_comparten_el_subdominio_de_la_cuenta():
 
     for nombre, objetivo in OBJETIVOS.items():
         assert f".{SUBDOMINIO}.workers.dev/" in objetivo.url, f"{nombre} no usa el subdominio de la cuenta"
+
+
+# @scenarios la-captura-de-la-v2-es-el-titular
+def test_la_v2_fotografia_el_titular_y_el_podio_no_la_pagina_entera():
+    """El texto del mensaje ya lleva el marcador y el álbum: repetirlos en la imagen es decirlo dos veces.
+
+    Y una captura de `.liga` es la página completa —marcador, logros, álbum y estadísticas—: una tira
+    larguísima que en Slack se ve como una miniatura ilegible.
+    """
+    from tools.post_ranking import OBJETIVOS
+
+    assert OBJETIVOS["v2"].captura == ".hero"
+
+
+# @scenarios la-captura-de-la-v2-es-el-titular
+def test_la_v2_espera_a_lo_que_va_a_fotografiar():
+    """Esperar a un selector y fotografiar otro deja la puerta abierta a capturar algo a medio pintar."""
+    from tools.post_ranking import OBJETIVOS
+
+    assert OBJETIVOS["v2"].espera == OBJETIVOS["v2"].captura
+
+
+# @scenarios la-captura-fallida-se-declara
+def test_si_el_elemento_no_existe_la_captura_falla_diciendo_cual():
+    """Sin esto, un selector que no encaja daba un `AttributeError: 'NoneType'` sin decir qué faltaba."""
+    import asyncio
+
+    from tools.post_ranking import Objetivo, capture_ranking
+
+    # Se espera a `body`, que SÍ existe, y se fotografía algo que no. Con `espera` apuntando también a lo
+    # inexistente, el que fallaba era `wait_for_selector` —cuyo mensaje ya menciona el selector— y la guarda
+    # de la captura no se ejercitaba: el mutante que la quitaba sobrevivía y el test parecía cubrirla.
+    objetivo = Objetivo(nombre="falso", url="about:blank", espera="body", captura=".no-existe")
+    try:
+        asyncio.run(capture_ranking(objetivo))
+    except Exception as error:  # noqa: BLE001
+        assert ".no-existe" in str(error), f"el error no dice qué selector falló: {error}"
+    else:
+        raise AssertionError("debería haber fallado")

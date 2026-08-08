@@ -1,0 +1,24 @@
+- run: '2026-08-08T19:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: captura-apunta-a-la-v2
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 3
+    supervivientes: 0
+  notas: >-
+    Lo pidió el dueño y encaja con el resumen en texto: ahora que el mensaje lleva el marcador y el álbum,
+    fotografiar la vista entera dice dos veces lo mismo, y `.liga` es una tira de marcador, logros, álbum y
+    estadísticas que Slack enseña como miniatura. El titular es lo que la imagen aporta y el texto no.
+    De paso, el objetivo pasa a ESPERAR AL MISMO SELECTOR QUE FOTOGRAFÍA: esperar a uno y capturar otro deja
+    la puerta abierta a fotografiar algo a medio pintar.
+    UN MUTANTE SOBREVIVIÓ y destapó un test que no cubría lo que decía: el de la guarda del selector
+    inexistente ponía el mismo selector en `espera` y en `captura`, así que fallaba `wait_for_selector`
+    —cuyo mensaje ya menciona el selector— y la guarda no se ejercitaba jamás.
+    VERIFICADO TOMANDO LA CAPTURA DE VERDAD: 1232 x 530 px, 79 KB.
