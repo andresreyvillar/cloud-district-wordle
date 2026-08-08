@@ -78,6 +78,11 @@ reglas dentro del publicador.
 **THEN** el mensaje no crece con ellos: está acotado por construcción —dos líneas, cinco del top y tres del
 álbum— y por eso cabe siempre en el comentario de Slack.
 
+### el-resumen-se-enciende-con-una-variable
+**WHEN** se despliega el código nuevo sin encender nada
+**THEN** el mensaje del canal es exactamente el de siempre; el resumen se activa cambiando una variable del
+repositorio, no desplegando.
+
 ## Estado después
 
 El mensaje del canal pasa de tres líneas a un resumen con secciones, y **sigue llevando la captura**. No se

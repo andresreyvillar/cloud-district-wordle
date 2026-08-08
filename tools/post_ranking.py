@@ -80,6 +80,19 @@ OBJETIVOS: dict[str, Objetivo] = {
 OBJETIVO_POR_DEFECTO = "v1"
 
 
+def resumen_activo() -> bool:
+    """Si el mensaje lleva el resumen compuesto.
+
+    **Apagado por defecto, y a propósito.** Mergear a `main` cambia lo que el cron ejecuta esa misma tarde,
+    así que un resumen encendido por defecto significaría que el grupo ve un mensaje nuevo sin que nadie lo
+    haya decidido. El interruptor sigue el patrón que ya usa `CAPTURA_OBJETIVO`: se enciende cambiando una
+    variable del repositorio, no desplegando código.
+
+        RESUMEN_COMPUESTO=1   el mensaje lleva jugador del día, obra, top 5, álbum y comentarios
+    """
+    return os.environ.get("RESUMEN_COMPUESTO", "").strip().lower() in ("1", "true", "si", "sí")
+
+
 def objetivo_de_captura() -> Objetivo:
     """El objetivo configurado. Uno desconocido **aborta**.
 
@@ -162,11 +175,15 @@ def comentario(seccion_medallas: str, objetivo: Objetivo, resultados=None) -> st
     mensaje lleva además el resumen de la jornada (slice `resumen-diario-compuesto`).
     """
     partes = ["¡Aquí tenéis el ranking actualizado! 🔥"]
-    if resultados:
+    if resultados and resumen_activo():
         jornada = max(fila["wordle_id"] for fila in resultados)
         cuerpo = resumen_del_dia(resultados, temporada_del_resumen(resultados), jornada)
         if cuerpo:
             partes.append(cuerpo)
+    # Las medallas NO van tras el interruptor. Se intentó, y rompía dos tests de
+    # `medallas-en-el-resumen-diario`: son comportamiento especificado de un slice aceptado, y apagarlas por
+    # la puerta de atrás sería cambiar una spec sin cambiarla. Consecuencia declarada: al mergear, las
+    # medallas empiezan a salir en el canal — que es el fallo que ese slice arregla.
     if seccion_medallas:
         partes.append(seccion_medallas)
     partes.append(f"Podéis ver todas las estadísticas detalladas aquí:\n👉 {objetivo.url}")

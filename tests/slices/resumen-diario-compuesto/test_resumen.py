@@ -213,3 +213,27 @@ def test_el_mensaje_no_crece_con_el_numero_de_jugadores():
     assert len(grande) < len(pequeno) * 1.5, "seis veces más gente no puede dar un mensaje mucho mayor"
     assert len(grande) <= LIMITE_DE_SLACK
     assert "Top 5" in grande and grande.count("\n1. ") == pequeno.count("\n1. ")
+
+
+# @scenarios el-resumen-se-enciende-con-una-variable
+def test_el_resumen_va_apagado_por_defecto():
+    """Mergear a `main` cambia lo que el cron ejecuta esa tarde: el mensaje no puede cambiar solo."""
+    import os
+
+    from post_ranking import OBJETIVOS, comentario, resumen_activo
+
+    filas = historia("Ana", 6) + [resultado("Ana", HOY, 2, LORO)]
+    previo = os.environ.pop("RESUMEN_COMPUESTO", None)
+    try:
+        assert resumen_activo() is False
+        apagado = comentario("", OBJETIVOS["v1"], filas)
+        assert "Jugador del día" not in apagado
+        assert "ranking actualizado" in apagado, "el mensaje de siempre sigue saliendo"
+
+        os.environ["RESUMEN_COMPUESTO"] = "1"
+        assert resumen_activo() is True
+        assert "Jugador del día" in comentario("", OBJETIVOS["v1"], filas)
+    finally:
+        os.environ.pop("RESUMEN_COMPUESTO", None)
+        if previo is not None:
+            os.environ["RESUMEN_COMPUESTO"] = previo
