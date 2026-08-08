@@ -13,15 +13,20 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- La cabecera usa el mismo lenguaje que el cuerpo: barra plana, borde grueso abajo y la marca en
+       tipografía de píxeles. Se queda pegada arriba al hacer scroll, que es lo que la convierte en
+       navegación de verdad en una tabla de 181 jornadas. -->
   <header class="cabecera">
-    <div class="marca">
-      <h1>Wordle <span>CloudDistrict</span></h1>
+    <div class="cabecera-interior">
+      <a class="marca" href="./" aria-label="Wordle CloudDistrict, ir a la temporada en curso">
+        <span class="pixel">WORDLE</span><span class="pixel resalte">CD</span>
+      </a>
+      <nav data-navegacion aria-label="Secciones"></nav>
       <label class="temporada">
         <span>Temporada</span>
         <select data-selector-temporada aria-label="Temporada"></select>
       </label>
     </div>
-    <nav data-navegacion aria-label="Secciones"></nav>
   </header>
 
   <main data-vista></main>

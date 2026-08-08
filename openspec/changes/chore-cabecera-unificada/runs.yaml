@@ -1,0 +1,22 @@
+- run: '2026-08-08T17:10:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    validate: pass
+    tests: pass
+  rondas_correccion: 3
+  notas: >-
+    Cabecera y cuerpo parecían dos webs pegadas. La causa estaba en la propia hoja: POPPINS SE CARGABA Y NO
+    SE USABA EN NINGÚN SITIO, aunque el documento de diseño la pide como tipografía de lectura. Activarla y
+    llevar los tokens de la liga a la cabecera resuelve la mitad del problema; la otra mitad es que la
+    navegación pasa de pestañas subrayadas a píldoras, que es el mismo gesto que los nombres pulsables.
+    EL HOVER ILEGIBLE LO REPORTÓ EL DUEÑO Y ERA MÍO: usaba `var(--liga-tinta)`, que se invierte con el tema
+    oscuro, así que sobre el verde el texto quedaba casi del color del fondo. La hoja ya resolvía este caso
+    en `.pixel.resalte` con una tinta fija. Contraste medido después: 11,09:1 en los dos temas.
+    TRES DESBORDAMIENTOS, DOS AJENOS. `main { padding: 2rem 0 }` reiniciaba el lateral y el texto se pegaba
+    al borde en móvil —ese sí era mío—. `.columnas` arrastraba el scroll horizontal de todo el documento con
+    sus 181 barras. Y `.distribucion .barra` heredaba el relleno de la barra de cabecera porque comparten
+    nombre de clase: ya se neutralizaban fondo y borde, pero no el relleno.
+    VERIFICADO EN 7 VISTAS × 5 COMBINACIONES de ancho y tema. Ninguna desborda, ninguna da errores.

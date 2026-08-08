@@ -322,8 +322,9 @@ export function pintarTemporada(contenedor, carga, temporada) {
 
   contenedor.innerHTML = `
     <div class="liga">
+      <!-- Sin marca: la identidad la lleva la cabecera. Repetirla aquí era la misma palabra dos veces
+           seguidas en pantalla. Esta barra es lo que siempre fue: la tira de cifras de la temporada. -->
       <div class="barra">
-        <div class="marca-liga"><span class="pixel">WORDLE</span><span class="pixel resalte">LIGA</span></div>
         <div class="hud">${hud(carga)}</div>
       </div>
 

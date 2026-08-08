@@ -28,82 +28,104 @@
 
 body {
   margin: 0;
-  padding: 0 1.25rem 3rem;
-  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: var(--tinta);
+  padding: 0 0 3rem;
+  /* Poppins estaba cargada y sin usar: el documento de diseño la pide como tipografía de lectura, y
+     usarla es lo que hace que cabecera y cuerpo dejen de parecer dos webs distintas. */
+  font: 16px/1.55 "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--liga-tinta);
   background: var(--fondo);
   -webkit-font-smoothing: antialiased;
 }
 
-.cabecera,
+/* El ancho útil. Era 60rem —960px— con un marcador de siete columnas: en un portátil sobraba media
+   pantalla a cada lado y las tiras de jornadas se apretaban sin motivo. */
+:root { --ancho: 84rem; --margen: 1.5rem; }
+
 main,
-.pie { max-width: 60rem; margin: 0 auto; }
+.pie { max-width: var(--ancho); margin: 0 auto; padding-inline: var(--margen); }
 
 /* --- cabecera ------------------------------------------------------------ */
+/* Mismo lenguaje que la barra del cuerpo: superficie plana, borde grueso abajo, marca en píxeles y
+   cifras en monoespaciada. Antes usaba la paleta antigua y una tipografía de sistema, y el corte entre
+   cabecera y contenido se veía a simple vista. */
 
-.cabecera { padding: 2rem 0 0; }
-
-.marca {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.marca h1 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-}
-
-.marca h1 span { color: var(--verde); }
-
-.temporada {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.85rem;
-  color: var(--tinta-suave);
-}
-
-.temporada select {
-  padding: 0.35rem 0.6rem;
-  font: inherit;
-  color: var(--tinta);
+.cabecera {
+  position: sticky; top: 0; z-index: 20;
   background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
+  border-bottom: 3px solid var(--liga-tinta);
 }
 
-nav[data-navegacion] {
-  display: flex;
-  gap: 0.25rem;
-  margin: 1.5rem 0 0;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--borde);
+.cabecera-interior {
+  display: flex; align-items: center; gap: 1rem;
+  max-width: var(--ancho); margin: 0 auto;
+  padding: 0.7rem var(--margen);
 }
+
+.marca { display: flex; align-items: center; gap: 0.4rem; text-decoration: none; color: inherit; flex: none; }
+.marca .pixel { font-size: 1rem; }
+
+/* Navegación de píldoras, no de pestañas subrayadas: es el mismo gesto que los nombres pulsables del
+   marcador, así que la web entera se pulsa igual. `margin-inline: auto` la centra y empuja la marca a la
+   izquierda y el selector a la derecha sin envolturas extra. */
+nav[data-navegacion] {
+  display: flex; gap: 0.3rem;
+  margin: 0 auto;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--liga-tablero);
+  border: 2px solid var(--borde); border-radius: 999px;
+}
+nav[data-navegacion]::-webkit-scrollbar { display: none; }
 
 nav[data-navegacion] a {
-  padding: 0.6rem 0.9rem;
-  color: var(--tinta-suave);
-  text-decoration: none;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
+  padding: 0.4rem 0.95rem;
+  font-size: 0.86rem; font-weight: 500;
+  color: var(--liga-media);
+  text-decoration: none; white-space: nowrap;
+  border-radius: 999px;
+  transition: background-color .12s, color .12s;
 }
-
-nav[data-navegacion] a:hover { color: var(--tinta); }
+nav[data-navegacion] a:hover { color: var(--liga-tinta); background: var(--superficie); }
 
 nav[data-navegacion] a[aria-current="page"] {
   font-weight: 600;
-  color: var(--tinta);
-  border-bottom-color: var(--verde);
+  color: #14072B;
+  background: var(--liga-verde);
+}
+nav[data-navegacion] a:focus-visible { outline: 2px solid var(--liga-morado); outline-offset: 2px; }
+
+.temporada {
+  display: flex; gap: 0.5rem; align-items: center; flex: none;
+  font-family: var(--mono); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--liga-suave);
+}
+
+.temporada select {
+  padding: 0.4rem 0.7rem;
+  font-family: var(--mono); font-size: 0.8rem;
+  color: var(--liga-tinta);
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-radius: 999px;
+}
+.temporada select:focus-visible { outline: 2px solid var(--liga-morado); outline-offset: 2px; }
+
+/* En pantalla estrecha la cabecera pasa a dos filas: identidad y temporada arriba, navegación debajo a
+   todo el ancho y con desplazamiento lateral. Cinco secciones caben deslizando; un menú desplegable
+   escondería la navegación detrás de un toque extra sin ganar nada. */
+@media (max-width: 780px) {
+  .cabecera-interior { flex-wrap: wrap; gap: 0.6rem 1rem; }
+  .marca { order: 1; }
+  .temporada { order: 2; margin-left: auto; }
+  nav[data-navegacion] { order: 3; width: 100%; margin: 0; justify-content: flex-start; }
+  .temporada span { display: none; }
 }
 
 /* --- vistas -------------------------------------------------------------- */
 
-main { padding: 2rem 0; }
+/* Se usa "padding-block" y no el atajo "padding": el atajo reinicia el lateral que pone el contenedor de
+   arriba, y con eso el texto se quedaba pegado al borde de la pantalla en móvil. */
+main { padding-block: 2rem; }
 
 .pendiente {
   padding: 2rem;
@@ -579,7 +601,10 @@ main { padding: 2rem 0; }
   position: relative; flex: 1 1 0;
   display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
   height: 100%; gap: 3px;
-  background: none; border: 0;                    /* .barra de la maqueta es otra cosa */
+  /* `.barra` de la maqueta es otra cosa —la tira de cifras de la temporada— y comparten nombre de clase.
+     Se neutralizaban el fondo y el borde pero NO el relleno, y ese relleno heredado (1rem 1.25rem por
+     barra, siete barras) desbordaba la ficha en móvil. */
+  background: none; border: 0; padding: 0;
 }
 .distribucion .barra b { width: 100%; min-height: 2px; }
 .distribucion .barra .n {
@@ -796,7 +821,11 @@ main { padding: 2rem 0; }
 }
 .nom:hover, .podio-card .nombre:hover, .ganador:hover,
 .temporada-card .etiqueta:hover, .ausentes a:hover {
-  color: var(--liga-tinta);
+  /* Tinta FIJA, no `--liga-tinta`. Esa variable se invierte con el tema oscuro y sobre el verde dejaba el
+     texto casi del color del fondo: el botón se veía relleno y vacío. El verde de la liga es claro en los
+     dos temas, así que su texto tiene que ser oscuro en los dos. Es la misma tinta que ya usa
+     `.pixel.resalte`, que resuelve exactamente este caso. */
+  color: #14072B;
   background: var(--liga-verde);
   border-color: var(--liga-verde);
 }
@@ -815,3 +844,12 @@ main { padding: 2rem 0; }
   text-decoration-color: var(--liga-verde); text-decoration-thickness: 2px;
 }
 .volver a:hover, .vacio a:hover, .bloque .nota a:hover { color: var(--liga-verde); }
+
+/* La barra del cuerpo ya no lleva marca —la lleva la cabecera—, así que las cifras se reparten a lo ancho
+   en lugar de amontonarse a la derecha dejando medio metro de superficie vacía. */
+.barra .hud { flex: 1; justify-content: space-between; }
+
+/* Las columnas de dificultad son una por jornada: la temporada 0 tiene 181 y desbordaban la página entera
+   en móvil, arrastrando el scroll horizontal de todo el documento. Se desplazan DENTRO de su caja, que es
+   lo que hay que hacer con un gráfico ancho: el resto de la página deja de moverse de lado. */
+.columnas { overflow-x: auto; scrollbar-width: thin; }
