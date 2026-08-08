@@ -8,24 +8,28 @@
 
 # Backend scripts and tooling
 *.py
-tools/
+/tools/
 extract_data.py
 update.sh
 update.log
 
-# Legacy / source-only data
-data/
+# Legacy / source-only data.
+#
+# ANCLADO con barra inicial, y no es cosmético: `data/` sin anclar casa a CUALQUIER profundidad con la
+# semántica de gitignore, así que se tragaba `v2/js/data/` entero — siete módulos— y la v2 se desplegaba
+# rota, sirviendo el index como si fuera JavaScript. El deploy decía "Success" y la web no arrancaba.
+/data/
 
 # Método spec-driven: especificaciones, harness y documentación
-openspec/
-openspec.workspace.yaml
-docs/
-tests/
+/openspec/
+/openspec.workspace.yaml
+/docs/
+/tests/
 CLAUDE.md
 .claude/
 
 # Entorno y configuración de desarrollo
-.venv/
+/.venv/
 pytest.ini
 requirements.txt
 requirements-dev.txt
@@ -40,7 +44,14 @@ context-snapshot-*.md
 wrangler.v2.jsonc
 
 # El script del Worker se empaqueta como código, no se sirve como fichero.
-worker/
+/worker/
+
+# El directorio temporal de wrangler: el primer deploy subió su bundle como asset.
+/.wrangler/
+
+# Páginas de desarrollo de la v2 y su ignore, que solo aplica al config alternativo.
+v2/dev/
+v2/.assetsignore
 
 # Repo metadata
 .git/

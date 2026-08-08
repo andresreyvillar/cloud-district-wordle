@@ -96,7 +96,7 @@ test('una ruta profunda de la v2 cae en su index, no en el de la v1', async () =
   assert.equal(await respuesta.text(), 'contenido de /v2/index.html');
   assert.deepEqual(
     pedidos,
-    ['/v2/t/2026-08/j/U08U27DFDL2', '/v2/index.html'],
+    ['/v2/t/2026-08/j/U08U27DFDL2', '/v2/'],
     'primero intenta el fichero y luego cae al index de la v2',
   );
 });
@@ -116,4 +116,56 @@ test('un prefijo parecido pero distinto no se confunde con el de la v2', async (
 
   assert.equal(respuesta.status, 404);
   assert.deepEqual(pedidos, ['/2abc'], 'no se reescribió');
+});
+
+
+test('una redirección de la capa de assets no se devuelve al navegador', async () => {
+  // El fallo real de producción: `/2/t/0` devolvía un 307 a `/v2/`, así que el navegador acababa en la ruta
+  // interna y perdía la de la v2. Solo un 200 cuenta como fichero.
+  const env = {
+    pedidos: [],
+    ASSETS: {
+      async fetch(request) {
+        const ruta = new URL(request.url).pathname;
+        env.pedidos.push(ruta);
+        if (ruta === '/v2/') return new Response('index de la v2', { status: 200 });
+        return new Response(null, { status: 307, headers: { location: '/v2/' } });
+      },
+    },
+  };
+
+  const respuesta = await worker.fetch(
+    new Request('https://ejemplo.workers.dev/2/t/0'),
+    env,
+  );
+
+  assert.equal(respuesta.status, 200, 'una 3xx de los assets no puede llegar al navegador');
+  assert.equal(await respuesta.text(), 'index de la v2');
+  assert.deepEqual(env.pedidos, ['/v2/t/0', '/v2/']);
+});
+
+
+test('un 304 de los assets se devuelve, no se confunde con "no existe"', async () => {
+  // El segundo fallo real: en la SEGUNDA visita el navegador pide condicionalmente los módulos que ya tiene
+  // en caché, los assets responden 304, y tratarlo como "no existe" devolvía el index con MIME text/html.
+  // El doble nunca había devuelto un 304, así que ningún test podía verlo.
+  const env = {
+    ASSETS: {
+      async fetch(request) {
+        if (new URL(request.url).pathname === '/v2/js/app.js') {
+          return new Response(null, { status: 304 });
+        }
+        return new Response('index de la v2', { status: 200 });
+      },
+    },
+  };
+
+  const respuesta = await worker.fetch(
+    new Request('https://ejemplo.workers.dev/2/js/app.js', {
+      headers: { 'if-none-match': 'W/"abc"' },
+    }),
+    env,
+  );
+
+  assert.equal(respuesta.status, 304, 'un 304 tiene que llegar al navegador para que use su caché');
 });

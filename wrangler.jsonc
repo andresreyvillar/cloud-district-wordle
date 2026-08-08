@@ -15,6 +15,9 @@
   "name": "cloud-district-wordle",
   "compatibility_date": "2026-01-26",
   "main": "worker/index.js",
+  // El deploy avisa de que, con la ruta workers.dev activa, las Preview URLs se habilitan por defecto. Se
+  // dejan apagadas: publicarían la web bajo un host más sin que nadie lo haya pedido.
+  "preview_urls": false,
   "assets": {
     "directory": ".",
     "binding": "ASSETS"

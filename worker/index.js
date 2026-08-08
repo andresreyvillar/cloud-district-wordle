@@ -36,13 +36,28 @@ export default {
     if (url.pathname.startsWith(PREFIJO)) {
       const interna = new URL(`${INTERNO}${url.pathname.slice(PREFIJO.length)}`, url);
       const respuesta = await env.ASSETS.fetch(new Request(interna, request));
-      if (respuesta.status !== 404) return respuesta;
+
+      // Se cae al index **solo** si el fichero no existe (404) o si los assets responden con una
+      // redirección de normalización (3xx). Todo lo demás se devuelve tal cual.
+      //
+      // Las dos condiciones salieron de producción, y las dos por separado:
+      //
+      // - devolver la 3xx tal cual mandaba al navegador a `/v2/`, filtrando la ruta interna y perdiendo la
+      //   de la v2;
+      // - exigir exactamente 200 rompía la **segunda** visita: el navegador manda una petición condicional
+      //   con el módulo ya en caché, los assets contestan **304 Not Modified**, y eso se tomaba por "no
+      //   existe", así que `/2/js/app.js` devolvía el index como si fuera JavaScript. La web solo fallaba
+      //   si ya la habías abierto antes, que es el caso de todo el que la use a diario.
+      // 304 está en el rango 3xx y **no es una redirección**: es "usa tu caché". Meterlo en el rango
+      // reintroducía el fallo que este código acaba de arreglar.
+      const REDIRECCIONES = [301, 302, 303, 307, 308];
+      const esRedireccion = REDIRECCIONES.includes(respuesta.status);
+      if (respuesta.status !== 404 && !esRedireccion) return respuesta;
 
       // Fallback de SPA, y **solo para la v2**: cualquier ruta de la v2 que no sea un fichero devuelve su
-      // index para que el router la resuelva en el cliente. Antes esto era
-      // `not_found_handling: single-page-application`, que aplicaba al Worker entero y habría hecho que una
-      // ruta inexistente de la v1 devolviera una página con 200.
-      return env.ASSETS.fetch(new Request(new URL(`${INTERNO}index.html`, url), request));
+      // index para que el router la resuelva en el cliente. Se pide el directorio y no `index.html` porque
+      // es la forma canónica: pedir el fichero dispara la misma normalización que causó el fallo anterior.
+      return env.ASSETS.fetch(new Request(new URL(INTERNO, url), request));
     }
 
     // La v1: se delega tal cual, incluido su 404.
