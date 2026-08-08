@@ -133,7 +133,7 @@ def resumen(url: str, clave: str) -> None:
     # (`CAPTURA_OBJETIVO`). Esta llamada se quedó atrás cuando el objetivo pasó a ser configurable.
     objetivo = objetivo_de_captura()
     print("  ┌" + "─" * 76)
-    for linea in comentario(medallas, objetivo).splitlines():
+    for linea in comentario(medallas, objetivo, filas).splitlines():
         print(f"  │ {linea}")
     print("  └" + "─" * 76)
     if not medallas:

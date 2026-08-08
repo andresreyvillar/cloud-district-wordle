@@ -17,6 +17,7 @@ from slack_sdk.errors import SlackApiError
 from supabase import create_client
 
 from badges import texto_de_medallas
+from resumen import resumen_del_dia
 from seasons import temporada_de
 
 load_dotenv()
@@ -151,13 +152,21 @@ def seccion_de_medallas(resultados):
     return texto_de_medallas(resultados, temporada_del_resumen(resultados), jornada)
 
 
-def comentario(seccion_medallas: str, objetivo: Objetivo) -> str:
+def comentario(seccion_medallas: str, objetivo: Objetivo, resultados=None) -> str:
     """El texto que acompaña a la captura.
 
     El enlace es **el del objetivo que se ha fotografiado**: mandar una foto de una web y un enlace a otra
     es la forma más rápida de que nadie se fíe de ninguna de las dos.
+
+    `resultados` es opcional para no romper a quien solo quiera la cabecera y el enlace; con ellos, el
+    mensaje lleva además el resumen de la jornada (slice `resumen-diario-compuesto`).
     """
     partes = ["¡Aquí tenéis el ranking actualizado! 🔥"]
+    if resultados:
+        jornada = max(fila["wordle_id"] for fila in resultados)
+        cuerpo = resumen_del_dia(resultados, temporada_del_resumen(resultados), jornada)
+        if cuerpo:
+            partes.append(cuerpo)
     if seccion_medallas:
         partes.append(seccion_medallas)
     partes.append(f"Podéis ver todas las estadísticas detalladas aquí:\n👉 {objetivo.url}")
@@ -214,7 +223,8 @@ async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=N
     grupo dejaba de recibir el resumen y en Actions estaba todo verde.
     """
     objetivo = objetivo_de_captura()
-    medallas = seccion_de_medallas(leer_resultados() if resultados is None else resultados)
+    filas = leer_resultados() if resultados is None else resultados
+    medallas = seccion_de_medallas(filas)
     print("Medallas de hoy:" if medallas else "Hoy no hay medallas nuevas.")
     if medallas:
         print(medallas)
@@ -225,7 +235,7 @@ async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=N
         print(f"Error capturando {objetivo.nombre}: {error}", file=sys.stderr)
         return 1
 
-    publicado = subir(ruta, comentario(medallas, objetivo))
+    publicado = subir(ruta, comentario(medallas, objetivo, filas))
     if os.path.exists(ruta):
         os.remove(ruta)
     return 0 if publicado else 1
