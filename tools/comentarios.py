@@ -44,8 +44,29 @@ RESOLVER_SOSPECHOSO = 2
 #: Cuántos comentarios como mucho. La sección es el remate del mensaje, no un muro.
 MAXIMO_COMENTARIOS = 3
 
-#: Orden de notabilidad: si alguien dispara dos, sale por el más raro. Coincide con la frecuencia medida.
-NOTABILIDAD = ("sospechoso", "rajado", "sembrado", "no-inspirado")
+#: Cuánto hueco tiene que dejar el último en publicar, y a partir de qué hora, para que llegar tarde sea
+#: noticia. Calibrado: con 4h de hueco sale 0,24 por jornada; con 3h, 0,31.
+HUECO_DEL_REZAGADO = 4
+HORA_DEL_REZAGADO = 14
+
+#: Cuánto mejor que la media del día tiene que ser la nota del rezagado para que la broma sea de sospecha y
+#: no de retraso. Con esto la combinación sale 0,06 por jornada: el chiste bueno, por raro.
+VENTAJA_SOSPECHOSA = 1.0
+
+#: Orden de notabilidad: si alguien dispara dos, sale por el más raro. Es el orden de la frecuencia medida
+#: sobre las 186 jornadas que cuentan:
+#:
+#:     clavada 0,01 · rezagado-con-suerte 0,06 · sospechoso 0,06 · rajado 0,18
+#:     rezagado 0,24 · sembrado 0,24 · no-inspirado 0,24
+NOTABILIDAD = (
+    "clavada",
+    "rezagado-con-suerte",
+    "sospechoso",
+    "rajado",
+    "rezagado",
+    "sembrado",
+    "no-inspirado",
+)
 
 
 @dataclass(frozen=True)
@@ -79,6 +100,21 @@ FRASES: dict[str, tuple[str, ...]] = {
         "{jugador} hoy no estaba inspirad@ 😅",
         "A {jugador} se le ha atragantado la palabra 😅",
         "Día para olvidar de {jugador} 😅",
+    ),
+    "clavada": (
+        "{jugador} lo ha sacado a la PRIMERA. Que alguien revise el diccionario 🍀",
+        "A la primera, {jugador}. Esto o es brujería o es que ya la sabía 🍀",
+        "{jugador} ha resuelto en 1. Sin comentarios 🍀",
+    ),
+    "rezagado": (
+        "{jugador} ha subido el resultado con el día ya vencido ⏰",
+        "Aparece {jugador} a última hora, como siempre ⏰",
+        "{jugador} publicando cuando ya nadie miraba ⏰",
+    ),
+    "rezagado-con-suerte": (
+        "{jugador} publica el último y con un {dato:.0f}. Habiendo visto los demás, claro 🕵️",
+        "Curioso: {jugador} llega tarde y clava un {dato:.0f}. Nada que declarar 🕵️",
+        "El último en publicar es {jugador}, y con un {dato:.0f}. Cosas del azar 🕵️",
     ),
     "rajado": (
         "{jugador} no ha aparecido justo el día difícil 👀",
@@ -129,8 +165,11 @@ def hechos_de_la_jornada(resultados: list[dict], temporada: str, jornada: int) -
         return []
 
     encontrados: list[Hecho] = []
+    encontrados.extend(_por_la_hora(del_dia, media))
     for fila in del_dia:
         jugador, score = _nombre(fila), fila["score"]
+        if score == 1:
+            encontrados.append(Hecho("clavada", jugador, score))
         if score <= RESOLVER_SOSPECHOSO and media >= UMBRAL_DIA_EXIGENTE:
             encontrados.append(Hecho("sospechoso", jugador, score))
         if score <= media - MARGEN_SEMBRADO:
@@ -150,6 +189,45 @@ def hechos_de_la_jornada(resultados: list[dict], temporada: str, jornada: int) -
             encontrados.append(Hecho("rajado", ", ".join(ausentes), varios=len(ausentes) > 1))
 
     return _uno_por_persona(encontrados)
+
+
+def _publicado(fila: dict):
+    """Cuándo se registró la fila, **solo si es utilizable como hora de publicación**.
+
+    `created_at` es cuando el cron escribió la fila, así que aproxima la publicación con un margen de hasta
+    una hora — suficiente para distinguir «por la mañana» de «a media tarde», que es lo único que estos
+    chistes necesitan.
+
+    Se exige que caiga **el mismo día que el puzzle**. Las 268 filas del backfill se insertaron todas de
+    golpe en otra fecha: ahí el margen no es de una hora sino de meses, y el chiste señalaría a alguien por
+    algo que no hizo.
+    """
+    marca = fila.get("created_at")
+    if not marca or str(marca)[:10] != str(fila["date"])[:10]:
+        return None
+    import datetime
+
+    return datetime.datetime.fromisoformat(str(marca))
+
+
+def _por_la_hora(del_dia: list[dict], media: float) -> list[Hecho]:
+    """Los hechos que dependen de cuándo se publicó: llegar el último, y llegar el último con suerte."""
+    con_hora = [(fila, _publicado(fila)) for fila in del_dia]
+    con_hora = [(fila, cuando) for fila, cuando in con_hora if cuando is not None]
+    if len(con_hora) < 3:
+        return []
+
+    con_hora.sort(key=lambda par: par[1])
+    (ultimo, cuando), (_, penultimo) = con_hora[-1], con_hora[-2]
+
+    hueco = (cuando - penultimo).total_seconds() >= HUECO_DEL_REZAGADO * 3600
+    if not (hueco and cuando.hour >= HORA_DEL_REZAGADO):
+        return []
+
+    # Llegar tarde es un chiste; llegar tarde y además clavarla es OTRO, y mejor: es el de haber visto lo
+    # que hacían los demás. Se separan porque su frecuencia es muy distinta (0,24 frente a 0,06).
+    clave = "rezagado-con-suerte" if ultimo["score"] <= media - VENTAJA_SOSPECHOSA else "rezagado"
+    return [Hecho(clave, _nombre(ultimo), ultimo["score"])]
 
 
 def _uno_por_persona(hechos: list[Hecho]) -> list[Hecho]:

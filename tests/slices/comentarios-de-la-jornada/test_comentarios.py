@@ -223,3 +223,73 @@ def test_la_frase_concuerda_cuando_faltan_varios():
 
     assert "no ha aparecido" in frase("rajado", 1599, "Carlos")
     assert "no han aparecido" in frase("rajado", 1599, "Carlos, Edu Noeda", varios=True)
+
+
+# ── Los disparadores que dependen de la hora de publicación ──────────────────────────────────────────
+#
+# `created_at` es cuando el cron escribió la fila, así que aproxima la hora de publicación con un margen de
+# hasta una hora. Sirve para distinguir "publicó por la mañana" de "publicó a media tarde", que es lo único
+# que estos chistes necesitan. **Solo se usa si cae el mismo día que el puzzle**: las 268 filas del backfill
+# se metieron todas de golpe otro día, y con ellas el margen no es de una hora sino de meses.
+
+def con_hora(fila, hora, dia="2026-03-02"):
+    return {**fila, "created_at": f"{dia}T{hora:02d}:30:00+00:00"}
+
+
+# @scenarios el-rezagado-se-nota
+def test_el_ultimo_en_publicar_con_mucho_hueco_se_comenta():
+    from comentarios import hechos_de_la_jornada
+
+    filas = [con_hora(f, 8) for f in jornada(1600, {"Ana": 4, "B": 4, "C": 4, "D": 4})]
+    filas.append(con_hora(resultado("Tarde", 1600, 4), 17))
+
+    hechos = hechos_de_la_jornada(filas, "0", 1600)
+
+    assert any(h.clave == "rezagado" and h.jugador == "Tarde" for h in hechos)
+
+
+# @scenarios el-rezagado-se-nota
+def test_publicar_a_la_vez_que_los_demas_no_es_ser_rezagado():
+    from comentarios import hechos_de_la_jornada
+
+    filas = [con_hora(f, 8) for f in jornada(1600, {"Ana": 4, "B": 4, "C": 4, "D": 4, "E": 4})]
+
+    assert not any(h.clave == "rezagado" for h in hechos_de_la_jornada(filas, "0", 1600))
+
+
+# @scenarios el-rezagado-se-nota
+def test_sin_hora_utilizable_no_se_comenta_el_retraso():
+    """Las filas del backfill se escribieron todas otro día: su hora no dice cuándo se publicó."""
+    from comentarios import hechos_de_la_jornada
+
+    filas = [con_hora(f, 8, dia="2026-02-02") for f in jornada(1600, {"Ana": 4, "B": 4, "C": 4, "D": 4})]
+    filas.append(con_hora(resultado("Tarde", 1600, 4), 17, dia="2026-02-02"))
+
+    assert not any(h.clave == "rezagado" for h in hechos_de_la_jornada(filas, "0", 1600))
+
+
+# @scenarios la-suerte-sospechosa-se-senala
+def test_llegar_tarde_y_ademas_clavarla_es_el_chiste_bueno():
+    """Publicar el último y con una nota muy por encima de la media: 0,06 por jornada."""
+    from comentarios import hechos_de_la_jornada
+
+    filas = [con_hora(f, 8) for f in jornada(1600, {"Ana": 5, "B": 5, "C": 5, "D": 5})]
+    filas.append(con_hora(resultado("Listillo", 1600, 2), 17))
+
+    hechos = hechos_de_la_jornada(filas, "0", 1600)
+    suyo = [h for h in hechos if h.jugador == "Listillo"]
+
+    assert suyo and suyo[0].clave == "rezagado-con-suerte", f"{suyo}"
+
+
+# @scenarios la-suerte-sospechosa-se-senala
+def test_acertar_a_la_primera_es_el_chiste_estrella():
+    """Una clavada sale 0,01 por jornada: dos veces en 186 jornadas."""
+    from comentarios import hechos_de_la_jornada
+
+    filas = jornada(1600, {"Ana": 1, "B": 4, "C": 4, "D": 4, "E": 4})
+
+    hechos = hechos_de_la_jornada(filas, "0", 1600)
+    de_ana = [h for h in hechos if h.jugador == "Ana"]
+
+    assert de_ana and de_ana[0].clave == "clavada"

@@ -24,7 +24,7 @@ load_dotenv()
 
 #: Las columnas que necesita el resumen. `pattern` entra porque sin ella ninguna medalla de figura podría
 #: anunciarse jamás: el dato no llegaría y el fallo sería silencioso.
-COLUMNAS = "slack_user_id,player_name,wordle_id,score,date,pattern"
+COLUMNAS = "slack_user_id,player_name,wordle_id,score,date,pattern,created_at"
 
 # Configuración
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")

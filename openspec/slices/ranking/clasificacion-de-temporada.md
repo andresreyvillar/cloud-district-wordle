@@ -75,7 +75,9 @@ lo que muestra la web y lo que publica el bot no pueden divergir.
 
 ### empate-se-rompe-por-participacion
 **WHEN** dos jugadores tienen la misma media final
-**THEN** va delante el que ha jugado más días.
+**THEN** va delante **en la lista** el que ha jugado más días — pero **comparten puesto**, porque empatar en
+la media es haber hecho la misma temporada. El desempate existe para que el orden sea determinista, no para
+fabricar una diferencia que no está en los datos (ver [[empates-comparten-puesto]]).
 
 ### la-tabla-hace-auditable-la-imputacion
 **WHEN** el grupo mira la clasificación

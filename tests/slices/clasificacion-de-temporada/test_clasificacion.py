@@ -56,7 +56,12 @@ def test_la_tabla_se_ordena_por_media_imputada_de_menor_a_mayor():
     # los cuatro de relleno empatan con "medio" en 4,0, así que solo el primero y el último son fijos
     assert orden[0] == "bueno"
     assert orden[-1] == "malo"
-    assert [fila["posicion"] for fila in tabla] == list(range(1, len(tabla) + 1))
+    # Los puestos ya NO son correlativos: quien empata comparte número y el siguiente salta
+    # (slice `empates-comparten-puesto`). Lo que sigue en pie es que no bajan nunca al recorrer la lista.
+    posiciones = [fila["posicion"] for fila in tabla]
+    assert posiciones[0] == 1
+    assert posiciones == sorted(posiciones)
+    assert max(posiciones) <= len(tabla)
     medias = [fila["media_temporada"] for fila in tabla]
     assert medias == sorted(medias)
 
@@ -137,13 +142,19 @@ def test_el_empate_en_media_lo_rompe_quien_ha_jugado_mas_dias():
     filas += jornada(1, 1600, {"zoe": 4, "r1": 4, "r2": 5, "r3": 5, "r4": 5, "r5": 4})
 
     tabla = clasificacion(filas, MES)
+    orden = [f["nombre"] for f in tabla]
     posiciones = {f["nombre"]: f["posicion"] for f in tabla}
     medias = {f["nombre"]: f["media_temporada"] for f in tabla}
     jugados = {f["nombre"]: f["jugados"] for f in tabla}
 
     assert medias["zoe"] == medias["ana"], f"el fixture no produce empate: {medias}"
     assert jugados["zoe"] > jugados["ana"]
-    assert posiciones["zoe"] < posiciones["ana"], "el desempate por participación no se aplica"
+    # El desempate ORDENA la lista, y ya no reparte puestos: empatar en la media es haber hecho la misma
+    # temporada, y quien juega un día más no la ha hecho mejor —si esa participación tiene que valer, lo
+    # hace la imputación, que ya está dentro de la media. Cambio de regla del slice
+    # `empates-comparten-puesto`, no un test debilitado: el desempate se sigue comprobando, sobre el orden.
+    assert orden.index("zoe") < orden.index("ana"), "el desempate por participación no ordena"
+    assert posiciones["zoe"] == posiciones["ana"], "empatados en media, mismo puesto"
 
 
 # @scenarios la-tabla-hace-auditable-la-imputacion

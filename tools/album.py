@@ -150,11 +150,19 @@ def _ranking(recuentos: dict[str, Counter[str]], nombre_de: dict[str, str]) -> l
             fila["nombre"].lower(),
         )
     )
+    # Puesto compartido cuando la tasa es la misma, igual que en el marcador de puntuación
+    # (slice `empates-comparten-puesto`): tres jugadores al 80% no han hecho uno mejor que otro, y el
+    # desempate existe para que la lista sea determinista, no para separarlos.
     posicion = 0
+    vistos = 0
+    anterior = None
     for fila in filas:
-        if fila["clasificado"]:
-            posicion += 1
-            fila["posicion"] = posicion
-        else:
+        if not fila["clasificado"]:
             fila["posicion"] = None
+            continue
+        vistos += 1
+        if fila["tasa"] != anterior:
+            posicion = vistos
+            anterior = fila["tasa"]
+        fila["posicion"] = posicion
     return filas

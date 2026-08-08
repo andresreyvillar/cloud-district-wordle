@@ -135,7 +135,10 @@ def test_el_top_no_pasa_de_cinco():
 
     bloque = bloque_top(muchos, "0", 1505)
 
-    assert len([l for l in bloque.splitlines() if l.strip().startswith(("1.", "2.", "3.", "4.", "5."))]) == 5
+    # Se corta por PUESTO, no por número de filas: con empates puede haber más de cinco líneas, y lo que
+    # no puede pasar es que aparezca un sexto puesto.
+    puestos = [int(l.split("º")[0]) for l in bloque.splitlines()[1:] if "º" in l.split(" ")[0]]
+    assert puestos and max(puestos) <= 5
 
 
 # @scenarios cabeza-del-album
@@ -187,7 +190,7 @@ def test_el_marcador_del_resumen_es_el_mismo_que_publica_la_web():
     lider = clasificacion(filas, "0")[0]
     bloque = bloque_top(filas, "0", 1509)
 
-    primera = next(l for l in bloque.splitlines() if l.strip().startswith("1."))
+    primera = next(l for l in bloque.splitlines() if l.strip().startswith("1º"))
     assert lider["nombre"] in primera
 
 
@@ -199,7 +202,7 @@ def test_el_mensaje_no_crece_con_el_numero_de_jugadores():
     Aquí se compara **el mensaje de un grupo pequeño con el de uno seis veces mayor**, que es lo que de
     verdad podría desbordarlo.
     """
-    from resumen import LIMITE_DE_SLACK, resumen_del_dia
+    from resumen import LIMITE_DE_SLACK, TOP, resumen_del_dia
 
     def grupo(cuantos):
         filas = []
@@ -212,7 +215,18 @@ def test_el_mensaje_no_crece_con_el_numero_de_jugadores():
 
     assert len(grande) < len(pequeno) * 1.5, "seis veces más gente no puede dar un mensaje mucho mayor"
     assert len(grande) <= LIMITE_DE_SLACK
-    assert "Top 5" in grande and grande.count("\n1. ") == pequeno.count("\n1. ")
+    # Se cuentan las LÍNEAS del bloque del top, no los prefijos "1.": con puestos compartidos varios
+    # jugadores llevan el mismo número y ese proxy dejó de medir lo que decía medir.
+    def filas_del_top(texto):
+        bloque = texto.split("📊 *Marcador")[1].split("\n\n")[0]
+        return len(bloque.splitlines())
+
+    assert "Marcador" in grande
+    # La propiedad: el bloque del marcador NO crece con el grupo. Se comparan los dos entre sí en lugar de
+    # contra un número fijo, porque con empates el recuento depende de cuántos comparten puesto y lo que
+    # importa es que seis veces más gente no produzca un bloque mayor.
+    assert filas_del_top(grande) == filas_del_top(pequeno)
+    assert filas_del_top(grande) <= TOP + 1, "el encabezado más como mucho cinco puestos"
 
 
 # @scenarios el-resumen-se-enciende-con-una-variable

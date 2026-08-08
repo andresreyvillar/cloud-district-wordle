@@ -56,6 +56,16 @@ excepcional que era.
 **WHEN** un día difícil hay gente de la temporada que no publica
 **THEN** se comenta la ausencia, usando el **mismo umbral de día difícil** que las medallas y no uno propio.
 
+### el-rezagado-se-nota
+**WHEN** el último en publicar llega mucho después que el resto y con el día ya avanzado
+**THEN** se comenta; y **solo** si su hora de registro es utilizable, es decir si cae el mismo día que el
+puzzle — las filas del backfill se insertaron todas de golpe en otra fecha y su hora no dice nada.
+
+### la-suerte-sospechosa-se-senala
+**WHEN** alguien acierta a la primera, o resuelve muy por debajo de la media de un día duro, o publica el
+último **y además** con una nota muy por encima de lo que ha hecho el grupo
+**THEN** el resumen lo señala, y cuanto más raro es el caso antes sale.
+
 ### un-hecho-no-se-repite-en-dos-comentarios
 **WHEN** un jugador dispara más de un detector el mismo día
 **THEN** aparece una sola vez, con el hecho más notable, en lugar de dos líneas sobre la misma persona.

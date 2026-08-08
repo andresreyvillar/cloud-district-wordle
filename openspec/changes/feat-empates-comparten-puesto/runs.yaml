@@ -1,0 +1,16 @@
+- run: '2026-08-08T18:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: empates-comparten-puesto
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Parte del rediseño del resumen diario que pidió el dueño. Todo lo que se fija aquí se midió antes:
+    el 62% de las jornadas tiene empate en la mejor nota, y los disparadores nuevos van de 0,01 a 0,24 por
+    jornada. El cambio de los empates es una MODIFICACIÓN de regla declarada, no un test debilitado: el
+    escenario decía que el desempate por participación daba mejor puesto y ahora ordena la lista.

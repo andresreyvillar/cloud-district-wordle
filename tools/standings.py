@@ -151,11 +151,24 @@ def clasificacion(resultados: list[dict], temporada: str) -> list[dict]:
             fila["nombre"].lower(),
         )
     )
+    # Puesto compartido cuando la media es la misma: dos jugadores con 3,58 no han hecho uno mejor que el
+    # otro, y el desempate interno existe para que el orden sea determinista, no para separarlos. El
+    # siguiente salta tantos números como gente lleve por delante.
+    #
+    # Se compara sobre la media **publicada**, no sobre el flotante crudo: si a la vista son el mismo
+    # número, separarlos es incomprensible para quien lo lee.
+    #
+    # Empatar no es raro: el 62% de las jornadas que cuentan tienen empate en la mejor nota del día.
     posicion = 0
+    vistos = 0
+    anterior = None
     for fila in filas:
-        if fila["clasificado"]:
-            posicion += 1
-            fila["posicion"] = posicion
-        else:
+        if not fila["clasificado"]:
             fila["posicion"] = None
+            continue
+        vistos += 1
+        if fila["media_temporada"] != anterior:
+            posicion = vistos
+            anterior = fila["media_temporada"]
+        fila["posicion"] = posicion
     return filas

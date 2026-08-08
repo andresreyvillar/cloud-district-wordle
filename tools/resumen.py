@@ -111,17 +111,38 @@ def bloque_top(resultados: list[dict], temporada: str, jornada: int) -> str:
     Quien no jugó hoy no lleva emoji: poner el de otro día haría que el resumen contase una jornada que no
     es la de hoy.
     """
-    tabla = [fila for fila in clasificacion(resultados, temporada) if fila["clasificado"]][:TOP]
-    if not tabla:
+    clasificados = [fila for fila in clasificacion(resultados, temporada) if fila["clasificado"]]
+    if not clasificados:
         return ""
 
+    # **Se corta por puesto, no por número de filas.** Con puestos compartidos, quedarse con los cinco
+    # primeros de la lista puede partir un empate por la mitad y dejar fuera a alguien que va igual que el
+    # quinto. Empatar es lo normal: el 62% de las jornadas tiene empate en la mejor nota del día.
+    tabla = [fila for fila in clasificados if fila["posicion"] <= TOP]
+
     dibujos = _figura_del_dia_por_jugador(resultados, jornada)
-    lineas = [
-        f"{fila['posicion']}. {fila['nombre']} — {fila['media_temporada']:.2f}"
-        f"{' ' + dibujos[fila['jugador']] if fila['jugador'] in dibujos else ''}"
-        for fila in tabla
-    ]
-    return "📊 *Top 5 de la temporada*\n" + "\n".join(lineas)
+    lineas = []
+    anterior = None
+    for fila in tabla:
+        # El número solo se escribe cuando cambia: repetir "2º" en dos líneas seguidas se lee como un error
+        # de copia; una línea sangrada se lee como lo que es, un empate.
+        marca = f"{fila['posicion']}º" if fila["posicion"] != anterior else "  ·"
+        anterior = fila["posicion"]
+        emoji = f" {dibujos[fila['jugador']]}" if fila["jugador"] in dibujos else ""
+        lineas.append(f"{marca} {fila['nombre']} — {_cifra(fila['media_temporada'])}{emoji}")
+    return f"📊 *Marcador · {_etiqueta(resultados, temporada)}*\n" + "\n".join(lineas)
+
+
+def _cifra(valor: float) -> str:
+    """Con coma decimal. La web ya lo hace con `toLocaleString("es-ES")`, y el mensaje va al mismo grupo:
+    un 3.20 en Slack y un 3,20 en la web son el mismo número escrito de dos formas."""
+    return f"{valor:.2f}".replace(".", ",")
+
+
+def _etiqueta(resultados: list[dict], temporada: str) -> str:
+    from seasons import etiqueta
+
+    return etiqueta(temporada)
 
 
 def tira(recuento: dict[str, int], categorias: list[dict]) -> str:
@@ -144,12 +165,15 @@ def bloque_album(resultados: list[dict], temporada: str) -> str:
     if not clasificados:
         return ""
 
-    lineas = [
-        f"{fila['posicion']}. {fila['nombre']} — {round(fila['tasa'] * 100)} % "
-        f"{tira(fila['recuento'], datos['categorias'])}"
-        for fila in clasificados
-    ]
-    return "🎨 *Álbum de figuras*\n" + "\n".join(lineas)
+    lineas, anterior = [], None
+    for fila in clasificados:
+        marca = f"{fila['posicion']}º" if fila["posicion"] != anterior else "  ·"
+        anterior = fila["posicion"]
+        lineas.append(
+            f"{marca} {fila['nombre']} — {round(fila['tasa'] * 100)} % "
+            f"{tira(fila['recuento'], datos['categorias'])}"
+        )
+    return "🎨 *Ranking de figuras*\n" + "\n".join(lineas)
 
 
 def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int) -> str:
