@@ -1,0 +1,35 @@
+- run: '2026-08-08T14:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: medallas-de-figuras
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  mutacion:
+    mutantes: 6
+    supervivientes: 0
+  notas: >-
+    Punto 6.2. Cinco medallas que miran el dibujo, y con ellas el eje de figuras queda completo.
+    LOS UMBRALES DEL BRIEF NO VALÍAN Y EL PROPIO BRIEF LO DECÍA: estaban medidos con el clasificador
+    desmentido. Rehechos sobre 122 pares jugador-mes: Florista pedía 5 flores y la lograba el 63% cuando
+    quería ser «raro, 8%»; Abstract@ pedía 12 abstractos y la lograba el 0,8% cuando quería ser «común,
+    24%». Los dos que más se movieron son justo los dos que dependen del reparto de categorías, que cambió
+    al calibrar. Excluir agosto movía cada cifra menos de dos puntos, así que no se excluye.
+    EL RECUENTO SALE DEL ÁLBUM. Si la tira dice 🦜5 y Ornitólog@ no salta, el logro parece roto. Un segundo
+    recuento de lo mismo es como este repositorio se ha equivocado tres veces.
+    TERCERA APARICIÓN DE LA MISMA CAUSA RAÍZ. `post_ranking` derivaba la temporada con el prefijo de la
+    fecha. Hoy funciona por casualidad —agosto de 2026 es a la vez el mes y el identificador— y para
+    cualquier fecha anterior devolvía una temporada que no existe. Y el resumen no leía la columna del
+    patrón, así que ninguna medalla de figura habría podido anunciarse nunca, en silencio.
+    UN TEST PASÓ EN VERDE CON EL SPRITE ROTO. El símbolo nuevo se insertó DENTRO del comentario de la
+    cabecera, porque ahí hay un `</svg>` de ejemplo y el script cortó por el primero. El SVG quedó mal
+    formado y las DOCE tarjetas se quedaron sin icono, también las siete que ya funcionaban — y el test
+    seguía verde, porque buscaba la cadena en el fichero entero. Lo cazó el navegador. El test ahora quita
+    los comentarios antes de mirar y cuadra los símbolos abiertos con los cerrados.
+    LA TEMPORADA 0 SALE DISTORSIONADA: 13 de 21 jugadores son «Ornitólog@ legendario» porque son 181
+    jornadas con umbrales pensados para un mes. Es la misma distorsión que ya tienen Fondista y Verdugo
+    allí, y se acepta igual en lugar de darle a las figuras una regla de temporada propia.

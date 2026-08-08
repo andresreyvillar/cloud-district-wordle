@@ -29,6 +29,11 @@ const LOGROS = {
   verdugo: 'Verdugo',
   impecable: 'Impecable',
   fondista: 'Fondista',
+  ornitologo: 'Ornitólog@',
+  arquitecto: 'Arquitect@',
+  florista: 'Florista',
+  coleccionista: 'Coleccionista',
+  abstracto: 'Abstract@',
 };
 
 const MESES = [

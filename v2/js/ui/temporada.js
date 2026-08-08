@@ -22,15 +22,25 @@ const COLOR = { bueno: '#3DE07A', medio: '#FFD23F', malo: '#8B5CFF', fallo: '#FF
 
 const FALLO = 7;
 
-/** Los siete logros implementados, con el símbolo del sprite y cómo se leen sus datos. */
-const LOGROS = [
+/**
+ * Los doce logros implementados, con el símbolo del sprite y cómo se leen sus datos.
+ *
+ * Los umbrales de las de figura están **remedidos con el clasificador calibrado** (`tools/badges.py`): los
+ * del brief se habían fijado con el que luego se desmintió.
+ */
+export const LOGROS = [
   { id: 'suertudo', nombre: 'Suertud@', regla: 'Resolver en un solo intento' },
   { id: 'dia-imposible', nombre: 'El día imposible', regla: 'Resolver en ≤4 un día de media ≥5,5' },
   { id: 'superviviente', nombre: 'Superviviente', regla: 'Resolver en ≤4 tres días de media ≥4,5' },
+  { id: 'ornitologo', nombre: 'Ornitólog@', regla: 'Cinco loros 🦜 en la temporada' },
+  { id: 'arquitecto', nombre: 'Arquitect@', regla: 'Cuatro geométricos 📐 en la temporada' },
   { id: 'metronomo', nombre: 'Metrónom@', regla: 'No faltar ni un día laborable del mes' },
+  { id: 'florista', nombre: 'Florista', regla: 'Once flores 🌷 en la temporada' },
   { id: 'verdugo', nombre: 'Verdugo', regla: 'Ser el mejor del día cinco veces' },
   { id: 'impecable', nombre: 'Impecable', regla: 'Un mes sin fallos, con 10 partidas mínimo' },
   { id: 'fondista', nombre: 'Fondista', regla: 'Quince partidas o más en el mes' },
+  { id: 'coleccionista', nombre: 'Coleccionista', regla: 'Las cuatro figuras en la misma temporada' },
+  { id: 'abstracto', nombre: 'Abstract@', regla: 'Siete abstractos 🌀 en la temporada' },
 ];
 
 function color(intentos, imputado) {

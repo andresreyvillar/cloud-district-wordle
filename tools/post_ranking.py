@@ -17,8 +17,13 @@ from slack_sdk.errors import SlackApiError
 from supabase import create_client
 
 from badges import texto_de_medallas
+from seasons import temporada_de
 
 load_dotenv()
+
+#: Las columnas que necesita el resumen. `pattern` entra porque sin ella ninguna medalla de figura podría
+#: anunciarse jamás: el dato no llegaría y el fallo sería silencioso.
+COLUMNAS = "slack_user_id,player_name,wordle_id,score,date,pattern"
 
 # Configuración
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -104,7 +109,7 @@ def leer_resultados():
     while True:
         pagina = (
             cliente.table("wordle_results")
-            .select("player_name,wordle_id,score,date")
+            .select(COLUMNAS)
             .order("wordle_id")
             .range(desplazamiento, desplazamiento + PAGINA - 1)
             .execute()
@@ -118,6 +123,22 @@ def leer_resultados():
         desplazamiento += PAGINA
 
 
+def temporada_del_resumen(resultados) -> str:
+    """La temporada a la que pertenece la última jornada, **según el modelo**.
+
+    Recortar la fecha (`str(fecha)[:7]`) funciona solo mientras toda temporada sea un `AAAA-MM`. Con la
+    temporada 0 devuelve un identificador que no existe, y las medallas del día salen calculadas sobre una
+    temporada vacía.
+
+    Es la **tercera** aparición de esta causa raíz: ya mordió en `badges._de_la_temporada` —181 jornadas sin
+    una sola medalla— y en la web, donde `/datos` decía que contaban 70 de 1543 filas. `seasons.temporada_de`
+    es la única definición.
+    """
+    jornada = max(fila["wordle_id"] for fila in resultados)
+    fecha = next(f["date"] for f in resultados if f["wordle_id"] == jornada)
+    return temporada_de(fecha)
+
+
 def seccion_de_medallas(resultados):
     """La sección de medallas del mensaje, o cadena vacía.
 
@@ -127,8 +148,7 @@ def seccion_de_medallas(resultados):
     if not resultados:
         return ""
     jornada = max(fila["wordle_id"] for fila in resultados)
-    temporada = next(str(f["date"])[:7] for f in resultados if f["wordle_id"] == jornada)
-    return texto_de_medallas(resultados, temporada, jornada)
+    return texto_de_medallas(resultados, temporada_del_resumen(resultados), jornada)
 
 
 def comentario(seccion_medallas: str, objetivo: Objetivo) -> str:

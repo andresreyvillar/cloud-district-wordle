@@ -295,3 +295,36 @@ allí el diccionario conserva su orden de inserción — **el fallo solo existí
 datos**. Se vio porque antes de escribir la vista se miró qué devuelve de verdad una instantánea real. La
 regla que queda: cuando el orden importa, se publica una lista; un diccionario en JSONB es un conjunto con
 aspecto de secuencia.
+
+## 2026-08-08 — Medallas de figuras: dos umbrales que no medían lo que decían
+
+**Qué.** Las cinco medallas que miran el dibujo —Ornitólog@, Arquitect@, Florista, Coleccionista y
+Abstract@— con sus umbrales rehechos. Con ellas el eje de figuras queda completo: clasificación, álbum y
+logros.
+
+**Por qué importa.** El brief marcaba estos umbrales como provisionales y decía por qué: se midieron con el
+clasificador que luego se desmintió. Al remedirlos con el bueno, dos de los cuatro no medían nada parecido a
+lo que decían. **Florista** pedía 5 flores y la lograba el **63%** de los pares jugador-mes, cuando estaba
+etiquetada como «raro, 8%». **Abstract@** pedía 12 abstractos y la lograba el **0,8%**, etiquetada como
+«común, 24%». Son justo los dos que dependen del reparto de categorías — y el reparto es lo que cambió al
+calibrar.
+
+**Decisiones.**
+- **El recuento sale del álbum**, no de un segundo recuento en el módulo de medallas. Si la tira dice `🦜5`
+  y `Ornitólog@` no salta, el logro parece roto, y esa clase de divergencia ya ha aparecido tres veces aquí.
+- **La temporada 0 sale distorsionada y se acepta.** 13 de 21 jugadores son «Ornitólog@ legendario» porque
+  son 181 jornadas con umbrales pensados para un mes. Es lo mismo que ya pasa con Fondista y Verdugo allí;
+  darle a las figuras una regla de temporada propia sería una segunda definición de temporada.
+
+**Aprendizaje.** **Un test puede pasar en verde con el fichero roto si mira la cadena y no la estructura.**
+El símbolo nuevo del sprite se insertó dentro del comentario de la cabecera —ahí hay un `</svg>` de ejemplo
+y el script cortó por el primero—, el SVG quedó mal formado y **las doce tarjetas se quedaron sin icono**,
+también las siete que ya funcionaban. El test seguía verde: buscaba `id="coleccionista"` en el fichero
+entero, y ahí estaba, comentado. Lo cazó abrir el navegador. Ahora quita los comentarios antes de mirar y
+cuadra los `<symbol>` abiertos con los cerrados. La regla: cuando se afirma sobre un fichero estructurado,
+se afirma sobre su estructura; buscar una subcadena es preguntarle al fichero si contiene unas letras, que
+es otra pregunta.
+
+Y de paso, la **tercera** aparición de la misma causa raíz: el resumen diario derivaba la temporada con
+`str(fecha)[:7]`. Hoy funcionaba por casualidad —agosto de 2026 es a la vez el mes y el identificador de
+temporada— y para cualquier fecha anterior calculaba las medallas sobre una temporada que no existe.

@@ -39,6 +39,28 @@ MINIMO_IMPECABLE = 10
 MINIMO_FONDISTA = 15
 MINIMO_DIAS_PARA_METRONOMO = 10
 
+#: Umbrales de las medallas de figura, **remedidos el 2026-08-08 con el clasificador calibrado**.
+#:
+#: Los del brief se midieron con el clasificador que luego se desmintió, y el propio brief pedía rehacerlos
+#: «junto a la calibración, no por separado». Con el bueno se habían descolocado del todo: Florista (5
+#: flores) la lograba el 63% cuando era «raro, 8%», y Abstract@ (12) el 0,8% cuando era «común, 24%».
+#:
+#: Medido sobre 122 pares jugador-mes, con las jornadas que cuentan de verdad en cada temporada. Cada
+#: umbral está justo por debajo del máximo que alguien ha llegado a hacer —loro 8, geométrico 4, flores 18,
+#: abstracto 14— que es donde un logro es difícil sin ser imposible:
+#:
+#:     Ornitólog@  5 loros        3,3%  legendario
+#:     Arquitect@  4 geométricos  1,6%  legendario
+#:     Florista   11 flores      11,5%  raro
+#:     Abstract@   7 abstractos  23,0%  común
+#:
+#: Excluir agosto de 2026 —el mes casi sin patrones— movía cada cifra menos de dos puntos, así que no se
+#: excluye: un umbral que dependa de qué meses se miren no es un umbral.
+MINIMO_ORNITOLOGO = 5
+MINIMO_ARQUITECTO = 4
+MINIMO_FLORISTA = 11
+MINIMO_ABSTRACTO = 7
+
 
 @dataclass(frozen=True)
 class Medalla:
@@ -57,6 +79,12 @@ CATALOGO: tuple[Medalla, ...] = (
     Medalla("verdugo", "Verdugo", "🎯", "comun", "temporada"),
     Medalla("impecable", "Impecable", "✨", "comun", "temporada"),
     Medalla("fondista", "Fondista", "💪", "comun", "temporada"),
+    # Las de figura. Todas de temporada: se pueden ganar cada mes, como las de constancia.
+    Medalla("ornitologo", "Ornitólog@", "🦜", "legendario", "temporada"),
+    Medalla("arquitecto", "Arquitect@", "📐", "legendario", "temporada"),
+    Medalla("florista", "Florista", "🌷", "raro", "temporada"),
+    Medalla("coleccionista", "Coleccionista", "🗂️", "comun", "temporada"),
+    Medalla("abstracto", "Abstract@", "🌀", "comun", "temporada"),
 )
 
 POR_CLAVE = {m.clave: m for m in CATALOGO}
@@ -97,6 +125,41 @@ def _de_la_temporada(resultados: list[dict], temporada: str) -> list[dict]:
     return [fila for fila in resultados if temporada_de(fila["date"]) == temporada]
 
 
+#: Qué categoría y qué umbral pide cada medalla de figura. `coleccionista` no está aquí: no pide cantidad de
+#: una categoría sino variedad, así que tiene su propia condición.
+UMBRAL_DE_FIGURA: tuple[tuple[str, str, int], ...] = (
+    ("ornitologo", "loro", MINIMO_ORNITOLOGO),
+    ("arquitecto", "geometrico", MINIMO_ARQUITECTO),
+    ("florista", "flores", MINIMO_FLORISTA),
+    ("abstracto", "abstracto", MINIMO_ABSTRACTO),
+)
+
+
+def _recuentos_de_figuras(resultados: list[dict], temporada: str) -> dict[str, dict[str, int]]:
+    """Cuántas partidas de cada categoría lleva cada jugador, **según el álbum**.
+
+    Se lee del álbum en lugar de contar aquí otra vez: si la tira dice `🦜5` y la medalla no salta, el logro
+    parece roto. Un segundo recuento de lo mismo es la forma en que este repositorio ya se ha equivocado
+    tres veces.
+
+    El álbum indexa por identificador de Slack y las medallas por nombre, así que se reindexan. Los dos
+    índices conviven desde `identidad-canonica-de-jugador` y unificarlos es otro slice.
+    """
+    from album import album
+
+    return {fila["nombre"]: fila["recuento"] for fila in album(resultados, temporada)["jugadores"]}
+
+
+def _de_figura(recuento: dict[str, int]) -> list[str]:
+    """Las medallas de figura que da un recuento por categoría."""
+    ganadas = [
+        clave for clave, categoria, umbral in UMBRAL_DE_FIGURA if recuento.get(categoria, 0) >= umbral
+    ]
+    if all(recuento.get(categoria, 0) >= 1 for _, categoria, _ in UMBRAL_DE_FIGURA):
+        ganadas.append("coleccionista")
+    return ganadas
+
+
 def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, list[str]]:
     """Las medallas de temporada de cada jugador en esa temporada.
 
@@ -113,6 +176,9 @@ def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, l
     dificultad = _dificultad_por_dia(del_mes)
     mejor = _mejor_del_dia(del_mes)
     dias_de_la_temporada = {fila["wordle_id"] for fila in del_mes}
+    # Sobre `resultados` sin filtrar: el álbum aplica su propia definición de qué jornada cuenta, que es la
+    # de la temporada. Pasarle `del_mes` le daría los días ya filtrados dos veces por criterios distintos.
+    recuentos = _recuentos_de_figuras(resultados, temporada)
 
     por_jugador: dict[str, list[dict]] = defaultdict(list)
     for fila in del_mes:
@@ -143,6 +209,8 @@ def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, l
 
         if len(filas) >= MINIMO_FONDISTA:
             ganadas.append("fondista")
+
+        ganadas.extend(_de_figura(recuentos.get(jugador, {})))
 
         if ganadas:
             palmares[jugador] = sorted(ganadas, key=lambda c: (ORDEN_NIVEL[POR_CLAVE[c].nivel], c))

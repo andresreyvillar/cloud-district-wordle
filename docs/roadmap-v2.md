@@ -146,7 +146,7 @@ Tercer eje de juego, independiente del ranking y del álbum. Diseño y umbrales 
 | # | Slice candidato | Capabilities | Qué resuelve |
 |---|---|---|---|
 | ~~6.1~~ | ~~`medallas-de-rendimiento-y-constancia`~~ → `medallas-en-el-resumen-diario` | estadisticas · ranking · dashboard | Las siete que **no** dependen del clasificador: Suertud@, El día imposible, Superviviente, Verdugo, Impecable, Pleno, Fondista. Umbrales firmes, calculados sobre puntuaciones y fechas |
-| 6.2 | `medallas-de-figuras` | estadisticas · dashboard | Ornitólog@, Arquitect@, Florista, Coleccionista, Abstract@. **Desbloqueadas el 2026-08-06**: el clasificador está calibrado |
+| ~~6.2~~ | ~~`medallas-de-figuras`~~ | estadisticas · dashboard | **HECHO el 2026-08-08**: las cinco, con los umbrales **remedidos** — los del brief los lograba el 63% (Florista) y el 0,8% (Abstract@). De camino, la tercera aparición de «la temporada sale del prefijo de la fecha» |
 | 6.3 | `anuncio-de-medalla` | publicacion | Anunciar en el resumen diario la medalla que alguien acaba de ganar |
 
 Las medallas son **derivadas, no almacenadas**: se calculan a partir de los resultados. Eso permite

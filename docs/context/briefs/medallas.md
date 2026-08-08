@@ -94,11 +94,17 @@ hay que rehacerlos junto a la calibración, no por separado.
 
 | Medalla | Condición | Logran | Nivel |
 |---|---|---|---|
-| **Ornitólog@** | 4 loros en un mes | 3% | legendario |
-| **Arquitect@** | 4 escuadras en un mes | 2% | legendario |
-| **Florista** | 5 flores en un mes | 8% | raro |
-| **Coleccionista** | las cuatro figuras en el mismo mes | 32% | común |
-| **Abstract@** | 12 abstractos en un mes | 24% | común |
+| **Ornitólog@** | 5 loros en la temporada | 3,3% | legendario |
+| **Arquitect@** | 4 geométricos en la temporada | 1,6% | legendario |
+| **Florista** | 11 flores en la temporada | 11,5% | raro |
+| **Coleccionista** | las cuatro figuras en la misma temporada | 41,0% | común |
+| **Abstract@** | 7 abstractos en la temporada | 23,0% | común |
+
+> **REMEDIDOS el 2026-08-08** con el clasificador calibrado, sobre 122 pares jugador-mes, que es lo que esta
+> misma sección pedía hacer. Dos estaban completamente descolocados: **Florista** (5 flores) la lograba el
+> **63,1%** cuando quería ser «raro, 8%», y **Abstract@** (12 abstractos) el **0,8%** cuando quería ser
+> «común, 24%». Son justo los dos que dependen del reparto de categorías, y el reparto cambió al calibrar.
+> Máximos históricos con el clasificador bueno: loro 8, geométrico 4, flores 18, abstracto 14.
 
 **Los umbrales son los calibrados, no los de la maqueta de diseño.** El
 [diseño de la liga arcade](../sources/2026-08-05-diseno-liga-arcade.md) pide "más de 10" en cada figura, que
