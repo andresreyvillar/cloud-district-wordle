@@ -119,7 +119,7 @@ en [`context/briefs/ranking-de-figuras.md`](context/briefs/ranking-de-figuras.md
 | ~~5.3~~ | ~~`clasificacion-de-figuras`~~ | ranking · resultados | **HECHO el 2026-08-08**: la instantánea publica el álbum. Puntuación = **tasa de figuras por partida clasificada**, mínimo 5 — las dos cifras medidas, no elegidas. Sin capability nueva: `patrones` no hacía falta |
 | ~~5.4~~ | ~~`album-de-figuras`~~ | dashboard · estadisticas | **HECHO el 2026-08-08**: el bloque ÁLBUM DE FIGURAS en la temporada y la tarjeta en la ficha, con la tira agrupada. De camino se cazó que **JSONB no conserva el orden de las claves**, que habría roto el orden de las categorías solo en producción |
 | ~~5.5~~ | ~~`resumen-diario-compuesto`~~ | publicacion | **HECHO el 2026-08-08**: jugador del día, obra del día, top 5 con el dibujo de cada uno y cabeza del álbum. La captura **se conserva** — sustituirla sigue siendo pregunta abierta. Los comentarios son 5.6 |
-| 5.6 | `comentarios-de-la-jornada` | publicacion · estadisticas | Detectores deterministas (sospechoso, sembrado, no inspirado, rajado) + redacción generativa |
+| ~~5.6~~ | ~~`comentarios-de-la-jornada`~~ | publicacion · estadisticas | **HECHO el 2026-08-08** en su parte determinista: cuatro detectores con frecuencias remedidas. La **redacción generativa queda fuera**: sin proveedor ni credencial, y cuesta dinero por jornada |
 | 5.7 | `imagen-de-la-obra-del-dia` | publicacion | Generación de la ilustración. Una al día por coste |
 
 Dos premios separados, no uno: exigir mejor puntuación **y** figura reconocible deja el premio vacío el

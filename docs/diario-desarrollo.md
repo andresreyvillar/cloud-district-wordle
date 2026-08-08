@@ -328,3 +328,32 @@ es otra pregunta.
 Y de paso, la **tercera** aparición de la misma causa raíz: el resumen diario derivaba la temporada con
 `str(fecha)[:7]`. Hoy funcionaba por casualidad —agosto de 2026 es a la vez el mes y el identificador de
 temporada— y para cualquier fecha anterior calculaba las medallas sobre una temporada que no existe.
+
+## 2026-08-08 — El resumen habla, y el mensaje real enseñó lo que ningún test veía
+
+**Qué.** El mensaje diario pasa de tres líneas a un resumen con secciones —jugador del día, obra del día,
+top 5 con el dibujo de cada uno, cabeza del álbum y comentarios de la jornada— y sigue llevando la captura.
+
+**Por qué importa.** Todo lo que pasaba estaba en una imagen: no se lee en la notificación del móvil, no se
+puede citar y no se puede buscar. Y son **dos premios y no uno** por evidencia: exigir mejor puntuación *y*
+figura reconocible deja el premio vacío el 94% de los días, porque la figura sale de las partidas malas.
+
+**Decisiones.**
+- **La captura se conserva.** Sustituirla es una pregunta abierta del brief y no la decide un slice.
+- **La redacción generativa queda fuera**, declarado: sin proveedor ni credencial, y cuesta dinero por
+  jornada. Los detectores emiten **hechos** y no frases, así que cambiar quién redacta no los toca.
+- **Los márgenes se remidieron** antes de fijarlos, como con las medallas. El del brief para «no inspirado»
+  daba 0,48 por jornada con las reglas de hoy; con el margen que el propio brief pedía, 0,24.
+
+**Aprendizaje.** **Imprimir el mensaje real encontró tres cosas que ningún test buscaba.** Un día duro
+llenaba la sección con tres «se ha rajado» seguidos —la notabilidad ordenaba y la clase más notable se comía
+el hueco—; la concordancia estaba rota, «Carlos, Edu Noeda **no ha** aparecido»; y se llamaba rajada a
+alguien que jugó una partida en marzo, porque las ausencias se medían contra quien jugó alguna vez en lugar
+de contra quien juega esta temporada. Ninguna de las tres es un fallo de lógica: son fallos de **lo que se
+lee**, y la única forma de verlos es leerlo.
+
+Y un mutante sobrevivió señalando un test que no cubría lo que decía: el de «no repetir el mismo chiste»
+usaba las ausencias, que van agrupadas en un solo hecho, así que la línea salía una vez con deduplicación y
+sin ella. La regla general que deja: **un test que verifica una regla tiene que usar un caso donde la regla
+sea lo único que decide**; si otra parte del código ya produce el resultado esperado, el test mide esa otra
+parte.

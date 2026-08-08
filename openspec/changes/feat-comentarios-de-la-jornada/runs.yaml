@@ -1,0 +1,29 @@
+- run: '2026-08-08T18:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: comentarios-de-la-jornada
+  gates:
+    validate: pass
+    cobertura: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 3
+  mutacion:
+    mutantes: 7
+    supervivientes: 0
+  notas: >-
+    Punto 5.6, en su parte determinista. La redacción generativa queda FUERA DE ALCANCE y declarado: no hay
+    proveedor decidido ni credencial, y llamar a un modelo por jornada cuesta dinero. Los detectores emiten
+    hechos y no texto, así que quien redacte se puede cambiar sin tocar la detección.
+    FRECUENCIAS REMEDIDAS antes de fijar nada: las del brief son de antes de la regla de días laborables. El
+    margen de «no inspirado» que el brief ya pedía subir a 2,0 da hoy 0,24 por jornada; el viejo daba 0,48.
+    TRES FALLOS LOS ENSEÑÓ EL MENSAJE REAL, NO UN TEST. Un día duro llenaba la sección con tres «se ha
+    rajado» seguidos. La concordancia estaba rota: «Carlos, Edu Noeda no ha aparecido». Y se llamaba rajada
+    a Carmen, que jugó una vez en marzo, porque las ausencias se medían contra quien jugó alguna vez en
+    lugar de contra quien juega esta temporada.
+    UN MUTANTE SOBREVIVIÓ y era un test que no cubría lo que decía: el de «no repetir el mismo chiste» usaba
+    las AUSENCIAS, que van agrupadas en un solo hecho, así que la línea salía una vez con deduplicación por
+    tipo y sin ella. Rehecho con tres personas disparando «no inspirado», que es un hecho por persona.
+    Y el de concordancia elegía la jornada 1600, que selecciona la frase sin verbo concordado: pasaba sin
+    comprobar lo que decía comprobar. Ahora recorre el ciclo entero de frases.

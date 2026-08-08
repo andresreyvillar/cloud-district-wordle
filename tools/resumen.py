@@ -18,6 +18,7 @@ del día son premios distintos a propósito, y casi nunca los gana la misma pers
 from __future__ import annotations
 
 from album import album
+from comentarios import seccion_de_comentarios
 from figures import FIGURAS, figura
 from standings import clasificacion
 
@@ -159,5 +160,6 @@ def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int) -> str
         bloque_obra_del_dia(resultados, temporada, jornada) if del_dia else "",
         bloque_top(resultados, temporada, jornada),
         bloque_album(resultados, temporada),
+        seccion_de_comentarios(resultados, temporada, jornada),
     ]
     return "\n\n".join(seccion for seccion in secciones if seccion)
