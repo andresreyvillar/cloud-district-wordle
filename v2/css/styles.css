@@ -1030,11 +1030,12 @@ nav[data-navegacion] a {
 .eje h2 { border-bottom: 0; padding-bottom: 0; color: var(--liga-tinta); }
 .eje .entradilla { margin: 0; color: var(--liga-suave); }
 
-/* Dos columnas donde caben. `minmax(26rem, 1fr)` reparte el ancho sin que ninguna tarjeta baje de la
-   medida en la que un párrafo se sigue leyendo cómodo. */
+/* Columnas donde caben. El mínimo va envuelto en `min(26rem, 100%)` y no suelto: con `minmax(26rem, 1fr)`
+   la pista mide 416 px pase lo que pase, así que en una pantalla de 390 la rejilla desbordaba el documento
+   entero. Con `min()` la pista nunca supera el ancho disponible. */
 .rejilla-reglas {
   display: grid; gap: 0.85rem;
-  grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(26rem, 100%), 1fr));
   align-items: start;
 }
 
