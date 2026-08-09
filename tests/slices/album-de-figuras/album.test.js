@@ -19,11 +19,15 @@ import { tarjetaDeAlbum } from '../../../v2/js/ui/jugador.js';
 
 /** El catálogo tal y como lo publica Python: lista ordenada, las que puntúan primero. */
 const CATALOGO = [
-  { clave: 'loro', emoji: '🦜', puntua: true },
-  { clave: 'flores', emoji: '🌷', puntua: true },
-  { clave: 'geometrico', emoji: '📐', puntua: true },
-  { clave: 'abstracto', emoji: '🌀', puntua: false },
+  { clave: 'loro', emoji: '🦜', puntua: true, puntos: 2 },
+  { clave: 'flores', emoji: '🌷', puntua: true, puntos: 1 },
+  { clave: 'geometrico', emoji: '📐', puntua: true, puntos: 3 },
+  { clave: 'abstracto', emoji: '🌀', puntua: false, puntos: 0 },
 ];
+
+/** Los mismos pesos que publica el catálogo del fixture: geométrico 3 · loro 2 · flor 1. */
+const PUNTOS_DE_PRUEBA = (recuento) =>
+  CATALOGO.reduce((suma, c) => suma + (c.puntos ?? 0) * (recuento[c.clave] ?? 0), 0);
 
 function jugador(id, nombre, recuento, extra = {}) {
   const partidas = Object.values(recuento).reduce((a, b) => a + b, 0);
@@ -34,6 +38,8 @@ function jugador(id, nombre, recuento, extra = {}) {
     partidas,
     figuras,
     tasa: partidas ? Math.round((figuras / partidas) * 10000) / 10000 : 0,
+    puntos: PUNTOS_DE_PRUEBA(recuento),
+    media: partidas ? Math.round((PUNTOS_DE_PRUEBA(recuento) / partidas) * 10000) / 10000 : 0,
     recuento: { loro: 0, flores: 0, geometrico: 0, abstracto: 0, ...recuento },
     clasificado: partidas >= 5,
     posicion: null,
@@ -134,7 +140,7 @@ test('la temporada publica su ranking de belleza con puesto, tasa y tira', () =>
   const html = bloqueDeAlbum(instantanea(ALBUM));
   assert.match(visible, /Juan \(Kokuma\)/);
   assert.match(visible, /🦜8/, "la tira agrupada");
-  assert.match(visible, /83\s*%/, "la tasa, en porcentaje");
+  assert.match(visible, /0,99/, 'la puntuación, en puntos por partida');
   assert.ok(!html.includes('MARCADOR'), 'es un bloque aparte del ranking de puntuación');
 });
 
@@ -173,7 +179,7 @@ test('la ficha trae la tira, la tasa y el puesto de ese jugador', () => {
 
   const visible = texto(tarjetaDeAlbum(suyo));
   assert.match(visible, /🌷60/);
-  assert.match(visible, /83\s*%/);
+  assert.match(visible, /0,99/);
   assert.match(visible, /1º/);
 });
 
@@ -194,7 +200,7 @@ test('un jugador sin partidas clasificadas no ve un 0%', () => {
   assert.equal(suyo.existe, false);
 
   const html = tarjetaDeAlbum(suyo);
-  assert.ok(!html.includes('0 %') && !html.includes('0%'), 'un 0% diría que dibujó mal');
+  assert.ok(!/\b0,00\b/.test(html), 'un 0,00 diría que dibujó mal');
 });
 
 /** @scenarios instantanea-sin-album-no-rompe */

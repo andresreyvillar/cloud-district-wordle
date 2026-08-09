@@ -1,0 +1,19 @@
+- run: '2026-08-09T11:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    validate: pass
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Tres peticiones del dueño. La de reglas era la de fondo: 5957 px de alto con el texto limitado a 62
+    caracteres dentro de tarjetas de 84 rem, o sea media tarjeta vacía, y ninguna forma de navegar 21
+    reglas. Rejilla de tres columnas, índice de ejes con recuento y HUD: 4253 px.
+    LO MÁS ÚTIL DE LA PÁGINA ESTABA ESCONDIDO: las reglas que se aplican sin haberse votado son la
+    información accionable —«si alguna no os cuadra, este es el momento de decirlo»— y se perdían entre las
+    demás. Ahora van marcadas en morado, que en esta paleta no significa ni bueno ni malo, solo «mira esto».
+    EL MEDALLERO SE CUENTA POR NOMBRE y la ficha se direcciona por identificador: el único sitio donde
+    conviven es la clasificación. Se resuelve de ahí, con la temporada de mayor ordinal para que el enlace
+    lleve a una ficha con datos. Sin resolver, no se enlaza: una ficha inventada es peor que ningún enlace.

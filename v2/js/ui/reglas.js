@@ -50,13 +50,13 @@ function pintarRegla(regla) {
     : '';
 
   return `
-    <article class="regla ${estado.clase}">
+    <article class="regla ${estado.clase}${regla.votada ? '' : ' sin-votar'}">
       <header>
-        <h3>${escapar(regla.titulo)}</h3>
         <div class="marcadores">
           <span class="estado">${escapar(estado.etiqueta)}</span>
           ${voto}
         </div>
+        <h3>${escapar(regla.titulo)}</h3>
       </header>
       <p class="que">${escapar(regla.que_hace)}</p>
       <p class="porque"><span>Por qué</span> ${escapar(regla.por_que)}</p>
@@ -85,14 +85,29 @@ export function pintarReglas(contenedor, reglas, temporada) {
 
   const aplicadas = reglas.filter((r) => r.estado === 'aplicada').length;
   const sinVotar = reglas.filter((r) => r.estado === 'aplicada' && !r.votada).length;
+  const votadas = reglas.filter((r) => r.votada).length;
+  const sinDecidir = reglas.filter((r) => r.estado === 'sin-decidir').length;
 
-  const grupos = agrupar(reglas)
+  const porEje = agrupar(reglas);
+
+  // Índice de ejes. Con veintiuna reglas la página mide casi seis mil píxeles: sin un salto directo, la
+  // única forma de llegar a «Las medallas» es rodar la rueda hasta encontrarla.
+  const indice = porEje
+    .map(
+      ([eje, delEje]) =>
+        `<a href="#eje-${eje}">${escapar(EJES[eje].titulo)}<b>${delEje.length}</b></a>`,
+    )
+    .join('');
+
+  const grupos = porEje
     .map(
       ([eje, delEje]) => `
-      <section class="eje">
-        <h2>${escapar(EJES[eje].titulo)}</h2>
-        <p class="entradilla">${escapar(EJES[eje].entradilla)}</p>
-        ${delEje.map(pintarRegla).join('')}
+      <section class="eje" id="eje-${eje}">
+        <header class="eje-cab">
+          <h2>${escapar(EJES[eje].titulo)}</h2>
+          <p class="entradilla">${escapar(EJES[eje].entradilla)}</p>
+        </header>
+        <div class="rejilla-reglas">${delEje.map(pintarRegla).join('')}</div>
       </section>`,
     )
     .join('');
@@ -100,16 +115,23 @@ export function pintarReglas(contenedor, reglas, temporada) {
   contenedor.innerHTML = `
     <div class="reglas">
       <header class="reglas-cabecera">
-        <p class="etiqueta">reglas del juego</p>
-        <h1>Todo lo que se aplica, y por qué</h1>
-        <p class="resumen">
-          ${aplicadas} reglas en vigor${temporada ? ` para ${escapar(temporada)}` : ''}.
-          ${sinVotar > 0
-            ? `<strong>${sinVotar} de ellas no se han votado en el canal</strong>: se acordaron en
-               conversación de diseño. Si alguna no os cuadra, este es el momento de decirlo.`
-            : ''}
-        </p>
+        <div class="reglas-titular">
+          <p class="etiqueta">reglas del juego${temporada ? ` · ${escapar(temporada)}` : ''}</p>
+          <h1>Todo lo que se aplica, y por qué</h1>
+          <p class="resumen">
+            ${sinVotar > 0
+              ? `<strong>${sinVotar} reglas en vigor no se han votado en el canal</strong>: se acordaron
+                 en conversación de diseño. Si alguna no os cuadra, este es el momento de decirlo.`
+              : 'Todas las reglas en vigor están votadas en el canal.'}
+          </p>
+        </div>
+        <div class="hud">
+          <div class="kpi"><span>En vigor</span><b>${aplicadas}</b></div>
+          <div class="kpi"><span>Votadas</span><b>${votadas}</b></div>
+          <div class="kpi"><span>Sin decidir</span><b>${sinDecidir}</b></div>
+        </div>
       </header>
+      <nav class="indice-reglas" aria-label="Ejes de reglas">${indice}</nav>
       ${grupos}
     </div>`;
 }

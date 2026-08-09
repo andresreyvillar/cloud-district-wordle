@@ -151,7 +151,9 @@ def test_la_cabeza_del_album_sale_con_su_tasa_y_su_tira():
     bloque = bloque_album(limpia + sucia, "0")
 
     assert "Ana" in bloque
-    assert "100" in bloque, "su tasa"
+    # Ocho loros a 2 puntos entre ocho partidas: 2,00 puntos por partida. Antes esto era «100 %», y cambió
+    # con la ponderación del 2026-08-09 (geométrico 3 · loro 2 · flor 1).
+    assert "2,00 pts" in bloque, f"la puntuación ponderada no sale: {bloque}"
     assert "🦜8" in bloque, "su tira agrupada"
 
 

@@ -170,7 +170,7 @@ def bloque_album(resultados: list[dict], temporada: str) -> str:
         marca = f"{fila['posicion']}º" if fila["posicion"] != anterior else "  ·"
         anterior = fila["posicion"]
         lineas.append(
-            f"{marca} {fila['nombre']} — {round(fila['tasa'] * 100)} % "
+            f"{marca} {fila['nombre']} — {_cifra(fila['media'])} pts "
             f"{tira(fila['recuento'], datos['categorias'])}"
         )
     return "🎨 *Ranking de figuras*\n" + "\n".join(lineas)

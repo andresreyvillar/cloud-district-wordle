@@ -58,8 +58,33 @@ export function archivo(instantaneas) {
  * `player_name`). Está declarado como defecto conocido en el slice: la identidad debería ser el id de Slack,
  * y arreglarlo es un cambio del lado de Python.
  */
+/**
+ * Nombre → dónde vive la ficha de esa persona: su identificador y una temporada en la que aparece.
+ *
+ * El medallero se cuenta por **nombre**, porque así llegan los logros en la instantánea. Para enlazar hace
+ * falta el identificador de Slack, y el único sitio donde conviven los dos es la clasificación.
+ *
+ * Se queda con la temporada de **mayor ordinal** en la que la persona aparece: enlazar a la más reciente
+ * lleva a una ficha con datos, mientras que la primera que se encontrara podría ser una en la que jugó una
+ * sola vez.
+ */
+function dondeVive(instantaneas) {
+  const mapa = new Map();
+  for (const [temporada, carga] of instantaneas.entries()) {
+    const ordinal = carga.ordinal ?? 0;
+    for (const fila of carga.clasificacion ?? []) {
+      const previo = mapa.get(fila.nombre);
+      if (!previo || ordinal > previo.ordinal) {
+        mapa.set(fila.nombre, { jugador: fila.jugador, temporada, ordinal });
+      }
+    }
+  }
+  return mapa;
+}
+
 export function medallero(instantaneas) {
   const cuenta = new Map();
+  const vive = dondeVive(instantaneas);
 
   for (const carga of instantaneas.values()) {
     for (const [clave, quienes] of Object.entries(carga.logros ?? {})) {
@@ -84,10 +109,18 @@ export function medallero(instantaneas) {
     cuenta.get(nombre).temporadas_ganadas += 1;
   }
 
-  return [...cuenta.values()].sort(
-    (a, b) =>
-      b.medallas - a.medallas ||
-      b.temporadas_ganadas - a.temporadas_ganadas ||
-      a.nombre.localeCompare(b.nombre),
-  );
+  // El destino de la ficha viaja con cada fila. Cuando no se puede resolver —un nombre que sale en los
+  // logros y en ninguna clasificación— se deja en `null` y la vista lo pinta sin enlace: mandar a una
+  // ficha inventada es peor que no enlazar.
+  return [...cuenta.values()]
+    .map((fila) => {
+      const donde = vive.get(fila.nombre) ?? null;
+      return { ...fila, jugador: donde?.jugador ?? null, temporada: donde?.temporada ?? null };
+    })
+    .sort(
+      (a, b) =>
+        b.medallas - a.medallas ||
+        b.temporadas_ganadas - a.temporadas_ganadas ||
+        a.nombre.localeCompare(b.nombre),
+    );
 }

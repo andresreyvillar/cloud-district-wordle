@@ -120,7 +120,13 @@ def test_la_instantanea_declara_cuantas_partidas_se_quedaron_sin_clasificar():
 
 
 # @scenarios tasa-de-figuras-por-partida
-def test_la_puntuacion_es_la_proporcion_de_partidas_con_figura():
+def test_la_puntuacion_es_la_media_de_puntos_por_partida():
+    """Cambio de regla del 2026-08-09: las figuras dejan de valer lo mismo.
+
+    Antes la puntuación era la proporción de partidas con figura. Ahora es la media de PUNTOS por partida,
+    con geométrico 3, loro 2 y flor 1. La propiedad que se conserva —y que es la que importa— es que sigue
+    siendo **por partida**: jugar más no sube la puntuación por sí solo.
+    """
     from album import album
 
     filas = partidas("U1", [FLOR, FLOR, FLOR, ABSTRACTO, ABSTRACTO])
@@ -129,7 +135,22 @@ def test_la_puntuacion_es_la_proporcion_de_partidas_con_figura():
 
     assert fila["figuras"] == 3
     assert fila["partidas"] == 5
-    assert fila["tasa"] == 0.6
+    assert fila["puntos"] == 3, "tres flores a 1 punto"
+    assert fila["media"] == 0.6
+    assert fila["tasa"] == 0.6, "la proporción se sigue publicando, ya no es el criterio"
+
+
+# @scenarios tasa-de-figuras-por-partida
+def test_un_geometrico_vale_mas_que_un_loro_y_un_loro_mas_que_una_flor():
+    from album import album
+
+    geo = partidas("U1", [GEOMETRICO] * 5, nombre="geo")
+    loro = partidas("U2", [LORO] * 5, nombre="loro")
+    flor = partidas("U3", [FLOR] * 5, nombre="flor")
+
+    orden = [f["nombre"] for f in album(geo + loro + flor, "0")["jugadores"]]
+
+    assert orden == ["geo", "loro", "flor"], f"la escala no se respeta: {orden}"
 
 
 # @scenarios tasa-de-figuras-por-partida
@@ -142,7 +163,7 @@ def test_jugar_mas_no_sube_la_tasa_por_si_solo():
 
     carga = album(constante + prolifico, "0")
 
-    assert fila_de(carga, "U1")["tasa"] == fila_de(carga, "U2")["tasa"]
+    assert fila_de(carga, "U1")["media"] == fila_de(carga, "U2")["media"]
     assert fila_de(carga, "U2")["partidas"] == 20
 
 
@@ -157,7 +178,7 @@ def test_un_abstracto_aparece_en_el_recuento_y_baja_la_tasa():
     ruidosa = fila_de(carga, "U2")
 
     assert ruidosa["recuento"]["abstracto"] == 1, "el abstracto se registra, no desaparece"
-    assert ruidosa["tasa"] < fila_de(carga, "U1")["tasa"]
+    assert ruidosa["media"] < fila_de(carga, "U1")["media"]
 
 
 # @scenarios minimo-de-partidas-para-clasificar
@@ -175,7 +196,7 @@ def test_por_debajo_del_minimo_no_hay_puesto_aunque_la_tasa_sea_la_mejor():
     carga = album(perfecta_pero_corta + regular_pero_larga, "0")
     sandra, juan = fila_de(carga, "U1"), fila_de(carga, "U2")
 
-    assert sandra["tasa"] > juan["tasa"]
+    assert sandra["media"] > juan["media"]
     assert sandra["clasificado"] is False and sandra["posicion"] is None
     assert juan["clasificado"] is True and juan["posicion"] == 1
     assert carga["jugadores"][0]["jugador"] == "U2", "quien no clasifica no encabeza"
@@ -269,7 +290,14 @@ def test_el_album_viaja_en_la_instantanea_con_el_catalogo_de_categorias():
     carga = instantanea(filas, "0")
 
     assert carga["album"]["jugadores"][0]["recuento"]["loro"] == 1
-    assert carga["album"]["categorias"][0] == {"clave": "loro", "emoji": "🦜", "puntua": True}
+    # El catálogo publica también LO QUE VALE cada figura, para que la web no tenga su propia tabla de
+    # puntos (decisión del dueño el 2026-08-09: geométrico > loro > flores).
+    assert carga["album"]["categorias"][0] == {
+        "clave": "loro",
+        "emoji": "🦜",
+        "puntua": True,
+        "puntos": 2,
+    }
 
 
 # @scenarios figura-de-cada-partida

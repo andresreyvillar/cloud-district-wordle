@@ -1,0 +1,20 @@
+- run: '2026-08-09T11:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: clasificacion-de-figuras
+  gates:
+    validate: pass
+    tests: pass
+  rondas_correccion: 2
+  notas: >-
+    Decisión del dueño: geométrico > loro > flores. Coincide con la rareza medida (7,4% · 13,6% · 46,5%).
+    SE MIDIÓ EL COSTE ANTES DE HACERLO Y SE ACEPTA CON LOS OJOS ABIERTOS: cuando se eligió el criterio, el
+    ponderado por rareza se descartó porque corona al segundo de la tabla de puntuación, que es lo que el
+    segundo eje existe para evitar. Remedido con los datos reparados: con todas las figuras a 1 el podio de
+    belleza no comparte a nadie con el de puntuación; con 3/2/1 entra Andrés R., segundo en puntuación.
+    3/2/1 Y NO 6/3/1 aunque la rareza dé esa proporción: con 5/3/1 el podio es idéntico, así que la escala
+    corta se explica igual y se recuerda mejor.
+    SIGUE SIENDO POR PARTIDA, que es la propiedad que impide que el ranking lo gane quien más juega.
+    LA ESCALA SE ANUNCIA en la cabecera del bloque y sale del catálogo publicado: un «1,14» sin saber contra
+    qué se mide no dice nada, y una tabla de puntos escrita en la web sería una segunda verdad.

@@ -255,8 +255,8 @@ export function tarjetaDeAlbum(album) {
       <div class="album-ficha">
         <span class="tiras figuras grande">${tiraDeFiguras(album.tira)}</span>
         <div class="album-cifra">
-          <b>${Math.round((album.tasa ?? 0) * 100)} %</b>
-          <span>${album.figuras} figuras de ${album.partidas} partidas con dibujo</span>
+          <b>${(album.media ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>
+          <span>puntos por partida · ${album.figuras} figuras de ${album.partidas} con dibujo</span>
         </div>
       </div>
       ${falta}

@@ -974,3 +974,102 @@ nav[data-navegacion] a {
   .columnas i, .distribucion .barra b, .tiras .casilla { animation: none; transform: none; }
   .logro.ganado .icono { animation: none; }
 }
+
+/* La marca completa: WORDLE · LIGA · CLOUD DISTRICT. La casa va más pequeña y apagada porque es el
+   contexto, no el nombre del juego; y desaparece en pantalla estrecha, donde la marca comparte fila con
+   el selector de temporada y no caben las tres piezas. */
+.marca .casa { font-size: 0.72rem; color: var(--liga-suave); letter-spacing: 0.04em; }
+@media (max-width: 900px) { .marca .casa { display: none; } }
+
+/* ══ Reglas ═══════════════════════════════════════════════════════════════════════════════════════
+   Tenía tres problemas y los tres eran de aprovechamiento del espacio, no de contenido:
+
+   - cada tarjeta ocupaba los 84rem de ancho con el texto limitado a 62 caracteres, así que **la mitad
+     derecha estaba vacía** y los marcadores flotaban a un palmo del título al que se refieren;
+   - veintiuna reglas en una sola columna dan 5957 px de scroll y ninguna forma de llegar a la quinta
+     sección salvo rodar la rueda;
+   - usaba la paleta antigua —verde oscuro, esquinas redondeadas, sombra— cuando el resto de la web ya
+     había pasado a la de la liga.
+*/
+
+.reglas-cabecera {
+  display: flex; flex-wrap: wrap; gap: 1rem 2rem;
+  align-items: flex-end; justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--liga-tinta);
+}
+.reglas-titular { max-width: 46rem; }
+.reglas-cabecera h1 { color: var(--liga-tinta); }
+.reglas-cabecera .etiqueta {
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; color: var(--liga-suave);
+}
+.reglas-cabecera .resumen { color: var(--liga-media); }
+.reglas-cabecera .resumen strong { color: var(--liga-tinta); }
+
+/* El índice: la misma píldora que la navegación de la cabecera, con el recuento de cada eje. */
+.indice-reglas { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.indice-reglas a {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem; font-weight: 500;
+  color: var(--liga-media); text-decoration: none;
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-radius: 999px;
+  transition: color .14s, border-color .14s, transform .14s;
+}
+.indice-reglas a:hover { color: var(--liga-tinta); border-color: var(--liga-verde); transform: translateY(-1px); }
+.indice-reglas a b {
+  font-family: var(--mono); font-size: 0.7rem;
+  padding: 1px 6px; border-radius: 999px;
+  color: var(--liga-suave); background: var(--liga-tablero);
+}
+/* El salto desde el índice deja el título bajo la cabecera pegajosa si no se reserva su alto. */
+.eje { scroll-margin-top: 5.5rem; }
+
+.eje-cab { display: flex; flex-wrap: wrap; gap: 0.2rem 1rem; align-items: baseline; }
+.eje h2 { border-bottom: 0; padding-bottom: 0; color: var(--liga-tinta); }
+.eje .entradilla { margin: 0; color: var(--liga-suave); }
+
+/* Dos columnas donde caben. `minmax(26rem, 1fr)` reparte el ancho sin que ninguna tarjeta baje de la
+   medida en la que un párrafo se sigue leyendo cómodo. */
+.rejilla-reglas {
+  display: grid; gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+  align-items: start;
+}
+
+.regla {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-left-width: 5px; border-radius: 14px;
+  box-shadow: none;
+}
+.regla.aplicada { border-left-color: var(--liga-verde); }
+.regla.acordada { border-left-color: var(--liga-amarillo); }
+.regla.abierta  { border-left-color: var(--liga-suave); }
+/* Una regla que se aplica sin haberse votado es LA información accionable de esta página: se marca con el
+   morado, que en esta paleta no se usa para nada bueno ni malo, solo para «mira esto». */
+.regla.aplicada.sin-votar { border-left-color: var(--liga-morado); }
+
+.regla header { display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start; }
+.regla .marcadores { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.regla h3 { color: var(--liga-tinta); font-size: 1rem; }
+.regla .que { color: var(--liga-media); font-size: 0.92rem; }
+.regla .porque { font-size: 0.86rem; color: var(--liga-suave); }
+.regla .porque span { color: var(--liga-tinta); font-weight: 600; }
+.regla .estado, .regla .voto {
+  font-family: var(--mono); font-size: 0.6rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px; border: 2px solid var(--borde);
+}
+.regla .voto.no { color: #14072B; background: var(--liga-morado); border-color: var(--liga-morado); }
+.regla .voto.si { color: var(--liga-suave); }
+.regla .parametros { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
+.regla .parametros li {
+  display: inline-flex; gap: 0.4rem; align-items: baseline;
+  padding: 3px 9px; border-radius: 999px; background: var(--liga-tablero);
+  font-size: 0.75rem;
+}
+.regla .parametros .pnombre { color: var(--liga-suave); }
+.regla .parametros .pvalor { font-family: var(--mono); font-weight: 600; color: var(--liga-tinta); }

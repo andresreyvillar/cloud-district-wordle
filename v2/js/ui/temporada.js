@@ -195,6 +195,15 @@ function logros(carga) {
     </section>`;
 }
 
+/** Cómo se lee la puntuación: `📐3 · 🦜2 · 🌷1`. Sale del catálogo publicado, no de una tabla propia. */
+function escalaDeFiguras(categorias) {
+  return (categorias ?? [])
+    .filter((c) => c.puntos > 0)
+    .sort((a, b) => b.puntos - a.puntos)
+    .map((c) => `${c.emoji}${c.puntos}`)
+    .join(' · ');
+}
+
 /** La tira agrupada, en HTML. `🦜8 🌷60 📐3 🌀15` con el ruido en gris para que no compita con las figuras. */
 export function tiraDeFiguras(entradas) {
   return (entradas ?? [])
@@ -205,8 +214,9 @@ export function tiraDeFiguras(entradas) {
     .join('');
 }
 
-function porcentaje(tasa) {
-  return `${Math.round((tasa ?? 0) * 100)} %`;
+/** La puntuación del álbum: puntos por partida, con coma decimal. */
+function puntosPorPartida(media) {
+  return (media ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**
@@ -228,7 +238,7 @@ export function bloqueDeAlbum(carga) {
         <span class="pos">${sinPuesto ? '—' : `${fila.posicion}º`}</span>
         <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
         <span class="tiras figuras">${tiraDeFiguras(fila.tira)}</span>
-        <span class="num fuerte">${escapar(porcentaje(fila.tasa))}</span>
+        <span class="num fuerte">${escapar(puntosPorPartida(fila.media))}</span>
         <span class="num suave">${fila.figuras}/${fila.partidas}</span>
       </div>`;
     })
@@ -245,10 +255,10 @@ export function bloqueDeAlbum(carga) {
   return `
     <section class="bloque">
       <header class="bloque-cab verde"><h2>ÁLBUM DE FIGURAS</h2>
-        <span>Ordenado por proporción de partidas con figura reconocible</span></header>
+        <span>${escapar(escalaDeFiguras(album.categorias))} · por partida</span></header>
       <div class="cabeza album-cabeza">
         <i></i><span>Pos</span><span>Jugador</span><span>Álbum</span>
-        <span class="der">Tasa</span><span class="der">Figuras</span>
+        <span class="der">Pts/partida</span><span class="der">Figuras</span>
       </div>
       ${filas}
       ${aviso}

@@ -68,7 +68,9 @@ function medalleroBloque(tabla) {
     .map(
       (f) => `
       <div class="fila">
-        <span class="nom">${escapar(f.nombre)}</span>
+        ${f.jugador
+          ? `<a class="nom" href="${escapar(rutaDeFicha(f.temporada, f.jugador))}">${escapar(f.nombre)}</a>`
+          : `<span class="nom sin-ficha">${escapar(f.nombre)}</span>`}
         <span class="detalle">${Object.entries(f.por_clave)
           .map(([clave, n]) => `${escapar(LOGROS[clave] ?? clave)}${n > 1 ? ` ×${n}` : ''}`)
           .join(' · ')}</span>

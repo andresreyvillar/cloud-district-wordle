@@ -38,6 +38,20 @@ PRECISION = 4
 #: Las cuatro categorías, en el orden en que se muestran: primero las que puntúan.
 CATEGORIAS: tuple[str, ...] = FIGURAS + (ABSTRACTO,)
 
+#: Lo que vale cada figura. **Decisión del dueño el 2026-08-09**: geométrico por encima de loro, y loro por
+#: encima de flores.
+#:
+#: El orden sale de la rareza medida sobre la temporada 0 —geométrico 7,4%, loro 13,6%, flores 46,5%— así
+#: que un geométrico es unas seis veces más raro que una flor. La escala se queda en **3/2/1 y no en 6/3/1**
+#: a propósito: con 5/3/1 el podio es exactamente el mismo, así que la escala corta se explica igual de bien
+#: y se recuerda mejor —«un geométrico vale tres flores»— sin cambiar a nadie de sitio.
+#:
+#: **Coste declarado.** Con todas las figuras valiendo 1, el podio de belleza no comparte a nadie con el de
+#: puntuación, que es la razón por la que existe este segundo eje. Ponderando, Andrés R. —segundo en
+#: puntuación— entra en el podio de belleza. Se acepta porque lo decide el dueño, no porque la medida lo
+#: recomiende.
+PUNTOS: dict[str, int] = {"geometrico": 3, "loro": 2, "flores": 1, ABSTRACTO: 0}
+
 
 def categorias() -> list[dict]:
     """El catálogo que viaja en la instantánea: clave, emoji y si puntúa, **en orden**.
@@ -50,7 +64,12 @@ def categorias() -> list[dict]:
     JavaScript sería una segunda verdad, que se queda atrás en cuanto se añada o renombre una categoría.
     """
     return [
-        {"clave": categoria, "emoji": VOCABULARIO[categoria], "puntua": categoria in FIGURAS}
+        {
+            "clave": categoria,
+            "emoji": VOCABULARIO[categoria],
+            "puntua": categoria in FIGURAS,
+            "puntos": PUNTOS[categoria],
+        }
         for categoria in CATEGORIAS
     ]
 
@@ -130,12 +149,18 @@ def _ranking(recuentos: dict[str, Counter[str]], nombre_de: dict[str, str]) -> l
     for jugador, cuenta in recuentos.items():
         partidas = sum(cuenta.values())
         figuras = sum(cuenta[categoria] for categoria in FIGURAS)
+        puntos = sum(PUNTOS[categoria] * cuenta[categoria] for categoria in CATEGORIAS)
         filas.append(
             {
                 "jugador": jugador,
                 "nombre": nombre_de[jugador],
                 "partidas": partidas,
                 "figuras": figuras,
+                "puntos": puntos,
+                # **Por partida, no en total.** Es lo que impide que el ranking lo gane quien más juega:
+                # ese criterio se midió al elegirlo y corona a quien más partidas acumula, que es un
+                # ranking de asistencia con otro nombre.
+                "media": round(puntos / partidas, PRECISION),
                 "tasa": round(figuras / partidas, PRECISION),
                 "recuento": {categoria: cuenta[categoria] for categoria in CATEGORIAS},
                 "clasificado": partidas >= MINIMO_PARA_EL_ALBUM,
@@ -145,7 +170,7 @@ def _ranking(recuentos: dict[str, Counter[str]], nombre_de: dict[str, str]) -> l
     filas.sort(
         key=lambda fila: (
             not fila["clasificado"],  # quien no clasifica, al final
-            -fila["tasa"],
+            -fila["media"],
             -fila["figuras"],
             fila["nombre"].lower(),
         )
@@ -161,8 +186,8 @@ def _ranking(recuentos: dict[str, Counter[str]], nombre_de: dict[str, str]) -> l
             fila["posicion"] = None
             continue
         vistos += 1
-        if fila["tasa"] != anterior:
+        if fila["media"] != anterior:
             posicion = vistos
-            anterior = fila["tasa"]
+            anterior = fila["media"]
         fila["posicion"] = posicion
     return filas
