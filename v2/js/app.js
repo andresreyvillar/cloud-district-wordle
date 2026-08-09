@@ -6,6 +6,7 @@
  */
 
 import { conBase, configurarBase, resolver, VISTAS } from './router.js';
+import { animar, movimientoReducido, seguirScroll } from './ui/animacion.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarReglas } from './ui/reglas.js';
 import { pintarDatos } from './ui/datos.js';
@@ -57,7 +58,18 @@ function elementos() {
   };
 }
 
+/**
+ * Pinta una vista y le pone el movimiento.
+ *
+ * El movimiento se arranca **aquí y no en cada vista**: es un envoltorio alrededor del despacho, así que
+ * ninguna vista tiene que acordarse de llamarlo y no hay forma de que una se quede quieta por olvido.
+ */
 function pintar(destino, resultados, instantaneas) {
+  despachar(destino, resultados, instantaneas);
+  animar(elementos().vista);
+}
+
+function despachar(destino, resultados, instantaneas) {
   const { navegacion, selector, vista } = elementos();
   const temporadas = temporadasDe(instantaneas);
   const actual = temporadaEfectiva(destino, temporadas);
@@ -101,10 +113,22 @@ function pintar(destino, resultados, instantaneas) {
   pintarPendiente(vista, { ...destino, temporada: actual }, PENDIENTES[destino.vista]);
 }
 
-/** Navega sin recargar y vuelve a pintar. */
+/**
+ * Navega sin recargar y vuelve a pintar.
+ *
+ * Con `startViewTransition` el navegador funde la vista vieja con la nueva. Se pide **solo si existe y si
+ * no hay preferencia de movimiento reducido**; si falta cualquiera de las dos cosas se pinta directamente,
+ * que es exactamente lo que hacía antes.
+ */
 function navegar(ruta, resultados, instantaneas) {
   window.history.pushState({}, '', ruta);
-  pintar(resolver(ruta), resultados, instantaneas);
+  const pintarAhora = () => pintar(resolver(ruta), resultados, instantaneas);
+
+  if (!document.startViewTransition || movimientoReducido()) {
+    pintarAhora();
+    return;
+  }
+  document.startViewTransition(pintarAhora);
 }
 
 export async function arrancar() {
@@ -126,6 +150,7 @@ export async function arrancar() {
   }
 
   pintar(resolver(window.location.pathname), resultados, instantaneas);
+  seguirScroll();
 
   // Los enlaces internos se interceptan para que el router los resuelva sin ir al servidor.
   document.addEventListener('click', (evento) => {
@@ -142,6 +167,7 @@ export async function arrancar() {
 
   window.addEventListener('popstate', () => {
     pintar(resolver(window.location.pathname), resultados, instantaneas);
+  seguirScroll();
   });
 }
 

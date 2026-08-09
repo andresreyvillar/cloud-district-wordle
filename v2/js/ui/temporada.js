@@ -268,11 +268,11 @@ function estadisticas(carga) {
   // Escala FIJA de 1 a 7, no el máximo del mes: escalada al propio mes, una temporada cuya jornada más
   // dura fue un 4,2 se veía igual de dramática que otra que llegó a 6,0 (slice `escala-fija-comparable`).
   const columnas = jornadas
-    .map((j) => {
+    .map((j, indice) => {
       const valor = dificultad[j];
       const alto = alturaDeIntentos(valor);
       const tono = valor >= 4.5 ? COLOR.fallo : valor >= 4 ? COLOR.medio : COLOR.bueno;
-      return `<i style="height:${alto}%;background:${tono}" title="Jornada ${j} · ${escapar(cifra(valor))}"></i>`;
+      return `<i style="height:${alto}%;background:${tono};--indice:${indice}" title="Jornada ${j} · ${escapar(cifra(valor))}"></i>`;
     })
     .join('');
 

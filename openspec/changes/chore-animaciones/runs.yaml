@@ -1,0 +1,23 @@
+- run: '2026-08-09T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: N/A
+  gates:
+    validate: pass
+    tests: pass
+  rondas_correccion: 2
+  notas: >-
+    Lo pidió el dueño. CONTRADICE EL DOCUMENTO DE DISEÑO, que pide una dirección plana y quieta, y queda
+    dicho en la propuesta: se hace por decisión suya, no porque encaje con lo acordado.
+    LA REGLA QUE NO SE PUEDE ROMPER es que una animación no altere lo que la web dice. El contador guarda
+    el texto original y lo restaura tal cual en lugar de reformatearlo: reconstruirlo devolvía `3.2` donde
+    la vista puso `3,20` y `1502` donde puso `1.502`, porque en español la coma es el separador decimal y
+    el punto el de miles. Un test lo fija sobre los seis formatos que aparecen de verdad.
+    EL ESTADO INICIAL INVISIBLE LO PONE JAVASCRIPT, no el CSS: si el observador no llegara a ejecutarse, un
+    `opacity: 0` de hoja de estilos dejaría la web en blanco. Así el peor caso es que no haya animación.
+    `prefers-reduced-motion` NO ATENÚA, APAGA: no se registra ni un observador. Comprobado en navegador.
+    UN TEST MÍO NO COMPROBABA NADA —una aserción `notEqual(x, undefined || x)`— y lo cacé al ejecutarlo.
+    Rehecho para que el doble registre los observadores creados; ahora un mutante que quita la desconexión
+    lo pone en rojo.
+    MEDIDO EL COSTE: 0 fotogramas de más de 50 ms recorriendo la temporada 0 entera.

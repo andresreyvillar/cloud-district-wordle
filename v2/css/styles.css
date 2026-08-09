@@ -853,3 +853,124 @@ main { padding-block: 2rem; }
    en móvil, arrastrando el scroll horizontal de todo el documento. Se desplazan DENTRO de su caja, que es
    lo que hay que hacer con un gráfico ancho: el resto de la página deja de moverse de lado. */
 .columnas { overflow-x: auto; scrollbar-width: thin; }
+
+/* ══ Movimiento ═══════════════════════════════════════════════════════════════════════════════════
+   El documento de diseño pide una dirección plana y quieta. Esto la contradice a propósito, por
+   petición del dueño, así que el movimiento se ata a tres reglas para que no se coma la legibilidad:
+
+   1. Solo `transform` y `opacity`. Las resuelve el compositor sin recalcular posiciones; animar `height`
+      en las 181 columnas de dificultad de la temporada 0 pondría al hilo principal a trabajar en cada
+      fotograma.
+   2. Corto y con frenada. Nada por encima de 600 ms: esto es un marcador que se consulta, no una
+      presentación que se contempla.
+   3. `prefers-reduced-motion` lo apaga entero, y va al final del fichero para que gane siempre.
+*/
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes crecer {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@keyframes entrar-casilla {
+  from { opacity: 0; transform: scale(.4); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes latido-suave {
+  0%, 100% { transform: none; }
+  50%      { transform: scale(1.06); }
+}
+
+/* Revelado al entrar en pantalla. El estado inicial lo pone JavaScript al marcar `.revelar`, y NO el CSS
+   a secas: si el observador no llegara a ejecutarse, un `opacity: 0` de hoja de estilos dejaría la web en
+   blanco. Marcándolo desde JS, el peor caso es que no haya animación. */
+.revelar { opacity: 0; will-change: opacity, transform; }
+.revelar.visible {
+  animation: aparecer .42s cubic-bezier(.2, .7, .3, 1) both;
+  animation-delay: var(--retraso, 0ms);
+  will-change: auto;
+}
+
+/* Las barras crecen desde su base, que es como se lee un gráfico de columnas. */
+.columnas i {
+  transform-origin: bottom;
+  animation: crecer .5s cubic-bezier(.2, .7, .3, 1) both;
+  animation-delay: calc(var(--indice, 0) * 6ms);
+}
+.distribucion .barra b {
+  transform-origin: bottom;
+  animation: crecer .55s cubic-bezier(.2, .7, .3, 1) both;
+}
+
+/* Las casillas de una tira entran en cascada, como un marcador rellenándose. Solo donde la tira cabe
+   —hasta 40 jornadas—, que es la misma condición con la que la vista decide pintarla. */
+.tiras .casilla { animation: entrar-casilla .3s ease-out both; }
+
+/* Micro-interacción: los botones de nombre y las tarjetas se levantan un pelo. Un píxel basta para que
+   se lea como pulsable; más, y parece que flota. */
+.nom, .podio-card .nombre, .ganador, .temporada-card .etiqueta, .ausentes a,
+nav[data-navegacion] a {
+  transition: transform .14s ease, background-color .14s ease, color .14s ease, border-color .14s ease;
+}
+.nom:hover, .podio-card .nombre:hover, .ganador:hover,
+.temporada-card .etiqueta:hover, .ausentes a:hover { transform: translateY(-1px); }
+.nom:active, .podio-card .nombre:active, .ganador:active { transform: translateY(0); }
+
+.podio-card, .logro, .temporada-card, .resultado {
+  transition: transform .18s ease, border-color .18s ease;
+}
+.podio-card:hover, .temporada-card:hover, .resultado:hover { transform: translateY(-2px); }
+
+/* Una medalla ganada respira. Solo las ganadas: las vacías quietas, para que el ojo vaya a lo que hay. */
+.logro.ganado .icono { animation: latido-suave 3.2s ease-in-out infinite; animation-delay: var(--retraso, 0ms); }
+.logro.ganado:hover .icono { animation-play-state: paused; transform: scale(1.12); transition: transform .18s ease; }
+
+/* La cabecera se despega al bajar: sombra y un punto menos de alto. */
+.cabecera { transition: box-shadow .2s ease, backdrop-filter .2s ease; }
+.cabecera.desplazada { box-shadow: 0 6px 20px rgb(0 0 0 / 8%); }
+.cabecera-interior { transition: padding-block .2s ease; }
+.cabecera.desplazada .cabecera-interior { padding-block: 0.45rem; }
+
+/* Barra de progreso de lectura, con animación dirigida por scroll: sin JavaScript, sin listeners y sin
+   un solo fotograma en el hilo principal. Donde el navegador no la soporte simplemente no aparece — es
+   decoración, y degradar a nada es mejor que degradar a un listener de scroll. */
+@supports (animation-timeline: scroll()) {
+  .cabecera::after {
+    content: "";
+    position: absolute; left: 0; bottom: -3px;
+    width: 100%; height: 3px;
+    background: var(--liga-verde);
+    transform-origin: left;
+    animation: progreso linear both;
+    animation-timeline: scroll(root block);
+  }
+  @keyframes progreso { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+}
+
+/* Transición entre vistas. `@view-transition` NO sirve aquí: es para navegaciones entre documentos, y
+   esta web cambia de vista con `pushState` sin recargar. La dispara `startViewTransition` desde el router
+   y estas reglas solo le dan la forma. */
+::view-transition-old(root) { animation: salir-vista .18s ease-in both; }
+::view-transition-new(root) { animation: aparecer .26s cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes salir-vista { to { opacity: 0; transform: translate3d(0, -6px, 0); } }
+
+/* ── El interruptor de accesibilidad ─────────────────────────────────────────────────────────────
+   Va EL ÚLTIMO del fichero a propósito: así gana a cualquier regla de arriba sin depender de la
+   especificidad. No es una atenuación, es un apagado — el movimiento de aparición y de escala provoca
+   mareo real a quien tiene un trastorno vestibular, y «más lento» no lo arregla. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .revelar, .revelar.visible { opacity: 1; animation: none; transform: none; }
+  .columnas i, .distribucion .barra b, .tiras .casilla { animation: none; transform: none; }
+  .logro.ganado .icono { animation: none; }
+}
