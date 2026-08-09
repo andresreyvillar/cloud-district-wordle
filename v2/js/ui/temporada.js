@@ -120,12 +120,33 @@ function podio(tabla, temporada) {
 }
 
 /**
+ * Cómo se escribe el puesto de una fila.
+ *
+ * **Repetir el número en dos filas seguidas se lee como una errata**, no como un empate: quien mira una
+ * tabla que va 1º, 1º, 3º, 3º, 5º, 6º, 6º, 6º concluye que falta el segundo puesto y que algo está roto.
+ * Así que el número se escribe **una vez** y las filas empatadas llevan un signo de igual con su puesto en
+ * el `title`, para que quien use lector de pantalla sepa en qué posición está.
+ *
+ * Los empates aquí no son un defecto del cálculo: en una temporada de cinco jornadas en la que todo el
+ * mundo ha jugado las cinco, la puntuación solo puede tomar seis valores. Los empatados de agosto tienen
+ * además colecciones idénticas —las mismas figuras, en el mismo número—, así que separarlos sería
+ * inventarse una diferencia que no está en los datos. Con más jornadas desaparecen solos: la temporada 0,
+ * con 72 a 149 partidas por persona, no tiene ni uno.
+ */
+export function marcaDePuesto(posicion, anterior) {
+  if (posicion === null || posicion === undefined) return '<span class="pos">—</span>';
+  if (posicion !== anterior) return `<span class="pos">${posicion}º</span>`;
+  return `<span class="pos empate" title="Empatado en el puesto ${posicion}"
+    aria-label="Empatado en el puesto ${posicion}">=</span>`;
+}
+
+/**
  * Una fila del marcador. **El nombre enlaza a la ficha de esa misma temporada.**
  *
  * Está exportada porque es comportamiento observable del slice `ficha-de-jugador` —el marcador es la puerta
  * de entrada a la ficha— y así el enlace se verifica sin navegador.
  */
-export function filaDeMarcador(fila, temporada) {
+export function filaDeMarcador(fila, temporada, anterior = null) {
   const sinClasificar = fila.clasificado === false;
   const acento = sinClasificar
     ? 'transparent'
@@ -135,7 +156,7 @@ export function filaDeMarcador(fila, temporada) {
   return `
       <div class="fila${sinClasificar ? ' sin-clasificar' : ''}">
         <i class="acento" style="background:${acento}"></i>
-        <span class="pos">${sinClasificar ? '—' : fila.posicion}</span>
+        ${marcaDePuesto(sinClasificar ? null : fila.posicion, anterior)}
         <a class="nom" href="${escapar(rutaDeFicha(temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
         <span class="tiras">${fila.por_dia.length <= 40 ? tira(fila.por_dia, 14) : ''}</span>
         <span class="num fuerte">${escapar(cifra(fila.media_temporada))}</span>
@@ -145,7 +166,9 @@ export function filaDeMarcador(fila, temporada) {
 }
 
 function marcador(tabla, imputada, temporada) {
-  const filas = tabla.map((fila) => filaDeMarcador(fila, temporada)).join('');
+  const filas = tabla
+    .map((fila, i) => filaDeMarcador(fila, temporada, i > 0 ? tabla[i - 1].posicion : null))
+    .join('');
 
   return `
     <section class="bloque">
@@ -230,12 +253,13 @@ export function bloqueDeAlbum(carga) {
   if (!album) return '';
 
   const filas = album.jugadores
-    .map((fila) => {
+    .map((fila, i) => {
       const sinPuesto = !fila.clasificado;
+      const anterior = i > 0 ? album.jugadores[i - 1].posicion : null;
       return `
       <div class="fila album-fila${sinPuesto ? ' sin-clasificar' : ''}">
         <i class="acento" style="background:${sinPuesto ? 'transparent' : fila.posicion <= 3 ? COLOR.bueno : 'rgba(43,39,51,.12)'}"></i>
-        <span class="pos">${sinPuesto ? '—' : `${fila.posicion}º`}</span>
+        ${marcaDePuesto(sinPuesto ? null : fila.posicion, anterior)}
         <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
         <span class="tiras figuras">${tiraDeFiguras(fila.tira)}</span>
         <span class="num fuerte">${escapar(puntosPorPartida(fila.media))}</span>

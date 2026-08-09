@@ -1,0 +1,22 @@
+- run: '2026-08-09T12:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: clasificacion-de-figuras
+  gates:
+    validate: pass
+    tests: pass
+  rondas_correccion: 2
+  notas: >-
+    El dueño reportó que el ranking de figuras no tenía segundo ni cuarto puesto. NO ERA UN FALLO DE
+    CÁLCULO: en agosto hay cinco jornadas y todos han jugado las cinco, así que los puntos por partida solo
+    pueden tomar seis valores para ocho jugadores. Y los empatados tenían COLECCIONES IDÉNTICAS, así que
+    ningún criterio del propio álbum podía separarlos.
+    DE LOS DOS BAREMOS QUE PROPUSO, UNO NO SE SOSTIENE. Premiar a quien publica antes no es medible con los
+    datos que hay: la única marca de tiempo es la escritura del cron, que trabaja por lotes cada hora. Solo
+    el 34% de los resultados de una jornada tienen minuto distinto y en NINGUNA jornada son todos distintos;
+    ordenar por ahí premiaría a quien cayó del lado bueno de una hora en punto. La hora real llega de Slack
+    pero no se guarda: sería otro trabajo con columna nueva y backfill.
+    UN FIXTURE MENTÍA: los tests de medallas construían filas sin `slack_user_id`, que producción no tiene
+    desde la canonización. Saltaron al pasar el álbum a consultar la tabla de puntuación. Se arregló el
+    fixture, no el código.

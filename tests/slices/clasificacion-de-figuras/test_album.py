@@ -319,3 +319,40 @@ def test_el_catalogo_viaja_como_lista_porque_jsonb_no_conserva_el_orden_de_las_c
     assert sorted(["loro", "flores", "geometrico", "abstracto"], key=lambda c: (len(c), c)) != [
         c["clave"] for c in catalogo
     ]
+
+
+# @scenarios orden-determinista-del-album
+def test_el_empate_lo_deshace_la_puntuacion_general():
+    """En una temporada de pocas jornadas la puntuación del álbum apenas distingue.
+
+    Con cinco jornadas jugadas por todos, los puntos por partida solo pueden tomar seis valores: siete de
+    ocho jugadores acababan empatados, y con **colecciones idénticas**, así que ningún criterio sacado del
+    propio álbum podía separarlos. Decisión del dueño el 2026-08-09: los deshace la tabla de puntuación.
+    """
+    from album import album
+
+    # Misma colección exacta —una flor cada uno— y por tanto la misma puntuación de álbum. Lo único que
+    # los separa es lo que hicieron en el marcador: `mejor` resolvió en 2 y `peor` en 5.
+    mejor = [
+        resultado("U1", 1500 + i, FLOR, nombre="Mejor", score=2) for i in range(5)
+    ]
+    peor = [resultado("U2", 1500 + i, FLOR, nombre="Peor", score=5) for i in range(5)]
+
+    filas = album(mejor + peor, "0")["jugadores"]
+
+    assert filas[0]["media"] == filas[1]["media"], "el criterio del álbum no los separa"
+    assert [f["nombre"] for f in filas] == ["Mejor", "Peor"]
+    assert [f["posicion"] for f in filas] == [1, 2], "ya no comparten puesto"
+
+
+# @scenarios orden-determinista-del-album
+def test_si_no_hay_nada_que_los_separe_siguen_compartiendo_puesto():
+    """El desempate no fabrica diferencias: dos personas idénticas en todo siguen empatadas."""
+    from album import album
+
+    a = [resultado("U1", 1500 + i, FLOR, nombre="Ana", score=4) for i in range(5)]
+    b = [resultado("U2", 1500 + i, FLOR, nombre="Bea", score=4) for i in range(5)]
+
+    filas = album(a + b, "0")["jugadores"]
+
+    assert [f["posicion"] for f in filas] == [1, 1]

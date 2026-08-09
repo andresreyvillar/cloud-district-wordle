@@ -106,7 +106,7 @@ def album(resultados: list[dict], temporada: str) -> dict:
         "sin_patron": sin_patron,
         "reparto": {categoria: reparto[categoria] for categoria in CATEGORIAS},
         "categorias": categorias(),
-        "jugadores": _ranking(recuentos, nombre_de),
+        "jugadores": _ranking(recuentos, nombre_de, _puntuacion_general(resultados, temporada)),
         "ultima_jornada": _ultima_jornada(resultados, temporada),
     }
 
@@ -138,12 +138,44 @@ def _ultima_jornada(resultados: list[dict], temporada: str) -> dict:
     }
 
 
-def _ranking(recuentos: dict[str, Counter[str]], nombre_de: dict[str, str]) -> list[dict]:
+#: Lo que se le supone a quien no aparece en la tabla de puntuación. Por encima del peor resultado posible,
+#: así que ordena al final sin competir con nadie.
+SIN_PUNTUACION = 99.0
+
+
+def _puntuacion_general(resultados: list[dict], temporada: str) -> dict[str, float]:
+    """La media de la tabla de puntuación de cada jugador, para deshacer empates en el álbum.
+
+    Import local para no crear un ciclo: `standings` importa `badges` y `badges` importa este módulo.
+    """
+    from standings import clasificacion
+
+    return {fila["jugador"]: fila["media_temporada"] for fila in clasificacion(resultados, temporada)}
+
+
+def _ranking(
+    recuentos: dict[str, Counter[str]],
+    nombre_de: dict[str, str],
+    puntuacion: dict[str, float],
+) -> list[dict]:
     """Las filas del álbum, ordenadas.
 
-    Orden: tasa descendente; a igualdad **más figuras delante**, porque sostener una proporción durante más
-    partidas dice más que alcanzarla en cinco; y a igualdad de figuras, por nombre, para que el resultado no
-    dependa del orden en que la base de datos devolvió las filas.
+    Orden: puntos por partida descendente; **a igualdad, mejor media en la tabla de puntuación**; luego más
+    figuras; y por último el nombre, para que el resultado no dependa del orden de las filas.
+
+    **El desempate por puntuación es decisión del dueño (2026-08-09)** y responde a un problema real: en una
+    temporada de cinco jornadas jugadas por todo el mundo, la puntuación del álbum solo puede tomar seis
+    valores, así que siete de ocho jugadores acababan empatados. Y no eran empates de redondeo — tenían
+    **colecciones idénticas**, las mismas figuras en el mismo número—, así que ningún criterio sacado del
+    propio álbum podía separarlos.
+
+    Se descartó el otro candidato, premiar a quien publica antes: medido, `created_at` no captura el orden
+    real de publicación. Solo el 34% de los resultados de una jornada tienen minuto distinto, porque el cron
+    los escribe por lotes cada hora, y en ninguna jornada del histórico son todos distintos. Ordenar por ahí
+    premiaría a quien cayó del lado bueno de una hora en punto.
+
+    Precio declarado: acopla los dos ejes. El álbum existe para premiar a otra gente que el marcador, y
+    ahora el marcador decide sus empates. Solo actúa cuando el criterio propio ya no distingue.
     """
     filas: list[dict] = []
     for jugador, cuenta in recuentos.items():
@@ -167,17 +199,21 @@ def _ranking(recuentos: dict[str, Counter[str]], nombre_de: dict[str, str]) -> l
             }
         )
 
-    filas.sort(
-        key=lambda fila: (
+    def orden(fila):
+        return (
             not fila["clasificado"],  # quien no clasifica, al final
             -fila["media"],
+            puntuacion.get(fila["jugador"], SIN_PUNTUACION),  # mejor media de puntuación, delante
             -fila["figuras"],
             fila["nombre"].lower(),
         )
-    )
+
+    filas.sort(key=orden)
     # Puesto compartido cuando la tasa es la misma, igual que en el marcador de puntuación
     # (slice `empates-comparten-puesto`): tres jugadores al 80% no han hecho uno mejor que otro, y el
     # desempate existe para que la lista sea determinista, no para separarlos.
+    # Se comparte puesto solo cuando **ni el desempate** separa: mismo criterio propio, misma puntuación
+    # general y mismas figuras. Comparar solo la media dejaba siete de ocho jugadores empatados en agosto.
     posicion = 0
     vistos = 0
     anterior = None
@@ -186,8 +222,9 @@ def _ranking(recuentos: dict[str, Counter[str]], nombre_de: dict[str, str]) -> l
             fila["posicion"] = None
             continue
         vistos += 1
-        if fila["media"] != anterior:
+        clave = orden(fila)[:-1]  # todo menos el nombre, que es solo para que el orden sea estable
+        if clave != anterior:
             posicion = vistos
-            anterior = fila["media"]
+            anterior = clave
         fila["posicion"] = posicion
     return filas

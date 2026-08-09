@@ -46,7 +46,16 @@ def dia_de_finde(n: int, mes: str = TEMPORADA) -> int:
 def r(jugador: str, wordle: int, score: int, mes: str = TEMPORADA, dia: int | None = None) -> dict:
     if dia is None:
         dia = dia_laborable(0, mes)
-    return {"player_name": jugador, "wordle_id": wordle, "score": score, "date": f"{mes}-{dia:02d}"}
+    # `slack_user_id` va SIEMPRE: producción no tiene ni una fila sin él desde la canonización de
+    # identidades, y un fixture sin esa columna es un doble más permisivo que la realidad — que es
+    # exactamente cómo este repositorio se ha equivocado antes (docs/lecciones.md, 2026-08-05).
+    return {
+        "slack_user_id": f"U_{jugador.replace(' ', '_')}",
+        "player_name": jugador,
+        "wordle_id": wordle,
+        "score": score,
+        "date": f"{mes}-{dia:02d}",
+    }
 
 
 def jornada_con(
@@ -261,7 +270,13 @@ def test_la_temporada_cero_reparte_medallas_sobre_todo_el_historico():
         # días 1-15 de mayo de 2026, saltando el fin de semana (mayo de 2026 empieza en viernes)
         dia = [4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22][i]
         filas.append(
-            {"player_name": "Fondista", "wordle_id": 1500 + i, "score": 4, "date": f"2026-05-{dia:02d}"}
+            {
+                "slack_user_id": "U_Fondista",
+                "player_name": "Fondista",
+                "wordle_id": 1500 + i,
+                "score": 4,
+                "date": f"2026-05-{dia:02d}",
+            }
         )
 
     palmares = medallas_de_temporada(filas, "0")
