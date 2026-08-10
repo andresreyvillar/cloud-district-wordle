@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from album import album
 from comentarios import seccion_de_comentarios
-from figures import FIGURAS, figura
+from figures import FIGURAS, figura, rasgos
 from standings import clasificacion
 
 #: Cuántos entran en el top del mensaje. Cinco es lo que pide el diseño del resumen.
@@ -76,10 +76,15 @@ def rareza(resultados: list[dict], temporada: str) -> dict[str, int]:
 def bloque_obra_del_dia(resultados: list[dict], temporada: str, jornada: int) -> str:
     """La figura más rara dibujada hoy, con su autor.
 
-    Empates: primero la categoría menos frecuente de la temporada; luego **más intentos**, porque la figura
-    sale del lienzo y el lienzo lo deja quien tarda (2,9 intentos de media en las partidas sin figura frente
-    a 4,7 en las que la tienen); y por último el nombre, para que el resultado no dependa del orden de las
-    filas.
+    Empates: primero la categoría menos frecuente de la temporada; luego **la simetría**, porque un espejo
+    perfecto es más difícil que una forma escasa y el clasificador, que solo devuelve categorías, no sabe
+    distinguirlos; luego **más intentos**, porque la figura sale del lienzo y el lienzo lo deja quien tarda
+    (2,9 intentos de media en las partidas sin figura frente a 4,7 en las que la tienen); y por último el
+    nombre, para que el resultado no dependa del orden de las filas.
+
+    La simetría por delante de los intentos es **decisión del dueño**, y cambia a quién se premia: el día que
+    se decidió había dos geométricos, uno simétrico resuelto en 3 y otro escaso resuelto en 4, y el premio se
+    lo llevaba el segundo.
     """
     candidatas = [
         (fila, figura(fila["pattern"]))
@@ -93,7 +98,12 @@ def bloque_obra_del_dia(resultados: list[dict], temporada: str, jornada: int) ->
     frecuencia = rareza(resultados, temporada)
     fila, categoria = min(
         reconocibles,
-        key=lambda par: (frecuencia.get(par[1], 0), -par[0]["score"], _nombre(par[0]).lower()),
+        key=lambda par: (
+            frecuencia.get(par[1], 0),
+            not rasgos(par[0]["pattern"]).espejo,  # el espejo primero
+            -par[0]["score"],
+            _nombre(par[0]).lower(),
+        ),
     )
     from figures import emoji
 

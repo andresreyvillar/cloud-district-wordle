@@ -55,6 +55,10 @@ La jornada y la temporada se derivan **de los datos**, no del reloj (§10).
 **THEN** se premia la **más rara de la temporada**, con su emoji y su autor; y si nadie dibujó nada
 reconocible, el premio se declara desierto en lugar de dárselo a un abstracto.
 
+### la-simetria-gana-la-obra-del-dia
+**WHEN** dos dibujos de la misma categoría compiten por el premio y uno es simétrico
+**THEN** gana el simétrico, por delante de quien tardó más intentos.
+
 ### top-cinco-con-su-dibujo
 **WHEN** se compone el resumen
 **THEN** aparecen los cinco primeros del marcador con su media, y junto a cada uno el emoji de lo que

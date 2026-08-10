@@ -105,6 +105,29 @@ def test_la_obra_del_dia_es_la_figura_mas_rara_de_la_temporada():
     assert "📐" in linea
 
 
+# @scenarios la-simetria-gana-la-obra-del-dia
+def test_la_simetria_gana_la_obra_del_dia_por_delante_de_los_intentos():
+    """El caso real del día en que se decidió: dos geométricos, y el premio se lo llevaba el escaso.
+
+    Las dos cuadrículas son de la misma categoría, así que la rareza no separa. Antes decidía «más
+    intentos» y ganaba el de 4; ahora decide la simetría y gana el espejo, aunque resolviera en 3. El
+    clasificador solo devuelve categorías, así que sin este desempate un espejo perfecto y una forma escasa
+    son indistinguibles.
+    """
+    from resumen import bloque_obra_del_dia
+
+    simetrico = "G...G/GG.GG/GGGGG"      # espejo perfecto, densidad 0,60
+    escaso = "...../.G..G/GGG.G/GGGGG"   # geométrico por poca tinta, sin simetría
+
+    temporada = historia("Ana", 12, patron=FLOR) + historia("Bea", 12, patron=FLOR)
+    hoy = [resultado("Ana", HOY, 3, simetrico), resultado("Bea", HOY, 4, escaso)]
+
+    linea = bloque_obra_del_dia(temporada + hoy, "0", HOY)
+
+    assert "Ana" in linea, f"gana el espejo aunque tardara menos: {linea}"
+    assert "Bea" not in linea
+
+
 # @scenarios obra-del-dia
 def test_sin_figuras_el_premio_queda_desierto():
     from resumen import bloque_obra_del_dia
