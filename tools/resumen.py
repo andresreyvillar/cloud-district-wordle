@@ -55,8 +55,13 @@ def bloque_jugador_del_dia(del_dia: list[dict]) -> str:
         return ""
     mejor = min(fila["score"] for fila in del_dia)
     quienes = sorted({_nombre(fila) for fila in del_dia if fila["score"] == mejor})
-    plural = "" if len(quienes) == 1 else "n"
-    return f"🏆 *Jugador del día:* {', '.join(quienes)} — resolvió{plural} en {mejor}."
+    # Las dos palabras cambian con el número, y las dos se conjugan enteras. Pegarle una «n» a «resolvió»
+    # daba «resolvión», que estuvo a punto de publicarse en el canal: el plural de un pretérito no se forma
+    # añadiendo una letra. El test de este bloque comprobaba a quién se nombra, nunca cómo se conjuga.
+    uno = len(quienes) == 1
+    titulo = "Jugador del día" if uno else "Jugadores del día"
+    verbo = "resolvió" if uno else "resolvieron"
+    return f"🏆 *{titulo}:* {', '.join(quienes)} — {verbo} en {mejor}."
 
 
 def rareza(resultados: list[dict], temporada: str) -> dict[str, int]:

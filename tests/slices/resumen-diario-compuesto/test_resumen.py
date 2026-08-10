@@ -82,6 +82,11 @@ def test_el_empate_en_la_mejor_puntuacion_nombra_a_todos():
     linea = bloque_jugador_del_dia(hoy)
 
     assert "Ana" in linea and "Bea" in linea
+    # **El plural también se conjuga.** Este test comprobaba a quién se nombra y nunca cómo, así que
+    # «resolvión» —pegarle una «n» a «resolvió»— pasó los gates y estuvo a punto de publicarse en el canal.
+    # Lo cazó previsualizar el mensaje real, no la suite.
+    assert "resolvieron en 2" in linea, f"el plural del pretérito, no una letra pegada: {linea}"
+    assert "Jugadores del día" in linea, f"con dos empatados el título también va en plural: {linea}"
     assert "Cris" not in linea
 
 
