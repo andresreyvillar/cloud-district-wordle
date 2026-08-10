@@ -318,3 +318,11 @@ etiqueta: loto
 🟩🟩🟩🟩🟩
 ```
 etiqueta: geometrico
+
+## 31 · #1677 · 3 intentos
+```
+🟩⬛⬛⬛🟩
+🟩🟩⬛🟩🟩
+🟩🟩🟩🟩🟩
+```
+etiqueta: geometrico

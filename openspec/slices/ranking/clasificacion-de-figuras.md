@@ -55,6 +55,26 @@ clasificador reimplementado en JavaScript sería una segunda verdad.
 **THEN** cada jugador lleva el recuento de sus partidas por categoría, derivado del patrón crudo de cada
 resultado y sin que la categoría se almacene en ninguna columna.
 
+### espejo-exacto-es-geometrico
+**WHEN** una cuadrícula que iba a salir abstracta tiene todas las filas del cuerpo iguales leídas al revés
+**THEN** cuenta como geométrica, aunque tenga demasiada tinta para el techo de densidad.
+
+### una-celda-rota-no-es-espejo
+**WHEN** una sola celda rompe la simetría de una cuadrícula
+**THEN** el espejo no se le concede, y la partida sigue siendo abstracta.
+
+### el-espejo-no-le-quita-figura-a-nadie
+**WHEN** una cuadrícula simétrica ya se reconoce como loro, como flor o como geométrica por su densidad
+**THEN** conserva esa categoría: el espejo solo se consulta cuando ninguna otra regla reconoce nada.
+
+### cuerpo-vacio-no-es-espejo
+**WHEN** se acierta a la primera y la cuadrícula es solo la banda verde
+**THEN** la partida sigue siendo abstracta: no hay cuerpo que pueda ser simétrico.
+
+### patron-fallado-no-es-espejo
+**WHEN** una cuadrícula simétrica no llega a resolver la palabra
+**THEN** la partida sigue siendo abstracta, porque sin banda final no hay dibujo que reconocer.
+
 ### sin-patron-no-cuenta
 **WHEN** un resultado que cuenta en la temporada no tiene patrón
 **THEN** no se le inventa categoría —no cuenta como figura ni como abstracto— y la instantánea publica
@@ -121,6 +141,10 @@ Nadie pinta esto todavía: la vista es [[album-de-figuras]] (TBD), el punto 5.4 
   instantánea anterior.
 - **Recalibrar el clasificador**: cambia el álbum de todo el mundo en la siguiente materialización, sin
   migración. Es el precio declarado de no almacenar la categoría.
+- **Simetría y densidad se contradicen**: un dibujo regular con mucha tinta cumple el espejo y no cumple el
+  techo de densidad. Manda el espejo, porque es la señal que no crece con el tamaño de la cuadrícula.
+- **Simetría solo respecto al eje vertical**: una escalera es regular respecto a la diagonal y no cumple el
+  espejo. Sigue saliendo abstracta, y es una limitación conocida, no un descuido.
 
 ## Slices compañeros
 

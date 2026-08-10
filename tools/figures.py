@@ -4,7 +4,7 @@ Pack: `feat-calibracion-de-figuras` (Slice: N/A — paso 5.0 del roadmap).
 Diseño: [ranking-de-figuras](../docs/context/briefs/ranking-de-figuras.md).
 
 Función **pura**: entra el patrón, sale la categoría. Sin reloj, sin red y sin estado (§10 del protocolo),
-que es lo que permite que las 30 etiquetas humanas funcionen como examen.
+que es lo que permite que las 31 etiquetas humanas funcionen como examen.
 
 **La categoría no se almacena.** Se deriva del patrón crudo cada vez, así que recalibrar un umbral
 reclasifica el histórico solo, sin migración. El precio declarado: cambiar un peso cambia el álbum de
@@ -12,8 +12,8 @@ todo el mundo, y por eso el conjunto dorado es lo que hace seguro tocarlo.
 
 Calibrado contra **dos criterios independientes**, porque el primero solo no basta:
 
-- **acuerdo**: 24 de las 30 etiquetas humanas (80%);
-- **reparto** sobre los 1521 patrones reales: flores 47% · abstracto 32% · loro 14% · geometrico 7%,
+- **acuerdo**: 25 de las 31 etiquetas humanas (81%);
+- **reparto** sobre los patrones reales: flores 47% · abstracto 32% · loro 13% · geometrico 7%,
   frente al 37/33/17/13 que etiquetó el humano.
 
 El candidato anterior sacaba 83% de acuerdo y **55% de flores** en producción: acertaba el examen y no
@@ -23,6 +23,11 @@ las dos medidas.
 
 Los seis desacuerdos que quedan están listados en el brief. Ninguno es caro: el álbum no toca el ranking
 de puntuación (decisión explícita), así que una figura mal puesta es una gracia perdida, no una injusticia.
+
+El geométrico se reconoce por **dos vías**: poca tinta (`es_geometrico`) y la **simetría en espejo**, que se
+consulta en último lugar. La segunda se añadió porque la primera dejaba fuera dibujos regulares con masa —un
+arco de densidad 0,60 salía abstracto—, y porque medir escasez de tinta no es medir regularidad. Ver `figura`
+para el orden, que es lo que hace el rasgo seguro.
 """
 
 from __future__ import annotations
@@ -50,6 +55,11 @@ FIGURAS: tuple[str, ...] = (LORO, FLORES, GEOMETRICO)
 
 VERDE, AMARILLO, VACIO = "G", "Y", "."
 
+#: Columnas de una cuadrícula de Wordle. La usa el espejo para no concedérselo a una fila truncada, que
+#: sería palíndroma por accidente. Los `range(5)` que ya había se dejan como estaban: unificarlos es un
+#: refactor de código que funciona, y no es lo que se está cambiando aquí.
+ANCHO = 5
+
 #: Verde mínimo y máximo del loro. El mínimo (4) descarta una columna suelta sin cuerpo —eso es un tallo,
 #: y va a geométrico—; el máximo (12) descarta las masas verdes grandes, que el humano etiquetó como
 #: abstracto o geométrico. Los cinco loros del conjunto caen entre 4 y 12.
@@ -60,7 +70,8 @@ MAXIMO_VERDE_DEL_LORO = 12
 MAXIMO_AMARILLO_DEL_LORO = 2
 
 #: Tinta máxima de un geométrico, en fracción de celdas del cuerpo. «Pocas celdas y forma limpia»: un
-#: tallo, una pirámide, una escalera. Por encima de esto el dibujo ya tiene masa y deja de ser limpio.
+#: tallo, una pirámide. Por encima de esto el dibujo ya tiene masa y deja de ser limpio — que es
+#: precisamente lo que dejaba fuera dibujos regulares, y por lo que existe la vía del espejo.
 DENSIDAD_MAXIMA_DEL_GEOMETRICO = 0.4
 
 #: Amarillos mínimos de una flor: dos pétalos. Con uno solo no hay flor, hay un amarillo.
@@ -87,6 +98,7 @@ class Rasgos:
     petalos_libres: int
     filas_de_petalos: int
     lineas_aisladas: tuple[int, ...]
+    espejo: bool
 
 
 def rejilla(patron: str) -> list[str]:
@@ -138,6 +150,26 @@ def _lineas_verticales_aisladas(cuerpo: list[str]) -> tuple[int, ...]:
     return tuple(largos)
 
 
+def _es_espejo(cuerpo: list[str]) -> bool:
+    """Si cada fila del cuerpo es igual leída al revés — el espejo respecto a la columna central.
+
+    **Es exacto: una sola celda rota lo niega.** Se midió la alternativa de admitir un defecto y se
+    descartó, porque lleva la cobertura del 1,1% al 7,7% de los patrones reales y cuesta una ficha del
+    conjunto dorado. Es el mismo canje que tumbó al primer candidato de la calibración: mejor reparto a
+    cambio de acertar menos.
+
+    Se mide **sobre el cuerpo**, no sobre la cuadrícula entera. La banda verde final es simétrica en toda
+    partida resuelta, así que incluirla convertiría el rasgo en «¿ha resuelto?», que ya se sabe por otro
+    camino. Un cuerpo vacío —un 1/6— no es un espejo: no hay nada que reflejar.
+
+    **Exige las cinco columnas.** No es paranoia sobre datos que no existen —las 6202 filas de producción
+    miden cinco—, es hacia dónde falla si algún día dejan de medirlas: una fila truncada como `GG` es
+    palíndroma por accidente, y sin esta condición un patrón corrupto pasaría de `abstracto` (0 puntos) a
+    `geometrico` (3, el máximo). Lo cazó la auditoría adversarial del gate 4d.
+    """
+    return bool(cuerpo) and all(len(fila) == ANCHO and fila == fila[::-1] for fila in cuerpo)
+
+
 def _celda(cuerpo: list[str], fila: int, columna: int) -> str:
     """La celda, o vacío si cae fuera. Evita repartir comprobaciones de límites por todo el módulo."""
     if not (0 <= fila < len(cuerpo)) or not (0 <= columna < len(cuerpo[fila])):
@@ -181,6 +213,7 @@ def rasgos(patron: str) -> Rasgos:
         petalos_libres=libres,
         filas_de_petalos=sum(1 for fila in cuerpo if AMARILLO in fila and VERDE not in fila),
         lineas_aisladas=_lineas_verticales_aisladas(cuerpo),
+        espejo=_es_espejo(cuerpo),
     )
 
 
@@ -202,7 +235,16 @@ def es_loro(r: Rasgos) -> bool:
 
 
 def es_geometrico(r: Rasgos) -> bool:
-    """Poca tinta y a lo sumo un amarillo: un tallo, una pirámide, una escalera."""
+    """Poca tinta y a lo sumo un amarillo: un tallo, una pirámide.
+
+    **No cubre la escalera**, aunque sea la forma más geométrica que existe: cuatro escalones dan densidad
+    0,50 y el techo está en 0,40. Antes esta docstring la prometía y la regla no la cumplía. La escalera
+    tampoco la rescata el espejo —es regular respecto a la diagonal, no al eje vertical—, así que sigue
+    saliendo abstracta. Es una limitación conocida, y arreglarla pide otra señal y otra medición.
+
+    Esta es **una** de las dos vías del geométrico; la otra es el espejo, que se consulta al final. Ver
+    `figura`.
+    """
     return r.densidad <= DENSIDAD_MAXIMA_DEL_GEOMETRICO and r.amarillos <= 1
 
 
@@ -227,6 +269,12 @@ def figura(patron: str) -> str:
     El orden de las reglas es parte de la calibración y no es cosmético: el loro se decide antes que la
     flor porque comparten el amarillo, y el geométrico antes que la flor porque una pirámide con un
     amarillo suelto no es un ramo.
+
+    **El espejo va en último lugar**, y ahí está lo que hace el rasgo seguro. Unos pétalos son simétricos
+    por naturaleza, así que un espejo consultado antes de la flor le robaría la categoría a flores
+    legítimas — se midió, y eran cinco. Puesto al final solo puede **ascender abstractos**: ninguna
+    cuadrícula que ya tiene figura la pierde, y eso es un invariante que los tests comprueban en lugar de
+    darlo por hecho.
     """
     r = rasgos(patron)
 
@@ -241,6 +289,11 @@ def figura(patron: str) -> str:
         return GEOMETRICO
     if es_flor(r):
         return FLORES
+    # Última oportunidad antes de rendirse: un dibujo regular con demasiada masa para el techo de densidad
+    # —un arco, una diana— es geométrico igualmente. La forma es lo que lo hace geométrico; la escasez de
+    # tinta era un sustituto de la regularidad, y no la mide.
+    if r.espejo:
+        return GEOMETRICO
     return ABSTRACTO
 
 

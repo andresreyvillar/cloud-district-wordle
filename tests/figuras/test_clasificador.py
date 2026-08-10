@@ -1,4 +1,4 @@
-"""El examen del clasificador de figuras: las 30 etiquetas humanas.
+"""El examen del clasificador de figuras: las 31 etiquetas humanas.
 
 Pack: `feat-calibracion-de-figuras` (Slice: N/A — el paso 5.0 del roadmap).
 
@@ -21,12 +21,12 @@ import pytest
 RAIZ = Path(__file__).resolve().parents[2]
 FUENTE = RAIZ / "docs/context/sources/2026-08-05-etiquetado-de-patrones.md"
 
-#: Fichas que el clasificador tiene que acertar de las 30. **Es el gate.**
+#: Fichas que el clasificador tiene que acertar de las 31. **Es el gate.**
 #:
 #: 24 es lo medido, no una aspiración: subirlo sin volver a calibrar rompe la suite, y bajarlo requiere
 #: explicar por qué se acepta un clasificador peor. Con 30 fichas el margen es de ±9 puntos
 #: (ver «Límite honesto» en el brief), así que este número distingue «80% o 60%», no «80% u 84%».
-ACUERDO_MINIMO = 24
+ACUERDO_MINIMO = 25
 
 #: Las cuatro categorías del vocabulario fijado el 2026-08-05.
 VOCABULARIO = ("loro", "flores", "geometrico", "abstracto")
@@ -36,7 +36,7 @@ FIGURAS = ("loro", "flores", "geometrico")
 
 
 def conjunto_dorado() -> list[dict]:
-    """Las 30 fichas etiquetadas a mano, parseadas del source.
+    """Las 31 fichas etiquetadas a mano, parseadas del source.
 
     `loto` se pliega en `flores`: apareció una sola vez y con un ejemplo no se calibra nada, se acierta
     por azar (decisión registrada en el brief).
@@ -64,10 +64,10 @@ def test_el_conjunto_dorado_se_lee_completo():
     """Si el parseo se rompe, el examen se aprueba con cero preguntas: eso hay que cazarlo aquí."""
     fichas = conjunto_dorado()
 
-    assert len(fichas) == 30, "el conjunto dorado son 30 fichas"
+    assert len(fichas) == 31, "el conjunto dorado son 31 fichas"
     assert all(f["etiqueta"] in VOCABULARIO for f in fichas), "hay una etiqueta fuera del vocabulario"
     reparto = {e: sum(1 for f in fichas if f["etiqueta"] == e) for e in VOCABULARIO}
-    assert reparto == {"loro": 5, "flores": 11, "geometrico": 4, "abstracto": 10}, reparto
+    assert reparto == {"loro": 5, "flores": 11, "geometrico": 5, "abstracto": 10}, reparto
 
 
 def test_el_acuerdo_con_las_etiquetas_humanas_no_baja():
@@ -83,7 +83,7 @@ def test_el_acuerdo_con_las_etiquetas_humanas_no_baja():
     aciertos = len(fichas) - len(fallos)
 
     assert aciertos >= ACUERDO_MINIMO, (
-        f"acuerdo {aciertos}/30, por debajo del gate ({ACUERDO_MINIMO}). Fallos:\n" + "\n".join(fallos)
+        f"acuerdo {aciertos}/31, por debajo del gate ({ACUERDO_MINIMO}). Fallos:\n" + "\n".join(fallos)
     )
 
 
@@ -99,9 +99,9 @@ def test_ninguna_categoria_se_come_el_conjunto():
     reparto = {e: sum(1 for f in fichas if figura(f["patron"]) == e) for e in VOCABULARIO}
 
     for categoria, cuantas in reparto.items():
-        assert cuantas <= 15, f"{categoria} se lleva {cuantas} de 30: una categoría domina el reparto"
+        assert cuantas <= 15, f"{categoria} se lleva {cuantas} de 31: una categoría domina el reparto"
     assert reparto["abstracto"] <= 13, (
-        f"abstracto se lleva {reparto['abstracto']} de 30; el humano etiquetó 10"
+        f"abstracto se lleva {reparto['abstracto']} de 31; el humano etiquetó 10"
     )
 
 
