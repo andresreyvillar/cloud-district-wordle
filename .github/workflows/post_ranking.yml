@@ -19,7 +19,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install slack_sdk python-dotenv supabase playwright
+          # `certifi` va explícito aunque hoy llegue como dependencia de supabase: lo usa `contexto_tls()`
+          # para verificar el TLS de Slack, y la lectura del canal está envuelta en un `try` que publicaría
+          # el resumen sin señales y sin que nadie se enterara si el paquete dejara de estar.
+          pip install slack_sdk python-dotenv supabase playwright certifi
           playwright install chromium --with-deps
 
       - name: Update data before snapshot
