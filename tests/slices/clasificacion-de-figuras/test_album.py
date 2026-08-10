@@ -19,7 +19,11 @@ MOTIVO = "TDD rojo — tools/album.py no existe todavía"
 LORO = ".G.../.G..G/.GY../GGGGG"
 GEOMETRICO = "..G../..G../GGGGG"
 FLOR = "Y...Y/..Y../GGGGG"
-ABSTRACTO = "GG.GG/GGYGG/GG.GG/GGGGG"
+
+#: **Asimétrico a propósito.** El anterior (`GG.GG/GGYGG/GG.GG`) era un espejo perfecto sin que nadie lo
+#: hubiera notado, así que al añadirse la regla del espejo dejó de ser abstracto y se llevó cinco tests por
+#: delante. Se sustituyó el fixture, no la aserción: era el fixture el que había dejado de ser cierto.
+ABSTRACTO = "GG.GG/GGYG./GG.GG/GGGGG"
 
 #: Una jornada de la temporada 0 (anterior al límite de temporadas, así que no filtra ni finde ni muestra).
 HISTORICO = "2026-03-02"

@@ -14,7 +14,10 @@ import pytest
 LORO = ".G.../.G..G/.GY../GGGGG"
 GEOMETRICO = "..G../..G../GGGGG"
 FLOR = "Y...Y/..Y../GGGGG"
-ABSTRACTO = "GG.GG/GGYGG/GG.GG/GGGGG"
+#: **Asimétrico a propósito.** El anterior (`GG.GG/GGYGG/GG.GG`) era un espejo perfecto sin que nadie
+#: lo hubiera notado, así que al añadirse la regla del espejo dejó de ser abstracto. Se sustituyó el
+#: fixture, no la aserción.
+ABSTRACTO = "GG.GG/GGYG./GG.GG/GGGGG"
 
 HISTORICO = "2026-03-02"
 HOY = 1600

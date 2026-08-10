@@ -1,0 +1,71 @@
+- run: '2026-08-10T08:05:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: clasificacion-de-figuras
+  gates:
+    validate: pass
+    coverage: pass
+    gates: pass
+    tests: pending
+  rondas_correccion: 2
+  notas: >-
+    MODIFICACIÓN, no slice nuevo: colisión de trigger con clasificacion-de-figuras (cron@pipeline).
+    EL ORIGEN es un caso real que el dueño trajo mirando la web: un arco simétrico (G...G/GG.GG) que sale
+    abstracto por densidad 0,60 contra el techo de 0,40. Buscando, la escalera cae por lo mismo, y el
+    docstring de es_geometrico promete literalmente «una escalera» que no cumple. La causa de fondo: el
+    clasificador mide escasez de tinta como sustituto de la regularidad, y no son lo mismo.
+    LA SEÑAL NUEVA es el espejo —cada fila del cuerpo igual leída al revés—, elegida porque NO CRECE CON EL
+    TAMAÑO de la cuadrícula, que es el defecto por el que se descartó el primer candidato de la calibración.
+    EL DISEÑO ESTUVO MAL UNA VERSIÓN ENTERA y lo cazaron los fixtures del propio slice, no la medición
+    agregada: el espejo iba como segunda vía del geométrico, que se evalúa antes que la flor, y unos pétalos
+    son simétricos por naturaleza. Los «5 flores → geométrico» de la primera medida no eran casos
+    marginales, eran flores legítimas. Corregido poniendo el espejo EN ÚLTIMO LUGAR, con lo que gana un
+    invariante verificable: solo puede ascender abstractos, ninguna figura se pierde.
+    LA TOLERANCIA SE DESCARTA: admitir una celda rota lleva la cobertura del 1,1% al 7,7% y cuesta una ficha
+    del conjunto dorado. Mismo canje que tumbó al primer candidato — mejor reparto, menos acierto.
+    MEDIDO ANTES: acuerdo 24/30 con los mismos seis desacuerdos (01, 16, 17, 26, 29, 30); geométrico 7,1% →
+    7,5% frente al 13% humano; 6 de 1561 patrones se mueven, todos desde abstracto; el ranking de figuras de
+    agosto no cambia ni de puestos ni de medias.
+    DEUDA PARA LA IMPLEMENTACIÓN: el fixture ABSTRACTO de test_album.py es simétrico y pasará a geométrico —
+    hay que sustituirlo por un abstracto asimétrico, NO relajar la aserción. Y el conjunto dorado gana la
+    ficha del arco, así que el denominador del acuerdo pasa de 30 a 31.
+    FUERA DE ALCANCE declarado: la escalera sigue abstracta (es simétrica en diagonal, no en vertical).
+
+- run: '2026-08-10T09:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: clasificacion-de-figuras
+  gates:
+    validate: pass
+    coverage: pass
+    verify_slice: pass
+    gates: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 2
+  notas: >-
+    IMPLEMENTADO: rasgo `espejo` en Rasgos (figures.py:100), `_es_espejo` (152), consultado EN ÚLTIMO LUGAR
+    en figura() (294). Ficha 31 del arco (#1677) al conjunto dorado: acuerdo 25/31 = 81%, mismos seis
+    desacuerdos. Gate de acuerdo SUBIDO de 24 a 25 en tests/figuras/test_clasificador.py — se refuerza.
+    EL GATE DE MUTACIÓN CAZÓ UN TEST VACUO MÍO. Mutación «medir el espejo sobre la cuadrícula entera»
+    SOBREVIVIÓ: la banda verde es palíndroma, así que incluirla da el mismo veredicto siempre que haya
+    cuerpo, y el único caso donde difiere —el 1/6— ya lo ataja la guarda de altura antes de mirar el espejo.
+    El test comprobaba vía figura(), por donde era INDETECTABLE. Reforzado para verificar el RASGO
+    (rasgos("GGGGG").espejo is False), que es lo que el delta de resultados especifica. Remutado: cazado.
+    LA AUDITORÍA ADVERSARIAL ENCONTRÓ UNA REGRESIÓN REAL: una fila truncada («GG») es palíndroma por
+    accidente, y sin exigir las cinco columnas un patrón corrupto pasaba de abstracto (0 puntos) a
+    geometrico (3, el máximo del álbum). Medido: las 6202 filas de producción miden cinco, así que no
+    arregla ningún dato de hoy — fija HACIA DÓNDE FALLA. Blindado con ANCHO (61) y test propio.
+    Defecto PREEXISTENTE detectado y NO tocado (fuera de alcance): 'xxxxx/GGGGG' ya salía geometrico antes
+    del cambio, porque una cuadrícula sin tinta reconocida tiene densidad 0.
+    CUATRO FICHEROS DE TEST compartían el fixture ABSTRACTO = "GG.GG/GGYGG/GG.GG", que era un espejo
+    perfecto: sustituido por uno asimétrico en los cuatro. Se cambió el fixture, NO la aserción.
+    IMPACTO MEDIDO, y es mayor de lo que la propuesta anticipaba: agosto no se mueve (solo Carmen, sin
+    puesto, 0,00 → 3,00), pero LA TEMPORADA 0 SÍ: once jugadores cambian de puesto o media, Iván A. sube
+    de 16º a 11º, y GANA LA MEDALLA DE ARQUITECTO. El podio no cambia. Es la regla funcionando, pero es
+    el palmarés de una persona real y el humano debe decidirlo antes de mergear.
+    GATE 4D SIN SUBAGENTES: la auditoría adversarial la hice yo mismo por la regla de sesión de no invocar
+    agentes sin petición explícita. Queda ofrecido al humano.
