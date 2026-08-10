@@ -144,6 +144,54 @@ def leer_resultados():
         desplazamiento += PAGINA
 
 
+#: Ventana que se lee del canal para derivar las señales del día, en horas hacia atrás desde la publicación.
+#: Dieciocho cubren desde la madrugada hasta las 17:00 UTC sin traerse la jornada anterior.
+VENTANA_DEL_DIA_EN_HORAS = 18
+
+
+def leer_el_canal(cliente=None):
+    """Los mensajes del día en el canal, para derivar las señales. **Best-effort: nunca lanza.**
+
+    Slice: `voz-de-la-jornada`. Es el **borde** del sistema (§10): aquí se hace la red y se lee el reloj, y lo
+    que sale de aquí va por parámetro a funciones puras.
+
+    Un canal que no responde no puede impedir que se publique el marcador, así que cualquier fallo devuelve
+    `None` y el resumen sale con lo que sepa la tabla. Se avisa por `stderr` para que quede en el log del
+    workflow en lugar de desaparecer.
+    """
+    import datetime as dt
+
+    from senales import senales_del_dia
+
+    if not (SLACK_TOKEN and CHANNEL_ID):
+        return None
+    try:
+        from extract_slack import contexto_tls
+
+        ahora = dt.datetime.now(dt.timezone.utc)
+        desde = (ahora - dt.timedelta(hours=VENTANA_DEL_DIA_EN_HORAS)).timestamp()
+        cli = cliente or WebClient(token=SLACK_TOKEN, ssl=contexto_tls())
+        mensajes, cursor = [], None
+        while True:
+            respuesta = cli.conversations_history(
+                channel=CHANNEL_ID, limit=200, cursor=cursor, oldest=str(desde)
+            )
+            mensajes += respuesta.get("messages", [])
+            cursor = (respuesta.get("response_metadata") or {}).get("next_cursor")
+            if not cursor:
+                break
+        return senales_del_dia(mensajes, bot=(cli.auth_test() or {}).get("user_id"))
+    except Exception as error:  # noqa: BLE001 — el resumen se publica igual, sea cual sea el fallo
+        # **Solo el tipo de excepción.** Este repositorio es público, así que los logs de Actions también lo
+        # son. El token viaja en una cabecera y no debería aparecer en el texto de un error, pero «no debería»
+        # no es garantía suficiente cuando el coste de equivocarse es un token del bot expuesto para siempre.
+        print(
+            f"Aviso: no se han podido leer las señales del canal ({type(error).__name__}).",
+            file=sys.stderr,
+        )
+        return None
+
+
 def temporada_del_resumen(resultados) -> str:
     """La temporada a la que pertenece la última jornada, **según el modelo**.
 
@@ -172,7 +220,7 @@ def seccion_de_medallas(resultados):
     return texto_de_medallas(resultados, temporada_del_resumen(resultados), jornada)
 
 
-def comentario(seccion_medallas: str, objetivo: Objetivo, resultados=None) -> str:
+def comentario(seccion_medallas: str, objetivo: Objetivo, resultados=None, senales=None) -> str:
     """El texto que acompaña a la captura.
 
     El enlace es **el del objetivo que se ha fotografiado**: mandar una foto de una web y un enlace a otra
@@ -184,7 +232,9 @@ def comentario(seccion_medallas: str, objetivo: Objetivo, resultados=None) -> st
     partes = ["¡Aquí tenéis el ranking actualizado! 🔥"]
     if resultados and resumen_activo():
         jornada = max(fila["wordle_id"] for fila in resultados)
-        cuerpo = resumen_del_dia(resultados, temporada_del_resumen(resultados), jornada)
+        cuerpo = resumen_del_dia(
+            resultados, temporada_del_resumen(resultados), jornada, senales=senales
+        )
         if cuerpo:
             partes.append(cuerpo)
     # Las medallas NO van tras el interruptor. Se intentó, y rompía dos tests de
@@ -265,7 +315,9 @@ async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=N
         print(f"Error capturando {objetivo.nombre}: {error}", file=sys.stderr)
         return 1
 
-    publicado = subir(ruta, comentario(medallas, objetivo, filas))
+    # Las señales se leen **después** de la captura: es lo último que se necesita y lo más frágil, así que si
+    # el canal no responde ya está todo lo demás listo para publicar.
+    publicado = subir(ruta, comentario(medallas, objetivo, filas, senales=leer_el_canal()))
     if os.path.exists(ruta):
         os.remove(ruta)
     return 0 if publicado else 1

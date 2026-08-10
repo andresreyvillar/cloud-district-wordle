@@ -1,0 +1,93 @@
+- run: '2026-08-10T15:40:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: voz-de-la-jornada
+  gates:
+    validate: pass
+    coverage: pass
+    gates: pass
+    tests: pending
+  rondas_correccion: 1
+  notas: >-
+    SLICE NUEVO. Comparte el cron `0 17 * * 1-5` con resumen-diario-compuesto, comentarios-de-la-jornada,
+    captura-apunta-a-la-v2 y medallas-en-el-resumen-diario, y se distingue por el `detail` — que es el
+    precedente que esos cuatro ya establecen.
+    EL DISEÑO CAMBIÓ DOS VECES DURANTE LA PROPUESTA, las dos por aportación del dueño. La primera versión era
+    solo un diccionario de frases con el registro elegido por `dificultad()`. El dueño propuso LEER EL CANAL
+    DEL DÍA antes de publicar, y eso convirtió en medible lo que la versión anterior declaraba fuera de
+    alcance: el madrugador, el rezagado, el más aplaudido y el más comentado. La lectura pasó a ser el eje.
+    POR QUÉ EL MADRUGADOR NO ERA POSIBLE ANTES: `created_at` lo escribe el cron por lotes cada hora, y solo el
+    34% de los resultados de una jornada tienen minuto distinto. El `ts` del canal tiene resolución de
+    segundos. Y la hora real YA se extrae en extract_slack.py:114 y add_results.py la descarta.
+    MEDIDO ANTES DE PROMETER EL PREMIO: el canal usa reacciones de forma abundante —los buenos resultados
+    acumulan 6-9 `boom`— y hay hilos de 37 y 14 respuestas. El premio al más aplaudido no saldría desierto.
+    NO SE PERSISTE NADA, y la segunda razón es de corrección y no de comodidad: las REACCIONES SON UN DATO
+    VIVO, así que guardarlas en la ingesta horaria las congelaría a media mañana. Leerlas a las 17:00 cuenta
+    el día completo. Confirmado por el dueño en la misma vuelta.
+    LICENCIA, y es la razón por la que el diccionario está escrito como está: el dueño pidió memes, frases de
+    televisión y de foros. El refrán tradicional y el proverbio asiático son de dominio público y van tal
+    cual; un guion o un post de Reddit son obra de terceros y el repositorio es PÚBLICO, así que ese registro
+    se escribe original en lugar de copiarse. El meme del día es plantilla de TEXTO y no imagen: el bot tiene
+    `files:write` y subir una imagen ajena sería un problema de derechos y de permisos a la vez.
+    GATE DE COBERTURA CAZÓ UN ESCENARIO HUÉRFANO: `las-frases-no-se-pisan` estaba anotado en el test y había
+    desaparecido del slice al reescribirlo. Devuelto al slice, no borrado del test.
+    DEUDA DECLARADA PARA LA FASE 3: los umbrales de madrugador y rezagado SE MIDEN antes de fijarlos, con el
+    criterio de que la mención salga en una minoría clara de las jornadas. Y el dueño revisa qué frases no
+    suenan al grupo: el chiste lo conoce él.
+    FASE 4 CON REVISIÓN DE SEGURIDAD (4e): toca el token de Slack y publica en el canal del grupo. Dos
+    riesgos por spec, y los dos hay que comprobar en vez de suponer — que el texto de un mensaje del canal
+    acabe en el mensaje publicado o en un test, y que el bot suba una imagen.
+
+- run: '2026-08-10T16:10:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  slice: voz-de-la-jornada
+  gates:
+    validate: pass
+    coverage: pass
+    verify_slice: pass
+    gates: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+    seguridad: pass
+  rondas_correccion: 3
+  notas: >-
+    IMPLEMENTADO: senales.py (deriva del canal, sin texto) · voz.py (frase, menciones, meme, tope) ·
+    refranero.py (solo datos) · resumen.py:_voz (cruce con la tabla) · post_ranking.leer_el_canal (borde) ·
+    preview_resumen.py (mira el mensaje sin publicarlo) · calibrate_menciones.py (solo lee).
+    UMBRALES MEDIDOS SOBRE 187 JORNADAS REALES, no elegidos redondos. Madrugador 60m → 24% de las jornadas;
+    rezagado 240m → 24%. La asimetría es real: la mañana está apelotonada y sacar una hora ya destaca, la
+    tarde está dispersa y con menos de cuatro horas «llegar tarde» le pasa a 2 de cada 3 jornadas — eso es
+    una columna, no una mención. Más aplaudido sale el 87% (es un premio, se acepta); más comentado el 28%.
+    EL TOPE DE 3 AÑADIDOS lo decidió el dueño al presentarle el plan: lo especificado sin límite encadenaba
+    doce bloques. Mensaje final medido: 987 caracteres contra el límite de 3000 de Slack.
+    CONTRADICCIÓN ENTRE DOS ESCENARIOS DEL MISMO SLICE, resuelta al implementar: si las pullas de líder
+    contaban dentro del tope, `el-lider-del-marcador-tiene-su-pulla` dejaba de cumplirse en las jornadas
+    movidas. Se dejan FUERA del tope, pegadas a los rankings que ya salen siempre.
+    UN TEST DE OTRO SLICE CAZÓ UN FALLO REAL: `test_el_mensaje_no_crece_con_el_numero_de_jugadores` se puso
+    rojo porque la mención de ausentes los nombraba a todos — con 30 jugadores el mensaje pasaba de 754 a
+    1483 caracteres. Añadido MAXIMO_NOMBRADOS=2: por encima, la mención no se concede. Señalar a doce no
+    señala a nadie.
+    MUTACIÓN: 6 mutantes, 1 superviviente. Los umbrales medidos NO ESTABAN PROTEGIDOS por ningún test —
+    bajar el rezagado de 240 a 30 dejaba la suite en verde. Reforzado con tests que fijan cada umbral y
+    comprueban el borde (59m no madruga, 239m no rezaga). Y el filtro del bot tampoco: el test le pasaba al
+    bot un mensaje que ES_RESULTADO ya descartaba por otro camino, así que quitar el filtro no rompía nada.
+    Reforzado sobre el HILO, que se cuenta antes de ese filtro. Segundo test vacuo mío que caza el gate.
+    ADVERSARIAL: dos refutaciones sostenidas, el mismo defecto. Un `ts` no numérico o un `count` nulo hacían
+    estallar la derivación ENTERA: el envoltorio del borde lo capturaba y el resumen salía sin NINGUNA
+    mención. Fallo total donde tocaba degradación. Ahora se salta el mensaje raro y los demás cuentan.
+    SEGURIDAD (4e): el repositorio es PÚBLICO, así que los logs de Actions también. El aviso de fallo
+    imprimía el objeto de excepción entero; ahora solo el tipo. El token viaja en cabecera y no debería
+    aparecer en el texto de un error, pero «no debería» no basta cuando el coste es un token expuesto.
+    Verificado además: senales.py/voz.py/preview no tocan el token, `Senales` no tiene ningún campo de texto
+    donde pudiera colarse una conversación, y el meme es plantilla de texto (el bot no sube imágenes).
+    EL PREVIEW CAZÓ DOS FALLOS QUE 33 TESTS EN VERDE NO VIERON: «Andrés R..» —doble punto, porque varios
+    nombres del grupo acaban en punto— y que las pullas de líder NO SALÍAN en el mensaje aunque
+    `pullas_de_lideres` estaba en verde: probaba la función y no su uso. Añadido test de integración contra
+    el texto publicado.
+    DEUDA REPORTADA, NO TOCADA: `comentarios.py` ya tiene un detector de rezagado (HORA_DEL_REZAGADO=14) que
+    usa `created_at`, el dato que no sirve. Ahora hay dos detectores del mismo fenómeno y el nuevo tiene
+    mejores datos. Retirar el viejo toca un slice aceptado: lo decide el humano.
