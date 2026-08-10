@@ -191,7 +191,62 @@ def bloque_album(resultados: list[dict], temporada: str) -> str:
     return "🎨 *Ranking de figuras*\n" + "\n".join(lineas)
 
 
-def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int) -> str:
+def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[str]:
+    """La voz de la jornada: menciones del canal, meme y frase, con el tope de añadidos.
+
+    Slice: `voz-de-la-jornada`. Vive aquí y no en `voz.py` porque es el punto donde se cruzan las señales del
+    canal con lo que ya sabe la tabla; `voz.py` no conoce ni la tabla ni la temporada.
+
+    `senales` puede ser `None` —canal caído o lectura desactivada— y entonces solo salen el meme y la frase,
+    que no dependen del canal. Un canal que no responde no puede impedir que se publique el marcador.
+    """
+    from comentarios import dificultad
+    from voz import anadidos, frase_del_dia, meme_del_dia, menciones, pullas_de_lideres
+
+    del_dia = _del_dia(resultados, jornada)
+    if not del_dia:
+        return []
+
+    nombres = {fila["slack_user_id"]: _nombre(fila) for fila in resultados}
+    filas = [
+        {"jugador": fila["slack_user_id"], "nombre": _nombre(fila), "intentos": fila["score"]}
+        for fila in del_dia
+    ]
+
+    tabla = clasificacion(resultados, temporada)
+    con_puesto = [fila for fila in tabla if fila.get("posicion")]
+    lider = con_puesto[0]["nombre"] if con_puesto else None
+    ultimo = con_puesto[-1]["nombre"] if len(con_puesto) > 1 else None
+
+    del_album = album(resultados, temporada)["jugadores"]
+    clasificados = [fila for fila in del_album if fila.get("posicion")]
+    lider_album = clasificados[0]["nombre"] if clasificados else None
+
+    dichos = menciones(
+        reacciones=getattr(senales, "reacciones", {}) or {},
+        respuestas=getattr(senales, "respuestas", {}) or {},
+        publicacion=getattr(senales, "publicacion", {}) or {},
+        nombres=nombres,
+        habituales=[fila["jugador"] for fila in con_puesto],
+        jornada=jornada,
+    )
+
+    # Las pullas de líder van **fuera del tope**, pegadas a los rankings que ya salen siempre. Meterlas dentro
+    # habría hecho que los escenarios del líder dejaran de cumplirse en las jornadas movidas: dos escenarios
+    # del mismo slice contradiciéndose.
+    pullas = pullas_de_lideres(lider, lider_album, jornada)
+
+    return [
+        *(pullas[clave] for clave in ("marcador", "album") if clave in pullas),
+        *anadidos(
+            meme=meme_del_dia(filas, jornada, lider=lider, ultimo=ultimo),
+            menciones=dichos,
+            frase=frase_del_dia(dificultad(del_dia) or 0.0, jornada),
+        ),
+    ]
+
+
+def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int, senales=None) -> str:
     """El resumen completo. **Una sección sin datos no se imprime**, no se imprime vacía."""
     del_dia = _del_dia(resultados, jornada)
     secciones = [
@@ -200,5 +255,6 @@ def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int) -> str
         bloque_top(resultados, temporada, jornada),
         bloque_album(resultados, temporada),
         seccion_de_comentarios(resultados, temporada, jornada),
+        *_voz(resultados, temporada, jornada, senales),
     ]
     return "\n\n".join(seccion for seccion in secciones if seccion)
