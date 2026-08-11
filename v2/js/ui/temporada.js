@@ -133,6 +133,54 @@ function podio(tabla, temporada) {
  * inventarse una diferencia que no está en los datos. Con más jornadas desaparecen solos: la temporada 0,
  * con 72 a 149 partidas por persona, no tiene ni uno.
  */
+/**
+ * Cuánta ventaja deja de ser una ventaja y pasa a ser una pelea, en media de intentos por día.
+ *
+ * Con las siete jornadas de una temporada corta, 0,15 de diferencia es **un solo intento** en todo el mes:
+ * quien va segundo lo remonta con una jornada buena. Llamar «liderar» a eso es contar mal la historia.
+ */
+const VENTAJA_MINIMA = 0.15;
+
+/**
+ * El titular de la temporada, según lo apretado que esté el primer puesto.
+ *
+ * **Mira `posicion`, no el orden de la lista**, y ahí estaba el error que esto viene a arreglar: el titular
+ * tomaba el segundo elemento del array como «el segundo» y contaba la diferencia, así que con un empate en
+ * cabeza publicaba «Claire le sigue a 0,00» — que es exactamente lo contrario de lo que pasaba. Los empates
+ * comparten puesto desde [[empates-comparten-puesto]] y el dato ya venía en la instantánea; solo faltaba
+ * leerlo.
+ */
+export function titular(clasificados) {
+  const filas = (clasificados ?? []).filter((fila) => fila.clasificado !== false);
+  if (!filas.length) return 'Todavía no hay clasificación.';
+
+  const lider = filas[0];
+  const nota = cifra(lider.media_temporada);
+  const empatados = filas.filter((fila) => fila.posicion === lider.posicion);
+
+  if (empatados.length === 2) {
+    return `${escapar(empatados[0].nombre)} y ${escapar(empatados[1].nombre)} van empatados a
+      ${escapar(nota)} de media: la temporada se decide entre los dos.`;
+  }
+  if (empatados.length > 2) {
+    return `${escapar(String(empatados.length))} empatados en cabeza a ${escapar(nota)} de media.
+      Nadie manda todavía.`;
+  }
+
+  const siguiente = filas.find((fila) => fila.posicion !== lider.posicion);
+  if (!siguiente) {
+    return `${escapar(lider.nombre)} lidera con ${escapar(nota)} de media por día.`;
+  }
+
+  const ventaja = siguiente.media_temporada - lider.media_temporada;
+  if (ventaja <= VENTAJA_MINIMA) {
+    return `${escapar(lider.nombre)} lidera con ${escapar(nota)}, pero ${escapar(siguiente.nombre)} le
+      respira en el cuello a ${escapar(cifra(ventaja))}.`;
+  }
+  return `${escapar(lider.nombre)} lidera con ${escapar(nota)} de media por día y
+    ${escapar(siguiente.nombre)} le sigue a ${escapar(cifra(ventaja))}.`;
+}
+
 export function marcaDePuesto(posicion, anterior) {
   if (posicion === null || posicion === undefined) return '<span class="pos">—</span>';
   if (posicion !== anterior) return `<span class="pos">${posicion}º</span>`;
@@ -351,8 +399,6 @@ export function pintarTemporada(contenedor, carga, temporada) {
 
   const clasificados = tabla.filter((fila) => fila.clasificado !== false);
   const lider = clasificados[0] ?? tabla[0];
-  const segundo = clasificados[1];
-  const diferencia = segundo ? segundo.media_temporada - lider.media_temporada : 0;
 
   contenedor.innerHTML = `
     <div class="liga">
@@ -368,9 +414,7 @@ export function pintarTemporada(contenedor, carga, temporada) {
             <span class="chip">${escapar(carga.etiqueta ?? temporada ?? '')}</span>
             <span class="mono">${escapar(carga.estado ?? '')}${carga.updated_at ? ` · ${escapar(antiguedad(carga.updated_at))}` : ''}</span>
           </div>
-          <h1>${escapar(lider.nombre)} lidera con ${escapar(cifra(lider.media_temporada))} de media por día${
-            segundo ? ` y ${escapar(segundo.nombre)} le sigue a ${escapar(cifra(diferencia))}` : ''
-          }.</h1>
+          <h1>${titular(clasificados)}</h1>
           <p class="serif">${carga.dias?.length ?? 0} jornadas válidas, ${carga.jugadores?.length ?? 0}
             jugadores y ${carga.resultados ?? 0} resultados. ${
               carga.imputada === false

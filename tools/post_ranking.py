@@ -261,7 +261,12 @@ async def capture_ranking(objetivo: Objetivo) -> str:
 
         # El selector confirma que la página ya tiene datos, no solo que ha cargado.
         await page.wait_for_selector(objetivo.espera, timeout=15000)
-        await asyncio.sleep(3)  # margen para que terminen de dibujarse los gráficos
+        # Margen para que terminen de dibujarse los gráficos **y, en la v2, las animaciones de las cifras**.
+        # Esto segundo no es un extra: medido, en el instante en que `.hero` aparece el podio muestra «3,48»
+        # donde la instantánea dice «3,57», porque el contador está a mitad de subida. A los 200 ms ya son
+        # correctas y la animación entera dura 900. Sin esta espera, el bot publicaría en el canal una imagen
+        # con cifras que no existen. **No recortar por debajo de un segundo.**
+        await asyncio.sleep(3)
 
         ruta = "ranking_snapshot.png"
         contenedor = await page.query_selector(objetivo.captura)

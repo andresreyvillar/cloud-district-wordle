@@ -148,6 +148,51 @@ def bloque_top(resultados: list[dict], temporada: str, jornada: int) -> str:
     return f"📊 *Marcador · {_etiqueta(resultados, temporada)}*\n" + "\n".join(lineas)
 
 
+#: Ventaja que deja de ser ventaja, en media de intentos por día. Con siete jornadas, 0,15 es un solo intento
+#: en todo el mes: quien va segundo lo remonta con una jornada buena. Es el mismo umbral que usa el titular
+#: de la web (`v2/js/ui/temporada.js`), y por la misma razón.
+VENTAJA_MINIMA = 0.15
+
+
+def bloque_rivalidad(resultados: list[dict], temporada: str, jornada: int) -> str:
+    """La pelea por el primer puesto, **si la hay**.
+
+    Con ventaja amplia no sale nada: inventar una rivalidad donde alguien va destacado sería contar mal la
+    temporada, y el mensaje ya tiene bastantes líneas.
+
+    Se lee de `posicion`, no del orden de la lista. Es el mismo error que la web publicaba en su titular —
+    tomar el segundo elemento del array como «el segundo» y restar las medias— y que con un empate en cabeza
+    producía «le sigue a 0,00».
+    """
+    from refranero import RIVALIDAD_EMPATE, RIVALIDAD_MONTON, RIVALIDAD_PELEA
+    from voz import _del_ciclo
+
+    filas = [fila for fila in clasificacion(resultados, temporada) if fila["clasificado"]]
+    if len(filas) < 2:
+        return ""
+
+    lider = filas[0]
+    empatados = [fila for fila in filas if fila["posicion"] == lider["posicion"]]
+    nota = _cifra(lider["media_temporada"])
+
+    if len(empatados) == 2:
+        return _del_ciclo(RIVALIDAD_EMPATE, jornada).format(
+            a=empatados[0]["nombre"], b=empatados[1]["nombre"], cifra=nota
+        )
+    if len(empatados) > 2:
+        return _del_ciclo(RIVALIDAD_MONTON, jornada).format(cuantos=len(empatados), cifra=nota)
+
+    siguiente = next((fila for fila in filas if fila["posicion"] != lider["posicion"]), None)
+    if not siguiente:
+        return ""
+    ventaja = siguiente["media_temporada"] - lider["media_temporada"]
+    if ventaja > VENTAJA_MINIMA:
+        return ""
+    return _del_ciclo(RIVALIDAD_PELEA, jornada).format(
+        a=lider["nombre"], b=siguiente["nombre"], cifra=_cifra(ventaja)
+    )
+
+
 def _cifra(valor: float) -> str:
     """Con coma decimal. La web ya lo hace con `toLocaleString("es-ES")`, y el mensaje va al mismo grupo:
     un 3.20 en Slack y un 3,20 en la web son el mismo número escrito de dos formas."""
@@ -253,6 +298,7 @@ def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int, senale
         bloque_jugador_del_dia(del_dia),
         bloque_obra_del_dia(resultados, temporada, jornada) if del_dia else "",
         bloque_top(resultados, temporada, jornada),
+        bloque_rivalidad(resultados, temporada, jornada),
         bloque_album(resultados, temporada),
         seccion_de_comentarios(resultados, temporada, jornada),
         *_voz(resultados, temporada, jornada, senales),

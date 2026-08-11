@@ -8,6 +8,11 @@
        servidor local monta también en /2/ para que local y producción no difieran. -->
   <base href="/2/">
   <title>Wordle CloudDistrict</title>
+  <!-- Relativo al `<base href="/2/">`, así que pide `/2/favicon.svg`. El icono vive **dentro de `v2/`** y no
+       en la raíz del repositorio a propósito: el servidor local sirve solo `v2/`, así que un icono en la raíz
+       funcionaría en producción y no en local. Esa divergencia entre los dos es la que ya rompió la v2 una
+       vez con el `.assetsignore`, y no se repite por ahorrar un fichero. -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Silkscreen:wght@400;700&family=Libre+Baskerville:ital@1&display=swap">
   <link rel="stylesheet" href="css/styles.css">

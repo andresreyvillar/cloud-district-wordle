@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Wordle Liga Cloud District">
+  <!-- El favicon de la liga: una cuadrícula de Wordle resolviéndose.
+
+       Cuenta la partida de arriba abajo — un amarillo, dos aciertos, y la fila verde de la victoria— porque
+       eso es lo único de este juego que se reconoce a 16 píxeles. Una letra o un texto no se leen a ese
+       tamaño, y una sola fila verde no dice Wordle: dice barra de progreso.
+
+       Tres columnas y no cinco a propósito: con cinco, cada celda mide 2,5 px en la pestaña y los huecos
+       desaparecen, así que la cuadrícula se ve como una mancha. Tres celdas de 8 con hueco de 1 sobreviven al
+       escalado, que es el único requisito real de un favicon.
+
+       Colores tomados de los tokens de la web (`v2/css/styles.css`), escritos aquí en crudo porque un SVG
+       servido como fichero no ve las variables CSS de la página. Si la paleta de la liga cambia, esto hay que
+       cambiarlo a mano — es el precio de que el icono sea un asset y no parte del documento.
+
+       Fondo opaco a propósito: el favicon se dibuja sobre la barra del navegador, que es clara en un tema y
+       oscura en el otro, y un icono transparente desaparece en uno de los dos. -->
+  <rect width="32" height="32" rx="7" fill="#2B2733"/>
+
+  <!-- Fila 1: casi nada. El hueco es tan informativo como el acierto. -->
+  <rect x="3"  y="3"  width="8" height="8" rx="1.5" fill="#454055"/>
+  <rect x="12" y="3"  width="8" height="8" rx="1.5" fill="#FFD23F"/>
+  <rect x="21" y="3"  width="8" height="8" rx="1.5" fill="#454055"/>
+
+  <!-- Fila 2: se va acercando. -->
+  <rect x="3"  y="12" width="8" height="8" rx="1.5" fill="#3DE07A"/>
+  <rect x="12" y="12" width="8" height="8" rx="1.5" fill="#454055"/>
+  <rect x="21" y="12" width="8" height="8" rx="1.5" fill="#FFD23F"/>
+
+  <!-- Fila 3: la banda verde. Es la fila que todo el mundo publica en el canal. -->
+  <rect x="3"  y="21" width="8" height="8" rx="1.5" fill="#3DE07A"/>
+  <rect x="12" y="21" width="8" height="8" rx="1.5" fill="#3DE07A"/>
+  <rect x="21" y="21" width="8" height="8" rx="1.5" fill="#3DE07A"/>
+</svg>
