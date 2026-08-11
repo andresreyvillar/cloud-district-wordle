@@ -86,6 +86,22 @@ def bloque_obra_del_dia(resultados: list[dict], temporada: str, jornada: int) ->
     se decidió había dos geométricos, uno simétrico resuelto en 3 y otro escaso resuelto en 4, y el premio se
     lo llevaba el segundo.
     """
+    elegida = _obra_del_dia(resultados, temporada, jornada)
+    if not elegida:
+        return "🖼️ *Obra del día:* desierta — hoy no ha salido ninguna figura reconocible."
+    fila, categoria = elegida
+    from figures import emoji
+
+    return f"🖼️ *Obra del día:* {emoji(categoria)} de {_nombre(fila)} ({fila['score']} intentos)."
+
+
+def _obra_del_dia(resultados: list[dict], temporada: str, jornada: int):
+    """La figura premiada del día como `(fila, categoria)`, o `None` si no hay ninguna reconocible.
+
+    Separada del texto para que la use también `bloque_la_jornada` **sin reimplementar el desempate**: la
+    regla de qué dibujo gana vive en un solo sitio, y una segunda copia habría divergido en la primera
+    recalibración.
+    """
     candidatas = [
         (fila, figura(fila["pattern"]))
         for fila in _del_dia(resultados, jornada)
@@ -93,10 +109,10 @@ def bloque_obra_del_dia(resultados: list[dict], temporada: str, jornada: int) ->
     ]
     reconocibles = [(fila, cat) for fila, cat in candidatas if cat in FIGURAS]
     if not reconocibles:
-        return "🖼️ *Obra del día:* desierta — hoy no ha salido ninguna figura reconocible."
+        return None
 
     frecuencia = rareza(resultados, temporada)
-    fila, categoria = min(
+    return min(
         reconocibles,
         key=lambda par: (
             frecuencia.get(par[1], 0),
@@ -105,9 +121,6 @@ def bloque_obra_del_dia(resultados: list[dict], temporada: str, jornada: int) ->
             _nombre(par[0]).lower(),
         ),
     )
-    from figures import emoji
-
-    return f"🖼️ *Obra del día:* {emoji(categoria)} de {_nombre(fila)} ({fila['score']} intentos)."
 
 
 def _figura_del_dia_por_jugador(resultados: list[dict], jornada: int) -> dict[str, str]:
@@ -152,6 +165,223 @@ def bloque_top(resultados: list[dict], temporada: str, jornada: int) -> str:
 #: en todo el mes: quien va segundo lo remonta con una jornada buena. Es el mismo umbral que usa el titular
 #: de la web (`v2/js/ui/temporada.js`), y por la misma razón.
 VENTAJA_MINIMA = 0.15
+
+
+
+#: Cuánto se separa la jornada de la media de su temporada para que se comente, en intentos.
+#:
+#: **Medido sobre 166 jornadas reales.** Con ±0,40 el 55% de los días quedan en «normal», «más difícil de lo
+#: habitual» sale en el 19% y «más fácil» en el 25%. Con ±0,20 saldría en dos de cada tres jornadas y dejaría
+#: de informar; con ±0,60 solo en una de siete. El adverbio «mucho» entra en ±0,80, que es el percentil 90.
+DELTA_NOTABLE = 0.40
+DELTA_MUCHO = 0.80
+
+#: Ausentes que se nombran antes de resumir el resto en «y otros N». Tres nombres se leen; doce son una lista
+#: de morosos y hacen crecer el mensaje con el grupo.
+AUSENTES_NOMBRADOS = 3
+
+#: Fracción de jornadas abiertas que convierte «hoy ha madrugado» en «como de costumbre».
+COSTUMBRE = 0.5
+
+#: Retraso del último respecto al primero a partir del cual se menciona, en minutos.
+CIERRE_TARDE = 120
+
+
+def _y(nombres: list[str]) -> str:
+    """Los nombres unidos como se leen: «Ana», «Ana y Bea», «Ana, Bea y Cris».
+
+    Una coma final —«Claire, Dani Sanchez, con 3»— se lee como una enumeración cortada. Lo delató el mensaje
+    compuesto, no un test.
+    """
+    if len(nombres) <= 1:
+        return nombres[0] if nombres else ""
+    return f"{', '.join(nombres[:-1])} y {nombres[-1]}"
+
+
+def _media_de_dificultades(resultados: list[dict], temporada: str) -> float | None:
+    """La dificultad media de las jornadas de la temporada, para comparar la de hoy contra algo comparable.
+
+    **No vale la media imputada del marcador**, que es lo que esto usaba: incluye la penalización de los días
+    que cada uno no juega, así que está inflada y achata la diferencia. Con los datos del día en que se
+    corrigió, hoy salía a +0,20 de la media imputada (4,62) y a **+0,49** de la media real de las jornadas
+    (4,33) — la primera decía «jornada de las de siempre» y la segunda «más difícil de lo habitual», que es lo
+    que era. Lo cazó el dueño leyendo el mensaje.
+    
+    Y es también la referencia con la que se calibraron los cortes sobre 166 jornadas, así que ahora el umbral
+    y la medida hablan de lo mismo. Se incluye la jornada de hoy en la media, igual que en la calibración.
+
+    Hereda de `resultados_de_temporada` qué jornadas cuentan, en lugar de tener su propia definición.
+    """
+    from comentarios import dificultad
+    from seasons import resultados_de_temporada
+
+    por_jornada: dict[int, list[dict]] = {}
+    for fila in resultados_de_temporada(resultados, temporada):
+        por_jornada.setdefault(fila["wordle_id"], []).append(fila)
+
+    medidas = [d for d in (dificultad(fs) for fs in por_jornada.values()) if d is not None]
+    return sum(medidas) / len(medidas) if medidas else None
+
+
+def _linea_de_dificultad(hoy: float, media: float, jornada: int) -> str:
+    from refranero import (
+        DIFICULTAD_MAS_DURA,
+        DIFICULTAD_MAS_FACIL,
+        DIFICULTAD_MUCHO_MAS_DURA,
+        DIFICULTAD_MUCHO_MAS_FACIL,
+        DIFICULTAD_NORMAL,
+    )
+    from voz import _del_ciclo
+
+    delta = hoy - media
+    if delta >= DELTA_MUCHO:
+        registro = DIFICULTAD_MUCHO_MAS_DURA
+    elif delta >= DELTA_NOTABLE:
+        registro = DIFICULTAD_MAS_DURA
+    elif delta <= -DELTA_MUCHO:
+        registro = DIFICULTAD_MUCHO_MAS_FACIL
+    elif delta <= -DELTA_NOTABLE:
+        registro = DIFICULTAD_MAS_FACIL
+    else:
+        registro = DIFICULTAD_NORMAL
+    return _del_ciclo(registro, jornada).format(cifra=_cifra(hoy), media=_cifra(media))
+
+
+def _linea_de_horarios(senales, nombres: dict[str, str], jornada: int) -> list[str]:
+    """Quién abrió la jornada —y si lo hace por costumbre— y quién la cerró muy tarde."""
+    from refranero import APERTURA_HABITUAL, APERTURA_SUELTA, CIERRE_TARDIO
+    from voz import _del_ciclo, con_nombre
+
+    publicacion = getattr(senales, "publicacion", None) or {}
+    if len(publicacion) < 2:
+        return []
+
+    orden = sorted(publicacion.items(), key=lambda par: par[1])
+    primero, cuando_primero = orden[0]
+    lineas: list[str] = []
+
+    veces = (getattr(senales, "aperturas", None) or {}).get(primero, 0)
+    total = getattr(senales, "jornadas_vistas", 0) or 0
+    if total >= 5 and veces >= max(2, total * COSTUMBRE):
+        lineas.append(
+            _del_ciclo(APERTURA_HABITUAL, jornada).format(
+                jugador=nombres.get(primero, primero), veces=veces, total=total
+            )
+        )
+    else:
+        lineas.append(con_nombre(_del_ciclo(APERTURA_SUELTA, jornada), nombres.get(primero, primero)))
+
+    ultimo, cuando_ultimo = orden[-1]
+    retraso = (cuando_ultimo - cuando_primero) / 60
+    if retraso >= CIERRE_TARDE:
+        horas = f"{retraso / 60:.0f} horas".replace(".0", "")
+        lineas.append(
+            _del_ciclo(CIERRE_TARDIO, jornada).format(jugador=nombres.get(ultimo, ultimo), horas=horas)
+        )
+    return lineas
+
+
+def _linea_de_ausentes(senales, habituales: list[str], nombres: dict[str, str], jornada: int) -> str:
+    """Quién no se ha presentado, con hasta tres nombres y el resto resumido.
+
+    Se deriva de que **no hay mensaje suyo en el canal**, no de la tabla: la tabla no distingue «no jugó» de
+    «jugó y aún no se ha ingerido».
+    """
+    from refranero import AUSENTES_DEL_DIA
+    from voz import _del_ciclo
+
+    publicacion = getattr(senales, "publicacion", None) or {}
+    if not publicacion:
+        return ""
+    faltan = sorted(nombres.get(j, j) for j in set(habituales) - set(publicacion))
+    if not faltan:
+        return ""
+
+    visibles = faltan[:AUSENTES_NOMBRADOS]
+    sobran = len(faltan) - len(visibles)
+    # Con coleta, los nombres van con comas: `_y` pondría un «y» y saldrían dos seguidas —«Cata y Clara C y
+    # uno más»—. Lo delató el mensaje compuesto.
+    resto = "" if not sobran else (" y uno más" if sobran == 1 else f" y otros {sobran}")
+    listado = ", ".join(visibles) if sobran else _y(visibles)
+    return _del_ciclo(AUSENTES_DEL_DIA, jornada).format(jugador=listado, resto=resto)
+
+
+def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, senales=None) -> str:
+    """La jornada contada, en formato de lista.
+
+    **Lista y no párrafo, con contenido de comentario.** Los bloques con emoji-título de antes rotulaban un
+    dato (`🏆 Jugador del día: X`); un párrafo cuenta la jornada pero hay que leerlo entero. Las viñetas
+    conservan lo que se lee de un vistazo en la notificación del móvil y dicen lo que pasó.
+    """
+    from comentarios import dificultad
+    from refranero import DIBUJO_DEL_DIA, MEJORES_DEL_DIA
+    from voz import _del_ciclo
+
+    del_dia = _del_dia(resultados, jornada)
+    if not del_dia:
+        return ""
+
+    tabla = clasificacion(resultados, temporada)
+    con_puesto = [fila for fila in tabla if fila.get("posicion")]
+    nombres = {fila["slack_user_id"]: _nombre(fila) for fila in resultados}
+    lineas: list[str] = []
+
+    hoy = dificultad(del_dia)
+    media = _media_de_dificultades(resultados, temporada)
+    if hoy is not None and media is not None:
+        lineas.append(_linea_de_dificultad(hoy, media, jornada))
+
+    mejor = min(fila["score"] for fila in del_dia)
+    quienes = sorted({_nombre(fila) for fila in del_dia if fila["score"] == mejor})
+    lineas.append(
+        _del_ciclo(MEJORES_DEL_DIA, jornada).format(jugador=_y(quienes), intentos=mejor)
+    )
+
+    obra = _obra_del_dia(resultados, temporada, jornada)
+    if obra:
+        fila, categoria = obra
+        from figures import emoji
+
+        lineas.append(
+            _del_ciclo(DIBUJO_DEL_DIA, jornada).format(
+                jugador=_nombre(fila), emoji=emoji(categoria), intentos=fila["score"]
+            )
+        )
+
+    lineas += _linea_de_horarios(senales, nombres, jornada)
+    ausentes = _linea_de_ausentes(
+        senales, [fila["jugador"] for fila in con_puesto], nombres, jornada
+    )
+    if ausentes:
+        lineas.append(ausentes)
+
+    # Los hechos notables y las menciones del canal entran **en esta misma lista**. Antes iban en un bloque
+    # aparte (`💬 La jornada`) y el mensaje acababa con dos listas de comentarios seguidas compitiendo por
+    # contar lo mismo.
+    from comentarios import frase as frase_de_hecho, hechos_elegidos
+    from voz import menciones
+
+    # **Agrupados por clave.** Dos líneas «Día fino de X» y «Día fino de Y» seguidas se leen como un error de
+    # copia, igual que pasaba con los ausentes uno por línea.
+    # `hechos_elegidos` y no `hechos_de_la_jornada`: el primero aplica el tope de comentarios y el orden por
+    # notabilidad. Tomándolos en crudo, el mensaje podía llevar siete hechos.
+    por_clave: dict[str, list] = {}
+    for hecho in hechos_elegidos(resultados, temporada, jornada):
+        por_clave.setdefault(hecho.clave, []).append(hecho)
+    for clave, hechos in por_clave.items():
+        quien = _y([h.jugador for h in hechos])
+        lineas.append(frase_de_hecho(clave, jornada, quien, hechos[0].dato, len(hechos) > 1))
+
+    dichas = menciones(
+        reacciones=getattr(senales, "reacciones", None) or {},
+        respuestas=getattr(senales, "respuestas", None) or {},
+        publicacion={},  # los horarios ya tienen su propia línea; aquí solo aplausos y conversación
+        nombres=nombres,
+        jornada=jornada,
+    )
+    lineas += [dichas[clave] for clave in ("aplaudido", "comentado") if clave in dichas]
+
+    return "\n".join(f"• {linea}" for linea in lineas)
 
 
 def bloque_rivalidad(resultados: list[dict], temporada: str, jornada: int) -> str:
@@ -276,31 +506,47 @@ def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[
         jornada=jornada,
     )
 
-    # Las pullas de líder van **fuera del tope**, pegadas a los rankings que ya salen siempre. Meterlas dentro
-    # habría hecho que los escenarios del líder dejaran de cumplirse en las jornadas movidas: dos escenarios
-    # del mismo slice contradiciéndose.
-    pullas = pullas_de_lideres(lider, lider_album, jornada)
-
     return [
-        *(pullas[clave] for clave in ("marcador", "album") if clave in pullas),
         *anadidos(
             meme=meme_del_dia(filas, jornada, lider=lider, ultimo=ultimo),
-            menciones=dichos,
+            menciones={},
             frase=frase_del_dia(dificultad(del_dia) or 0.0, jornada),
         ),
     ]
+
+
+def _pulla_del_marcador(resultados: list[dict], temporada: str, jornada: int) -> str:
+    from voz import pullas_de_lideres
+
+    con_puesto = [fila for fila in clasificacion(resultados, temporada) if fila.get("posicion")]
+    if not con_puesto:
+        return ""
+    return pullas_de_lideres(con_puesto[0]["nombre"], None, jornada).get("marcador", "")
+
+
+def _pulla_del_album(resultados: list[dict], temporada: str, jornada: int) -> str:
+    from voz import pullas_de_lideres
+
+    clasificados = [f for f in album(resultados, temporada)["jugadores"] if f.get("posicion")]
+    if not clasificados:
+        return ""
+    return pullas_de_lideres(None, clasificados[0]["nombre"], jornada).get("album", "")
 
 
 def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int, senales=None) -> str:
     """El resumen completo. **Una sección sin datos no se imprime**, no se imprime vacía."""
     del_dia = _del_dia(resultados, jornada)
     secciones = [
-        bloque_jugador_del_dia(del_dia),
-        bloque_obra_del_dia(resultados, temporada, jornada) if del_dia else "",
+        bloque_la_jornada(resultados, temporada, jornada, senales),
+        # **Una** línea de cierre —el meme si la jornada tiene forma, y si no el proverbio— entre la jornada y
+        # los rankings. Tres frases seguidas era un tercer bloque de comentarios y el mensaje ya tiene dos.
+        *_voz(resultados, temporada, jornada, senales),
         bloque_top(resultados, temporada, jornada),
+        # Las pullas van **pegadas a su ranking**, que es lo que comentan. Sueltas al final del comentario
+        # nadie sabía a qué se referían.
+        _pulla_del_marcador(resultados, temporada, jornada),
         bloque_rivalidad(resultados, temporada, jornada),
         bloque_album(resultados, temporada),
-        seccion_de_comentarios(resultados, temporada, jornada),
-        *_voz(resultados, temporada, jornada, senales),
+        _pulla_del_album(resultados, temporada, jornada),
     ]
     return "\n\n".join(seccion for seccion in secciones if seccion)

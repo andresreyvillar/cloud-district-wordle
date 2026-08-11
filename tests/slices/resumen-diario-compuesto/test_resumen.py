@@ -63,9 +63,11 @@ def test_el_jugador_del_dia_es_la_mejor_puntuacion():
 
     # Sobre SU línea, no sobre el mensaje entero: Ana aparece también en el top y en el álbum, así que
     # `"Ana" in texto` pasaba aunque el premio se lo llevara Bea. Lo cazó un mutante.
-    linea = next(l for l in texto.splitlines() if "Jugador del día" in l)
+    # Sobre SU línea, no sobre el mensaje entero: Ana aparece también en el top y en el álbum, así que
+    # `"Ana" in texto` pasaba aunque el premio se lo llevara Bea. Lo cazó un mutante.
+    linea = next(l for l in texto.splitlines() if "mejores" in l or "bordado" in l or "Arriba del todo" in l)
     assert "Ana" in linea and "Bea" not in linea
-    assert "en 2" in linea, "y con la puntuación que lo gana"
+    assert "2" in linea, "y con la puntuación que lo gana"
 
 
 # @scenarios jugador-del-dia
@@ -194,7 +196,7 @@ def test_sin_resultados_no_se_inventa_ninguna_seccion():
 
     texto = resumen_del_dia([], "0", HOY)
 
-    assert "Jugador del día" not in texto
+    assert "mejores del día" not in texto.lower()
     assert "Obra del día" not in texto
     assert texto.strip() == "" or "ranking" in texto.lower()
 
@@ -209,7 +211,7 @@ def test_una_temporada_sin_album_no_imprime_la_seccion_del_album():
     texto = resumen_del_dia(filas, "0", HOY)
 
     assert "Álbum" not in texto
-    assert "Jugador del día" in texto, "las secciones con datos sí salen"
+    assert "Ana" in texto, "las secciones con datos sí salen"
 
 
 # @scenarios el-resumen-no-recalcula
@@ -274,12 +276,12 @@ def test_el_resumen_va_apagado_por_defecto():
     try:
         assert resumen_activo() is False
         apagado = comentario("", OBJETIVOS["v1"], filas)
-        assert "Jugador del día" not in apagado
+        assert "mejores del día" not in apagado.lower()
         assert "ranking actualizado" in apagado, "el mensaje de siempre sigue saliendo"
 
         os.environ["RESUMEN_COMPUESTO"] = "1"
         assert resumen_activo() is True
-        assert "Jugador del día" in comentario("", OBJETIVOS["v1"], filas)
+        assert "2" in comentario("", OBJETIVOS["v1"], filas)
     finally:
         os.environ.pop("RESUMEN_COMPUESTO", None)
         if previo is not None:
@@ -329,3 +331,160 @@ def test_la_pelea_no_deja_huecos_de_plantilla():
     filas = historia("Ana", 8, score=3) + historia("Bea", 8, score=3)
 
     assert "{" not in bloque_rivalidad(filas, "0", 1007)
+
+
+class _Senales:
+    """Doble de las señales del canal. La red se queda en el borde, así que aquí basta un objeto."""
+
+    def __init__(self, publicacion=None, reacciones=None, respuestas=None, aperturas=None, vistas=0):
+        self.publicacion = publicacion or {}
+        self.reacciones = reacciones or {}
+        self.respuestas = respuestas or {}
+        self.aperturas = aperturas or {}
+        self.jornadas_vistas = vistas
+
+
+# @scenarios la-jornada-se-cuenta-en-lugar-de-rotularse
+def test_la_jornada_se_cuenta_en_frases_y_no_en_rotulos():
+    from resumen import bloque_la_jornada
+
+    # **Cinco jugadores como mínimo**: con menos, `dificultad()` devuelve None y la línea que compara la
+    # jornada con la temporada no sale. Un fixture corto haría pasar el test por la razón equivocada.
+    filas, hoy = [], []
+    for i, nota in enumerate((2, 4, 4, 5, 5)):
+        filas += historia(f"J{i}", 8, score=4)
+        hoy.append(resultado(f"J{i}", HOY, nota, LORO if i == 0 else ABSTRACTO))
+
+    bloque = bloque_la_jornada(filas + hoy, "0", HOY)
+
+    assert "Jugador del día" not in bloque and "Obra del día" not in bloque, "ya no se rotula"
+    assert bloque.startswith("• "), "es una lista"
+    assert "de media" in bloque, f"la primera línea compara la jornada con la temporada: {bloque}"
+    assert "J0" in bloque
+
+
+# @scenarios la-jornada-se-cuenta-en-lugar-de-rotularse
+def test_el_registro_de_la_linea_lo_decide_la_diferencia_con_la_temporada():
+    """Los cortes están medidos sobre 166 jornadas: ±0,40 deja el 55% de los días en «normal»."""
+    from resumen import DELTA_NOTABLE, bloque_la_jornada
+
+    assert DELTA_NOTABLE == 0.40
+
+    def jornada_de(historico: int, hoy_nota: int) -> str:
+        filas, hoy = [], []
+        for i in range(5):  # la muestra mínima, o no habría línea que comprobar
+            filas += historia(f"J{i}", 8, score=historico)
+            hoy.append(resultado(f"J{i}", HOY, hoy_nota, LORO))
+        return bloque_la_jornada(filas + hoy, "0", HOY)
+
+    # **Contra el registro, no contra una palabra.** «difícil» solo está en una de las tres frases del
+    # registro duro, así que la aserción literal fallaba con las otras dos según rotara el ciclo — y habría
+    # vuelto a fallar al editar el diccionario, que está hecho para editarse.
+    duro = jornada_de(historico=3, hoy_nota=6)
+    from refranero import DIFICULTAD_MUCHO_MAS_DURA
+    plantillas = [f.split("{")[0] for f in DIFICULTAD_MUCHO_MAS_DURA]
+    assert any(duro.splitlines()[0].removeprefix("• ").startswith(p) for p in plantillas), duro
+
+    from refranero import DIFICULTAD_MUCHO_MAS_FACIL
+    facil = jornada_de(historico=5, hoy_nota=2)
+    plantillas = [f.split("{")[0] for f in DIFICULTAD_MUCHO_MAS_FACIL]
+    assert any(facil.splitlines()[0].removeprefix("• ").startswith(p) for p in plantillas), facil
+
+
+# @scenarios quien-abre-por-costumbre-se-distingue-de-quien-abre-un-dia
+def test_la_costumbre_de_madrugar_necesita_historico():
+    from resumen import bloque_la_jornada
+
+    filas = historia("Ana", 8, score=3) + historia("Bea", 8, score=4) + [
+        resultado("Ana", HOY, 3, LORO), resultado("Bea", HOY, 4, FLOR),
+    ]
+    horas = {"U_Ana": 1788249600.0, "U_Bea": 1788253200.0}
+
+    # Sin histórico suficiente: solo se dice que hoy abrió.
+    suelto = bloque_la_jornada(filas, "0", HOY, _Senales(publicacion=horas))
+    assert "Ana" in suelto and "costumbre" not in suelto and "de las últimas" not in suelto
+
+    # Con costumbre demostrada: se dice, y con el recuento.
+    habitual = bloque_la_jornada(
+        filas, "0", HOY, _Senales(publicacion=horas, aperturas={"U_Ana": 8}, vistas=10)
+    )
+    assert "8" in habitual and "10" in habitual, habitual
+
+    # **El caso que separa el umbral**, y sin él la prueba de mutación pasaba con `COSTUMBRE = 0`: quien ha
+    # abierto 2 de 10 jornadas no lo hace por costumbre, lo hizo dos veces.
+    from resumen import COSTUMBRE
+
+    assert COSTUMBRE == 0.5
+    poco = bloque_la_jornada(
+        filas, "0", HOY, _Senales(publicacion=horas, aperturas={"U_Ana": 2}, vistas=10)
+    )
+    assert "costumbre" not in poco and "de las últimas" not in poco, poco
+
+
+# @scenarios los-ausentes-se-nombran-sin-listarlos-todos
+def test_los_ausentes_se_resumen_en_lugar_de_listarse():
+    """Nombrar a todos hacía crecer el mensaje con el grupo, y señalar a doce no señala a nadie."""
+    from resumen import AUSENTES_NOMBRADOS, bloque_la_jornada
+
+    filas = []
+    for i in range(9):
+        filas += historia(f"J{i}", 8, score=4)
+    filas += [resultado("J0", HOY, 4, FLOR), resultado("J1", HOY, 4, FLOR)]
+    senales = _Senales(publicacion={"U_J0": 1788249600.0, "U_J1": 1788253200.0})
+
+    bloque = bloque_la_jornada(filas, "0", HOY, senales)
+    linea = next(l for l in bloque.splitlines() if "faltan" in l or "Sin noticias" in l or "libre" in l
+                 or "presentado" in l)
+
+    assert "y otros" in linea, f"el resto se resume: {linea}"
+    assert linea.count(",") <= AUSENTES_NOMBRADOS, f"no se listan todos: {linea}"
+    assert " y y " not in linea and ", y " not in linea, f"puntuación doblada: {linea}"
+
+
+# @scenarios la-jornada-se-cuenta-en-lugar-de-rotularse
+def test_la_dificultad_se_compara_con_las_jornadas_no_con_la_media_imputada():
+    """La referencia es la dificultad media de las jornadas, no la media imputada del marcador.
+
+    La imputada incluye la penalización de los días que cada uno no juega, así que está inflada y achata la
+    diferencia: con los datos del día en que se corrigió, una jornada que estaba a +0,49 de la media real de
+    las jornadas salía a +0,20 de la imputada y se publicaba como «de las de siempre». Lo cazó el dueño
+    leyendo el mensaje, no la suite.
+    """
+    from resumen import _media_de_dificultades
+
+    # Cinco jugadores que faltan la mitad de los días: su media imputada sube, la de las jornadas no.
+    filas = []
+    for i in range(5):
+        filas += [resultado(f"J{i}", 1500 + j, 3) for j in range(4)]
+    # Una jornada más, jugada por todos, con la misma nota: la dificultad media sigue siendo 3.
+    filas += [resultado(f"J{i}", 1504, 3) for i in range(5)]
+
+    referencia = _media_de_dificultades(filas, "0")
+
+    assert referencia == pytest.approx(3.0), (
+        f"la referencia son los intentos reales de las jornadas, no las medias imputadas: {referencia}"
+    )
+
+
+# @scenarios la-jornada-se-cuenta-en-lugar-de-rotularse
+def test_la_linea_publicada_usa_la_referencia_correcta():
+    """**Sobre el texto, no sobre la función.** Probar `_media_de_dificultades` no basta: la primera versión
+    de este arreglo tenía esa función correcta y la línea seguía usando la media imputada, y la mutación pasó.
+
+    El fixture está construido para que las dos referencias den textos distintos: cuatro jugadores juegan las
+    diez jornadas —ocho fáciles y dos duras— y uno falta a las dos duras, así que su imputación penaliza y
+    sube la media del marcador. Dificultades reales 2,11; imputada del grupo 2,68. Con la jornada de hoy en
+    3,00 la primera da «mucho más dura» y la segunda «normal».
+    """
+    from resumen import bloque_la_jornada
+
+    filas = []
+    for i in range(4):
+        filas += [resultado(f"J{i}", 1500 + j, 2 if j < 8 else 6, LORO) for j in range(10)]
+    filas += [resultado("J4", 1500 + j, 2, LORO) for j in range(8)]
+    hoy = [resultado(f"J{i}", HOY, 3, LORO) for i in range(5)]
+
+    primera = bloque_la_jornada(filas + hoy, "0", HOY).splitlines()[0]
+
+    assert "2,11" in primera, f"la referencia publicada es la de las jornadas: {primera}"
+    assert "2,68" not in primera, f"no la media imputada del marcador: {primera}"

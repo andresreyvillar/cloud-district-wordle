@@ -27,6 +27,44 @@ from dataclasses import dataclass, field
 ES_RESULTADO = re.compile(r"La palabra del d[íi]a\s*#?(\d+)\s+([1-6X])/6", re.I)
 
 
+def _jornada_de(mensaje: dict) -> int | None:
+    """El número de puzzle que declara un mensaje, o `None` si no es un resultado."""
+    encontrado = ES_RESULTADO.search(mensaje.get("text") or "")
+    return int(encontrado.group(1)) if encontrado else None
+
+
+def veces_que_abrio(mensajes: list[dict], bot: str | None = None) -> tuple[dict[str, int], int]:
+    """Cuántas jornadas ha abierto cada jugador, y sobre cuántas jornadas se cuenta.
+
+    Es lo que permite decir «como de costumbre» en lugar de «hoy»: sin histórico, que alguien publique primero
+    un día no dice nada de su costumbre. Se cuenta sobre la ventana que se haya leído del canal —no se
+    persiste nada— y por eso devuelve también el denominador: una racha de «3» no significa lo mismo sobre 5
+    jornadas que sobre 30.
+
+    Se agrupa por el **número de puzzle que declara el mensaje**, no por su fecha: quien publica el resultado
+    de ayer a medianoche abrió la jornada de ayer, no la de hoy.
+    """
+    primeros: dict[str, int] = {}
+    por_jornada: dict[int, tuple[str, float]] = {}
+
+    for mensaje in mensajes:
+        autor = mensaje.get("user")
+        jornada = _jornada_de(mensaje)
+        if not autor or autor == bot or jornada is None:
+            continue
+        try:
+            cuando = float(mensaje.get("ts") or 0)
+        except (TypeError, ValueError):
+            continue
+        actual = por_jornada.get(jornada)
+        if actual is None or cuando < actual[1]:
+            por_jornada[jornada] = (autor, cuando)
+
+    for autor, _ in por_jornada.values():
+        primeros[autor] = primeros.get(autor, 0) + 1
+    return primeros, len(por_jornada)
+
+
 @dataclass(frozen=True)
 class Senales:
     """Lo que el canal sabe de una jornada y la tabla no.
@@ -41,9 +79,18 @@ class Senales:
     reacciones: dict[str, int] = field(default_factory=dict)
     #: `jugador → respuestas` que tiene el hilo que abrió.
     respuestas: dict[str, int] = field(default_factory=dict)
+    #: `jugador → jornadas que ha abierto` en la ventana leída. Es lo que sostiene un «como de costumbre».
+    aperturas: dict[str, int] = field(default_factory=dict)
+    #: Jornadas sobre las que se cuentan las aperturas. Una racha sin denominador no dice nada.
+    jornadas_vistas: int = 0
 
 
-def senales_del_dia(mensajes: list[dict], bot: str | None = None) -> Senales:
+def senales_del_dia(
+    mensajes: list[dict],
+    bot: str | None = None,
+    jornada: int | None = None,
+    desde: float | None = None,
+) -> Senales:
     """Las señales de los mensajes de una jornada.
 
     `bot` es el identificador del propio bot, y sus mensajes **se ignoran del todo**: publica el resumen todas
@@ -52,6 +99,11 @@ def senales_del_dia(mensajes: list[dict], bot: str | None = None) -> Senales:
 
     Si un jugador publicó dos veces el mismo día —pasa: se corrige o se reenvía— vale **el primero**, que es
     cuando de verdad resolvió.
+
+    `jornada` acota qué resultados cuentan como «de hoy», y `desde` qué **charla** cuenta. Los dos hacen falta
+    porque la ventana que se lee del canal es de treinta días —para poder contar las aperturas— y sin filtros
+    el mensaje decía que alguien había montado el hilo del día con una conversación de hace tres semanas. Lo
+    delató el mensaje compuesto al ampliar la ventana.
     """
     publicacion: dict[str, float] = {}
     reacciones: dict[str, int] = {}
@@ -74,10 +126,11 @@ def senales_del_dia(mensajes: list[dict], bot: str | None = None) -> Senales:
 
         # La conversación cuenta para el hilo aunque no sea un resultado: quien abre debate lo abre igual
         # comentando que jugando. Lo que la charla NO da es hora de publicación.
-        if hilo:
+        if hilo and (desde is None or cuando >= desde):
             respuestas[autor] = max(respuestas.get(autor, 0), hilo)
 
-        if not ES_RESULTADO.search(mensaje.get("text") or ""):
+        suya = _jornada_de(mensaje)
+        if suya is None or (jornada is not None and suya != jornada):
             continue
 
         if autor not in publicacion or cuando < publicacion[autor]:
@@ -86,4 +139,11 @@ def senales_del_dia(mensajes: list[dict], bot: str | None = None) -> Senales:
         elif cuantas > reacciones.get(autor, 0):
             reacciones[autor] = cuantas
 
-    return Senales(publicacion=publicacion, reacciones=reacciones, respuestas=respuestas)
+    aperturas, vistas = veces_que_abrio(mensajes, bot)
+    return Senales(
+        publicacion=publicacion,
+        reacciones=reacciones,
+        respuestas=respuestas,
+        aperturas=aperturas,
+        jornadas_vistas=vistas,
+    )

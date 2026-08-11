@@ -45,7 +45,7 @@ def main() -> int:
 
     jornada = max(fila["wordle_id"] for fila in resultados)
     temporada = temporada_del_resumen(resultados)
-    senales = None if args.sin_canal else leer_el_canal()
+    senales = None if args.sin_canal else leer_el_canal(jornada)
 
     print(f"[jornada {jornada} · temporada {temporada} · resumen_activo={resumen_activo()}]")
     print(f"[señales del canal: {'sí' if senales else 'no'}]")
