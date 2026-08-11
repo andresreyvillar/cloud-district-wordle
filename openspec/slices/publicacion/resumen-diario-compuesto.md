@@ -50,6 +50,20 @@ La jornada y la temporada se derivan **de los datos**, no del reloj (§10).
 **WHEN** se compone el resumen de una jornada
 **THEN** nombra a quien mejor puntuación hizo ese día, y si hay empate los nombra a todos.
 
+### la-jornada-se-cuenta-en-lugar-de-rotularse
+**WHEN** se compone el resumen
+**THEN** la jornada se cuenta en frases —cómo de dura fue comparada con la temporada, quiénes fueron los
+mejores, de quién es el mejor dibujo, quién abrió y quién no apareció— en lugar de rotular cada dato con su
+título.
+
+### quien-abre-por-costumbre-se-distingue-de-quien-abre-un-dia
+**WHEN** quien abrió la jornada ha abierto además la mayoría de las jornadas recientes
+**THEN** se dice que es su costumbre, con el recuento; y si no, solo que hoy abrió.
+
+### los-ausentes-se-nombran-sin-listarlos-todos
+**WHEN** falta más gente de la que se puede nombrar
+**THEN** se nombran unos pocos y el resto se resume, de modo que el mensaje no crezca con el grupo.
+
 ### obra-del-dia
 **WHEN** alguien dejó una figura reconocible ese día
 **THEN** se premia la **más rara de la temporada**, con su emoji y su autor; y si nadie dibujó nada

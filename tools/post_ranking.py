@@ -144,12 +144,17 @@ def leer_resultados():
         desplazamiento += PAGINA
 
 
-#: Ventana que se lee del canal para derivar las señales del día, en horas hacia atrás desde la publicación.
-#: Dieciocho cubren desde la madrugada hasta las 17:00 UTC sin traerse la jornada anterior.
-VENTANA_DEL_DIA_EN_HORAS = 18
+#: Días que se leen del canal. **Treinta y no uno**, y no es por capricho: con la ventana del día solo se
+#: puede decir «hoy ha abierto X», nunca «como de costumbre», porque una apertura suelta no dice nada de la
+#: costumbre de nadie. Treinta días son unas dos páginas de `conversations.history` — barato para lo que
+#: aporta— y **no se persiste nada**: los mensajes se descartan al publicar.
+#:
+#: Lo que es de hoy y lo que es histórico se separa **por el número de puzzle que declara cada mensaje**, no
+#: por su fecha: `senales_del_dia` recibe la jornada y filtra.
+VENTANA_EN_DIAS = 30
 
 
-def leer_el_canal(cliente=None):
+def leer_el_canal(jornada: int | None = None, cliente=None):
     """Los mensajes del día en el canal, para derivar las señales. **Best-effort: nunca lanza.**
 
     Slice: `voz-de-la-jornada`. Es el **borde** del sistema (§10): aquí se hace la red y se lee el reloj, y lo
@@ -169,7 +174,10 @@ def leer_el_canal(cliente=None):
         from extract_slack import contexto_tls
 
         ahora = dt.datetime.now(dt.timezone.utc)
-        desde = (ahora - dt.timedelta(hours=VENTANA_DEL_DIA_EN_HORAS)).timestamp()
+        desde = (ahora - dt.timedelta(days=VENTANA_EN_DIAS)).timestamp()
+        # La charla se acota al día; las aperturas usan la ventana entera. Sin esto, un hilo de hace tres
+        # semanas se publicaba como «el hilo del día».
+        desde_hoy = ahora.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
         cli = cliente or WebClient(token=SLACK_TOKEN, ssl=contexto_tls())
         mensajes, cursor = [], None
         while True:
@@ -180,7 +188,12 @@ def leer_el_canal(cliente=None):
             cursor = (respuesta.get("response_metadata") or {}).get("next_cursor")
             if not cursor:
                 break
-        return senales_del_dia(mensajes, bot=(cli.auth_test() or {}).get("user_id"))
+        return senales_del_dia(
+            mensajes,
+            bot=(cli.auth_test() or {}).get("user_id"),
+            jornada=jornada,
+            desde=desde_hoy,
+        )
     except Exception as error:  # noqa: BLE001 — el resumen se publica igual, sea cual sea el fallo
         # **Solo el tipo de excepción.** Este repositorio es público, así que los logs de Actions también lo
         # son. El token viaja en una cabecera y no debería aparecer en el texto de un error, pero «no debería»
@@ -322,7 +335,8 @@ async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=N
 
     # Las señales se leen **después** de la captura: es lo último que se necesita y lo más frágil, así que si
     # el canal no responde ya está todo lo demás listo para publicar.
-    publicado = subir(ruta, comentario(medallas, objetivo, filas, senales=leer_el_canal()))
+    jornada = max(fila["wordle_id"] for fila in filas) if filas else None
+    publicado = subir(ruta, comentario(medallas, objetivo, filas, senales=leer_el_canal(jornada)))
     if os.path.exists(ruta):
         os.remove(ruta)
     return 0 if publicado else 1

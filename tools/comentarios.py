@@ -264,6 +264,24 @@ def frase(
     return plantilla.format(jugador=jugador, dato=dato if dato is not None else 0)
 
 
+def hechos_elegidos(resultados: list[dict], temporada: str, jornada: int) -> list[Hecho]:
+    """Los hechos que caben en un mensaje: **uno por tipo** y como mucho `MAXIMO_COMENTARIOS`.
+
+    Vive aparte para que `resumen.py` use el mismo criterio al integrarlos en su lista. Cuando el resumen los
+    tomaba de `hechos_de_la_jornada` directamente se saltaba este recorte, y el mensaje podía llevar siete.
+    """
+    vistos: set[str] = set()
+    elegidos: list[Hecho] = []
+    for hecho in hechos_de_la_jornada(resultados, temporada, jornada):
+        if hecho.clave in vistos:
+            continue
+        vistos.add(hecho.clave)
+        elegidos.append(hecho)
+        if len(elegidos) == MAXIMO_COMENTARIOS:
+            break
+    return elegidos
+
+
 def seccion_de_comentarios(resultados: list[dict], temporada: str, jornada: int) -> str:
     """La sección del mensaje, o cadena vacía si hoy no ha pasado nada.
 
@@ -271,19 +289,9 @@ def seccion_de_comentarios(resultados: list[dict], temporada: str, jornada: int)
     chiste tres veces —lo enseñó el mensaje real, no un test—: la notabilidad ordena, y todos los hechos de
     la clase más notable se comían el hueco.
     """
-    hechos = hechos_de_la_jornada(resultados, temporada, jornada)
-    if not hechos:
+    elegidos = hechos_elegidos(resultados, temporada, jornada)
+    if not elegidos:
         return ""
-
-    vistos: set[str] = set()
-    elegidos: list[Hecho] = []
-    for hecho in hechos:
-        if hecho.clave in vistos:
-            continue
-        vistos.add(hecho.clave)
-        elegidos.append(hecho)
-        if len(elegidos) == MAXIMO_COMENTARIOS:
-            break
 
     lineas = [f"• {frase(h.clave, jornada, h.jugador, h.dato, h.varios)}" for h in elegidos]
     return "💬 *La jornada*\n" + "\n".join(lineas)

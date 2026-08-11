@@ -151,25 +151,25 @@ REZAGADO: tuple[str, ...] = (
 )
 
 MAS_APLAUDIDO: tuple[str, ...] = (
-    "💥 Lo de {jugador} ha levantado al canal.",
-    "💥 El grupo ha hablado, y ha dicho {jugador}.",
-    "💥 {jugador} se lleva los aplausos del día.",
-    "💥 Nadie ha aplaudido más que a {jugador}.",
-    "💥 A {jugador} le han llovido las reacciones, y con motivo.",
-    "💥 {jugador} ha hecho el ruido del día.",
-    "💥 Ovación para {jugador}.",
-    "💥 Hoy el canal se ha puesto en pie por {jugador}.",
+    "Lo de {jugador} ha levantado al canal.",
+    "El grupo ha hablado, y ha dicho {jugador}.",
+    "{jugador} se lleva los aplausos del día.",
+    "Nadie ha aplaudido más que a {jugador}.",
+    "A {jugador} le han llovido las reacciones, y con motivo.",
+    "{jugador} ha hecho el ruido del día.",
+    "Ovación para {jugador}.",
+    "Hoy el canal se ha puesto en pie por {jugador}.",
 )
 
 MAS_COMENTADO: tuple[str, ...] = (
-    "💬 {jugador} ha montado el hilo del día.",
-    "💬 Lo de {jugador} ha dado más conversación que el propio Wordle.",
-    "💬 {jugador} ha abierto debate, y el debate ha durado.",
-    "💬 El tema del día lo ha puesto {jugador}.",
-    "💬 {jugador} ha conseguido que el canal hable de otra cosa.",
-    "💬 Hoy se ha hablado sobre todo de {jugador}.",
-    "💬 {jugador} lanzó la piedra y el hilo hizo el resto.",
-    "💬 Hilo del día, cortesía de {jugador}.",
+    "{jugador} ha montado el hilo del día.",
+    "Lo de {jugador} ha dado más conversación que el propio Wordle.",
+    "{jugador} ha abierto debate, y el debate ha durado.",
+    "El tema del día lo ha puesto {jugador}.",
+    "{jugador} ha conseguido que el canal hable de otra cosa.",
+    "Hoy se ha hablado sobre todo de {jugador}.",
+    "{jugador} lanzó la piedra y el hilo hizo el resto.",
+    "Hilo del día, cortesía de {jugador}.",
 )
 
 AUSENTE: tuple[str, ...] = (
@@ -286,4 +286,89 @@ RIVALIDAD_MONTON: tuple[str, ...] = (
     "🔥 *Pelea por el primer puesto:* {cuantos} comparten el primer puesto a {cifra}. Asamblea.",
     "🔥 *Pelea por el primer puesto:* {cuantos} a {cifra} y ninguno se despega.",
     "🔥 *Pelea por el primer puesto:* {cuantos} personas empatadas arriba. Esto es un pelotón, no un podio.",
+)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Las líneas del bloque de la jornada. Formato de lista, contenido de comentario: se leen de un vistazo en la
+# notificación del móvil y a la vez cuentan lo que pasó, en vez de rotular un dato.
+#
+# `{cifra}` es la dificultad del día y `{media}` la de la temporada. Los cortes están medidos sobre 166
+# jornadas: ±0,40 deja el 55% de los días en «normal», y decir «más difícil de lo habitual» pasa una de cada
+# cinco jornadas — con ±0,20 pasaría casi siempre y dejaría de informar.
+# ─────────────────────────────────────────────────────────────────────────────
+
+DIFICULTAD_MUCHO_MAS_DURA: tuple[str, ...] = (
+    "Hoy la palabra ha sido mucho más difícil de lo habitual: {cifra} de media frente a {media}.",
+    "Hoy nos ha pasado por encima: {cifra} de media contra los {media} de la temporada.",
+    "Palabra de las que se recuerdan: {cifra} de media, y la temporada va en {media}.",
+)
+
+DIFICULTAD_MAS_DURA: tuple[str, ...] = (
+    "Hoy la palabra ha sido algo más difícil de lo habitual: {cifra} de media frente a {media}.",
+    "Hoy se ha vendido un poco más cara: {cifra} de media, contra {media} de la temporada.",
+    "Día cuesta arriba, sin drama: {cifra} de media frente a {media}.",
+)
+
+DIFICULTAD_NORMAL: tuple[str, ...] = (
+    "Hoy la palabra ha ido como suele: {cifra} de media, y la temporada va en {media}.",
+    "Jornada de las de siempre: {cifra} de media frente a {media}.",
+    "Hoy sin sorpresas: {cifra} de media, lo normal en esta temporada ({media}).",
+)
+
+DIFICULTAD_MAS_FACIL: tuple[str, ...] = (
+    "Hoy la palabra se ha dejado querer: {cifra} de media frente a {media}.",
+    "Día amable: {cifra} de media, por debajo de los {media} de la temporada.",
+    "Hoy ha ido rodada: {cifra} de media contra {media}.",
+)
+
+DIFICULTAD_MUCHO_MAS_FACIL: tuple[str, ...] = (
+    "Hoy la palabra ha venido a entregarse: {cifra} de media frente a {media}.",
+    "Regalo del diccionario: {cifra} de media, y la temporada va en {media}.",
+    "Hoy no ha habido partido: {cifra} de media contra {media}.",
+)
+
+#: Los mejores del día. `{jugador}` puede ser más de un nombre y `{intentos}` su nota.
+MEJORES_DEL_DIA: tuple[str, ...] = (
+    "Los mejores del día: {jugador}, en {intentos}.",
+    "Lo han bordado {jugador}: {intentos} intentos.",
+    "Arriba del todo hoy, {jugador}, con {intentos}.",
+    "{jugador} se lleva la jornada con {intentos} intentos.",
+)
+
+#: El dibujo del día. `{emoji}` la figura y `{intentos}` lo que costó.
+DIBUJO_DEL_DIA: tuple[str, ...] = (
+    "El dibujo más bonito es de {jugador}: un {emoji} que le costó {intentos} intentos.",
+    "Premio de belleza para {jugador}, con un {emoji} de {intentos} intentos.",
+    "{jugador} ha dejado el mejor dibujo del día: {emoji}, en {intentos}.",
+    "Lo más presentable de hoy lo firma {jugador}: {emoji} ({intentos} intentos).",
+)
+
+#: Quien abrió la jornada **con costumbre demostrada**: ha abierto la mayoría de las que se han leído.
+APERTURA_HABITUAL: tuple[str, ...] = (
+    "Como de costumbre, {jugador} ha madrugado: ha abierto {veces} de las últimas {total} jornadas.",
+    "{jugador} otra vez el primero — {veces} de {total} jornadas lleva abriendo.",
+    "El madrugador de siempre: {jugador}, {veces} aperturas en {total} jornadas.",
+)
+
+#: Quien abrió la jornada sin que sea costumbre.
+APERTURA_SUELTA: tuple[str, ...] = (
+    "{jugador} ha abierto la jornada.",
+    "El primero en publicar hoy, {jugador}.",
+    "Hoy ha dado el pistoletazo {jugador}.",
+)
+
+#: Quien la cerró, cuando tardó lo suyo. `{horas}` es cuánto después del primero.
+CIERRE_TARDIO: tuple[str, ...] = (
+    "{jugador} la ha cerrado {horas} después.",
+    "{jugador} apareció {horas} más tarde, como quien no quiere la cosa.",
+    "El último, {jugador}, con {horas} de retraso sobre el primero.",
+)
+
+#: Los ausentes. `{jugador}` son hasta tres nombres y `{resto}` la coleta de «y otros N».
+AUSENTES_DEL_DIA: tuple[str, ...] = (
+    "{jugador}{resto} ni se han presentado hoy.",
+    "Sin noticias de {jugador}{resto}.",
+    "Hoy faltan {jugador}{resto}.",
+    "{jugador}{resto} se han tomado el día libre.",
 )

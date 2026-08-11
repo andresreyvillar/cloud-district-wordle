@@ -144,3 +144,39 @@ def test_un_mensaje_malformado_no_se_lleva_las_senales_del_dia():
     assert s.publicacion["U1"] == pytest.approx(MANANA), "el mensaje bueno sigue contando"
     assert "U9" not in s.publicacion, "el del ts inválido se salta, no tumba el resto"
     assert s.reacciones["U8"] == 0, "una reacción sin count vale cero, no revienta"
+
+
+# @scenarios el-que-mas-conversacion-levanta-se-nombra
+def test_la_charla_vieja_no_es_el_hilo_de_hoy():
+    """La ventana del canal es de treinta días para poder contar aperturas, y eso trajo un efecto raro.
+
+    Sin acotar la charla, un hilo de hace tres semanas se publicaba como «el hilo del día». Lo delató el
+    mensaje compuesto al ampliar la ventana, no un test.
+    """
+    from senales import senales_del_dia
+
+    viejo = mensaje("U9", MANANA - 20 * 86400, "una conversación de hace tres semanas", respuestas=40)
+    de_hoy = mensaje("U1", MANANA, RESULTADO, respuestas=2)
+
+    s = senales_del_dia([viejo, de_hoy], bot="UBOT", jornada=1700, desde=MANANA - 3600)
+
+    assert "U9" not in s.respuestas, "un hilo de hace tres semanas no es el hilo de hoy"
+    assert s.respuestas["U1"] == 2
+
+
+# @scenarios quien-abre-por-costumbre-se-distingue-de-quien-abre-un-dia
+def test_las_aperturas_se_cuentan_por_jornada_declarada():
+    """Por el número de puzzle del mensaje, no por su fecha: quien publica el de ayer a medianoche abrió ayer."""
+    from senales import veces_que_abrio
+
+    mensajes = [
+        {"user": "U1", "ts": "100", "text": "La palabra del día #1700 3/6"},
+        {"user": "U2", "ts": "200", "text": "La palabra del día #1700 4/6"},
+        {"user": "U2", "ts": "300", "text": "La palabra del día #1701 3/6"},
+        {"user": "U1", "ts": "400", "text": "La palabra del día #1701 5/6"},
+    ]
+
+    primeros, vistas = veces_que_abrio(mensajes, bot="UBOT")
+
+    assert vistas == 2
+    assert primeros == {"U1": 1, "U2": 1}
