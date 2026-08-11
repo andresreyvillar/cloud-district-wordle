@@ -44,6 +44,11 @@ RESOLVER_SOSPECHOSO = 2
 #: Cuántos comentarios como mucho. La sección es el remate del mensaje, no un muro.
 MAXIMO_COMENTARIOS = 3
 
+#: Ausentes que se pueden nombrar en una línea antes de que deje de ser una pulla y pase a ser una lista.
+#: Dos es el mismo tope que usa `voz.py` para sus menciones, y por la misma razón medida: nombrar a todos
+#: hacía crecer el mensaje con el grupo.
+MAXIMO_AUSENTES_NOMBRADOS = 2
+
 #: Cuánto hueco tiene que dejar el último en publicar, y a partir de qué hora, para que llegar tarde sea
 #: noticia. Calibrado: con 4h de hueco sale 0,24 por jornada; con 3h, 0,31.
 HUECO_DEL_REZAGADO = 4
@@ -183,9 +188,15 @@ def hechos_de_la_jornada(resultados: list[dict], temporada: str, jornada: int) -
         presentes = {_nombre(fila) for fila in del_dia}
         de_la_temporada = {_nombre(fila) for fila in resultados_de_temporada(resultados, temporada)}
         ausentes = sorted(de_la_temporada - presentes)
-        if ausentes:
-            # **Una sola línea con todos**, no una por persona: tres líneas seguidas señalando a tres
-            # ausentes deja de ser una broma y es una lista de morosos.
+        # **Una sola línea con todos**, no una por persona: tres líneas seguidas señalando a tres ausentes
+        # deja de ser una broma y es una lista de morosos.
+        #
+        # Y con un tope, porque sin él tampoco era una broma: visto en el mensaje real, «Silencio de Carlos,
+        # Carlos H., Cata, Clara C, Dani Sanchez, Edu Noeda, Gabi, Juan (Kokuma)» son ocho nombres en una
+        # línea. Eso hace crecer el mensaje con el grupo —lo que `el-mensaje-no-crece-con-el-grupo` existe
+        # para impedir— y además señalar a media liga no señala a nadie. Por encima del tope, la ausencia es
+        # el dato del día y no una pulla, así que no se comenta.
+        if ausentes and len(ausentes) <= MAXIMO_AUSENTES_NOMBRADOS:
             encontrados.append(Hecho("rajado", ", ".join(ausentes), varios=len(ausentes) > 1))
 
     return _uno_por_persona(encontrados)

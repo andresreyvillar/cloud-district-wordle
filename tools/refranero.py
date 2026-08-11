@@ -246,3 +246,44 @@ MEMES: tuple[tuple[str, str], ...] = (
         "🎯 *Meme del día:* unos en {mejor} y otros en {peor}. La misma palabra, dos realidades.",
     ),
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# La pelea por el primer puesto. Llevan `{a}`, `{b}` y `{cifra}`.
+#
+# Solo salen cuando hay pelea de verdad —empate en cabeza o una ventaja que se remonta en una jornada—, así
+# que no hace falta que sean quince: rotan despacio porque aparecen poco.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Empate exacto en el primer puesto. Es lo que el titular de la web contaba como «le sigue a 0,00».
+RIVALIDAD_EMPATE: tuple[str, ...] = (
+    "🔥 *Pelea por el primer puesto:* {a} y {b} empatados a {cifra}. No se sacan ni una décima.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} van clavados a {cifra}. El que falle primero, se queda.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} a {cifra} los dos. La temporada se decide entre ellos.",
+    "🔥 *Pelea por el primer puesto:* nadie manda. {a} y {b} comparten el primer puesto a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b}, {cifra} cada uno. Esto lo desempata una sola jornada.",
+    "🔥 *Pelea por el primer puesto:* {a} contra {b}, y de momento tablas a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} empatados a {cifra}. Que no pestañee ninguno.",
+    "🔥 *Pelea por el primer puesto:* {cifra} y {cifra}. {a} y {b} no se despegan.",
+)
+
+#: Ventaja tan corta que se remonta en una jornada.
+RIVALIDAD_PELEA: tuple[str, ...] = (
+    "🔥 *Pelea por el primer puesto:* {a} lidera, pero {b} le respira en el cuello a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} va primero por {cifra}. Una jornada mala y cambia el orden.",
+    "🔥 *Pelea por el primer puesto:* {b} está a {cifra} de {a}. Eso se remonta en un día.",
+    "🔥 *Pelea por el primer puesto:* {a} manda por {cifra} sobre {b}, que es no mandar mucho.",
+    "🔥 *Pelea por el primer puesto:* {cifra} separan a {a} de {b}. Nada, básicamente.",
+    "🔥 *Pelea por el primer puesto:* {a} delante, {b} pegado a {cifra}. Sin distancia para relajarse.",
+    "🔥 *Pelea por el primer puesto:* {a} aguanta arriba por {cifra} sobre {b}.",
+    "🔥 *Pelea por el primer puesto:* {b} a {cifra} de {a}: esto no está decidido.",
+)
+
+#: Empate a tres o más. **No se nombran todos**: por encima de dos, la lista hace crecer el mensaje con el
+#: grupo, que es la propiedad que un test de otro slice protege.
+RIVALIDAD_MONTON: tuple[str, ...] = (
+    "🔥 *Pelea por el primer puesto:* {cuantos} empatados en cabeza a {cifra}. Hoy no hay rey.",
+    "🔥 *Pelea por el primer puesto:* {cuantos} comparten el primer puesto a {cifra}. Asamblea.",
+    "🔥 *Pelea por el primer puesto:* {cuantos} a {cifra} y ninguno se despega.",
+    "🔥 *Pelea por el primer puesto:* {cuantos} personas empatadas arriba. Esto es un pelotón, no un podio.",
+)

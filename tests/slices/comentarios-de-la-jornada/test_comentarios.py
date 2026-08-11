@@ -293,3 +293,36 @@ def test_acertar_a_la_primera_es_el_chiste_estrella():
     de_ana = [h for h in hechos if h.jugador == "Ana"]
 
     assert de_ana and de_ana[0].clave == "clavada"
+
+
+# @scenarios ausencia-en-dia-dificil
+def test_muchos_ausentes_no_se_nombran_uno_por_uno():
+    """Visto en el mensaje real: «Silencio de» seguido de ocho nombres.
+
+    Hace crecer el mensaje con el grupo, que es lo que `el-mensaje-no-crece-con-el-grupo` impide, y señalar a
+    media liga no señala a nadie. Por encima del tope la ausencia es el dato del día, no una pulla.
+
+    **La primera versión de este test era vacua**: dejaba a dos jugadores en la jornada, y con menos de cinco
+    `dificultad()` devuelve `None`, así que el detector no llegaba a dispararse y la aserción pasaba por la
+    razón equivocada. Lo cazó la prueba de mutación. Ahora la jornada tiene muestra suficiente y se comprueba
+    el borde por los dos lados.
+    """
+    from comentarios import MAXIMO_AUSENTES_NOMBRADOS, hechos_de_la_jornada
+
+    habituales = 11
+    historia = []
+    for i in range(habituales):
+        historia += [resultado(f"J{i}", 1500 + j, 5) for j in range(6)]
+
+    def rajados(cuantos_juegan):
+        hoy = [resultado(f"J{i}", 1600, 6) for i in range(cuantos_juegan)]
+        return [h for h in hechos_de_la_jornada(historia + hoy, "0", 1600) if h.clave == "rajado"]
+
+    # Seis juegan, cinco faltan: por encima del tope, no se comenta.
+    muchos = rajados(6)
+    assert not muchos, f"cinco ausentes no se nombran: {[h.jugador for h in muchos]}"
+
+    # Nueve juegan, dos faltan: justo en el tope, sí se comenta.
+    pocos = rajados(habituales - MAXIMO_AUSENTES_NOMBRADOS)
+    assert pocos, "con dos ausentes la pulla sí sale, o el detector estaría muerto"
+    assert pocos[0].jugador.count(",") == MAXIMO_AUSENTES_NOMBRADOS - 1

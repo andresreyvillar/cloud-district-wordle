@@ -284,3 +284,48 @@ def test_el_resumen_va_apagado_por_defecto():
         os.environ.pop("RESUMEN_COMPUESTO", None)
         if previo is not None:
             os.environ["RESUMEN_COMPUESTO"] = previo
+
+
+# @scenarios la-pelea-por-el-primer-puesto-se-cuenta
+def test_el_empate_en_cabeza_se_cuenta_como_pelea():
+    """El caso real: dos personas compartiendo el primer puesto con la misma media.
+
+    La web publicaba «le sigue a 0,00» en su titular porque tomaba el segundo elemento de la lista como el
+    segundo clasificado. `posicion` ya venía en los datos y nadie la leía.
+    """
+    from resumen import bloque_rivalidad
+
+    filas = historia("Ana", 8, score=3) + historia("Bea", 8, score=3) + historia("Cris", 8, score=5)
+
+    linea = bloque_rivalidad(filas, "0", 1007)
+
+    assert "Ana" in linea and "Bea" in linea
+    assert "Cris" not in linea, "el tercero no está en la pelea"
+    assert "0,00" not in linea, "un empate no es una ventaja de cero"
+
+
+# @scenarios la-pelea-por-el-primer-puesto-se-cuenta
+def test_una_ventaja_amplia_no_inventa_rivalidad():
+    """Con alguien destacado no hay pelea que contar, y el mensaje ya tiene bastantes líneas."""
+    from resumen import bloque_rivalidad
+
+    filas = historia("Ana", 8, score=2) + historia("Bea", 8, score=6)
+
+    assert bloque_rivalidad(filas, "0", 1007) == ""
+
+
+# @scenarios la-pelea-por-el-primer-puesto-se-cuenta
+def test_con_un_solo_clasificado_no_hay_pelea():
+    from resumen import bloque_rivalidad
+
+    assert bloque_rivalidad(historia("Ana", 8, score=3), "0", 1007) == ""
+
+
+# @scenarios la-pelea-por-el-primer-puesto-se-cuenta
+def test_la_pelea_no_deja_huecos_de_plantilla():
+    """Un `{a}` sin rellenar saldría literal en el canal."""
+    from resumen import bloque_rivalidad
+
+    filas = historia("Ana", 8, score=3) + historia("Bea", 8, score=3)
+
+    assert "{" not in bloque_rivalidad(filas, "0", 1007)

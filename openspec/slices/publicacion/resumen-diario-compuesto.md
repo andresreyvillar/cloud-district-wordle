@@ -59,6 +59,10 @@ reconocible, el premio se declara desierto en lugar de dárselo a un abstracto.
 **WHEN** dos dibujos de la misma categoría compiten por el premio y uno es simétrico
 **THEN** gana el simétrico, por delante de quien tardó más intentos.
 
+### la-pelea-por-el-primer-puesto-se-cuenta
+**WHEN** el primer puesto está empatado o la ventaja del líder se remonta en una jornada
+**THEN** el mensaje lo dice nombrando a quienes se lo juegan; y con ventaja amplia no se inventa rivalidad.
+
 ### top-cinco-con-su-dibujo
 **WHEN** se compone el resumen
 **THEN** aparecen los cinco primeros del marcador con su media, y junto a cada uno el emoji de lo que

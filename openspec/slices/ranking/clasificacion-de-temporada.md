@@ -88,6 +88,11 @@ comprobar de dónde sale la diferencia.
 **WHEN** la temporada elegida no tiene ningún día válido
 **THEN** la vista lo explica, en lugar de mostrar una tabla vacía.
 
+### el-titular-cuenta-la-pelea-por-el-primer-puesto
+**WHEN** varios jugadores comparten el primer puesto, o el segundo está a una distancia que se remonta en una
+jornada
+**THEN** el titular lo cuenta como lo que es —un empate o una pelea— y nunca como una ventaja de cero.
+
 ### la-vista-dice-cuando-se-calculo
 **WHEN** el grupo mira una clasificación
 **THEN** la vista indica cuándo se calculó, porque es un dato derivado que puede quedar rancio si el cron
