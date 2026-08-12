@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
+import album
 import badges
 import calendario
 import seasons
@@ -327,29 +328,64 @@ def catalogo() -> tuple[Regla, ...]:
             eje="figuras",
             titulo="La cuadrícula de emojis dibuja una figura, y se colecciona",
             que_hace=(
-                "Cada partida deja un dibujo que se clasifica en loro, flores, geométrico o abstracto, y "
-                "se acumula en tu álbum. Todavía no está activo."
+                "Tu cuadrícula se clasifica en cuatro categorías: 📐 geométrico, 🦜 loro, 🌷 flores y "
+                "🌀 abstracto, que es cuando no se reconoce nada. La categoría se deduce del dibujo, no la "
+                "elige nadie: un dibujo simétrico cuenta como geométrico aunque tenga mucha tinta."
             ),
             por_que=(
                 "Es un segundo eje que premia a quien sufre: la figura sale de las partidas que salen mal, "
                 "así que quien gana el mes casi nunca gana el álbum."
             ),
-            estado=SIN_DECIDIR,
+            estado=APLICADA,
             votada=False,
             falta_decidir=(
-                "El clasificador automático no está calibrado. Hay 30 cuadrículas etiquetadas a mano para "
-                "medirlo, y hasta que acierte lo suficiente los umbrales de sus medallas no se publican."
+                "El clasificador acierta 25 de las 31 cuadrículas etiquetadas a mano. Los seis desacuerdos "
+                "están medidos y aceptados: una figura mal puesta es una gracia perdida, no una injusticia, "
+                "porque el álbum no toca el marcador."
+            ),
+        ),
+        Regla(
+            id="figuras-ponderadas",
+            eje="figuras",
+            titulo="No todas las figuras valen lo mismo",
+            que_hace=(
+                "Un 📐 geométrico vale 3 puntos, un 🦜 loro 2 y una 🌷 flor 1. Un 🌀 abstracto no suma, pero "
+                "cuenta: tu puntuación del álbum son los puntos entre las jornadas de la temporada, no entre "
+                "las partidas que jugaste."
+            ),
+            por_que=(
+                "El orden sale de lo raras que son, medido: el geométrico aparece en el 7% de las partidas, "
+                "el loro en el 14% y las flores en el 47%. Y el denominador son las jornadas para que faltar "
+                "no mejore la media: quien juega solo los días que le sale algo bonito tenía media perfecta."
+            ),
+            estado=APLICADA,
+            votada=False,
+            falta_decidir=(
+                "La escala 3/2/1 la decidió el dueño, no la votó el grupo. Y premia la rareza por encima de "
+                "la constancia: quien saca un geométrico compensa tres abstractos."
+            ),
+            parametros=(
+                _p("mínimo de partidas", album.MINIMO_PARA_EL_ALBUM, "album.MINIMO_PARA_EL_ALBUM", "partidas"),
             ),
         ),
         Regla(
             id="figuras-no-puntuan",
             eje="figuras",
             titulo="El álbum no influye en la clasificación",
-            que_hace="Las figuras no suman ni restan en el ranking de puntuación.",
-            por_que="Decisión explícita: son dos juegos distintos y mezclarlos estropearía los dos.",
-            estado=SIN_DECIDIR,
+            que_hace=(
+                "Las figuras no suman ni restan en el ranking de puntuación. El álbum tiene su propio "
+                "ranking, y cuando dos empatan en él se desempata por la posición en el marcador."
+            ),
+            por_que=(
+                "Son dos premios distintos a propósito: el marcador mide acertar y el álbum mide lo que "
+                "dejas dibujado. Mezclarlos convertiría el segundo en un decorado del primero."
+            ),
+            estado=APLICADA,
             votada=False,
-            falta_decidir="Si algún día el álbum tiene su propio podio, y con qué criterio se ordena.",
+            falta_decidir=(
+                "El desempate por marcador acopla los dos ejes, que es justo lo que el álbum existe para "
+                "evitar. Solo actúa cuando el criterio propio ya no distingue, pero está ahí."
+            ),
         ),
         # ── lo que el grupo tiene sobre la mesa ──────────────────────────────────────────────────
         Regla(

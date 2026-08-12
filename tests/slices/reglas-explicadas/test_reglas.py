@@ -97,6 +97,10 @@ def test_hay_reglas_aplicadas_que_el_grupo_no_ha_votado_y_se_declara():
     El grupo ratificó las trece reglas del reglamento el 2026-08-07. Las **dos del modelo de participación**
     siguen sin votar y el cálculo ya las usa: son justo las que cambian quién gana el mes.
 
+    Y desde el 2026-08-12 son cinco: **las tres del álbum tampoco están votadas**. El álbum se construyó y la
+    escala de figuras la decidió el dueño; el grupo nunca las ratificó. Son menos graves que las de
+    participación porque el álbum no toca el marcador, pero la página no las va a esconder.
+
     **Este test es un cable trampa a propósito.** Si el grupo vota esas dos, se pone rojo y alguien tiene
     que venir a actualizarlo, que es exactamente lo que debe pasar cuando cambia lo que la página afirma.
     """
@@ -107,7 +111,13 @@ def test_hay_reglas_aplicadas_que_el_grupo_no_ha_votado_y_se_declara():
 
     aplicadas_sin_votar = {r.id for r in catalogo() if r.estado == "aplicada" and not r.votada}
 
-    assert aplicadas_sin_votar == {"imputacion-por-dificultad", "sin-minimo-para-clasificar"}, (
+    assert aplicadas_sin_votar == {
+        "imputacion-por-dificultad",
+        "sin-minimo-para-clasificar",
+        "album-de-figuras",
+        "figuras-ponderadas",
+        "figuras-no-puntuan",
+    }, (
         f"lo aplicado sin votar ha cambiado: {aplicadas_sin_votar}. Si el grupo las ha votado, actualiza "
         "el catálogo y este test; si no, es que alguien ha marcado como votada una regla que no lo está."
     )
