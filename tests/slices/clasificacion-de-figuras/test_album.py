@@ -360,3 +360,56 @@ def test_si_no_hay_nada_que_los_separe_siguen_compartiendo_puesto():
     filas = album(a + b, "0")["jugadores"]
 
     assert [f["posicion"] for f in filas] == [1, 1]
+
+
+# @scenarios faltar-no-mejora-la-media-del-album
+def test_faltar_no_mejora_la_media_del_album():
+    """El defecto que esto corrige, con los números reales que lo destaparon.
+
+    Dos jugadores con los mismos 8 puntos: uno jugó las 8 jornadas y tres le salieron abstractas, el otro jugó
+    5 y ninguna. Salían a 1,00 y 1,60 — el segundo ganaba **por haber faltado tres días**, porque sus
+    abstractos no llegaban a existir. El marcador protege esto con un escenario propio desde el principio; el
+    álbum no lo tenía.
+    """
+    from album import album
+
+    dias = ["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07"]
+    filas = []
+    for indice, dia in enumerate(dias):
+        # Aparece todos los días: tres flores y dos abstractos.
+        filas.append(resultado("U_todos", 1700 + indice, FLOR if indice < 3 else ABSTRACTO, dia))
+        # Solo aparece cuando le sale bonito: tres flores y a casa.
+        if indice < 3:
+            filas.append(resultado("U_selectivo", 1700 + indice, FLOR, dia))
+        # Relleno para que **todos** los días alcancen la muestra mínima, también los que el selectivo se
+        # salta: con tres rellenos, esos días no contaban como jornada y el denominador salía 3 en vez de 5.
+        for otro in range(4):
+            filas.append(resultado(f"U_relleno{otro}", 1700 + indice, ABSTRACTO, dia))
+
+    carga = album(filas, "2026-08")
+    todos, selectivo = fila_de(carga, "U_todos"), fila_de(carga, "U_selectivo")
+
+    assert todos["puntos"] == selectivo["puntos"] == 3, "los mismos puntos"
+    assert todos["partidas"] == 5 and selectivo["partidas"] == 3, "y distinto número de partidas"
+    assert todos["denominador"] == selectivo["denominador"] == 5, "el denominador son las jornadas"
+    assert todos["media"] == selectivo["media"], (
+        f"faltar no puede mejorar la media: {todos['media']} vs {selectivo['media']}"
+    )
+
+
+# @scenarios la-temporada-cero-mide-contra-las-partidas-jugadas
+def test_la_temporada_cero_mide_contra_las_partidas_jugadas():
+    """Son 181 jornadas de dieciocho meses con gente entrando y saliendo.
+
+    Medir contra todas ordenaría por antigüedad en el grupo, no por quién dibuja mejor, y la temporada 0 se
+    rige por las reglas con las que se jugó.
+    """
+    from album import album
+
+    corta = partidas("U1", [FLOR] * 6)
+    larga = [resultado("U2", 1500 + i, FLOR) for i in range(20)]
+
+    carga = album(corta + larga, "0")
+
+    assert fila_de(carga, "U1")["denominador"] == 6, "sus partidas, no las 20 jornadas"
+    assert fila_de(carga, "U1")["media"] == fila_de(carga, "U2")["media"] == 1.0
