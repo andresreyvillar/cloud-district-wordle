@@ -38,7 +38,6 @@ MARGEN_SEMBRADO = 1.5
 MARGEN_NO_INSPIRADO = 2.0
 
 #: Media del día a partir de la cual resolver en dos o menos es «sospechoso».
-UMBRAL_DIA_EXIGENTE = 4.0
 RESOLVER_SOSPECHOSO = 2
 
 #: Cuántos comentarios como mucho. La sección es el remate del mensaje, no un muro.
@@ -90,11 +89,40 @@ class Hecho:
 
 
 #: Las frases de cada hecho. Varias por clave para que el mismo suceso no se cuente siempre igual.
+#: El berrinche vive en `refranero.py`, con el resto del diccionario del resumen, y se suma a las dos claves
+#: del sospechoso. Sus frases no concuerdan en número a propósito, así que valen para una persona y para
+#: varias sin necesitar variante propia.
+from refranero import BERRINCHE  # noqa: E402
+
 FRASES: dict[str, tuple[str, ...]] = {
+    # **No pueden dar por supuesto que el día fuera duro**: la condición se retiró, así que un «mientras el
+    # resto sufría» saldría también en una jornada fácil y sería mentira. Y hacen falta unas cuantas: esto
+    # aparece en el 29% de las jornadas, unas seis veces al mes.
     "sospechoso": (
-        "{jugador} lo ha sacado en {dato:.0f} un día en que el resto sufría. Sospechoso 🤨",
-        "Un {dato:.0f} de {jugador} en un día así… ¿alguien le ha visto el diccionario? 🤨",
-        "{jugador} ha resuelto en {dato:.0f} mientras el grupo se dejaba los intentos. Muy fuerte 🤨",
+        "{jugador} lo ha sacado en {dato:.0f}. Sospechoso 🤨",
+        "Un {dato:.0f} de {jugador}… ¿alguien le ha visto el diccionario? 🤨",
+        "{jugador} en {dato:.0f} intentos. Muy fuerte 🤨",
+        "{dato:.0f} intentos, {jugador}. Explícate 🤨",
+        "{jugador} ha resuelto en {dato:.0f} y se ha quedado tan anch@ 🤨",
+        "Nadie resuelve en {dato:.0f} por casualidad, {jugador} 🤨",
+        "{jugador} y su {dato:.0f}. Aquí hay gato encerrado 🤨",
+        "Un {dato:.0f} limpio de {jugador}. Demasiado limpio 🤨",
+        "{jugador} lo sabía. En {dato:.0f} no se acierta, se recuerda 🤨",
+        "{dato:.0f} de {jugador}: o es un genio o tiene el diccionario abierto 🤨",
+        "{jugador} ha ido directo en {dato:.0f}. Como quien ya conocía el camino 🤨",
+        "Enhorabuena a {jugador} por su {dato:.0f}, y que conste nuestra sospecha 🤨",
+        *BERRINCHE,
+    ),
+    # Cuando caen dos o tres en la misma jornada van en una línea, y el verbo cambia. Pasa en 14 de las 167
+    # jornadas del histórico, así que sin esta concordancia se publicaría «Ana y Bea lo ha sacado en 2».
+    "sospechoso-varios": (
+        "{jugador} lo han sacado en {dato:.0f}. Sospechoso 🤨",
+        "Un {dato:.0f} de {jugador}… ¿se han puesto de acuerdo? 🤨",
+        "{jugador} en {dato:.0f} intentos los dos. Muy fuerte 🤨",
+        "{dato:.0f} intentos, {jugador}. Explicaos 🤨",
+        "{jugador} han resuelto en {dato:.0f} y se han quedado tan anchos 🤨",
+        "Nadie resuelve en {dato:.0f} por casualidad, y {jugador} menos 🤨",
+        *BERRINCHE,
     ),
     "sembrado": (
         "{jugador} está sembrad@ hoy 🌟",
@@ -175,7 +203,12 @@ def hechos_de_la_jornada(resultados: list[dict], temporada: str, jornada: int) -
         jugador, score = _nombre(fila), fila["score"]
         if score == 1:
             encontrados.append(Hecho("clavada", jugador, score))
-        if score <= RESOLVER_SOSPECHOSO and media >= UMBRAL_DIA_EXIGENTE:
+        # **Sin condición sobre lo dura que fuera la jornada.** Antes hacía falta además un día exigente
+        # (media ≥ 4,0) y el aviso salía en el 6% de las jornadas: prácticamente nunca. Decisión del dueño:
+        # resolver en uno o dos es sospechoso de base. Medido sobre 167 jornadas, ahora sale en el 29% —una de
+        # cada tres— y bien repartido: el más «sospechoso» del histórico acumula 9 apariciones y el siguiente
+        # 8, así que la pulla no se ceba con nadie.
+        if score <= RESOLVER_SOSPECHOSO:
             encontrados.append(Hecho("sospechoso", jugador, score))
         if score <= media - MARGEN_SEMBRADO:
             encontrados.append(Hecho("sembrado", jugador, score))
@@ -264,21 +297,38 @@ def frase(
     return plantilla.format(jugador=jugador, dato=dato if dato is not None else 0)
 
 
+def nombres_unidos(nombres: list[str]) -> str:
+    """Los nombres como se leen: «Ana», «Ana y Bea», «Ana, Bea y Cris»."""
+    if len(nombres) <= 1:
+        return nombres[0] if nombres else ""
+    return f"{', '.join(nombres[:-1])} y {nombres[-1]}"
+
+
 def hechos_elegidos(resultados: list[dict], temporada: str, jornada: int) -> list[Hecho]:
     """Los hechos que caben en un mensaje: **uno por tipo** y como mucho `MAXIMO_COMENTARIOS`.
+
+    Cuando varias personas comparten el mismo hecho —dos sospechosos el mismo día, que pasa en 14 de las 167
+    jornadas del histórico— se **fusionan en uno** con los nombres unidos y `varios=True`, para que la frase
+    concuerde en plural. La fusión vive aquí y no en cada consumidor: antes esta función devolvía solo el
+    primero de cada clave, así que las variantes en plural eran código que nunca se ejecutaba.
 
     Vive aparte para que `resumen.py` use el mismo criterio al integrarlos en su lista. Cuando el resumen los
     tomaba de `hechos_de_la_jornada` directamente se saltaba este recorte, y el mensaje podía llevar siete.
     """
-    vistos: set[str] = set()
-    elegidos: list[Hecho] = []
+    grupos: dict[str, list[Hecho]] = {}
     for hecho in hechos_de_la_jornada(resultados, temporada, jornada):
-        if hecho.clave in vistos:
+        if hecho.clave not in grupos and len(grupos) == MAXIMO_COMENTARIOS:
             continue
-        vistos.add(hecho.clave)
-        elegidos.append(hecho)
-        if len(elegidos) == MAXIMO_COMENTARIOS:
-            break
+        grupos.setdefault(hecho.clave, []).append(hecho)
+
+    elegidos: list[Hecho] = []
+    for clave, hechos in grupos.items():
+        if len(hechos) == 1:
+            elegidos.append(hechos[0])
+            continue
+        elegidos.append(
+            Hecho(clave, nombres_unidos([h.jugador for h in hechos]), hechos[0].dato, varios=True)
+        )
     return elegidos
 
 

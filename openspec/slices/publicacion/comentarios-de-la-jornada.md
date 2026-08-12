@@ -44,9 +44,13 @@ dificultad de la jornada, que ya calcula `standings`.
 ## Comportamiento observable
 
 ### sospechoso-es-el-chiste-raro
-**WHEN** alguien resuelve en dos intentos o menos un día cuya media del grupo es alta
-**THEN** el resumen lo señala, y por su frecuencia medida (0,07 por jornada) sigue siendo la broma
-excepcional que era.
+**WHEN** alguien resuelve en dos intentos o menos, **sea el día que sea**
+**THEN** el resumen le lanza la pulla, sin exigir además que la jornada fuera dura.
+
+Antes hacía falta que la media del grupo fuera alta y el aviso salía en el 6% de las jornadas: casi nunca.
+Sin esa condición sale en el **29%** —una de cada tres— y reparte: quien más acumula en todo el histórico
+llega a nueve, así que no se ceba con nadie. La pulla no afirma que el día fuera duro, porque ya no lo
+comprueba.
 
 ### sembrado-y-no-inspirado-son-simetricos
 **WHEN** alguien queda muy por debajo o muy por encima de la media del día
