@@ -372,3 +372,30 @@ AUSENTES_DEL_DIA: tuple[str, ...] = (
     "Hoy faltan {jugador}{resto}.",
     "{jugador}{resto} se han tomado el día libre.",
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# El berrinche: la pulla al sospechoso en tono de rabieta.
+#
+# **Van sobre el resultado, nunca sobre la persona.** El grupo es real, el canal es de trabajo y estos
+# nombres son de compañeros identificables: la broma es «no me creo ese 2», no nada sobre quien lo hizo.
+#
+# Y están escritas **sin concordancia de número** —impersonales, o con el nombre suelto— a propósito: así la
+# misma frase sirve para un sospechoso y para tres sin necesidad de una variante en plural, que es donde este
+# diccionario ya se había equivocado una vez.
+# ─────────────────────────────────────────────────────────────────────────────
+
+BERRINCHE: tuple[str, ...] = (
+    "Un {dato:.0f} de {jugador}. UN {dato:.0f}. Y el resto aquí sufriendo 🤨",
+    "No me creo el {dato:.0f} de {jugador}. No me lo creo y no me lo vais a hacer creer 🤨",
+    "Exijo repetir la jornada. Y que se revise el diccionario de {jugador} 🤨",
+    "{jugador} otra vez arriba. Alguien tendría que hacer algo 🤨",
+    "Pues yo digo que el {dato:.0f} de {jugador} no vale. Lo digo yo y ya está 🤨",
+    "Un {dato:.0f} de {jugador}, y encima con esa cara de no haber roto un plato 🤨",
+    "Que conste en acta mi protesta por el {dato:.0f} de {jugador} 🤨",
+    "Reclamación formal al {dato:.0f} de {jugador}. Se admite a trámite 🤨",
+    "Yo también quiero un {dato:.0f} como el de {jugador}. ¿Dónde se pide? 🤨",
+    "El {dato:.0f} de {jugador}: aquí hay tongo y lo sabéis 🤨",
+    "Al VAR con el {dato:.0f} de {jugador} 🤨",
+    "Me niego a aceptar el {dato:.0f} de {jugador}. Y lo digo pataleando 🤨",
+)

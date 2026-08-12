@@ -42,13 +42,36 @@ def test_resolver_en_dos_un_dia_duro_se_senala():
 
 
 # @scenarios sospechoso-es-el-chiste-raro
-def test_resolver_en_dos_un_dia_facil_no_es_sospechoso():
-    """El chiste vive de la comparación: en un día fácil, un 2 no llama la atención."""
-    from comentarios import hechos_de_la_jornada
+def test_resolver_en_dos_es_sospechoso_aunque_el_dia_sea_facil():
+    """**Decisión del dueño**: resolver en uno o dos es sospechoso de base.
 
-    filas = jornada(1600, {"Ana": 2, "B": 2, "C": 3, "D": 2, "E": 3})
+    Antes hacía falta además un día duro y el aviso salía en el 6% de las jornadas — prácticamente nunca, y
+    por eso una jornada real con un 2 pasó sin pulla. Medido: sin esa condición sale en el 29%.
+    """
+    from comentarios import hechos_de_la_jornada, frase
 
-    assert not any(h.clave == "sospechoso" for h in hechos_de_la_jornada(filas, "0", 1600))
+    facil = jornada(1600, {"Ana": 2, "B": 2, "C": 3, "D": 2, "E": 3})
+    hechos = hechos_de_la_jornada(facil, "0", 1600)
+    sospechosos = [h for h in hechos if h.clave == "sospechoso"]
+
+    assert sospechosos, "un 2 recibe pulla aunque el día fuera fácil"
+    assert {h.jugador for h in sospechosos} == {"Ana", "B", "D"}
+
+    # Y la pulla **no puede afirmar que el día fuera duro**, porque ya no se comprueba.
+    for indice in range(20):
+        texto = frase("sospechoso", 1600 + indice, "Ana", 2.0)
+        assert "sufría" not in texto and "día así" not in texto, texto
+
+
+# @scenarios sospechoso-es-el-chiste-raro
+def test_varios_sospechosos_concuerdan_en_plural():
+    """Pasa en 14 de las 167 jornadas del histórico. Sin la variante, saldría «Ana y Bea lo ha sacado»."""
+    from comentarios import frase
+
+    for indice in range(12):
+        texto = frase("sospechoso", 1600 + indice, "Ana y Bea", 2.0, varios=True)
+        assert " lo ha sacado" not in texto, texto
+        assert "Ana y Bea" in texto
 
 
 # @scenarios sembrado-y-no-inspirado-son-simetricos
@@ -326,3 +349,65 @@ def test_muchos_ausentes_no_se_nombran_uno_por_uno():
     pocos = rajados(habituales - MAXIMO_AUSENTES_NOMBRADOS)
     assert pocos, "con dos ausentes la pulla sí sale, o el detector estaría muerto"
     assert pocos[0].jugador.count(",") == MAXIMO_AUSENTES_NOMBRADOS - 1
+
+
+# @scenarios un-hecho-no-se-repite-en-dos-comentarios
+def test_los_que_comparten_hecho_se_fusionan_en_una_linea():
+    """Dos sospechosos el mismo día son **una** línea en plural, no dos idénticas ni una sola persona.
+
+    `hechos_elegidos` devolvía solo el primero de cada clave, así que las variantes en plural del diccionario
+    eran código que nunca se ejecutaba y el segundo sospechoso desaparecía del mensaje sin dejar rastro.
+    """
+    from comentarios import hechos_elegidos
+
+    filas = jornada(1600, {"Ana": 2, "Bea": 2, "C": 4, "D": 5, "E": 5})
+
+    sospechosos = [h for h in hechos_elegidos(filas, "0", 1600) if h.clave == "sospechoso"]
+
+    assert len(sospechosos) == 1, "una sola línea"
+    assert sospechosos[0].varios is True, "y en plural"
+    assert sospechosos[0].jugador == "Ana y Bea", sospechosos[0].jugador
+
+
+# @scenarios un-hecho-no-se-repite-en-dos-comentarios
+def test_el_tope_de_comentarios_cuenta_tipos_y_no_personas():
+    """El tope limita cuántos temas se comentan, no a cuánta gente se nombra dentro de cada uno."""
+    from comentarios import MAXIMO_COMENTARIOS, hechos_elegidos
+
+    filas = jornada(1600, {"Ana": 2, "Bea": 2, "C": 2, "D": 6, "E": 6})
+
+    elegidos = hechos_elegidos(filas, "0", 1600)
+
+    assert len({h.clave for h in elegidos}) <= MAXIMO_COMENTARIOS
+    assert len(elegidos) == len({h.clave for h in elegidos}), "un hecho por tipo tras la fusión"
+
+
+# @scenarios sospechoso-es-el-chiste-raro
+def test_el_berrinche_sirve_para_uno_y_para_varios():
+    """Las frases de berrinche están escritas **sin concordancia de número** a propósito.
+
+    Así valen para un sospechoso y para tres sin necesitar variante en plural — que es donde este diccionario
+    ya se equivocó una vez, publicando «Ana y Bea lo ha sacado en 2».
+    """
+    from comentarios import FRASES
+    from refranero import BERRINCHE
+
+    for registro in ("sospechoso", "sospechoso-varios"):
+        assert all(f in FRASES[registro] for f in BERRINCHE), f"el berrinche falta en {registro}"
+
+    for plantilla in BERRINCHE:
+        # Un verbo conjugado delataría que la frase asume cuántos son.
+        assert " ha " not in plantilla and " han " not in plantilla, plantilla
+        # Y tiene que quedar bien con un sujeto plural.
+        texto = plantilla.format(jugador="Ana y Bea", dato=2.0)
+        assert "{" not in texto and "}" not in texto, texto
+
+
+def test_ninguna_frase_deja_huecos_sin_rellenar():
+    """Un `{jugador}` mal escrito saldría literal en el canal, delante de todo el grupo."""
+    from comentarios import FRASES
+
+    for clave, plantillas in FRASES.items():
+        for plantilla in plantillas:
+            texto = plantilla.format(jugador="Ana", dato=2.0)
+            assert "{" not in texto and "}" not in texto, f"{clave}: {plantilla}"
