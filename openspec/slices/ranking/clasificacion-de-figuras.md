@@ -89,6 +89,16 @@ el recuento absoluto, de modo que quien juega más no gana por jugar más.
 **WHEN** una partida sale abstracta
 **THEN** aparece en el recuento del jugador y **rebaja** su tasa, en lugar de desaparecer del álbum.
 
+### faltar-no-mejora-la-media-del-album
+**WHEN** dos jugadores suman los mismos puntos y uno ha jugado menos jornadas que el otro
+**THEN** su puntuación es la misma: la media se mide contra **las jornadas de la temporada**, no contra las
+partidas que cada uno jugó, así que no aparecer no puede mejorar el puesto.
+
+### la-temporada-cero-mide-contra-las-partidas-jugadas
+**WHEN** el álbum se calcula sobre la temporada 0
+**THEN** el denominador son las partidas jugadas, porque son dieciocho meses en los que la gente entró y
+salió del grupo y medir contra todas sus jornadas ordenaría por antigüedad y no por dibujo.
+
 ### minimo-de-partidas-para-clasificar
 **WHEN** un jugador tiene menos partidas clasificadas que el mínimo
 **THEN** su álbum se publica igual pero sin puesto, y no puede encabezar el ranking de belleza.

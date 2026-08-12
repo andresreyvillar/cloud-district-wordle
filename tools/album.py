@@ -18,7 +18,7 @@ from __future__ import annotations
 from collections import Counter
 
 from figures import ABSTRACTO, FIGURAS, VOCABULARIO, figura
-from seasons import resultados_de_temporada
+from seasons import TEMPORADA_CERO, resultados_de_temporada
 
 #: Partidas clasificadas que hacen falta para tener puesto en el ranking de belleza.
 #:
@@ -74,6 +74,25 @@ def categorias() -> list[dict]:
     ]
 
 
+#: Jornadas que se usan de denominador, por temporada.
+#:
+#: **Faltar no puede mejorar la media**, que es la propiedad que el marcador protege con un escenario propio
+#: (`faltar-nunca-mejora-la-media`) y que el álbum no tenía. Medido el 2026-08-12: dos jugadores con los
+#: mismos 8 puntos, uno tras jugar las 8 jornadas con 3 abstractos y otro tras jugar 5 sin ninguno, salían a
+#: 1,00 y 1,60. El segundo ganaba **por haber faltado tres días**: sus abstractos no existían porque no llegó
+#: a jugarlos. Quien juega solo los días que le sale algo bonito tenía media perfecta.
+#:
+#: Con las jornadas de la temporada como denominador, los dos quedan a 1,00: hicieron lo mismo, y uno además
+#: apareció todos los días.
+#:
+#: **La temporada 0 se queda con las partidas jugadas.** Son 181 jornadas de dieciocho meses en las que la
+#: gente entró y salió del grupo; medir contra 181 no dice quién dibuja mejor, dice quién estaba desde el
+#: principio. Es coherente con su propia regla: la temporada 0 se rige por lo que estaba en vigor cuando se
+#: jugó. Decisión del dueño el 2026-08-12.
+def _denominador(temporada: str, jornadas: int, partidas: int) -> int:
+    return partidas if temporada == TEMPORADA_CERO else max(jornadas, partidas)
+
+
 def album(resultados: list[dict], temporada: str) -> dict:
     """El álbum de una temporada: reparto, cobertura y una fila por jugador con algo que clasificar.
 
@@ -106,7 +125,14 @@ def album(resultados: list[dict], temporada: str) -> dict:
         "sin_patron": sin_patron,
         "reparto": {categoria: reparto[categoria] for categoria in CATEGORIAS},
         "categorias": categorias(),
-        "jugadores": _ranking(recuentos, nombre_de, _puntuacion_general(resultados, temporada)),
+        "jornadas": len({fila["wordle_id"] for fila in cuentan}),
+        "jugadores": _ranking(
+            recuentos,
+            nombre_de,
+            _puntuacion_general(resultados, temporada),
+            temporada,
+            len({fila["wordle_id"] for fila in cuentan}),
+        ),
         "ultima_jornada": _ultima_jornada(resultados, temporada),
     }
 
@@ -157,6 +183,8 @@ def _ranking(
     recuentos: dict[str, Counter[str]],
     nombre_de: dict[str, str],
     puntuacion: dict[str, float],
+    temporada: str = "",
+    jornadas: int = 0,
 ) -> list[dict]:
     """Las filas del álbum, ordenadas.
 
@@ -180,6 +208,7 @@ def _ranking(
     filas: list[dict] = []
     for jugador, cuenta in recuentos.items():
         partidas = sum(cuenta.values())
+        denominador = _denominador(temporada, jornadas, partidas)
         figuras = sum(cuenta[categoria] for categoria in FIGURAS)
         puntos = sum(PUNTOS[categoria] * cuenta[categoria] for categoria in CATEGORIAS)
         filas.append(
@@ -189,10 +218,13 @@ def _ranking(
                 "partidas": partidas,
                 "figuras": figuras,
                 "puntos": puntos,
-                # **Por partida, no en total.** Es lo que impide que el ranking lo gane quien más juega:
-                # ese criterio se midió al elegirlo y corona a quien más partidas acumula, que es un
-                # ranking de asistencia con otro nombre.
-                "media": round(puntos / partidas, PRECISION),
+                #: Las jornadas contra las que se mide. En una temporada mensual son las de la temporada,
+                #: para que faltar no mejore la media; en la 0, las partidas jugadas.
+                "denominador": denominador,
+                # **Por jornada de la temporada, no por partida jugada ni en total.** El total corona a quien
+                # más juega —un ranking de asistencia con otro nombre— y por partida jugada premiaba a quien
+                # faltaba: sus abstractos no llegaban a existir. Ver `_denominador`.
+                "media": round(puntos / denominador, PRECISION),
                 "tasa": round(figuras / partidas, PRECISION),
                 "recuento": {categoria: cuenta[categoria] for categoria in CATEGORIAS},
                 "clasificado": partidas >= MINIMO_PARA_EL_ALBUM,

@@ -399,3 +399,62 @@ BERRINCHE: tuple[str, ...] = (
     "Al VAR con el {dato:.0f} de {jugador} 🤨",
     "Me niego a aceptar el {dato:.0f} de {jugador}. Y lo digo pataleando 🤨",
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ESTADO DE ÁNIMO DE LA JORNADA
+#
+# El problema que resuelve: cada bloque del mensaje elegía su frase de su propio registro sin saber qué
+# habían elegido los demás, así que un día salía una línea sarcástica, otra celebratoria y un cierre
+# resignado. El mensaje sonaba a tres personas distintas. Ahora **una jornada tiene un estado de ánimo** y
+# todas las piezas con tono se sacan de él.
+#
+# **Solo las piezas con tono varían por estado.** Sub-agrupar los quince registros por cinco estados serían
+# setenta y cinco grupos y unas mil frases: no es realista y envejecería mal. Los hechos —mejores, dibujo,
+# horarios, ausentes— se quedan neutros, y el tono lo pone el conector que los encadena.
+#
+# Tres estados reutilizan los registros de día que ya existían, porque su tono coincide.
+# ─────────────────────────────────────────────────────────────────────────────
+
+INCREDULIDAD = "incredulidad"
+EPICA = "epica"
+DERROTA = "derrota"
+RUTINA = "rutina"
+FIESTA = "fiesta"
+
+#: La frase que cierra el comentario, por estado.
+CIERRE: dict[str, tuple[str, ...]] = {
+    INCREDULIDAD: (
+        "En {dato:.0f} intentos no se acierta: se recuerda.",
+        "Yo esto lo dejo aquí y que cada uno piense lo que quiera.",
+        "Un día alguien nos explicará cómo se hace un {dato:.0f}.",
+        "Nadie resuelve en {dato:.0f} por casualidad. En fin.",
+        "Que quede constancia de nuestra perplejidad colectiva.",
+        "Seguiremos investigando.",
+        "La comisión de investigación se reúne mañana.",
+        "Y así, sin más explicaciones, se cerró la jornada.",
+    ),
+    EPICA: (
+        "Días como hoy son los que se cuentan luego.",
+        "La palabra se defendió, pero no le sirvió de nada.",
+        "Hoy hubo partido de verdad.",
+        "Al que ha desplazado la montaña hay que reconocérselo.",
+        "Cáete siete veces, levántate ocho. Hoy alguien se levantó.",
+        "De estas jornadas se sale con galones.",
+        "Hoy la palabra encontró la horma de su zapato.",
+        "Quien la sigue la consigue, y hoy se ha visto.",
+    ),
+    DERROTA: DIA_DURO,
+    RUTINA: DIA_NORMAL,
+    FIESTA: DIA_FACIL,
+}
+
+#: Conectores para encadenar la segunda línea con la primera cuando hablan de lo mismo. Es lo que convierte
+#: una lista de datos en un narrador con una idea en la cabeza.
+CONECTORES: dict[str, tuple[str, ...]] = {
+    INCREDULIDAD: ("Y encima", "Y por si faltaba algo", "Y ya que estamos", "Faltaba decir que"),
+    EPICA: ("Y además", "Y no solo eso", "Para colmo", "Y encima"),
+    DERROTA: ("Y aun así", "Al menos", "Eso sí", "Por lo menos"),
+    RUTINA: ("Además", "Y", "También", "Por cierto"),
+    FIESTA: ("Y encima", "Y además", "Y de paso", "Y para redondearlo"),
+}

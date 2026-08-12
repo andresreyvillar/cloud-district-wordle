@@ -375,20 +375,21 @@ def test_el_registro_de_la_linea_lo_decide_la_diferencia_con_la_temporada():
         for i in range(5):  # la muestra mínima, o no habría línea que comprobar
             filas += historia(f"J{i}", 8, score=historico)
             hoy.append(resultado(f"J{i}", HOY, hoy_nota, LORO))
-        return bloque_la_jornada(filas + hoy, "0", HOY)
+        bloque = bloque_la_jornada(filas + hoy, "0", HOY)
+        # **Se busca la línea, no se asume su posición**: el orden del bloque lo decide la relevancia, así que
+        # la comparación con la temporada ya no es necesariamente la primera.
+        return next(l for l in bloque.splitlines() if "de media" in l).removeprefix("• ")
 
     # **Contra el registro, no contra una palabra.** «difícil» solo está en una de las tres frases del
     # registro duro, así que la aserción literal fallaba con las otras dos según rotara el ciclo — y habría
     # vuelto a fallar al editar el diccionario, que está hecho para editarse.
-    duro = jornada_de(historico=3, hoy_nota=6)
-    from refranero import DIFICULTAD_MUCHO_MAS_DURA
-    plantillas = [f.split("{")[0] for f in DIFICULTAD_MUCHO_MAS_DURA]
-    assert any(duro.splitlines()[0].removeprefix("• ").startswith(p) for p in plantillas), duro
+    from refranero import DIFICULTAD_MUCHO_MAS_DURA, DIFICULTAD_MUCHO_MAS_FACIL
 
-    from refranero import DIFICULTAD_MUCHO_MAS_FACIL
+    duro = jornada_de(historico=3, hoy_nota=6)
+    assert any(duro.startswith(f.split("{")[0]) for f in DIFICULTAD_MUCHO_MAS_DURA), duro
+
     facil = jornada_de(historico=5, hoy_nota=2)
-    plantillas = [f.split("{")[0] for f in DIFICULTAD_MUCHO_MAS_FACIL]
-    assert any(facil.splitlines()[0].removeprefix("• ").startswith(p) for p in plantillas), facil
+    assert any(facil.startswith(f.split("{")[0]) for f in DIFICULTAD_MUCHO_MAS_FACIL), facil
 
 
 # @scenarios quien-abre-por-costumbre-se-distingue-de-quien-abre-un-dia
@@ -484,7 +485,105 @@ def test_la_linea_publicada_usa_la_referencia_correcta():
     filas += [resultado("J4", 1500 + j, 2, LORO) for j in range(8)]
     hoy = [resultado(f"J{i}", HOY, 3, LORO) for i in range(5)]
 
+    bloque = bloque_la_jornada(filas + hoy, "0", HOY)
+    linea = next(l for l in bloque.splitlines() if "de media" in l)
+
+    assert "2,11" in linea, f"la referencia publicada es la de las jornadas: {linea}"
+    assert "2,68" not in linea, f"no la media imputada del marcador: {linea}"
+
+
+# @scenarios el-mensaje-tiene-una-sola-voz
+def test_el_estado_de_animo_sale_de_los_datos_y_gobierna_las_piezas_con_tono():
+    """El mensaje sonaba a tres personas: cada pieza elegía de su propio registro sin mirar a las demás."""
+    from refranero import CIERRE, CONECTORES, DERROTA, EPICA, FIESTA, INCREDULIDAD, RUTINA
+    from voz import estado_de_animo
+
+    # Un 1 o un 2 manda sobre todo lo demás: es de lo único que se va a hablar.
+    assert estado_de_animo(3.0, 4.5, 2) == INCREDULIDAD, "aunque el día fuera fácil"
+    # Día duro: épica si alguien destaca **sobre la dificultad de hoy**, derrota si no.
+    assert estado_de_animo(5.2, 4.3, 3) == EPICA
+    assert estado_de_animo(5.2, 4.3, 5) == DERROTA
+    assert estado_de_animo(3.0, 4.3, 3) == FIESTA
+    assert estado_de_animo(4.3, 4.3, 4) == RUTINA
+    # Sin muestra no se afirma un estado: se cae a rutina.
+    assert estado_de_animo(None, None, 4) == RUTINA
+
+    for estado in (INCREDULIDAD, EPICA, DERROTA, RUTINA, FIESTA):
+        assert CIERRE[estado] and CONECTORES[estado], f"{estado} sin frases"
+
+
+# @scenarios lo-mas-notable-abre-el-comentario
+def test_la_pulla_del_sospechoso_abre_el_comentario():
+    """Con el orden fijo anterior, el titular del día aparecía en la séptima línea."""
+    from resumen import bloque_la_jornada
+
+    filas, hoy = [], []
+    for i, nota in enumerate((2, 4, 4, 5, 5)):
+        filas += historia(f"J{i}", 8, score=4)
+        hoy.append(resultado(f"J{i}", HOY, nota, LORO))
+
     primera = bloque_la_jornada(filas + hoy, "0", HOY).splitlines()[0]
 
-    assert "2,11" in primera, f"la referencia publicada es la de las jornadas: {primera}"
-    assert "2,68" not in primera, f"no la media imputada del marcador: {primera}"
+    assert "J0" in primera, f"quien resolvió en 2 abre: {primera}"
+    assert "🤨" in primera, f"y con la pulla, no con el dato: {primera}"
+
+
+# @scenarios lo-mas-notable-abre-el-comentario
+def test_un_hecho_menor_no_se_cuela_por_delante_de_los_mejores():
+    """**El caso que distingue el orden del de inserción.** Los hechos se construyen antes que las demás
+    piezas, así que sin ordenar por relevancia cualquiera de ellos abriría el comentario. Un «día fino» no es
+    el titular: los mejores del día sí. Lo cazó la prueba de mutación.
+    """
+    from resumen import bloque_la_jornada
+
+    # Nadie baja de 3, así que no hay pulla; y J0 saca 3 en un día de media 5, que es «sembrado».
+    filas, hoy = [], []
+    for i, nota in enumerate((3, 5, 5, 6, 6)):
+        filas += historia(f"J{i}", 8, score=5)
+        hoy.append(resultado(f"J{i}", HOY, nota, LORO))
+
+    lineas = bloque_la_jornada(filas + hoy, "0", HOY).splitlines()
+
+    assert "🌟" not in lineas[0], f"un «día fino» no abre el comentario: {lineas[0]}"
+    assert any("🌟" in l for l in lineas), "pero sí sale, más abajo"
+
+
+# @scenarios la-segunda-linea-se-encadena-con-la-primera
+def test_la_segunda_linea_se_encadena_sin_romper_los_nombres():
+    """Minusculizar a ciegas publicaba «Faltaba decir que claire se lleva la jornada».
+
+    El nombre de una compañera en minúscula es justo el detalle que delata que el texto lo escribe una
+    máquina.
+    """
+    from refranero import CONECTORES, INCREDULIDAD
+    from resumen import bloque_la_jornada
+
+    filas, hoy = [], []
+    for i, nota in enumerate((2, 4, 4, 5, 5)):
+        filas += historia(f"Nombre{i}", 8, score=4)
+        hoy.append(resultado(f"Nombre{i}", HOY, nota, LORO))
+
+    lineas = bloque_la_jornada(filas + hoy, "0", HOY).splitlines()
+    segunda = lineas[1].removeprefix("• ")
+
+    assert any(segunda.startswith(c) for c in CONECTORES[INCREDULIDAD]), segunda
+    assert "nombre0" not in segunda, f"el nombre propio conserva su mayúscula: {segunda}"
+    assert "Nombre0" in segunda, segunda
+
+
+def test_el_encadenado_baja_la_inicial_salvo_en_los_nombres():
+    """Sobre la función, porque el caso integrado depende de qué frase rote ese día.
+
+    «Hoy ha ido rodada» tras un conector tiene que ser «y hoy ha ido rodada», pero «Claire se lleva la
+    jornada» no puede convertirse en «claire»: el nombre de una compañera en minúscula delata que el texto lo
+    escribe una máquina.
+    """
+    from resumen import _en_minuscula
+
+    nombres = ["Claire", "Andrés R."]
+
+    assert _en_minuscula("Hoy ha ido rodada.", nombres) == "hoy ha ido rodada."
+    assert _en_minuscula("Claire se lleva la jornada.", nombres) == "Claire se lleva la jornada."
+    assert _en_minuscula("Andrés R. firma el dibujo.", nombres).startswith("Andrés R."), (
+        "un nombre con punto dentro tampoco se toca"
+    )

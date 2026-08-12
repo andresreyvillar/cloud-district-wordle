@@ -48,6 +48,17 @@ TOPE_DE_ANADIDOS = 3
 #: Fallos que hacen que una partida no cuente como resuelta.
 FALLO = 7
 
+#: Resolver en esto o menos vuelca la jornada a incredulidad. Es el mismo umbral que la pulla del sospechoso
+#: (`comentarios.RESOLVER_SOSPECHOSO`), y se declara aquí para no importar el módulo entero por un número.
+RESOLVER_SOSPECHOSO = 2
+
+#: Cuánto hay que mejorar la media de un día duro para que la jornada sea épica en lugar de una derrota.
+MARGEN_HAZANA = 1.5
+
+#: Separación de la media de la temporada que hace notable una jornada. Igual que en `resumen.DELTA_NOTABLE`,
+#: medido sobre 166 jornadas.
+DELTA_NOTABLE = 0.40
+
 
 def con_nombre(plantilla: str, jugador: str) -> str:
     """La plantilla con el nombre puesto, sin puntuación duplicada.
@@ -73,7 +84,11 @@ def _del_ciclo(frases: tuple[str, ...], jornada: int) -> str:
 
 
 def frase_del_dia(dificultad: float, jornada: int) -> str:
-    """La frase que resume la jornada, con el registro que le corresponde a lo dura que fue."""
+    """La frase que resume la jornada, con el registro que le corresponde a lo dura que fue.
+
+    Se mantiene para quien solo quiera el registro por dificultad. El resumen usa `cierre`, que lo elige por
+    el estado de ánimo de la jornada — así todas las piezas con tono del mensaje vienen del mismo sitio.
+    """
     if dificultad <= DIA_SUAVE_HASTA:
         registro = DIA_FACIL
     elif dificultad >= DIA_DURO_DESDE:
@@ -81,6 +96,50 @@ def frase_del_dia(dificultad: float, jornada: int) -> str:
     else:
         registro = DIA_NORMAL
     return _del_ciclo(registro, jornada)
+
+
+def estado_de_animo(dificultad: float | None, media: float | None, mejor: int | None) -> str:
+    """El estado de ánimo de una jornada, derivado de los datos y **sin azar**.
+
+    Es lo que da voz única al mensaje: todas las piezas con tono —la pulla, el cierre, los conectores— se
+    sacan del mismo estado, en lugar de que cada bloque eligiera del suyo sin saber qué habían elegido los
+    demás. El mensaje sonaba a tres personas distintas escribiendo por turnos.
+
+    El orden de las comprobaciones es el criterio: **lo más llamativo manda**. Un uno o un dos convierte la
+    jornada en incredulidad aunque el día fuera fácil, porque es de lo único que se va a hablar.
+    """
+    from refranero import DERROTA, EPICA, FIESTA, INCREDULIDAD, RUTINA
+
+    if mejor is not None and mejor <= RESOLVER_SOSPECHOSO:
+        return INCREDULIDAD
+    if dificultad is None or media is None:
+        return RUTINA
+
+    delta = dificultad - media
+    if delta >= DELTA_NOTABLE:
+        # Día duro: épico si alguien lo sacó bien de todas formas, derrota si no. La hazaña se mide contra
+        # **la dificultad del día**, no contra la media de la temporada: lo épico es destacar sobre lo que
+        # sufrió el grupo hoy, y comparar con la temporada hacía que un 3 en un día de 5,2 saliera derrota.
+        return EPICA if mejor is not None and mejor <= dificultad - MARGEN_HAZANA else DERROTA
+    if delta <= -DELTA_NOTABLE:
+        return FIESTA
+    return RUTINA
+
+
+def cierre(estado: str, jornada: int, dato: float | None = None) -> str:
+    """La frase que cierra el comentario, del registro del estado de ánimo."""
+    from refranero import CIERRE
+
+    plantilla = _del_ciclo(CIERRE.get(estado) or CIERRE["rutina"], jornada)
+    return plantilla.format(dato=dato) if "{dato" in plantilla else plantilla
+
+
+def conector(estado: str, jornada: int) -> str:
+    """El conector que encadena la segunda línea con la primera, del registro del estado."""
+    from refranero import CONECTORES
+
+    opciones = CONECTORES.get(estado) or CONECTORES["rutina"]
+    return opciones[jornada % len(opciones)]
 
 
 def pullas_de_lideres(lider_marcador: str | None, lider_album: str | None, jornada: int) -> dict[str, str]:
