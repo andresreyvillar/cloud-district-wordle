@@ -307,15 +307,25 @@ def _linea_de_ausentes(senales, habituales: list[str], nombres: dict[str, str], 
 
 
 def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, senales=None) -> str:
-    """La jornada contada, en formato de lista.
+    """La jornada contada, en formato de lista y **con una sola voz**.
 
-    **Lista y no párrafo, con contenido de comentario.** Los bloques con emoji-título de antes rotulaban un
-    dato (`🏆 Jugador del día: X`); un párrafo cuenta la jornada pero hay que leerlo entero. Las viñetas
-    conservan lo que se lee de un vistazo en la notificación del móvil y dicen lo que pasó.
+    Tres reglas la sostienen, y las tres salieron de leer el mensaje en conjunto:
+
+    **Un estado de ánimo por jornada.** Antes cada pieza elegía su frase de su propio registro sin saber qué
+    habían elegido las demás, así que salía una línea sarcástica, otra celebratoria y un cierre resignado: el
+    mensaje sonaba a tres personas escribiendo por turnos. Ahora la pulla, el conector y el cierre vienen del
+    mismo estado.
+
+    **Lo más notable abre.** El orden era fijo —dificultad, mejores, dibujo, horarios, ausentes— y el titular
+    del día podía aparecer en la séptima línea. Manda la misma tabla de notabilidad que ya usan los
+    comentarios.
+
+    **La segunda línea se encadena con la primera** si habla de la misma persona, con un conector del estado.
+    Es lo que convierte una lista de datos en alguien con una idea en la cabeza.
     """
-    from comentarios import dificultad
+    from comentarios import dificultad, frase as frase_de_hecho, hechos_elegidos
     from refranero import DIBUJO_DEL_DIA, MEJORES_DEL_DIA
-    from voz import _del_ciclo
+    from voz import _del_ciclo, conector, estado_de_animo
 
     del_dia = _del_dia(resultados, jornada)
     if not del_dia:
@@ -324,64 +334,97 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
     tabla = clasificacion(resultados, temporada)
     con_puesto = [fila for fila in tabla if fila.get("posicion")]
     nombres = {fila["slack_user_id"]: _nombre(fila) for fila in resultados}
-    lineas: list[str] = []
 
     hoy = dificultad(del_dia)
     media = _media_de_dificultades(resultados, temporada)
-    if hoy is not None and media is not None:
-        lineas.append(_linea_de_dificultad(hoy, media, jornada))
-
     mejor = min(fila["score"] for fila in del_dia)
+    estado = estado_de_animo(hoy, media, mejor)
+
     quienes = sorted({_nombre(fila) for fila in del_dia if fila["score"] == mejor})
-    lineas.append(
-        _del_ciclo(MEJORES_DEL_DIA, jornada).format(jugador=_y(quienes), intentos=mejor)
-    )
+    protagonistas = set(quienes)
+
+    # Las piezas, cada una con su prioridad. La pulla del sospechoso va primera cuando existe: es de lo único
+    # que el grupo va a hablar.
+    piezas: list[tuple[int, str, set[str]]] = []
+
+    for hecho in hechos_elegidos(resultados, temporada, jornada):
+        prioridad = 0 if hecho.clave in ("sospechoso", "clavada") else 4
+        texto = frase_de_hecho(hecho.clave, jornada, hecho.jugador, hecho.dato, hecho.varios)
+        piezas.append((prioridad, texto, {hecho.jugador}))
+
+    piezas.append((
+        1,
+        _del_ciclo(MEJORES_DEL_DIA, jornada).format(jugador=_y(quienes), intentos=mejor),
+        protagonistas,
+    ))
 
     obra = _obra_del_dia(resultados, temporada, jornada)
     if obra:
         fila, categoria = obra
         from figures import emoji
 
-        lineas.append(
+        piezas.append((
+            2,
             _del_ciclo(DIBUJO_DEL_DIA, jornada).format(
                 jugador=_nombre(fila), emoji=emoji(categoria), intentos=fila["score"]
-            )
-        )
+            ),
+            {_nombre(fila)},
+        ))
 
-    lineas += _linea_de_horarios(senales, nombres, jornada)
+    if hoy is not None and media is not None:
+        piezas.append((3, _linea_de_dificultad(hoy, media, jornada), set()))
+
+    for texto in _linea_de_horarios(senales, nombres, jornada):
+        piezas.append((5, texto, set()))
+
     ausentes = _linea_de_ausentes(
         senales, [fila["jugador"] for fila in con_puesto], nombres, jornada
     )
     if ausentes:
-        lineas.append(ausentes)
+        piezas.append((6, ausentes, set()))
 
-    # Los hechos notables y las menciones del canal entran **en esta misma lista**. Antes iban en un bloque
-    # aparte (`💬 La jornada`) y el mensaje acababa con dos listas de comentarios seguidas compitiendo por
-    # contar lo mismo.
-    from comentarios import frase as frase_de_hecho, hechos_elegidos
+    dichas = menciones_del_canal(senales, nombres, jornada)
+    for texto in dichas:
+        piezas.append((7, texto, set()))
+
+    piezas.sort(key=lambda pieza: pieza[0])
+    lineas = [texto for _, texto, _ in piezas]
+
+    # **El encadenado.** Solo la segunda línea, y solo si habla de quien abre: un conector delante de una
+    # línea que cambia de sujeto suena a error, no a narración.
+    if len(piezas) > 1 and piezas[1][2] & piezas[0][2]:
+        lineas[1] = f"{conector(estado, jornada)} {_en_minuscula(lineas[1], nombres.values())}"
+
+    return "\n".join(f"• {linea}" for linea in lineas)
+
+
+def _en_minuscula(frase: str, nombres) -> str:
+    """La frase con la inicial en minúscula, **salvo que empiece por un nombre propio**.
+
+    Tras un conector la oración continúa, así que «Hoy ha ido rodada» pasa a «y hoy ha ido rodada». Pero
+    minusculizar a ciegas publicaba «Faltaba decir que claire se lleva la jornada», y el nombre de una
+    compañera en minúscula es justo el detalle que delata que el texto lo escribe una máquina.
+    """
+    # **Se compara el arranque de la frase, no su primera palabra.** Media liga tiene nombre compuesto
+    # —«Andrés R.», «Dani Sanchez», «Juan (Kokuma)»— así que mirar solo la primera palabra dejaba fuera a
+    # todos ellos y les bajaba la inicial. Lo cazó el test del caso con punto dentro.
+    if any(nombre and frase.startswith(nombre) for nombre in nombres):
+        return frase
+    return frase[0].lower() + frase[1:]
+
+
+def menciones_del_canal(senales, nombres: dict[str, str], jornada: int) -> list[str]:
+    """Las menciones que salen del canal: aplausos y conversación. Los horarios tienen su propia línea."""
     from voz import menciones
-
-    # **Agrupados por clave.** Dos líneas «Día fino de X» y «Día fino de Y» seguidas se leen como un error de
-    # copia, igual que pasaba con los ausentes uno por línea.
-    # `hechos_elegidos` y no `hechos_de_la_jornada`: el primero aplica el tope de comentarios y el orden por
-    # notabilidad. Tomándolos en crudo, el mensaje podía llevar siete hechos.
-    por_clave: dict[str, list] = {}
-    for hecho in hechos_elegidos(resultados, temporada, jornada):
-        por_clave.setdefault(hecho.clave, []).append(hecho)
-    for clave, hechos in por_clave.items():
-        quien = _y([h.jugador for h in hechos])
-        lineas.append(frase_de_hecho(clave, jornada, quien, hechos[0].dato, len(hechos) > 1))
 
     dichas = menciones(
         reacciones=getattr(senales, "reacciones", None) or {},
         respuestas=getattr(senales, "respuestas", None) or {},
-        publicacion={},  # los horarios ya tienen su propia línea; aquí solo aplausos y conversación
+        publicacion={},
         nombres=nombres,
         jornada=jornada,
     )
-    lineas += [dichas[clave] for clave in ("aplaudido", "comentado") if clave in dichas]
-
-    return "\n".join(f"• {linea}" for linea in lineas)
+    return [dichas[clave] for clave in ("aplaudido", "comentado") if clave in dichas]
 
 
 def bloque_rivalidad(resultados: list[dict], temporada: str, jornada: int) -> str:
@@ -476,41 +519,37 @@ def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[
     que no dependen del canal. Un canal que no responde no puede impedir que se publique el marcador.
     """
     from comentarios import dificultad
-    from voz import anadidos, frase_del_dia, meme_del_dia, menciones, pullas_de_lideres
+    from voz import anadidos, cierre, estado_de_animo, meme_del_dia
 
     del_dia = _del_dia(resultados, jornada)
     if not del_dia:
         return []
 
-    nombres = {fila["slack_user_id"]: _nombre(fila) for fila in resultados}
     filas = [
         {"jugador": fila["slack_user_id"], "nombre": _nombre(fila), "intentos": fila["score"]}
         for fila in del_dia
     ]
 
-    tabla = clasificacion(resultados, temporada)
-    con_puesto = [fila for fila in tabla if fila.get("posicion")]
+    con_puesto = [fila for fila in clasificacion(resultados, temporada) if fila.get("posicion")]
     lider = con_puesto[0]["nombre"] if con_puesto else None
     ultimo = con_puesto[-1]["nombre"] if len(con_puesto) > 1 else None
+    mejor = min(fila["score"] for fila in del_dia)
 
-    del_album = album(resultados, temporada)["jugadores"]
-    clasificados = [fila for fila in del_album if fila.get("posicion")]
-    lider_album = clasificados[0]["nombre"] if clasificados else None
-
-    dichos = menciones(
-        reacciones=getattr(senales, "reacciones", {}) or {},
-        respuestas=getattr(senales, "respuestas", {}) or {},
-        publicacion=getattr(senales, "publicacion", {}) or {},
-        nombres=nombres,
-        habituales=[fila["jugador"] for fila in con_puesto],
-        jornada=jornada,
-    )
-
+    # Las menciones del canal **no salen aquí**: ya son viñetas de `bloque_la_jornada`. Estuvieron un rato en
+    # los dos sitios y «Ovación para Claire» se publicaba dos veces en el mismo mensaje.
     return [
         *anadidos(
             meme=meme_del_dia(filas, jornada, lider=lider, ultimo=ultimo),
             menciones={},
-            frase=frase_del_dia(dificultad(del_dia) or 0.0, jornada),
+            # **Del estado de ánimo**, no del registro de dificultad: es la última pieza con tono del mensaje
+            # y tiene que sonar a lo mismo que la pulla y el conector de arriba.
+            frase=cierre(
+                estado_de_animo(
+                    dificultad(del_dia), _media_de_dificultades(resultados, temporada), mejor
+                ),
+                jornada,
+                dato=mejor,
+            ),
         ),
     ]
 

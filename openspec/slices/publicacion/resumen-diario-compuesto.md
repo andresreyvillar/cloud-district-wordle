@@ -50,6 +50,19 @@ La jornada y la temporada se derivan **de los datos**, no del reloj (§10).
 **WHEN** se compone el resumen de una jornada
 **THEN** nombra a quien mejor puntuación hizo ese día, y si hay empate los nombra a todos.
 
+### el-mensaje-tiene-una-sola-voz
+**WHEN** se compone el resumen
+**THEN** las frases con tono —la pulla, el conector y el cierre— salen todas del mismo estado de ánimo de la
+jornada, derivado de los datos, en lugar de que cada bloque elija del suyo.
+
+### lo-mas-notable-abre-el-comentario
+**WHEN** la jornada tiene un hecho notable
+**THEN** ese hecho es la primera línea, y no queda enterrado detrás de los datos de rutina.
+
+### la-segunda-linea-se-encadena-con-la-primera
+**WHEN** la segunda línea habla de la misma persona que la primera
+**THEN** se une a ella con un conector del estado de ánimo; y si cambia de sujeto, no se encadena.
+
 ### la-jornada-se-cuenta-en-lugar-de-rotularse
 **WHEN** se compone el resumen
 **THEN** la jornada se cuenta en frases —cómo de dura fue comparada con la temporada, quiénes fueron los
