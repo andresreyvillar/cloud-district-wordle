@@ -587,3 +587,59 @@ def test_el_encadenado_baja_la_inicial_salvo_en_los_nombres():
     assert _en_minuscula("Andrés R. firma el dibujo.", nombres).startswith("Andrés R."), (
         "un nombre con punto dentro tampoco se toca"
     )
+
+
+# @scenarios el-mensaje-tiene-una-sola-voz
+def test_el_cierre_no_repite_la_linea_de_dificultad():
+    """Se publicó «Hoy la palabra se ha dejado querer» dos veces en el mismo mensaje: arriba con las cifras y
+    abajo sola. El cierre reutilizaba los registros de día, que comparten frase base con los de dificultad, y
+    el índice del ciclo es el mismo número de jornada en los dos, así que caían juntas.
+    """
+    from refranero import (
+        CIERRE,
+        DIFICULTAD_MAS_DURA,
+        DIFICULTAD_MAS_FACIL,
+        DIFICULTAD_MUCHO_MAS_DURA,
+        DIFICULTAD_MUCHO_MAS_FACIL,
+        DIFICULTAD_NORMAL,
+    )
+
+    de_dificultad = set().union(
+        DIFICULTAD_MUCHO_MAS_DURA,
+        DIFICULTAD_MAS_DURA,
+        DIFICULTAD_NORMAL,
+        DIFICULTAD_MAS_FACIL,
+        DIFICULTAD_MUCHO_MAS_FACIL,
+    )
+    # Comparadas por su arranque, no por el texto entero: la de dificultad lleva las cifras pegadas. Y
+    # **normalizando la puntuación final**: sin eso, «…dejado querer.» y «…dejado querer» no coincidían y la
+    # prueba de mutación colaba la frase repetida.
+    def base(frase: str) -> str:
+        return frase.split(":")[0].split("{")[0].strip().rstrip(".,;:").lower()
+
+    arranques = {base(f) for f in de_dificultad}
+
+    for estado, frases in CIERRE.items():
+        for frase in frases:
+            assert base(frase) not in arranques, f"{estado}: «{frase}» ya sale en la línea de dificultad"
+
+
+# @scenarios la-jornada-se-cuenta-en-lugar-de-rotularse
+def test_un_empate_multitudinario_no_nombra_a_todos():
+    """Siete de once empataron en 3 y la línea los nombraba a los siete: no distingue a nadie y crece con el
+    grupo, que es lo que ya se limitó en los ausentes.
+    """
+    from resumen import AUSENTES_NOMBRADOS, bloque_la_jornada
+
+    filas, hoy = [], []
+    for i in range(7):
+        filas += historia(f"J{i}", 8, score=4)
+        hoy.append(resultado(f"J{i}", HOY, 3, LORO))
+
+    linea = next(
+        l for l in bloque_la_jornada(filas + hoy, "0", HOY).splitlines()
+        if "mejores" in l or "bordado" in l or "Arriba del todo" in l or "se lleva la jornada" in l
+    )
+
+    assert "más" in linea, f"el resto se cuenta en lugar de listarse: {linea}"
+    assert linea.count(",") <= AUSENTES_NOMBRADOS, linea

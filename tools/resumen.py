@@ -176,8 +176,9 @@ VENTAJA_MINIMA = 0.15
 DELTA_NOTABLE = 0.40
 DELTA_MUCHO = 0.80
 
-#: Ausentes que se nombran antes de resumir el resto en «y otros N». Tres nombres se leen; doce son una lista
-#: de morosos y hacen crecer el mensaje con el grupo.
+#: Personas que se nombran en una línea antes de resumir el resto. Tres nombres se leen; siete o doce son una
+#: lista, hacen crecer el mensaje con el grupo y dejan de señalar a nadie. Se usa para los ausentes y para los
+#: mejores del día, que es donde el empate múltiple es lo normal.
 AUSENTES_NOMBRADOS = 3
 
 #: Fracción de jornadas abiertas que convierte «hoy ha madrugado» en «como de costumbre».
@@ -342,6 +343,14 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
 
     quienes = sorted({_nombre(fila) for fila in del_dia if fila["score"] == mejor})
     protagonistas = set(quienes)
+    # **Con tope.** Hoy empataron siete de once en 3 y la línea los nombraba a todos: nombrar a siete no
+    # distingue a nadie, y la línea crecía con el grupo — lo mismo que ya se limitó en los ausentes y en el
+    # empate de aplaudidos. Por encima del tope se nombran unos pocos y se cuenta el resto.
+    if len(quienes) > AUSENTES_NOMBRADOS:
+        visibles = quienes[:AUSENTES_NOMBRADOS]
+        quienes_texto = f"{', '.join(visibles)} y {len(quienes) - len(visibles)} más"
+    else:
+        quienes_texto = _y(quienes)
 
     # Las piezas, cada una con su prioridad. La pulla del sospechoso va primera cuando existe: es de lo único
     # que el grupo va a hablar.
@@ -354,7 +363,7 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
 
     piezas.append((
         1,
-        _del_ciclo(MEJORES_DEL_DIA, jornada).format(jugador=_y(quienes), intentos=mejor),
+        _del_ciclo(MEJORES_DEL_DIA, jornada).format(jugador=quienes_texto, intentos=mejor),
         protagonistas,
     ))
 

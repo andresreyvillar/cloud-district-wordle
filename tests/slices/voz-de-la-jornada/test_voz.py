@@ -208,3 +208,25 @@ def test_el_nombre_que_acaba_en_punto_no_duplica_la_puntuacion():
 
     assert con_nombre("Hoy se ha hablado de {jugador}.", "Andrés R.") == "Hoy se ha hablado de Andrés R."
     assert con_nombre("Manda {jugador} hoy.", "Cata") == "Manda Cata hoy."
+
+
+# @scenarios el-mas-aplaudido-se-nombra
+def test_las_menciones_del_canal_concuerdan_con_dos_personas():
+    """Se publicó «Lo de Gabi, Sandra ha levantado al canal»: sin la «y» y con el verbo en singular.
+
+    Las frases se reescribieron para que el verbo no dependa del número, así que una sola plantilla vale para
+    uno o para dos. Es lo que el resto del diccionario ya hacía y a las menciones no llegó.
+    """
+    from voz import menciones
+
+    dos = menciones(
+        reacciones={"U1": 5, "U2": 5}, respuestas={}, publicacion={},
+        nombres={"U1": "Gabi", "U2": "Sandra"}, jornada=1680,
+    )
+    uno = menciones(
+        reacciones={"U1": 5}, respuestas={}, publicacion={}, nombres={"U1": "Gabi"}, jornada=1680,
+    )
+
+    assert "Gabi y Sandra" in dos["aplaudido"], dos["aplaudido"]
+    assert ", Sandra" not in dos["aplaudido"], f"enumeración cortada: {dos['aplaudido']}"
+    assert "Gabi" in uno["aplaudido"]

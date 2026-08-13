@@ -154,21 +154,20 @@ MAS_APLAUDIDO: tuple[str, ...] = (
     "Lo de {jugador} ha levantado al canal.",
     "El grupo ha hablado, y ha dicho {jugador}.",
     "{jugador} se lleva los aplausos del día.",
-    "Nadie ha aplaudido más que a {jugador}.",
+    "Nadie ha recibido más reacciones que {jugador}.",
     "A {jugador} le han llovido las reacciones, y con motivo.",
-    "{jugador} ha hecho el ruido del día.",
+    "El ruido del día lo ha hecho {jugador}.",
     "Ovación para {jugador}.",
     "Hoy el canal se ha puesto en pie por {jugador}.",
 )
 
 MAS_COMENTADO: tuple[str, ...] = (
-    "{jugador} ha montado el hilo del día.",
+    "El hilo del día lo ha montado {jugador}.",
     "Lo de {jugador} ha dado más conversación que el propio Wordle.",
-    "{jugador} ha abierto debate, y el debate ha durado.",
+    "El debate del día lo ha abierto {jugador}.",
     "El tema del día lo ha puesto {jugador}.",
-    "{jugador} ha conseguido que el canal hable de otra cosa.",
     "Hoy se ha hablado sobre todo de {jugador}.",
-    "{jugador} lanzó la piedra y el hilo hizo el resto.",
+    "La piedra la ha lanzado {jugador}, y el hilo hizo el resto.",
     "Hilo del día, cortesía de {jugador}.",
 )
 
@@ -422,31 +421,81 @@ DERROTA = "derrota"
 RUTINA = "rutina"
 FIESTA = "fiesta"
 
-#: La frase que cierra el comentario, por estado.
+#: La frase que cierra el comentario, por estado de ánimo.
+#:
+#: **Cultura pop, no refranero.** Los proverbios siguen llevando la viñeta de dificultad, que es informativa;
+#: el cierre es el remate y tiene que tener gancho. Videojuegos, series, cine, televisión de aquí, deporte y
+#: tono de prensa rosa — el registro con el que este grupo habla de verdad.
+#:
+#: Y hay un beneficio de rebote: antes el cierre reutilizaba los registros de día, que comparten frase base
+#: con las de la viñeta de dificultad, así que el mismo día podía publicar «Hoy la palabra se ha dejado
+#: querer» dos veces, arriba con cifras y abajo sola. Con registros propios eso no puede pasar.
+#:
+#: **Son alusiones escritas para esto, no citas.** Referenciar un fenómeno cultural o un título es libre;
+#: copiar el diálogo de un guion no lo es, y este repositorio es público. Tampoco se nombra a personas
+#: reales: el tono de prensa rosa se consigue con el registro —exclusiva, portada, tertulia— sin meter a
+#: nadie de verdad en una frase que se publica sola cada tarde.
 CIERRE: dict[str, tuple[str, ...]] = {
     INCREDULIDAD: (
-        "En {dato:.0f} intentos no se acierta: se recuerda.",
-        "Yo esto lo dejo aquí y que cada uno piense lo que quiera.",
-        "Un día alguien nos explicará cómo se hace un {dato:.0f}.",
-        "Nadie resuelve en {dato:.0f} por casualidad. En fin.",
-        "Que quede constancia de nuestra perplejidad colectiva.",
-        "Seguiremos investigando.",
-        "La comisión de investigación se reúne mañana.",
-        "Y así, sin más explicaciones, se cerró la jornada.",
+        "Esto tiene más trampa que un jefe final con truco activado.",
+        "Aquí hay gato encerrado, y pide expediente aparte.",
+        "Ni con el comodín del público se saca eso en {dato:.0f}.",
+        "Esto no lo aclara una tertulia de tarde entera.",
+        "Alguien ha jugado con el código de vidas infinitas.",
+        "Exclusiva a doble página y tertulia por la tarde.",
+        "Un {dato:.0f} así se recuerda, no se acierta. Y lo dejo aquí.",
+        "Esto merece portada, foto pequeña y muchas preguntas.",
+        "Modo dios, y sin haberlo escrito nadie.",
+        "Se abre investigación. Con música de misterio de fondo.",
     ),
     EPICA: (
-        "Días como hoy son los que se cuentan luego.",
-        "La palabra se defendió, pero no le sirvió de nada.",
-        "Hoy hubo partido de verdad.",
-        "Al que ha desplazado la montaña hay que reconocérselo.",
-        "Cáete siete veces, levántate ocho. Hoy alguien se levantó.",
-        "De estas jornadas se sale con galones.",
-        "Hoy la palabra encontró la horma de su zapato.",
-        "Quien la sigue la consigue, y hoy se ha visto.",
+        "Jefe final al primer intento y sin gastar una vida.",
+        "Esto ha sido remontada de las que se cuentan en el bar veinte años.",
+        "Nivel imposible, pasado a pelo.",
+        "De estas jornadas se sale con galones y con una cicatriz.",
+        "Épica de última jornada de liga, con el estadio de pie.",
+        "Ha sacado la espada de la piedra delante de todos.",
+        "Partida para el capítulo final de temporada.",
+        "Difícil activado, sin guardar y sin pestañear.",
+        "Esto va directo al vídeo de mejores momentos.",
+        "Hoy alguien ha hecho la jugada del año.",
     ),
-    DERROTA: DIA_DURO,
-    RUTINA: DIA_NORMAL,
-    FIESTA: DIA_FACIL,
+    DERROTA: (
+        "Game over y sin monedas para otra.",
+        "Vuelta al último punto de guardado, otra vez.",
+        "El nivel del agua nos ha ganado a todos.",
+        "Eliminados en la primera prueba, sin discusión.",
+        "Hoy la palabra ha jugado en casa y con el árbitro de su parte.",
+        "Capítulo de los que se ven entre los dedos.",
+        "Nos ha pasado por encima como un final de temporada mal explicado.",
+        "Hoy no había nivel fácil disponible.",
+        "Derrota gorda, de las que no se comentan en la oficina.",
+        "Aquí hemos venido a sufrir, y se ha cumplido.",
+    ),
+    RUTINA: (
+        "Capítulo de relleno, de los que no pasa nada.",
+        "Episodio de transición. La temporada sigue.",
+        "Hoy sin exclusiva: portada tranquila.",
+        "Nivel de tutorial, sin sobresaltos.",
+        "Día de los de repetir capítulo sin enterarte.",
+        "Jornada de las que no salen en el resumen del año.",
+        "Ni drama ni gloria: día de oficina.",
+        "Hoy la trama principal no ha avanzado.",
+        "Partido de media tabla, con poca gente en la grada.",
+        "Se archiva sin comentarios.",
+    ),
+    FIESTA: (
+        "Modo fácil con vidas infinitas.",
+        "Hoy la palabra venía con las instrucciones puestas.",
+        "Nivel bonus, y con monedas de regalo.",
+        "Hoy hasta el tutorial nos ha aplaudido.",
+        "Esto ha sido el chupito que invita la casa.",
+        "Jornada de las que suben la moral de la plantilla.",
+        "Hoy la palabra se ha entregado sin resistencia.",
+        "Día redondo, portada en color y sonrisas.",
+        "Victoria cómoda, de las de cambiar de canal en el minuto ochenta.",
+        "Hoy jugábamos con el marcador a favor desde el principio.",
+    ),
 }
 
 #: Conectores para encadenar la segunda línea con la primera cuando hablan de lo mismo. Es lo que convierte
