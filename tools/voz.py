@@ -186,7 +186,15 @@ def _los_de(valores: dict[str, int]) -> list[str]:
 
 
 def _nombres_de(jugadores: list[str], nombres: dict[str, str]) -> str:
-    return ", ".join(nombres.get(jugador, jugador) for jugador in jugadores)
+    """Los nombres como se leen: «Ana», «Ana y Bea».
+
+    Con una coma —«Lo de Gabi, Sandra ha levantado al canal»— la frase se lee como una enumeración cortada.
+    Y las frases se reescribieron para que el verbo no concuerde con el número: así una sola plantilla vale
+    para uno o para dos, que es lo que el resto del diccionario ya hacía y a las menciones no llegó.
+    """
+    from comentarios import nombres_unidos
+
+    return nombres_unidos([nombres.get(jugador, jugador) for jugador in jugadores])
 
 
 def menciones(
