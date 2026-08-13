@@ -109,8 +109,27 @@ La ausencia de políticas de escritura es lo que sostiene la seguridad del model
 clave publicable y con ella solo se puede leer. Cualquier política nueva de escritura rompería esa
 garantía y necesita su propio ADR.
 
-**Mecanismo de deploy: CONFIRMADO el 2026-08-07 contra Cloudflare.** La suposición de este ADR era
-falsa: no hay Workers Builds, y **el push a `main` no despliega nada**.
+> **SEGUNDA CORRECCIÓN, 2026-08-13. Vuelve a ser cierto que el push despliega.** Lo comprobado el 07 era
+> correcto entonces; entre esa fecha y hoy se conectó el build automático, y la tabla de abajo se quedó
+> describiendo un estado que ya no existe. Pruebas de hoy, todas del mismo día:
+>
+> | Comprobado | Cómo |
+> |---|---|
+> | `v2/favicon.svg` no existía; entró en el commit `c85d9cd` y **está sirviéndose en producción** | `curl` devuelve `200 image/svg+xml` |
+> | **Nadie ejecutó `wrangler` para publicarlo** | ninguna de las órdenes de la sesión lo invoca |
+> | **Ningún workflow despliega**, sigue siendo verdad | `grep -rl wrangler .github/workflows/` → vacío |
+> | El deploy tarda **segundos** tras el push: el primer `curl` devolvió el index y el siguiente el SVG | dos peticiones seguidas |
+>
+> **Consecuencia, y es la que importa: mergear a `main` SÍ publica la web.** Lo que se merge se ve. Se
+> mantiene todo lo demás del ADR.
+>
+> La lección no es la premisa, es el método: esto se ha escrito mal **dos veces**, primero suponiendo que
+> desplegaba y luego suponiendo que ya nunca lo haría. Un mecanismo de infraestructura no se documenta y se
+> olvida; se comprueba cada vez que se va a confiar en él.
+
+**Mecanismo de deploy: comprobado el 2026-08-07 contra Cloudflare, y ~~vigente~~ superado (ver la segunda
+corrección arriba).** Lo que se verificó ese día: no había Workers Builds, y el push a `main` no desplegaba
+nada.
 
 | Comprobado | Cómo |
 |---|---|

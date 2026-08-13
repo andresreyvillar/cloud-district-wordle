@@ -60,15 +60,16 @@ comprueba.
 **WHEN** un día difícil hay gente de la temporada que no publica
 **THEN** se comenta la ausencia, usando el **mismo umbral de día difícil** que las medallas y no uno propio.
 
-### el-rezagado-se-nota
-**WHEN** el último en publicar llega mucho después que el resto y con el día ya avanzado
-**THEN** se comenta; y **solo** si su hora de registro es utilizable, es decir si cae el mismo día que el
-puzzle — las filas del backfill se insertaron todas de golpe en otra fecha y su hora no dice nada.
+### el-rezagado-lo-comenta-quien-tiene-la-hora-buena
+**WHEN** el último en publicar llega mucho después que el resto
+**THEN** **no lo comenta este slice**: la hora de registro es la que el cron escribió por lotes cada hora, y
+sobre ella «el último en publicar» es casi ruido. Lo comenta [[voz-de-la-jornada]], que lee la hora real del
+canal.
 
 ### la-suerte-sospechosa-se-senala
-**WHEN** alguien acierta a la primera, o resuelve muy por debajo de la media de un día duro, o publica el
-último **y además** con una nota muy por encima de lo que ha hecho el grupo
-**THEN** el resumen lo señala, y cuanto más raro es el caso antes sale.
+**WHEN** alguien acierta a la primera, o resuelve en uno o dos intentos
+**THEN** el resumen lo señala, y cuanto más raro es el caso antes sale. Lo de publicar el último **y además**
+clavarla lo lleva [[voz-de-la-jornada]], que es donde está la hora de verdad.
 
 ### un-hecho-no-se-repite-en-dos-comentarios
 **WHEN** un jugador dispara más de un detector el mismo día

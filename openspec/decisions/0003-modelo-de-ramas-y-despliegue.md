@@ -12,7 +12,14 @@ afecta: [todas]
 En `pga-cms` el flujo es `feat/… → develop → main`, con `main` protegida y el despliegue por pipeline
 aprobado. Aquí la situación es distinta y hay que decirla con precisión:
 
-> **CORRECCIÓN del 2026-08-07.** La premisa «Cloudflare publica al push a `main`» **es falsa**, y se
+> **SEGUNDA CORRECCIÓN, 2026-08-13: mergear SÍ publica la web.** La corrección de abajo era cierta cuando se
+> escribió y ha dejado de serlo: el build automático está conectado y lo que se merge se ve en segundos.
+> Comprobado hoy —un asset nuevo apareció en producción sin que nadie ejecutase `wrangler`, y sigue sin haber
+> workflow de despliegue—, con las pruebas en el [ADR 0005](0005-hosting-y-convivencia-v1-v2.md). **Así que la
+> premisa original del ADR vuelve a valer: mergear es desplegar, y de las dos maneras** —los assets y los
+> cron—. Lo demás del ADR no depende de esto y se mantiene.
+>
+> **CORRECCIÓN del 2026-08-07 (ya superada).** La premisa «Cloudflare publica al push a `main`» **es falsa**, y se
 > escribió sin comprobarla. Verificado contra Cloudflare: no hay Workers Builds, ningún workflow
 > despliega, y los diez despliegues del Worker son `wrangler deploy` lanzados a mano. Lo que sí corre
 > desde `main` son los dos cron de GitHub Actions. Es decir: **mergear cambia lo que el pipeline ejecuta

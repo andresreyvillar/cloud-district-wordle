@@ -15,11 +15,16 @@ verdad; el código es una derivada demostrada por tests. Ver [ADR 0001](openspec
 - **Los datos son de personas reales.** La tabla tiene los resultados de compañeros identificables y
   el repositorio es **público**. Nada de escrituras exploratorias en producción, nada de volcar
   conversaciones del canal al repo.
-- **Mergear a `main` cambia lo que el pipeline ejecuta, pero NO publica la web.** Los dos cron son
-  GitHub Actions y corren desde `main`, así que al mergear el siguiente cron escribe en Supabase con el
-  código nuevo. Los assets, en cambio, se publican **a mano** con `npx wrangler deploy` — comprobado
-  contra Cloudflare el 2026-08-07: no hay Workers Builds ni workflow de despliegue
-  ([ADR 0005](openspec/decisions/0005-hosting-y-convivencia-v1-v2.md), mecanismo confirmado).
+- **Mergear a `main` despliega, y de las dos maneras.** Los assets se publican solos en segundos —el build
+  automático está conectado, comprobado el 2026-08-13: un asset nuevo apareció en producción sin ejecutar
+  `wrangler` y sin ningún workflow de despliegue— y los dos cron son GitHub Actions que corren desde `main`,
+  así que el siguiente escribe en Supabase con el código nuevo. **Lo que se merge, se ve.**
+  Este punto se ha documentado mal dos veces, en las dos direcciones
+  ([ADR 0005](openspec/decisions/0005-hosting-y-convivencia-v1-v2.md), segunda corrección): antes de confiar
+  en él, comprobarlo.
+- **Lo que va dentro de la instantánea no se despliega con el push.** Las reglas, el álbum y la
+  clasificación viven en `season_snapshots`, así que un cambio en `tools/rules.py` o en el cálculo **no se
+  ve hasta la siguiente materialización** (cron horario, o `gh workflow run update_stats.yml`).
 - Specs, slices y documentación en español; identificadores y código en inglés. Palabras reservadas
   del esquema sin traducir (`WHEN`, `THEN`, `## ADDED Requirements`, claves de frontmatter).
 
@@ -116,8 +121,8 @@ Presente atemporal, honesto con los errores.
 Decisión completa en [ADR 0003](openspec/decisions/0003-modelo-de-ramas-y-despliegue.md).
 
 ```
-feat/<change-id> · chore/openspec-slice-<slug>  ──PR──▶  main  ──▶  los cron ya corren con el código nuevo
-                                                             (la web se publica a mano: wrangler deploy)
+feat/<change-id> · chore/openspec-slice-<slug>  ──PR──▶  main  ──▶  la web se publica sola (segundos)
+                                                             y los cron ya corren con el código nuevo
 ```
 
 - **Nunca se trabaja en `main`.** Toda autoría e implementación va en su rama.
