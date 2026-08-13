@@ -187,6 +187,11 @@ COSTUMBRE = 0.5
 #: Retraso del último respecto al primero a partir del cual se menciona, en minutos.
 CIERRE_TARDE = 120
 
+#: Cuánto tiene que mejorar la media del día el último en publicar para que la mención cambie de tono. Es el
+#: mismo margen que usaba el detector que esto sustituye (`comentarios.VENTAJA_SOSPECHOSA`), y por la misma
+#: razón: es la diferencia a partir de la cual «ha llegado tarde» pasa a «ha llegado tarde y mira qué bien».
+VENTAJA_DEL_REZAGADO = 1.0
+
 
 def _y(nombres: list[str]) -> str:
     """Los nombres unidos como se leen: «Ana», «Ana y Bea», «Ana, Bea y Cris».
@@ -248,9 +253,21 @@ def _linea_de_dificultad(hoy: float, media: float, jornada: int) -> str:
     return _del_ciclo(registro, jornada).format(cifra=_cifra(hoy), media=_cifra(media))
 
 
-def _linea_de_horarios(senales, nombres: dict[str, str], jornada: int) -> list[str]:
-    """Quién abrió la jornada —y si lo hace por costumbre— y quién la cerró muy tarde."""
-    from refranero import APERTURA_HABITUAL, APERTURA_SUELTA, CIERRE_TARDIO
+def _linea_de_horarios(
+    senales,
+    nombres: dict[str, str],
+    jornada: int,
+    del_dia: list[dict] | None = None,
+    media: float | None = None,
+) -> list[str]:
+    """Quién abrió la jornada —y si lo hace por costumbre— y quién la cerró muy tarde.
+
+    Y si quien cerró **además clavó la nota**, se dice de otra manera: llegar tarde es un chiste y llegar
+    tarde habiendo visto lo que hacían los demás es otro, mejor. Ese segundo vivía en `comentarios.py`
+    apoyado en `created_at` —la hora en que el cron escribió la fila, por lotes cada hora— y aquí se mide con
+    la hora real del canal, que es la única que sostiene la insinuación.
+    """
+    from refranero import APERTURA_HABITUAL, APERTURA_SUELTA, CIERRE_TARDIO, CIERRE_TARDIO_CON_SUERTE
     from voz import _del_ciclo, con_nombre
 
     publicacion = getattr(senales, "publicacion", None) or {}
@@ -276,8 +293,15 @@ def _linea_de_horarios(senales, nombres: dict[str, str], jornada: int) -> list[s
     retraso = (cuando_ultimo - cuando_primero) / 60
     if retraso >= CIERRE_TARDE:
         horas = f"{retraso / 60:.0f} horas".replace(".0", "")
+        nombre_ultimo = nombres.get(ultimo, ultimo)
+        suya = next(
+            (f["score"] for f in (del_dia or []) if _nombre(f) == nombre_ultimo),
+            None,
+        )
+        con_suerte = suya is not None and media is not None and suya <= media - VENTAJA_DEL_REZAGADO
+        registro = CIERRE_TARDIO_CON_SUERTE if con_suerte else CIERRE_TARDIO
         lineas.append(
-            _del_ciclo(CIERRE_TARDIO, jornada).format(jugador=nombres.get(ultimo, ultimo), horas=horas)
+            _del_ciclo(registro, jornada).format(jugador=nombre_ultimo, horas=horas, dato=suya or 0)
         )
     return lineas
 

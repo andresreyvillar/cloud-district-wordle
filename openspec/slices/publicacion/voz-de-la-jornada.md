@@ -66,6 +66,11 @@ que quedó registrada al escribir la fila.
 **WHEN** alguien publicó su resultado mucho después que el resto
 **THEN** el mensaje lo menciona.
 
+### el-que-cierra-tarde-y-clava-la-nota-se-insinua
+**WHEN** quien publica el último lo hace mucho después y además con una nota muy por encima del grupo
+**THEN** la mención lo dice de otra manera que un simple retraso, porque el chiste es otro: había visto lo que
+hacían los demás.
+
 ### el-mas-aplaudido-se-nombra
 **WHEN** un resultado del día recibió más reacciones que los demás
 **THEN** el mensaje nombra a su autor.

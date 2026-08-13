@@ -50,8 +50,6 @@ MAXIMO_AUSENTES_NOMBRADOS = 2
 
 #: Cuánto hueco tiene que dejar el último en publicar, y a partir de qué hora, para que llegar tarde sea
 #: noticia. Calibrado: con 4h de hueco sale 0,24 por jornada; con 3h, 0,31.
-HUECO_DEL_REZAGADO = 4
-HORA_DEL_REZAGADO = 14
 
 #: Cuánto mejor que la media del día tiene que ser la nota del rezagado para que la broma sea de sospecha y
 #: no de retraso. Con esto la combinación sale 0,06 por jornada: el chiste bueno, por raro.
@@ -64,10 +62,8 @@ VENTAJA_SOSPECHOSA = 1.0
 #:     rezagado 0,24 · sembrado 0,24 · no-inspirado 0,24
 NOTABILIDAD = (
     "clavada",
-    "rezagado-con-suerte",
-    "sospechoso",
+        "sospechoso",
     "rajado",
-    "rezagado",
     "sembrado",
     "no-inspirado",
 )
@@ -198,7 +194,6 @@ def hechos_de_la_jornada(resultados: list[dict], temporada: str, jornada: int) -
         return []
 
     encontrados: list[Hecho] = []
-    encontrados.extend(_por_la_hora(del_dia, media))
     for fila in del_dia:
         jugador, score = _nombre(fila), fila["score"]
         if score == 1:
@@ -252,26 +247,6 @@ def _publicado(fila: dict):
     import datetime
 
     return datetime.datetime.fromisoformat(str(marca))
-
-
-def _por_la_hora(del_dia: list[dict], media: float) -> list[Hecho]:
-    """Los hechos que dependen de cuándo se publicó: llegar el último, y llegar el último con suerte."""
-    con_hora = [(fila, _publicado(fila)) for fila in del_dia]
-    con_hora = [(fila, cuando) for fila, cuando in con_hora if cuando is not None]
-    if len(con_hora) < 3:
-        return []
-
-    con_hora.sort(key=lambda par: par[1])
-    (ultimo, cuando), (_, penultimo) = con_hora[-1], con_hora[-2]
-
-    hueco = (cuando - penultimo).total_seconds() >= HUECO_DEL_REZAGADO * 3600
-    if not (hueco and cuando.hour >= HORA_DEL_REZAGADO):
-        return []
-
-    # Llegar tarde es un chiste; llegar tarde y además clavarla es OTRO, y mejor: es el de haber visto lo
-    # que hacían los demás. Se separan porque su frecuencia es muy distinta (0,24 frente a 0,06).
-    clave = "rezagado-con-suerte" if ultimo["score"] <= media - VENTAJA_SOSPECHOSA else "rezagado"
-    return [Hecho(clave, _nombre(ultimo), ultimo["score"])]
 
 
 def _uno_por_persona(hechos: list[Hecho]) -> list[Hecho]:

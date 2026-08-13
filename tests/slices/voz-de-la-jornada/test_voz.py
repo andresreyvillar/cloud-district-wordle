@@ -230,3 +230,47 @@ def test_las_menciones_del_canal_concuerdan_con_dos_personas():
     assert "Gabi y Sandra" in dos["aplaudido"], dos["aplaudido"]
     assert ", Sandra" not in dos["aplaudido"], f"enumeración cortada: {dos['aplaudido']}"
     assert "Gabi" in uno["aplaudido"]
+
+
+# @scenarios el-que-cierra-tarde-y-clava-la-nota-se-insinua
+def test_cerrar_tarde_y_clavarla_se_cuenta_de_otra_manera():
+    """Llegar tarde es un chiste; llegar tarde habiendo visto lo que hacían los demás es otro, y mejor.
+
+    Vivía en `comentarios.py` sobre `created_at` —la hora en que el cron escribió la fila, por lotes cada
+    hora— y se ha mudado aquí, que es donde está la hora real del canal. Sin ese dato la insinuación no se
+    sostiene.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "slices" / "resumen-diario-compuesto"))
+    from refranero import CIERRE_TARDIO, CIERRE_TARDIO_CON_SUERTE
+    from resumen import VENTAJA_DEL_REZAGADO, _linea_de_horarios
+
+    class Senales:
+        publicacion = {"U1": 1788249600.0, "U2": 1788249600.0 + 5 * 3600}
+        aperturas: dict = {}
+        jornadas_vistas = 0
+
+    nombres = {"U1": "Ana", "U2": "Bea"}
+
+    def de(registro, dato):
+        """Las frases del registro ya formateadas. **Comparar plantillas por su arranque no sirve**: casi
+        todas empiezan por `{jugador}`, así que el prefijo es cadena vacía y la aserción pasaba siempre —lo
+        cazó la prueba de mutación."""
+        return {f.format(jugador="Bea", horas="5 horas", dato=dato) for f in registro}
+
+    def horarios(nota):
+        return _linea_de_horarios(
+            Senales(), nombres, 1700,
+            del_dia=[{"player_name": "Ana", "score": 5}, {"player_name": "Bea", "score": nota}],
+            media=5.0,
+        )
+
+    # Bea cierra cinco horas tarde con un 2 en un día de media 5: la mejora supera el margen.
+    assert VENTAJA_DEL_REZAGADO == 1.0
+    con_suerte = horarios(2)
+    assert set(con_suerte) & de(CIERRE_TARDIO_CON_SUERTE, 2), con_suerte
+    assert not set(con_suerte) & de(CIERRE_TARDIO, 2), con_suerte
+
+    # Y cerrando tarde con una nota del montón, la mención es la normal.
+    sin_suerte = horarios(5)
+    assert set(sin_suerte) & de(CIERRE_TARDIO, 5), sin_suerte
+    assert not set(sin_suerte) & de(CIERRE_TARDIO_CON_SUERTE, 5), sin_suerte

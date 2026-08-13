@@ -357,6 +357,20 @@ APERTURA_SUELTA: tuple[str, ...] = (
     "Hoy ha dado el pistoletazo {jugador}.",
 )
 
+#: Quien la cerró tarde **y además con una nota muy por encima del grupo**. Es otro chiste que el de llegar
+#: tarde, y mejor: el de haber visto lo que hacían los demás antes de jugar.
+#:
+#: Vivía en `comentarios.py` apoyado en `created_at`, que es la hora en que el cron escribió la fila y no la
+#: de publicación: por lotes cada hora, con solo el 34% de los resultados de una jornada en minutos
+#: distintos. Sobre ese dato, «el último en publicar» era casi ruido. Ahora se mide con la hora real del
+#: canal, que es la que sostiene la insinuación.
+CIERRE_TARDIO_CON_SUERTE: tuple[str, ...] = (
+    "{jugador} la ha cerrado {horas} después, y con un {dato:.0f}. Habiendo visto los demás, claro.",
+    "Curioso: {jugador} llega {horas} tarde y clava un {dato:.0f}. Nada que declarar.",
+    "El último en publicar es {jugador}, {horas} después, y con un {dato:.0f}. Cosas del azar.",
+    "{jugador} aparece {horas} más tarde con un {dato:.0f} debajo del brazo.",
+)
+
 #: Quien la cerró, cuando tardó lo suyo. `{horas}` es cuánto después del primero.
 CIERRE_TARDIO: tuple[str, ...] = (
     "{jugador} la ha cerrado {horas} después.",
