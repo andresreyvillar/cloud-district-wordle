@@ -543,6 +543,7 @@ def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[
     lider = con_puesto[0]["nombre"] if con_puesto else None
     ultimo = con_puesto[-1]["nombre"] if len(con_puesto) > 1 else None
     mejor = min(fila["score"] for fila in del_dia)
+    mejores = sorted({_nombre(fila) for fila in del_dia if fila["score"] == mejor})
 
     # Las menciones del canal **no salen aquí**: ya son viñetas de `bloque_la_jornada`. Estuvieron un rato en
     # los dos sitios y «Ovación para Claire» se publicaba dos veces en el mismo mensaje.
@@ -558,6 +559,10 @@ def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[
                 ),
                 jornada,
                 dato=mejor,
+                # A quién nombra el cierre cuando la frase lo pide: quien firmó la mejor nota del día, y
+                # **solo si fue una persona**. Con siete empatados la frase cede el turno a la siguiente del
+                # registro en lugar de nombrar a una lista.
+                jugador=mejores[0] if len(mejores) == 1 else "",
             ),
         ),
     ]

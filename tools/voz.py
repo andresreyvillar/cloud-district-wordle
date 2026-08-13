@@ -126,12 +126,27 @@ def estado_de_animo(dificultad: float | None, media: float | None, mejor: int | 
     return RUTINA
 
 
-def cierre(estado: str, jornada: int, dato: float | None = None) -> str:
-    """La frase que cierra el comentario, del registro del estado de ánimo."""
+def cierre(estado: str, jornada: int, dato: float | None = None, jugador: str = "") -> str:
+    """La frase que cierra el comentario, del registro del estado de ánimo.
+
+    Rellena **los dos huecos posibles**, y de ahí la guarda: cuando el registro pasó a llevar frases con
+    `{jugador}` —«{jugador}, esta palabra es tu padre»— esta función solo formateaba `dato`, así que reventaba
+    con `KeyError` o publicaba el hueco literal en el canal según qué frase rotara ese día.
+
+    Si no se sabe a quién nombrar, se salta la primera frase que lo pida en lugar de escribir un hueco vacío:
+    una frase sin sujeto se lee peor que otra frase.
+    """
     from refranero import CIERRE
 
-    plantilla = _del_ciclo(CIERRE.get(estado) or CIERRE["rutina"], jornada)
-    return plantilla.format(dato=dato) if "{dato" in plantilla else plantilla
+    registro = CIERRE.get(estado) or CIERRE["rutina"]
+    for salto in range(len(registro)):
+        plantilla = registro[(jornada + salto) % len(registro)]
+        # Se salta la frase que pide un hueco que no se puede rellenar. Escribir «0 intentos» o dejar el
+        # `{jugador}` literal es peor que usar otra frase del mismo registro: el tono se conserva igual.
+        if ("{jugador}" in plantilla and not jugador) or ("{dato" in plantilla and dato is None):
+            continue
+        return plantilla.format(dato=dato, jugador=jugador)
+    return ""
 
 
 def conector(estado: str, jornada: int) -> str:
