@@ -643,3 +643,50 @@ def test_un_empate_multitudinario_no_nombra_a_todos():
 
     assert "más" in linea, f"el resto se cuenta en lugar de listarse: {linea}"
     assert linea.count(",") <= AUSENTES_NOMBRADOS, linea
+
+
+# @scenarios el-mensaje-tiene-una-sola-voz
+def test_ninguna_frase_de_cierre_publica_un_hueco():
+    """**Barre las 105 frases en las cuatro combinaciones de datos disponibles.**
+
+    Al pasar el cierre a cultura pop, doce frases empezaron a llevar `{jugador}` y `cierre()` solo formateaba
+    `dato`: según qué frase rotara ese día, reventaba con `KeyError` o publicaba `{jugador}` literal en el
+    canal. Con 105 frases y un índice que depende de la jornada, un fallo así aparece un día cualquiera y no
+    en el que lo pruebas.
+    """
+    from refranero import CIERRE
+    from voz import cierre
+
+    for estado, frases in CIERRE.items():
+        for indice in range(len(frases)):
+            for dato in (None, 2):
+                for jugador in ("", "Claire"):
+                    texto = cierre(estado, indice, dato=dato, jugador=jugador)
+                    assert texto, f"{estado}[{indice}] dato={dato} jugador={jugador!r}: sin frase"
+                    assert "{" not in texto and "}" not in texto, f"{estado}: hueco sin rellenar: {texto}"
+                    assert " 0 " not in texto, f"{estado}: un dato ausente colado como cero: {texto}"
+
+
+# @scenarios el-mensaje-tiene-una-sola-voz
+def test_el_cierre_no_nombra_a_una_lista_de_empatados():
+    """Con siete empatados, «{jugador}, esta palabra es tu padre» tendría siete padres."""
+    from resumen import resumen_del_dia
+
+    filas, hoy = [], []
+    for i in range(7):
+        filas += historia(f"J{i}", 8, score=4)
+        hoy.append(resultado(f"J{i}", HOY, 2, LORO))
+
+    texto = resumen_del_dia(filas + hoy, "0", HOY)
+
+    # La línea de cierre es la que va justo antes del marcador. Ninguna puede enumerar a los empatados; el
+    # bloque de mejores sí, porque tiene su propio tope.
+    parrafos = texto.split("\n\n")
+    cierre_publicado = next(
+        p for i, p in enumerate(parrafos)
+        if i + 1 < len(parrafos) and parrafos[i + 1].startswith("📊")
+    )
+
+    assert "J0" not in cierre_publicado or cierre_publicado.count("J") == 1, (
+        f"el cierre enumera empatados: {cierre_publicado}"
+    )
