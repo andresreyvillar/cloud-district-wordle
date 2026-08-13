@@ -152,12 +152,21 @@ def temporadas(resultados: list[dict]) -> list[dict]:
     ]
 
 
-def instantanea(resultados: list[dict], temporada: str) -> dict:
+def instantanea(resultados: list[dict], temporada: str, version: str = "") -> dict:
     """La carga útil que se materializa para una temporada.
 
     Solo el modelo: qué días la forman, cuántos resultados cuentan y quién participó. **No ordena a nadie** —
     la clasificación y las medallas llegan con sus propios slices y añaden claves a esta carga útil, que es
     justo la razón de que sea JSONB y no columnas.
+
+    `version` es el commit con el que se calculó, y **entra por parámetro** porque leer git aquí rompería la
+    frontera determinista (§10): esta función tiene que dar lo mismo con las mismas entradas. Lo rellena quien
+    materializa, que es el borde.
+
+    Existe porque una instantánea sin procedencia es indepurable. El 2026-08-13 alguien recalculó agosto desde
+    una copia del repo por detrás de `main` y le revirtió el álbum al grupo en silencio; averiguar de dónde
+    había salido ese payload costó media docena de consultas y comparar SHAs de workflows a mano. Con el
+    commit dentro, se ve de un vistazo.
     """
     # Imports locales para no crear ciclos: los módulos importan de este.
     from album import album
@@ -213,4 +222,7 @@ def instantanea(resultados: list[dict], temporada: str) -> dict:
         # El segundo ranking, el de figuras. Independiente del de puntuación por decisión explícita: no
         # entra en `clasificacion` ni la altera.
         "album": album(resultados, temporada),
+        # La procedencia del cálculo, no un dato del juego. Cadena vacía si quien materializa no la sabe:
+        # inventarse un valor sería peor que declarar que no consta.
+        "calculado_con": version,
     }

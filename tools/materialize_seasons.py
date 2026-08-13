@@ -24,6 +24,7 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
+from procedencia import version
 from seasons import EN_CURSO, instantanea, temporadas
 
 load_dotenv()
@@ -66,7 +67,9 @@ def materializar(
     for temporada in objetivo:
         fila = {
             "temporada": temporada,
-            "payload": instantanea(resultados, temporada),
+            # La procedencia entra aquí, en el borde: `instantanea` no puede leer git sin dejar de ser
+            # determinista. Sin ella, un payload escrito con código viejo es indistinguible de uno bueno.
+            "payload": instantanea(resultados, temporada, version()),
             "updated_at": ahora.isoformat(),
         }
         if not dry_run:

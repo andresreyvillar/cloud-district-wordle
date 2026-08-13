@@ -92,7 +92,42 @@ def ingerir() -> None:
     print(cargar.stdout.strip()[-1200:] or cargar.stderr.strip()[-600:])
 
 
-def calcular(url: str, clave: str, seco: bool, temporadas_objetivo: list[str] | None) -> dict:
+def _exige_estar_al_dia(insiste: bool = False) -> None:
+    """Aborta si la copia local está por detrás de `origin/main`, salvo que se insista a mano.
+
+    **Materializar desde una copia vieja no recalcula: retrocede.** Pasó el 2026-08-13: alguien ejecutó esto
+    con el repositorio dos commits por detrás y le devolvió al grupo un álbum con la regla anterior, sin que
+    nada lo avisara. Los tres cron de esa mañana habían escrito bien; esta ejecución lo deshizo.
+
+    Se puede seguir con `--aunque-este-viejo`, porque a veces se quiere justamente comparar contra el cálculo
+    anterior. Lo que no puede pasar es hacerlo sin darse cuenta.
+    """
+    from procedencia import por_detras_de_origen, version
+
+    print(f"  calculando con {version() or 'una versión que git no sabe decir'}")
+    detras, detalle = por_detras_de_origen()
+    if not detras:
+        print(f"  \033[32m ok \033[0m {detalle}")
+        return
+    if insiste:
+        print(f"  \033[33m aviso \033[0m {detalle} — se continúa porque se ha pedido")
+        return
+    raise SystemExit(
+        f"\n  \033[41m ALTO \033[0m {detalle}.\n"
+        "  Materializar desde una copia vieja no recalcula, RETROCEDE: le devuelve al grupo el cálculo\n"
+        "  anterior y nada lo avisa. Haz `git pull` antes.\n"
+        "  Si de verdad quieres comparar contra el cálculo viejo: --aunque-este-viejo\n"
+        "  Y si solo querías mirar sin escribir: --seco\n"
+    )
+
+
+def calcular(
+    url: str,
+    clave: str,
+    seco: bool,
+    temporadas_objetivo: list[str] | None,
+    insiste: bool = False,
+) -> dict:
     """Materializa las instantáneas y devuelve las cargas útiles calculadas."""
     sys.path.insert(0, str(RAIZ / "tools"))
     import materialize_seasons as mat
@@ -112,6 +147,9 @@ def calcular(url: str, clave: str, seco: bool, temporadas_objetivo: list[str] | 
         marca = "◀ en curso" if entrada["estado"] == seasons.EN_CURSO else ""
         elegida = "·" if entrada["temporada"] in objetivo else " "
         print(f"  {elegida} {entrada['temporada']}  {entrada['dias']:2} días  {marca}")
+
+    if not seco:
+        _exige_estar_al_dia(insiste)
 
     tabla = None if seco else mat.TablaSupabase(url, clave)
     informe = mat.materializar(
@@ -164,6 +202,11 @@ def main(argv: list[str] | None = None) -> int:
     analizador.add_argument(
         "--temporada", action="append", help="limita el cálculo a esta temporada (repetible)"
     )
+    analizador.add_argument(
+        "--aunque-este-viejo",
+        action="store_true",
+        help="materializa aunque la copia esté por detrás de origin/main (retrocede el cálculo del grupo)",
+    )
     analizador.add_argument("--puerto", type=int, default=PUERTO)
     argumentos = analizador.parse_args(argv)
 
@@ -172,7 +215,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if argumentos.con_ingesta and not argumentos.seco:
         ingerir()
-    calcular(url, clave, argumentos.seco, argumentos.temporada)
+    calcular(url, clave, argumentos.seco, argumentos.temporada, argumentos.aunque_este_viejo)
     if not argumentos.sin_resumen:
         resumen(url, clave)
     if not argumentos.sin_web:
