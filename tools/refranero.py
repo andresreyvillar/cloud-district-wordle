@@ -151,24 +151,24 @@ REZAGADO: tuple[str, ...] = (
 )
 
 MAS_APLAUDIDO: tuple[str, ...] = (
-    "Lo de {jugador} ha levantado al canal.",
-    "El grupo ha hablado, y ha dicho {jugador}.",
-    "{jugador} se lleva los aplausos del día.",
-    "Nadie ha recibido más reacciones que {jugador}.",
-    "A {jugador} le han llovido las reacciones, y con motivo.",
-    "El ruido del día lo ha hecho {jugador}.",
-    "Ovación para {jugador}.",
-    "Hoy el canal se ha puesto en pie por {jugador}.",
+    "Lo más aplaudido del día es de {jugador}: {dato}.",
+    "Nadie ha recibido más reacciones que {jugador}: {dato}.",
+    "Lluvia de reacciones sobre {jugador}: {dato}.",
+    "El canal se ha puesto en pie por {jugador}: {dato}.",
+    "Ovación para {jugador}, con {dato}.",
+    "{jugador} se lleva los aplausos del día: {dato}.",
+    "Lo de {jugador} ha gustado, y se ha notado: {dato}.",
+    "{dato} para {jugador}. El grupo ha votado con el dedo.",
 )
 
 MAS_COMENTADO: tuple[str, ...] = (
-    "El hilo del día lo ha montado {jugador}.",
-    "Lo de {jugador} ha dado más conversación que el propio Wordle.",
-    "El debate del día lo ha abierto {jugador}.",
-    "El tema del día lo ha puesto {jugador}.",
-    "Hoy se ha hablado sobre todo de {jugador}.",
-    "La piedra la ha lanzado {jugador}, y el hilo hizo el resto.",
-    "Hilo del día, cortesía de {jugador}.",
+    "El hilo del día lo ha montado {jugador}: {dato}.",
+    "Lo de {jugador} ha dado conversación: {dato} en su hilo.",
+    "{jugador} ha abierto debate y ha durado: {dato}.",
+    "El tema del día lo ha puesto {jugador}, con {dato}.",
+    "Hoy se ha hablado sobre todo de lo de {jugador}: {dato}.",
+    "{jugador} lanzó la piedra y el hilo hizo el resto: {dato}.",
+    "Hilo del día, cortesía de {jugador}: {dato}.",
 )
 
 AUSENTE: tuple[str, ...] = (

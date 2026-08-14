@@ -873,3 +873,63 @@ def test_el_mensaje_publica_la_variante_del_que_cierra_tarde_y_clava():
     # por `{jugador}`, así que el prefijo sería cadena vacía y la aserción pasaría siempre.
     assert any("Eva" in l and ("Nada que declarar" in l or "Habiendo visto" in l or "debajo del brazo" in l
                                or "Cosas del azar" in l) for l in bloque.splitlines()), bloque
+
+
+# @scenarios la-pelea-por-el-primer-puesto-se-cuenta
+def test_con_empate_en_cabeza_no_se_corona_a_nadie():
+    """Publicaba «X arriba, y los demás mirando el escaparate» con un empate real en cabeza, justo al lado del
+    bloque que decía que iban clavados: dos líneas del mismo mensaje contradiciéndose.
+
+    Es el mismo error que la web tenía en su titular — tomar el primer elemento del array como el líder en vez
+    de leer `posicion`.
+    """
+    from resumen import _manda_en_solitario, _pulla_del_marcador
+
+    empatados = [
+        {"nombre": "Ana", "posicion": 1},
+        {"nombre": "Bea", "posicion": 1},
+        {"nombre": "Cris", "posicion": 3},
+    ]
+    en_solitario = [
+        {"nombre": "Ana", "posicion": 1},
+        {"nombre": "Bea", "posicion": 2},
+    ]
+
+    assert _manda_en_solitario(empatados) == "", "con el puesto compartido no manda nadie"
+    assert _manda_en_solitario(en_solitario) == "Ana"
+    assert _manda_en_solitario([]) == ""
+
+    # Y sobre el mensaje: con empate, ninguna pulla de marcador.
+    filas, hoy = [], []
+    for quien, nota in [("Ana", 3), ("Bea", 3), ("Cris", 5), ("Dan", 5), ("Eva", 5)]:
+        filas += historia(quien, 8, score=nota)
+        hoy.append(resultado(quien, HOY, nota, FLOR))
+
+    assert _pulla_del_marcador(filas + hoy, "0", HOY) == ""
+
+
+# @scenarios el-mas-aplaudido-se-nombra
+def test_las_menciones_del_canal_dicen_de_donde_salen():
+    """«El grupo ha hablado, y ha dicho X» no distinguía si era por reacciones o por respuestas de un hilo, y
+    ninguna de las dos llevaba el número: la mención afirmaba algo que el lector no podía comprobar.
+    """
+    from refranero import MAS_APLAUDIDO, MAS_COMENTADO
+    from voz import menciones
+
+    for plantilla in MAS_APLAUDIDO + MAS_COMENTADO:
+        assert "{dato}" in plantilla, f"sin recuento: {plantilla}"
+
+    dichas = menciones(
+        reacciones={"U1": 8}, respuestas={"U2": 14}, publicacion={},
+        nombres={"U1": "Gabi", "U2": "Clara C"}, jornada=1681,
+    )
+
+    assert "8 reaccion" in dichas["aplaudido"], dichas["aplaudido"]
+    assert "14 respuesta" in dichas["comentado"], dichas["comentado"]
+
+    # Y la concordancia con uno solo.
+    una = menciones(
+        reacciones={"U1": 1}, respuestas={"U2": 1}, publicacion={},
+        nombres={"U1": "Gabi", "U2": "Clara C"}, jornada=1681,
+    )
+    assert "1 reacción" in una["aplaudido"] and "1 respuesta" in una["comentado"]
