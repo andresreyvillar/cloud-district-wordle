@@ -261,6 +261,27 @@ def menciones(
     return salida
 
 
+def protagonistas_de_menciones(
+    reacciones: dict[str, int],
+    respuestas: dict[str, int],
+    nombres: dict[str, str],
+) -> dict[str, set[str]]:
+    """Quién protagoniza cada mención del canal, con el **mismo criterio** que la usa para nombrarla.
+
+    Existe para poder fusionar en una línea los reconocimientos de la misma persona: sin saber de quién habla
+    cada mención, el mensaje la nombraba en una viñeta por premio y leído junto parecía un monográfico.
+
+    Se apoya en `_los_de`, así que un empate multitudinario no devuelve protagonista — igual que no concede la
+    mención— y no puede haber una línea fusionada sin su mención correspondiente.
+    """
+    salida: dict[str, set[str]] = {}
+    for clave, valores in (("aplaudido", reacciones), ("comentado", respuestas)):
+        quienes = _los_de(valores)
+        if quienes:
+            salida[clave] = {nombres.get(jugador, jugador) for jugador in quienes}
+    return salida
+
+
 def meme_del_dia(
     del_dia: list[dict],
     jornada: int,
