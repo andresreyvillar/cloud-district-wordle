@@ -166,6 +166,10 @@ def bloque_top(resultados: list[dict], temporada: str, jornada: int) -> str:
 #: de la web (`v2/js/ui/temporada.js`), y por la misma razón.
 VENTAJA_MINIMA = 0.15
 
+#: Jornadas previas que hace falta que tenga la temporada para hablar de un relevo. Con menos, quitar la de
+#: hoy deja un marcador que no representa nada y cualquier orden parece un cambio de líder.
+JORNADAS_PARA_HABLAR_DE_RELEVO = 3
+
 
 
 #: Cuánto se separa la jornada de la media de su temporada para que se comente, en intentos.
@@ -460,6 +464,67 @@ def menciones_del_canal(senales, nombres: dict[str, str], jornada: int) -> list[
     return [dichas[clave] for clave in ("aplaudido", "comentado") if clave in dichas]
 
 
+def bloque_relevo(resultados: list[dict], temporada: str, jornada: int) -> str:
+    """El relevo en cabeza, **si la jornada de hoy lo ha provocado**.
+
+    Se detecta comparando el marcador con y sin los resultados de hoy, así que **no hace falta guardar
+    historia**: es cálculo puro, da lo mismo cuantas veces se repita y no depende de que la instantánea
+    anterior siga existiendo. Guardar «quién lideraba ayer» habría sido un estado que mantener, y este
+    proyecto ya tuvo un payload sobrescrito por una copia vieja.
+
+    Si el líder cambia se anuncia, y si no, no se publica nada: inventar un relevo donde no lo hubo sería
+    contar mal la jornada. La regla de cuándo cuenta vive en `hay_relevo`.
+    """
+    from refranero import CAMBIO_DE_LIDER
+    from voz import _del_ciclo, con_nombre
+
+    if not _del_dia(resultados, jornada):
+        return ""
+
+    previos = [r for r in resultados if r["wordle_id"] != jornada]
+    relevo = hay_relevo(
+        [f for f in clasificacion(previos, temporada) if f.get("posicion")],
+        [f for f in clasificacion(resultados, temporada) if f.get("posicion")],
+        len({r["wordle_id"] for r in previos}),
+    )
+    if not relevo:
+        return ""
+
+    nuevo, anterior = relevo
+    plantilla = _del_ciclo(CAMBIO_DE_LIDER, jornada)
+    return con_nombre(plantilla.replace("{nuevo}", nuevo).replace("{anterior}", "{jugador}"), anterior)
+
+
+def hay_relevo(antes: list[dict], ahora: list[dict], jornadas_previas: int) -> tuple[str, str] | None:
+    """`(nuevo, anterior)` si la jornada ha cambiado quién manda, o `None`.
+
+    **Separada de los datos a propósito.** Vivía dentro de `bloque_relevo` y sus dos guardas no había manera
+    de probarlas con resultados sintéticos: para llegar a ellas hace falta una combinación muy concreta de
+    medias y participaciones, así que los tests pasaban sin ejercitarlas y la prueba de mutación las tumbaba
+    las dos. Recibiendo las clasificaciones ya hechas, la regla se comprueba tal cual es.
+
+    **Hacen falta jornadas previas de verdad.** En la primera de una temporada, quitar la de hoy deja un
+    marcador que no representa nada y cualquier orden parece un relevo — así se anunciaba uno en la jornada de
+    estreno del mes.
+
+    **Y no vale si están empatados.** Con la misma media, quién sale primero lo decide el desempate por
+    participación, así que el «relevo» sería el orden alternando por ruido. Medido sobre agosto: con los dos de
+    cabeza clavados, se anunciaba en **diez de diez** jornadas. Ese empate lo cuenta `bloque_rivalidad`.
+    """
+    if jornadas_previas < JORNADAS_PARA_HABLAR_DE_RELEVO or not antes or not ahora:
+        return None
+
+    lider_antes, lider_ahora = antes[0], ahora[0]
+    if lider_antes["nombre"] == lider_ahora["nombre"]:
+        return None
+
+    suya = next((f for f in ahora if f["nombre"] == lider_antes["nombre"]), None)
+    if suya and suya["media_temporada"] == lider_ahora["media_temporada"]:
+        return None
+
+    return lider_ahora["nombre"], lider_antes["nombre"]
+
+
 def bloque_rivalidad(resultados: list[dict], temporada: str, jornada: int) -> str:
     """La pelea por el primer puesto, **si la hay**.
 
@@ -619,6 +684,8 @@ def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int, senale
         # los rankings. Tres frases seguidas era un tercer bloque de comentarios y el mensaje ya tiene dos.
         *_voz(resultados, temporada, jornada, senales),
         bloque_top(resultados, temporada, jornada),
+        # El relevo va justo tras el marcador: es lo que explica por qué el orden ha cambiado.
+        bloque_relevo(resultados, temporada, jornada),
         # Las pullas van **pegadas a su ranking**, que es lo que comentan. Sueltas al final del comentario
         # nadie sabía a qué se referían.
         _pulla_del_marcador(resultados, temporada, jornada),

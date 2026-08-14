@@ -362,3 +362,40 @@ def test_dos_medallas_nunca_comparten_nombre():
 
     assert len(set(nombres)) == len(nombres), f"nombres repetidos: {nombres}"
     assert len(set(claves)) == len(claves), f"claves repetidas: {claves}"
+
+
+# @scenarios las-medallas-del-mismo-grupo-van-juntas
+def test_las_medallas_que_gana_la_misma_gente_van_en_una_linea():
+    """El bloque publicaba dos líneas seguidas con los mismos nombres y distinto emoji.
+
+    `Metrónom@` e `Impecable` las suele ganar el mismo grupo —quien no falta ningún día laborable suele ser
+    también quien no falla ninguna—, así que el mensaje decía dos veces lo mismo. Es la misma medicina que ya
+    se aplicó a los ausentes, a los aplaudidos y a los empatados, en el único bloque al que no había llegado.
+    """
+    from tools.badges import texto_de_medallas
+
+    # Dos jugadoras juegan **todos** los días laborables del mes y siempre resuelven: se llevan las dos
+    # medallas de constancia a la vez, que es el caso que producía las líneas repetidas.
+    laborables = _dias(TEMPORADA, laborables=True)
+    filas: list[dict] = []
+    for indice, dia in enumerate(laborables):
+        for quien in ("Ana", "Bea"):
+            filas.append(r(quien, 1600 + indice, 3, dia=dia))
+        filas += jornada_con(1600 + indice, [4, 4, 5, 5, 6], dia=dia)
+
+    # **La jornada se busca, no se supone.** Las de constancia se cruzan a mitad de mes, no el último día:
+    # apuntando a la última jornada el texto salía vacío y el test no probaba nada.
+    from tools.badges import medallas_nuevas
+
+    jornada = next(
+        j for j in (1600 + i for i in range(len(laborables)))
+        if any(len(claves) >= 2 for claves in medallas_nuevas(filas, TEMPORADA, j).values())
+    )
+    texto = texto_de_medallas(filas, TEMPORADA, jornada=jornada)
+
+    lineas = [l for l in texto.splitlines() if "—" in l]
+    assert lineas, f"no hay medallas que comprobar en la jornada {jornada}: {texto}"
+    nombres_por_linea = [l.split("—")[1].strip() for l in lineas]
+    assert len(nombres_por_linea) == len(set(nombres_por_linea)), (
+        f"dos líneas con exactamente los mismos nombres: {lineas}"
+    )

@@ -312,12 +312,24 @@ def texto_de_medallas(resultados: list[dict], temporada: str, jornada: int) -> s
             repetida = veces.get((jugador, clave), 1)
             por_medalla[clave].append(f"{jugador}{f' (×{repetida})' if repetida > 1 else ''}")
 
-    lineas: list[str] = []
+    # **Las medallas que gana exactamente la misma gente van juntas.** Sin esto, el bloque publicaba dos
+    # líneas seguidas con los mismos cuatro nombres y distinto emoji —`Metrónom@` e `Impecable` las suele ganar
+    # el mismo grupo—, y el mensaje decía dos veces lo mismo. Es la misma medicina que ya se aplicó a los
+    # ausentes, a los aplaudidos y a los empatados, en el único bloque al que no había llegado.
+    grupos: dict[tuple[str, ...], list] = {}
     for medalla in CATALOGO:  # el catálogo ya está en orden de rareza
         if medalla.clave in por_medalla:
-            quienes = ", ".join(sorted(por_medalla[medalla.clave]))
-            exclamacion = "¡" if medalla.nivel == "legendario" else ""
-            cierre = "!" if medalla.nivel == "legendario" else ""
-            lineas.append(f"{medalla.emoji} {exclamacion}{medalla.nombre}{cierre} — {quienes}")
+            grupos.setdefault(tuple(sorted(por_medalla[medalla.clave])), []).append(medalla)
+
+    lineas: list[str] = []
+    for quienes, medallas in grupos.items():
+        emojis = " ".join(m.emoji for m in medallas)
+        # El nivel de la primera manda: el catálogo va en orden de rareza, así que es la más difícil del grupo.
+        exclamacion = "¡" if medallas[0].nivel == "legendario" else ""
+        cierre = "!" if medallas[0].nivel == "legendario" else ""
+        nombres = " y ".join(m.nombre for m in medallas) if len(medallas) < 3 else (
+            ", ".join(m.nombre for m in medallas[:-1]) + " y " + medallas[-1].nombre
+        )
+        lineas.append(f"{emojis} {exclamacion}{nombres}{cierre} — {', '.join(quienes)}")
 
     return "🏅 *Medallas de hoy*\n" + "\n".join(lineas)

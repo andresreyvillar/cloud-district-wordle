@@ -690,3 +690,96 @@ def test_el_cierre_no_nombra_a_una_lista_de_empatados():
     assert "J0" not in cierre_publicado or cierre_publicado.count("J") == 1, (
         f"el cierre enumera empatados: {cierre_publicado}"
     )
+
+
+# @scenarios el-relevo-en-cabeza-se-anuncia
+def test_el_relevo_se_anuncia_cuando_cambia_quien_manda():
+    from resumen import bloque_relevo
+
+    # Cuatro jornadas: Bea manda las tres primeras por poco y Ana la adelanta en la cuarta. Las notas están
+    # elegidas para que el adelantamiento sea **posible**: con demasiada ventaja inicial, una sola jornada no
+    # puede darle la vuelta a la media y el fixture no probaría nada.
+    filas = []
+    for jornada, (nota_ana, nota_bea) in enumerate([(4, 3), (4, 3), (4, 3), (1, 7)]):
+        dia = f"2026-08-{3 + jornada:02d}"
+        filas.append(resultado("Ana", 1700 + jornada, nota_ana, FLOR, dia))
+        filas.append(resultado("Bea", 1700 + jornada, nota_bea, FLOR, dia))
+        for otro in range(3):
+            filas.append(resultado(f"R{otro}", 1700 + jornada, 4, FLOR, dia))
+
+    linea = bloque_relevo(filas, "2026-08", 1703)
+
+    assert "Ana" in linea and "Bea" in linea, linea
+    assert "Relevo" in linea, linea
+
+
+# @scenarios el-relevo-en-cabeza-se-anuncia
+def test_un_empate_en_cabeza_no_es_un_relevo():
+    """Con la misma media, quién sale primero lo decide el desempate por participación.
+
+    Medido sobre agosto: sin esta guarda, con los dos de cabeza clavados el relevo se anunciaba en **diez de
+    diez jornadas**. Ese empate ya lo cuenta `bloque_rivalidad`, que es su sitio.
+    """
+    from resumen import bloque_relevo
+
+    filas = []
+    for jornada in range(4):
+        dia = f"2026-08-{3 + jornada:02d}"
+        for quien in ("Ana", "Bea"):
+            filas.append(resultado(quien, 1700 + jornada, 3, FLOR, dia))
+        for otro in range(3):
+            filas.append(resultado(f"R{otro}", 1700 + jornada, 5, FLOR, dia))
+
+    assert bloque_relevo(filas, "2026-08", 1703) == ""
+
+
+# @scenarios el-relevo-en-cabeza-se-anuncia
+def test_sin_jornadas_previas_no_se_habla_de_relevo():
+    """En la primera jornada del mes, quitar la de hoy deja un marcador que no representa nada."""
+    from resumen import JORNADAS_PARA_HABLAR_DE_RELEVO, bloque_relevo
+
+    assert JORNADAS_PARA_HABLAR_DE_RELEVO == 3
+
+    filas = []
+    for jornada in range(2):  # menos que el mínimo
+        dia = f"2026-08-{3 + jornada:02d}"
+        filas.append(resultado("Ana", 1700 + jornada, 2, FLOR, dia))
+        for otro in range(4):
+            filas.append(resultado(f"R{otro}", 1700 + jornada, 5, FLOR, dia))
+
+    assert bloque_relevo(filas, "2026-08", 1701) == ""
+
+
+# @scenarios el-relevo-en-cabeza-se-anuncia
+def test_la_regla_del_relevo_sobre_las_clasificaciones():
+    """**Sobre la regla, no sobre los datos.** Las dos guardas no se pueden ejercitar con resultados
+    sintéticos: para llegar a ellas hace falta una combinación muy concreta de medias y participaciones, así
+    que los tests anteriores pasaban sin tocarlas y la prueba de mutación las tumbaba las dos.
+    """
+    from resumen import JORNADAS_PARA_HABLAR_DE_RELEVO, hay_relevo
+
+    def tabla(*pares):
+        return [{"nombre": n, "media_temporada": m, "posicion": i} for i, (n, m) in enumerate(pares, 1)]
+
+    suficientes = JORNADAS_PARA_HABLAR_DE_RELEVO
+
+    # Cambio de líder con ventaja real: se anuncia.
+    assert hay_relevo(tabla(("Bea", 3.0), ("Ana", 4.0)), tabla(("Ana", 3.2), ("Bea", 3.5)), suficientes) == (
+        "Ana",
+        "Bea",
+    )
+
+    # **Empatados**: el orden lo decide el desempate, así que no es un relevo.
+    assert hay_relevo(
+        tabla(("Bea", 3.0), ("Ana", 3.0)), tabla(("Ana", 3.0), ("Bea", 3.0)), suficientes
+    ) is None
+
+    # **Sin jornadas previas suficientes**: «antes» no significa nada.
+    assert hay_relevo(
+        tabla(("Bea", 3.0), ("Ana", 4.0)), tabla(("Ana", 3.2), ("Bea", 3.5)), suficientes - 1
+    ) is None
+
+    # Y si manda el mismo, no hay nada que contar.
+    assert hay_relevo(
+        tabla(("Ana", 3.0), ("Bea", 4.0)), tabla(("Ana", 3.1), ("Bea", 4.0)), suficientes
+    ) is None

@@ -86,6 +86,12 @@ reconocible, el premio se declara desierto en lugar de dárselo a un abstracto.
 **WHEN** dos dibujos de la misma categoría compiten por el premio y uno es simétrico
 **THEN** gana el simétrico, por delante de quien tardó más intentos.
 
+### el-relevo-en-cabeza-se-anuncia
+**WHEN** la jornada de hoy cambia quién manda en el marcador
+**THEN** el mensaje lo anuncia nombrando a quien sube y a quien cae; y no lo anuncia cuando el cambio es solo
+el desempate alternando entre dos que van igualados, ni cuando la temporada aún no tiene jornadas previas
+suficientes para que «antes» signifique algo.
+
 ### la-pelea-por-el-primer-puesto-se-cuenta
 **WHEN** el primer puesto está empatado o la ventaja del líder se remonta en una jornada
 **THEN** el mensaje lo dice nombrando a quienes se lo juegan; y con ventaja amplia no se inventa rivalidad.
