@@ -726,22 +726,35 @@ def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[
     ]
 
 
+def _manda_en_solitario(filas: list[dict]) -> str:
+    """Quien encabeza sin compartir el puesto, o cadena vacía si el primer puesto está empatado.
+
+    **Mira `posicion`, no el orden de la lista.** Es el mismo error que la web publicaba en su titular: tomar
+    el primer elemento del array como el líder. Con un empate en cabeza, la pulla coronaba a uno de los dos
+    —«X arriba, y los demás mirando el escaparate»— justo al lado del bloque que dice que van clavados. Dos
+    líneas del mismo mensaje contradiciéndose.
+
+    Con empate no se dice nada: la pelea ya la cuenta `bloque_rivalidad`, que es su sitio.
+    """
+    con_puesto = [fila for fila in filas if fila.get("posicion")]
+    if not con_puesto:
+        return ""
+    primeros = [fila for fila in con_puesto if fila["posicion"] == con_puesto[0]["posicion"]]
+    return primeros[0]["nombre"] if len(primeros) == 1 else ""
+
+
 def _pulla_del_marcador(resultados: list[dict], temporada: str, jornada: int) -> str:
     from voz import pullas_de_lideres
 
-    con_puesto = [fila for fila in clasificacion(resultados, temporada) if fila.get("posicion")]
-    if not con_puesto:
-        return ""
-    return pullas_de_lideres(con_puesto[0]["nombre"], None, jornada).get("marcador", "")
+    quien = _manda_en_solitario(clasificacion(resultados, temporada))
+    return pullas_de_lideres(quien, None, jornada).get("marcador", "") if quien else ""
 
 
 def _pulla_del_album(resultados: list[dict], temporada: str, jornada: int) -> str:
     from voz import pullas_de_lideres
 
-    clasificados = [f for f in album(resultados, temporada)["jugadores"] if f.get("posicion")]
-    if not clasificados:
-        return ""
-    return pullas_de_lideres(None, clasificados[0]["nombre"], jornada).get("album", "")
+    quien = _manda_en_solitario(album(resultados, temporada)["jugadores"])
+    return pullas_de_lideres(None, quien, jornada).get("album", "") if quien else ""
 
 
 def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int, senales=None) -> str:

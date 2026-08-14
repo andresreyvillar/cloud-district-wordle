@@ -200,6 +200,15 @@ def _los_de(valores: dict[str, int]) -> list[str]:
     return empatados if len(empatados) <= MAXIMO_NOMBRADOS else []
 
 
+def _cuantas(cuantos: int, singular: str, plural: str) -> str:
+    """«1 reacción» o «5 reacciones».
+
+    La cifra va **dentro** de la mención porque sin ella la frase afirma algo que el lector no puede
+    comprobar: «le han llovido las reacciones» con dos es una exageración, y con diecinueve se queda corta.
+    """
+    return f"{cuantos} {singular if cuantos == 1 else plural}"
+
+
 def _nombres_de(jugadores: list[str], nombres: dict[str, str]) -> str:
     """Los nombres como se leen: «Ana», «Ana y Bea».
 
@@ -230,13 +239,19 @@ def menciones(
     aplaudidos = _los_de(reacciones)
     if aplaudidos:
         salida["aplaudido"] = con_nombre(
-            _del_ciclo(MAS_APLAUDIDO, jornada), _nombres_de(aplaudidos, nombres)
+            _del_ciclo(MAS_APLAUDIDO, jornada).replace(
+                "{dato}", _cuantas(max(reacciones.values()), "reacción", "reacciones")
+            ),
+            _nombres_de(aplaudidos, nombres),
         )
 
     comentados = _los_de(respuestas)
     if comentados:
         salida["comentado"] = con_nombre(
-            _del_ciclo(MAS_COMENTADO, jornada), _nombres_de(comentados, nombres)
+            _del_ciclo(MAS_COMENTADO, jornada).replace(
+                "{dato}", _cuantas(max(respuestas.values()), "respuesta", "respuestas")
+            ),
+            _nombres_de(comentados, nombres),
         )
 
     # Hacen falta al menos dos publicaciones: con una sola no hay con quién comparar, así que no hay ni
