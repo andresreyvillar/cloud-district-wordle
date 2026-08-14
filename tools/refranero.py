@@ -611,3 +611,37 @@ LIDER_AGUANTA: tuple[str, ...] = (
     "👑 *{nuevo} aguanta arriba*: {anterior} se ha quedado a las puertas.",
     "👑 *Nada que hacer, {anterior}*: {nuevo} sigue mandando.",
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EL DÍA DE ALGUIEN
+#
+# Cada bloque elige a su mejor candidato por separado, y cuando coincide la misma persona en varios el mensaje
+# la nombra una y otra vez: medido en la jornada 1681, alguien salía **siete veces** y leído junto parecía un
+# monográfico. Cada línea era correcta; el conjunto, no.
+#
+# Cuando alguien es **protagonista único** de dos o más reconocimientos, sus líneas se fusionan en una. No se
+# reparten los premios a otra gente: eso sería falsear quién ganó qué.
+# ─────────────────────────────────────────────────────────────────────────────
+
+DIA_DE: tuple[str, ...] = (
+    "Día de {jugador}: {logros}.",
+    "{jugador} se lo ha llevado casi todo: {logros}.",
+    "Pleno de {jugador}: {logros}.",
+    "{jugador} firma la jornada: {logros}.",
+    "Hoy todo apunta a {jugador}: {logros}.",
+    "{jugador} arrasa: {logros}.",
+    "La jornada tiene dueño, {jugador}: {logros}.",
+    "{jugador} no ha dejado nada para los demás: {logros}.",
+)
+
+#: Cómo se nombra cada reconocimiento dentro de una línea fusionada. Cortos a propósito: la gracia de fundir
+#: tres líneas en una se pierde si la línea resultante es más larga que las tres.
+LOGROS_DEL_DIA: dict[str, str] = {
+    # `{dato}` es opcional: solo la mejor nota tiene una cifra que aporte. Fusionar no puede costar
+    # información — la línea decía con cuántos intentos se ganó la jornada y hay un test que lo exige.
+    "mejores": "la mejor nota (en {dato})",
+    "dibujo": "el mejor dibujo",
+    "aplaudido": "la ovación del canal",
+    "comentado": "el hilo del día",
+}

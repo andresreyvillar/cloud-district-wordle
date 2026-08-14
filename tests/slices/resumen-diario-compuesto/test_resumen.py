@@ -65,7 +65,13 @@ def test_el_jugador_del_dia_es_la_mejor_puntuacion():
     # `"Ana" in texto` pasaba aunque el premio se lo llevara Bea. Lo cazó un mutante.
     # Sobre SU línea, no sobre el mensaje entero: Ana aparece también en el top y en el álbum, así que
     # `"Ana" in texto` pasaba aunque el premio se lo llevara Bea. Lo cazó un mutante.
-    linea = next(l for l in texto.splitlines() if "mejores" in l or "bordado" in l or "Arriba del todo" in l)
+    # La mejor nota puede salir en su propia línea o **fusionada** con los otros premios de la misma
+    # persona («Día de Ana: la mejor nota (en 2) y el mejor dibujo»). Se busca donde esté: lo que el escenario
+    # exige es que la nombre a ella y diga con cuánto, no en qué línea lo pone.
+    linea = next(
+        l for l in texto.splitlines()
+        if "mejor nota" in l or "mejores" in l or "bordado" in l or "Arriba del todo" in l
+    )
     assert "Ana" in linea and "Bea" not in linea
     assert "2" in linea, "y con la puntuación que lo gana"
 
@@ -536,9 +542,11 @@ def test_un_hecho_menor_no_se_cuela_por_delante_de_los_mejores():
     """
     from resumen import bloque_la_jornada
 
-    # Nadie baja de 3, así que no hay pulla; y J0 saca 3 en un día de media 5, que es «sembrado».
+    # J0 saca 3 en un día de media alta, que es «sembrado»; **y J1 saca 2, así que el mejor del día es otro**.
+    # Hace falta separarlos: «día fino» no se publica si es la misma persona que tiene la mejor nota, porque
+    # sería el mismo elogio dos veces, y entonces este test no tendría el 🌟 que busca.
     filas, hoy = [], []
-    for i, nota in enumerate((3, 5, 5, 6, 6)):
+    for i, nota in enumerate((3, 2, 6, 6, 6)):  # media 4,6: J0 queda 1,6 por debajo, que es «sembrado»
         filas += historia(f"J{i}", 8, score=5)
         hoy.append(resultado(f"J{i}", HOY, nota, LORO))
 
@@ -783,3 +791,85 @@ def test_la_regla_del_relevo_sobre_las_clasificaciones():
     assert hay_relevo(
         tabla(("Ana", 3.0), ("Bea", 4.0)), tabla(("Ana", 3.1), ("Bea", 4.0)), suficientes
     ) is None
+
+
+# @scenarios los-premios-de-la-misma-persona-se-dicen-una-vez
+def test_los_premios_de_la_misma_persona_van_en_una_linea():
+    """Cada bloque elegía a su candidato por separado y el mensaje nombraba a la misma persona una vez por
+    premio: medido en la jornada 1681, alguien salía **siete veces** y leído junto parecía un monográfico.
+
+    Se dice una vez, y **sin repartir los premios**: ceder el mejor dibujo al segundo para hablar de más gente
+    sería falsear quién ganó qué.
+    """
+    from resumen import bloque_la_jornada
+
+    # Ana gana la nota del día y además el mejor dibujo: dos reconocimientos y protagonista única de los dos.
+    # **Nota 3 y no 2**: un 2 dispara además la pulla del sospechoso, que no es un reconocimiento y no se
+    # fusiona —son cosas distintas—, y con ella el test no aislaría la propiedad que quiere fijar.
+    filas, hoy = [], []
+    for quien, nota, patron in [
+        ("Ana", 3, LORO), ("Bea", 5, ABSTRACTO), ("Cris", 5, ABSTRACTO),
+        ("Dan", 5, ABSTRACTO), ("Eva", 5, ABSTRACTO),
+    ]:
+        filas += historia(quien, 8, score=4)
+        hoy.append(resultado(quien, HOY, nota, patron))
+
+    bloque = bloque_la_jornada(filas + hoy, "0", HOY)
+    lineas_con_ana = [l for l in bloque.splitlines() if "Ana" in l]
+
+    assert len(lineas_con_ana) == 1, f"Ana sale en más de una línea: {lineas_con_ana}"
+    assert "la mejor nota" in lineas_con_ana[0] and "el mejor dibujo" in lineas_con_ana[0]
+    assert "en 3" in lineas_con_ana[0], "y fusionar no puede costar la puntuación"
+
+
+# @scenarios los-premios-de-la-misma-persona-se-dicen-una-vez
+def test_un_premio_compartido_no_entra_en_la_fusion():
+    """Si la mejor nota la comparten varios, «la mejor nota» dejaría de ser cierto para quien la comparte."""
+    from resumen import bloque_la_jornada
+
+    # Ana y Bea empatan en la mejor nota; el dibujo es de Ana.
+    filas, hoy = [], []
+    for quien, nota, patron in [
+        ("Ana", 2, LORO), ("Bea", 2, ABSTRACTO), ("Cris", 5, ABSTRACTO),
+        ("Dan", 5, ABSTRACTO), ("Eva", 5, ABSTRACTO),
+    ]:
+        filas += historia(quien, 8, score=4)
+        hoy.append(resultado(quien, HOY, nota, patron))
+
+    bloque = bloque_la_jornada(filas + hoy, "0", HOY)
+
+    assert "Día de Ana" not in bloque and "Pleno de Ana" not in bloque, (
+        f"no se fusiona un premio compartido: {bloque}"
+    )
+    assert "Bea" in bloque, "y quien lo comparte sigue nombrada"
+
+
+# @scenarios la-jornada-se-cuenta-en-lugar-de-rotularse
+def test_el_mensaje_publica_la_variante_del_que_cierra_tarde_y_clava():
+    """**Sobre el mensaje, no sobre la función.**
+
+    `_linea_de_horarios` recibió `del_dia` y la dificultad para poder distinguir al que cierra tarde del que
+    cierra tarde *y además* clava la nota. Pero la llamada desde el bloque se quedó sin pasarlos —un replace
+    que falló en silencio— y la variante era **inalcanzable en producción** mientras su test seguía en verde,
+    porque llamaba a la función directamente. Lo cazó la prueba de mutación.
+    """
+    from resumen import bloque_la_jornada
+
+    # Cinco jugadores para que la jornada tenga muestra; Eva cierra cinco horas tarde con la mejor nota.
+    filas, hoy = [], []
+    for quien, nota in [("Ana", 5), ("Bea", 5), ("Cris", 6), ("Dan", 6), ("Eva", 2)]:
+        filas += historia(quien, 8, score=5)
+        hoy.append(resultado(quien, HOY, nota, ABSTRACTO))
+
+    base = 1788249600.0
+    senales = _Senales(publicacion={
+        "U_Ana": base, "U_Bea": base + 600, "U_Cris": base + 900,
+        "U_Dan": base + 1200, "U_Eva": base + 5 * 3600,
+    })
+
+    bloque = bloque_la_jornada(filas + hoy, "0", HOY, senales)
+
+    # Se comparan los **fragmentos distintivos** del registro, no el arranque: casi todas sus frases empiezan
+    # por `{jugador}`, así que el prefijo sería cadena vacía y la aserción pasaría siempre.
+    assert any("Eva" in l and ("Nada que declarar" in l or "Habiendo visto" in l or "debajo del brazo" in l
+                               or "Cosas del azar" in l) for l in bloque.splitlines()), bloque

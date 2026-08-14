@@ -382,17 +382,24 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
 
     # Las piezas, cada una con su prioridad. La pulla del sospechoso va primera cuando existe: es de lo único
     # que el grupo va a hablar.
-    piezas: list[tuple[int, str, set[str]]] = []
+    # `(prioridad, texto, protagonistas, reconocimiento)`. El último campo solo lo llevan las piezas que
+    # premian a alguien: son las únicas que se pueden fusionar.
+    piezas: list[tuple[int, str, set[str], str]] = []
 
     for hecho in hechos_elegidos(resultados, temporada, jornada):
+        # **«Día fino de X» no se dice si X ya tiene la mejor nota**: es el mismo elogio con otras palabras, y
+        # el mensaje acabaría felicitando dos veces por lo mismo en dos viñetas seguidas.
+        if hecho.clave == "sembrado" and hecho.jugador in protagonistas:
+            continue
         prioridad = 0 if hecho.clave in ("sospechoso", "clavada") else 4
         texto = frase_de_hecho(hecho.clave, jornada, hecho.jugador, hecho.dato, hecho.varios)
-        piezas.append((prioridad, texto, {hecho.jugador}))
+        piezas.append((prioridad, texto, {hecho.jugador}, ""))
 
     piezas.append((
         1,
         _del_ciclo(MEJORES_DEL_DIA, jornada).format(jugador=quienes_texto, intentos=mejor),
         protagonistas,
+        "mejores",
     ))
 
     obra = _obra_del_dia(resultados, temporada, jornada)
@@ -406,26 +413,30 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
                 jugador=_nombre(fila), emoji=emoji(categoria), intentos=fila["score"]
             ),
             {_nombre(fila)},
+            "dibujo",
         ))
 
     if hoy is not None and media is not None:
-        piezas.append((3, _linea_de_dificultad(hoy, media, jornada), set()))
+        piezas.append((3, _linea_de_dificultad(hoy, media, jornada), set(), ""))
 
-    for texto in _linea_de_horarios(senales, nombres, jornada):
-        piezas.append((5, texto, set()))
+    # `del_dia` y `hoy` **hacen falta**: sin ellos la mención del que cierra tarde no puede distinguir si
+    # además clavó la nota. Se quedaron sin pasar en un replace que falló en silencio, y la variante «con
+    # suerte» era inalcanzable en producción aunque su test estuviera en verde.
+    for texto in _linea_de_horarios(senales, nombres, jornada, del_dia, hoy):
+        piezas.append((5, texto, set(), ""))
 
     ausentes = _linea_de_ausentes(
         senales, [fila["jugador"] for fila in con_puesto], nombres, jornada
     )
     if ausentes:
-        piezas.append((6, ausentes, set()))
+        piezas.append((6, ausentes, set(), ""))
 
-    dichas = menciones_del_canal(senales, nombres, jornada)
-    for texto in dichas:
-        piezas.append((7, texto, set()))
+    for clave, texto, quien in menciones_del_canal(senales, nombres, jornada):
+        piezas.append((7, texto, quien, clave))
 
     piezas.sort(key=lambda pieza: pieza[0])
-    lineas = [texto for _, texto, _ in piezas]
+    piezas = _fusiona_reconocimientos(piezas, jornada, {"mejores": mejor})
+    lineas = [texto for _, texto, _, _ in piezas]
 
     # **El encadenado.** Solo la segunda línea, y solo si habla de quien abre: un conector delante de una
     # línea que cambia de sujeto suena a error, no a narración.
@@ -450,18 +461,76 @@ def _en_minuscula(frase: str, nombres) -> str:
     return frase[0].lower() + frase[1:]
 
 
-def menciones_del_canal(senales, nombres: dict[str, str], jornada: int) -> list[str]:
-    """Las menciones que salen del canal: aplausos y conversación. Los horarios tienen su propia línea."""
-    from voz import menciones
+def menciones_del_canal(
+    senales, nombres: dict[str, str], jornada: int
+) -> list[tuple[str, str, set[str]]]:
+    """Las menciones del canal como `(clave, texto, protagonistas)`.
 
+    Devuelve también **de quién habla** cada una porque es lo que permite fusionar en una línea los
+    reconocimientos de la misma persona. Antes solo devolvía el texto, así que el mensaje no podía saber que
+    la ovación y el mejor dibujo eran del mismo y la nombraba dos veces.
+    """
+    from voz import menciones, protagonistas_de_menciones
+
+    reacciones = getattr(senales, "reacciones", None) or {}
+    respuestas = getattr(senales, "respuestas", None) or {}
     dichas = menciones(
-        reacciones=getattr(senales, "reacciones", None) or {},
-        respuestas=getattr(senales, "respuestas", None) or {},
+        reacciones=reacciones,
+        respuestas=respuestas,
         publicacion={},
         nombres=nombres,
         jornada=jornada,
     )
-    return [dichas[clave] for clave in ("aplaudido", "comentado") if clave in dichas]
+    quienes = protagonistas_de_menciones(reacciones, respuestas, nombres)
+    return [
+        (clave, dichas[clave], quienes.get(clave, set()))
+        for clave in ("aplaudido", "comentado")
+        if clave in dichas
+    ]
+
+
+def _fusiona_reconocimientos(
+    piezas: list[tuple[int, str, set[str], str]],
+    jornada: int,
+    datos: dict[str, object] | None = None,
+) -> list[tuple[int, str, set[str], str]]:
+    """Junta en una línea los reconocimientos de los que alguien es **protagonista único**.
+
+    Cada bloque elige a su mejor candidato por separado, y cuando coincide la misma persona el mensaje la
+    nombra una vez por premio: medido en la jornada 1681, alguien salía siete veces y leído junto parecía un
+    monográfico. Cada línea era correcta; el conjunto, no.
+
+    **No se reparten los premios a otra gente.** Ceder el mejor dibujo al segundo para que el mensaje hable de
+    más personas sería falsear quién ganó qué. Lo que se hace es decirlo una sola vez.
+
+    Se exige **protagonista único**: si la mejor nota la comparten tres, esa línea no entra en la fusión,
+    porque «la mejor nota» dejaría de ser cierto para quien la comparte.
+    """
+    from refranero import DIA_DE, LOGROS_DEL_DIA
+    from voz import _del_ciclo
+
+    datos = datos or {}
+    unicos: dict[str, list[int]] = {}
+    for indice, (_, _, protagonistas, reconocimiento) in enumerate(piezas):
+        if reconocimiento in LOGROS_DEL_DIA and len(protagonistas) == 1:
+            unicos.setdefault(next(iter(protagonistas)), []).append(indice)
+
+    fusionables = {quien: indices for quien, indices in unicos.items() if len(indices) > 1}
+    if not fusionables:
+        return piezas
+
+    # Solo se fusiona a una persona por mensaje: dos líneas «Día de X» y «Día de Y» seguidas serían el mismo
+    # problema con otra cara. Se elige quien más acumule, y a igualdad la primera por orden de aparición.
+    quien, indices = max(fusionables.items(), key=lambda par: (len(par[1]), -par[1][0]))
+    logros = [
+        LOGROS_DEL_DIA[piezas[i][3]].replace("{dato}", str(datos.get(piezas[i][3], "")))
+        for i in indices
+    ]
+    linea = _del_ciclo(DIA_DE, jornada).format(jugador=quien, logros=_y(logros))
+
+    resultado = [pieza for i, pieza in enumerate(piezas) if i not in set(indices)]
+    resultado.insert(0, (piezas[indices[0]][0], linea, {quien}, ""))
+    return resultado
 
 
 def bloque_relevo(resultados: list[dict], temporada: str, jornada: int) -> str:

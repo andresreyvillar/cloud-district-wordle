@@ -50,6 +50,11 @@ La jornada y la temporada se derivan **de los datos**, no del reloj (§10).
 **WHEN** se compone el resumen de una jornada
 **THEN** nombra a quien mejor puntuación hizo ese día, y si hay empate los nombra a todos.
 
+### los-premios-de-la-misma-persona-se-dicen-una-vez
+**WHEN** alguien es protagonista único de dos o más reconocimientos de la jornada
+**THEN** se dicen en una sola línea en lugar de una por premio; y **no se reparten a otra gente**, porque
+cederle el premio al segundo para hablar de más personas sería falsear quién ganó qué.
+
 ### el-mensaje-tiene-una-sola-voz
 **WHEN** se compone el resumen
 **THEN** las frases con tono —la pulla, el conector y el cierre— salen todas del mismo estado de ánimo de la
