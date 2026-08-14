@@ -576,3 +576,38 @@ CONECTORES: dict[str, tuple[str, ...]] = {
     RUTINA: ("Además", "Y", "También", "Por cierto"),
     FIESTA: ("Y encima", "Y además", "Y de paso", "Y para redondearlo"),
 }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EL RELEVO EN CABEZA
+#
+# Cambiar de líder es lo que de verdad enciende una liga, y hasta ahora el mensaje no lo decía: publicaba el
+# marcador nuevo como si nada hubiera pasado. Se detecta **comparando el marcador con y sin la jornada de
+# hoy**, así que no hace falta guardar historia: es cálculo, y da lo mismo cuantas veces se repita.
+#
+# Registro de rivalidad y competición, con la misma técnica que el cierre: la referencia se reescribe para el
+# juego en lugar de citarse. `{nuevo}` es quien pasa a mandar y `{anterior}` quien se queda.
+# ─────────────────────────────────────────────────────────────────────────────
+
+CAMBIO_DE_LIDER: tuple[str, ...] = (
+    "👑 *Relevo en cabeza:* {nuevo} desbanca a {anterior}. Solo puede quedar uno.",
+    "👑 *Relevo en cabeza:* {anterior} ha perdido el trono y {nuevo} ya se ha sentado.",
+    "👑 *Relevo en cabeza:* {nuevo} adelanta a {anterior} en la última curva.",
+    "👑 *Relevo en cabeza:* se cae {anterior}, sube {nuevo}. Esto es una liga, no un paseo.",
+    "👑 *Relevo en cabeza:* {nuevo} le ha quitado el cinturón a {anterior}.",
+    "👑 *Relevo en cabeza:* {anterior} fuera, {nuevo} dentro. El clásico cambia de dueño.",
+    "👑 *Relevo en cabeza:* {nuevo} manda ahora, y {anterior} tendrá algo que decir mañana.",
+    "👑 *Relevo en cabeza:* {nuevo} ha hecho el adelantamiento del año sobre {anterior}.",
+    "👑 *Relevo en cabeza:* {anterior} llevaba la corona prestada. {nuevo} ha venido a recogerla.",
+    "👑 *Relevo en cabeza:* {nuevo} gana el pulso a {anterior}. Segunda vuelta mañana.",
+    "👑 *Relevo en cabeza:* golpe de estado limpio de {nuevo} contra {anterior}.",
+    "👑 *Relevo en cabeza:* {anterior} ha aguantado lo que ha podido. Ahora manda {nuevo}.",
+)
+
+#: Cuando quien manda **aguanta** un intento de adelantamiento, que también es rivalidad.
+LIDER_AGUANTA: tuple[str, ...] = (
+    "👑 *Sigue mandando {nuevo}*, que ha aguantado el asalto de {anterior}.",
+    "👑 *{nuevo} defiende el trono* de {anterior} por muy poco.",
+    "👑 *{nuevo} aguanta arriba*: {anterior} se ha quedado a las puertas.",
+    "👑 *Nada que hacer, {anterior}*: {nuevo} sigue mandando.",
+)

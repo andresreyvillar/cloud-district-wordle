@@ -54,6 +54,10 @@ y el 48% del grupo. Una medalla tiene gracia el día que se gana.
 
 ## Comportamiento observable
 
+### las-medallas-del-mismo-grupo-van-juntas
+**WHEN** varias medallas de la jornada las gana exactamente la misma gente
+**THEN** se anuncian en una sola línea, en lugar de repetir los mismos nombres con distinto emoji.
+
 ### medalla-nueva-se-anuncia
 **WHEN** un jugador alcanza una medalla en la jornada que se está publicando
 **THEN** el texto del resumen la anuncia con su nombre.
