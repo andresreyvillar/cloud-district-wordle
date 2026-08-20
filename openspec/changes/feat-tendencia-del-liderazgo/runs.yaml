@@ -1,0 +1,50 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-20T18:05:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Tendencia del liderazgo enganchada al relevo. Análisis primero: cinco candidatas medidas sobre los
+    datos reales, entran dos (volatilidad y dominio) y se descartan tres por falta de señal con 7-14
+    partidas. La simulación de la línea diaria fue lo que decidió el diseño: publicaba «Andrés R. lleva 7
+    jornadas mandando» en dos jornadas en que mandaba Claire, porque mezclaba total acumulado con racha.
+    De ahí que `historia_del_liderazgo` devuelva las dos cifras separadas y que el dominio comparta hueco
+    con el relevo. Frecuencia natural (8 de 14 en agosto) por decisión del dueño frente a la alternativa
+    de hitos cada 5 cambios. Ronda de corrección: el primer fixture no pasaba los filtros de temporada
+    (hacen falta 5 jugadores por jornada y día laborable) y los seis tests fallaban por eso, no por la
+    implementación. Gate 4c a la segunda: el primer intento usaba `git restore --source=:0`, que no
+    resolvía, así que las cuatro mutaciones se acumularon y el aislamiento era falso; repetido con copia
+    de respaldo, cada mutación mata exactamente su escenario.
+
+- run: '2026-08-20T19:40:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Tensión creciente del empate, a peticion del dueño. La medida cambió el diseño: escalar por **duración**
+    no habría tenido señal —los cinco empates de agosto duran una jornada, y de las doce rachas del histórico
+    once duran una—, así que escala por **recurrencia**, que llega a cuatro veces en las dos temporadas.
+    Tres niveles: neutro, insistente (2-3) y tenso (4+). Dos rondas de corrección, las dos por tests que no
+    ejercitaban lo que decían: (1) el fixture de empates salteados no volvía a igualar las medias porque son
+    acumuladas, hacía falta intercambiar las notas para que las sumas coincidieran; (2) más grave, el test del
+    punto doble era **vacío** —miraba las jornadas 1 y 2, y `_del_ciclo` elige por `jornada % len(registro)`,
+    así que no seleccionaba ninguna de las nueve frases que ponen el nombre antes del punto: quitar el colapso
+    no lo ponía en rojo—. Lo cazaron las mutaciones M9 y M10, que no fallaban. Rehecho para llegar a las
+    jornadas que sí seleccionan esas frases. De paso se arregló un defecto previo visible: las frases de
+    rivalidad usan `.format()` directo y publicaban «separan a Claire de Andrés R.. Nada»; el colapso de
+    `con_nombre` se extrajo a `sin_punto_doble` en lugar de duplicarlo.
