@@ -278,6 +278,36 @@ RIVALIDAD_PELEA: tuple[str, ...] = (
     "🔥 *Pelea por el primer puesto:* {b} a {cifra} de {a}: esto no está decidido.",
 )
 
+#: El **segundo y el tercer** empate de la misma pareja en la temporada. Llevan además `{veces}`.
+#:
+#: La escalada va por **recurrencia, no por duración**. Medido: los empates consecutivos casi no existen —los
+#: cinco de agosto duran una sola jornada, y de las doce rachas del histórico once duran una y solo una llegó
+#: a tres—. Lo que sí se repite es la misma pareja empatando en jornadas salteadas: Andrés R. y Claire cuatro
+#: veces en agosto (#1678, #1681, #1685, #1687) y otras cuatro en el histórico.
+RIVALIDAD_EMPATE_OTRA_VEZ: tuple[str, ...] = (
+    "🔥 *Pelea por el primer puesto:* otra vez {cifra} y {cifra}. {a} y {b} llevan {veces} empates este mes.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} vuelven a estar clavados a {cifra}. Van {veces}.",
+    "🔥 *Pelea por el primer puesto:* y van {veces}. {a} y {b} a {cifra}, otra vez sin separarse.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} empatan por {veces}ª vez a {cifra}. Esto empieza a cansar.",
+    "🔥 *Pelea por el primer puesto:* {veces} empates ya entre {a} y {b}. A {cifra} otra vez.",
+    "🔥 *Pelea por el primer puesto:* otra jornada, mismo {cifra} para {a} y {b}. Van {veces}.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} no hay manera: {veces} veces a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* van {veces} empates de {a} y {b}. Alguien tendrá que ceder.",
+)
+
+#: El **cuarto empate o más** de la misma pareja: la tensión al máximo. Cuatro es el techo observado en las
+#: dos temporadas (195 jornadas), así que este registro es el del caso extremo de verdad.
+RIVALIDAD_EMPATE_TENSION: tuple[str, ...] = (
+    "🔥 *Pelea por el primer puesto:* {veces}º empate de {a} y {b}. Esto ya no es casualidad, es un pulso.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b}, {veces} veces a {cifra}. Se está poniendo muy tenso esto.",
+    "🔥 *Pelea por el primer puesto:* {veces} empates. {a} y {b} a {cifra}, y la cosa huele a chamusquina.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} llevan {veces} empates a {cifra}. Que alguien traiga la manta.",
+    "🔥 *Pelea por el primer puesto:* {veces}º empate entre {a} y {b}. Esto se decide en la última jornada.",
+    "🔥 *Pelea por el primer puesto:* {a} contra {b}, {veces}ª vez en tablas a {cifra}. Aquí no cabe un alfiler.",
+    "🔥 *Pelea por el primer puesto:* {veces} veces empatados {a} y {b}. Uno de los dos va a estallar.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} a {cifra} por {veces}ª vez. La tensión se corta con un cuchillo.",
+)
+
 #: Empate a tres o más. **No se nombran todos**: por encima de dos, la lista hace crecer el mensaje con el
 #: grupo, que es la propiedad que un test de otro slice protege.
 RIVALIDAD_MONTON: tuple[str, ...] = (
@@ -645,3 +675,40 @@ LOGROS_DEL_DIA: dict[str, str] = {
     "aplaudido": "la ovación del canal",
     "comentado": "el hilo del día",
 }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TENDENCIA DEL LIDERAZGO
+#
+# **No tiene línea propia.** Se enganchó al relevo después de simular la alternativa: una línea diaria de
+# tendencia salía desde la tercera jornada del mes, se repetía casi idéntica varios días y llegó a publicar
+# «Andrés R. lleva 7 jornadas mandando» tres días seguidos **mientras mandaba Claire** — porque «7 jornadas»
+# era un total acumulado y «lleva mandando» se lee como racha. Pegada al relevo solo aparece cuando de verdad
+# ha cambiado algo.
+#
+# Frecuencia natural, decisión del dueño: en un mes volátil como agosto sale 8 de 14 jornadas, y en uno
+# tranquilo el 7%, igual que el relevo. La frecuencia **es** la señal: el mensaje habla de rivalidad cuando
+# hay rivalidad.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: El contexto que se le añade al relevo. `{cambios}` y `{reparto}` (los dos que se la están jugando).
+TENDENCIA_DEL_MES: tuple[str, ...] = (
+    "Y van {cambios} cambios de cabeza este mes: {reparto}.",
+    "{cambios} veces ha cambiado el líder en lo que va de mes. Reparto: {reparto}.",
+    "Esto no se decide hasta el último día: {cambios} cambios ya, y {reparto}.",
+    "Van {cambios} relevos este mes. Se lo están repartiendo: {reparto}.",
+    "El mes lleva {cambios} vuelcos en la cabeza: {reparto}.",
+    "Otro más: {cambios} cambios de líder este mes ({reparto}).",
+    "Nadie se acomoda: {cambios} relevos y un reparto de {reparto}.",
+    "{cambios} cambios de cabeza. Esto es una liga de verdad: {reparto}.",
+)
+
+#: El caso opuesto: alguien lleva jornadas **seguidas** sin soltar la cabeza. `{jugador}` y `{racha}`.
+DOMINIO: tuple[str, ...] = (
+    "👑 {jugador} lleva {racha} jornadas seguidas sin soltar la cabeza.",
+    "👑 {racha} jornadas mandando {jugador}, y nadie se le acerca.",
+    "👑 Nadie le quita la cabeza a {jugador}: {racha} jornadas ya.",
+    "👑 {jugador} se ha instalado arriba: {racha} jornadas seguidas.",
+    "👑 {racha} jornadas de reinado de {jugador}. Alguien tendrá que hacer algo.",
+    "👑 {jugador} sigue arriba por {racha}ª jornada consecutiva.",
+)

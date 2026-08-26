@@ -67,7 +67,15 @@ def con_nombre(plantilla: str, jugador: str) -> str:
     producía «Hoy se ha hablado de Andrés R..». Lo cazó **mirar el mensaje**, no la suite: los tests
     comprobaban que el nombre saliera, no cómo quedaba la frase alrededor.
     """
-    texto = plantilla.format(jugador=jugador)
+    return sin_punto_doble(plantilla.format(jugador=jugador))
+
+
+def sin_punto_doble(texto: str) -> str:
+    """Colapsa el punto duplicado que dejan los nombres acabados en punto.
+
+    Vive aparte de `con_nombre` porque el problema no es exclusivo de `{jugador}`: las frases de rivalidad
+    rellenan `{a}` y `{b}` con `.format()` directo y publicaban «separan a Claire de Andrés R.. Nada».
+    """
     while ".." in texto:
         texto = texto.replace("..", ".")
     return texto

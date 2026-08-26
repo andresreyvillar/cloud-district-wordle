@@ -20,6 +20,7 @@ from __future__ import annotations
 from album import album
 from comentarios import seccion_de_comentarios
 from figures import FIGURAS, figura, rasgos
+from seasons import resultados_de_temporada
 from standings import clasificacion
 
 #: Cuántos entran en el top del mensaje. Cinco es lo que pide el diseño del resumen.
@@ -557,11 +558,125 @@ def bloque_relevo(resultados: list[dict], temporada: str, jornada: int) -> str:
         len({r["wordle_id"] for r in previos}),
     )
     if not relevo:
-        return ""
+        return _dominio(resultados, temporada, jornada)
 
     nuevo, anterior = relevo
     plantilla = _del_ciclo(CAMBIO_DE_LIDER, jornada)
-    return con_nombre(plantilla.replace("{nuevo}", nuevo).replace("{anterior}", "{jugador}"), anterior)
+    linea = con_nombre(plantilla.replace("{nuevo}", nuevo).replace("{anterior}", "{jugador}"), anterior)
+    return " ".join(x for x in (linea, _tendencia_del_mes(resultados, temporada, jornada, nuevo, anterior)) if x)
+
+
+def _tendencia_del_mes(resultados, temporada, jornada, nuevo: str, anterior: str) -> str:
+    """El contexto del mes que se le añade al relevo: cuántas veces ha cambiado la cabeza y el reparto.
+
+    **Va pegado al relevo y no tiene línea propia.** Simulada como línea diaria salía desde la tercera jornada
+    del mes, se repetía casi idéntica varios días y llegó a decir «lleva 7 jornadas mandando» de quien ya no
+    mandaba. Pegada al relevo solo aparece cuando de verdad ha cambiado algo.
+
+    El reparto nombra a **los dos del relevo**, no a los dos con más jornadas acumuladas: en una jornada real
+    el top-2 acumulado decía «Andrés R. 7 · Dani Sanchez 1» el día que la cabeza se la jugaban Andrés R. y
+    Claire, dejando fuera a quien acababa de cogerla.
+    """
+    from refranero import TENDENCIA_DEL_MES
+    from voz import _del_ciclo
+
+    historia = historia_del_liderazgo(resultados, temporada, jornada)
+    # Con un solo cambio el relevo ya lo dice todo; «y van 1 cambios» no es una tendencia.
+    if historia["cambios"] < 2:
+        return ""
+    dias = historia["jornadas"]
+    reparto = " · ".join(f"{quien} {dias.get(quien, 0)}" for quien in (nuevo, anterior))
+    return _del_ciclo(TENDENCIA_DEL_MES, jornada).format(cambios=historia["cambios"], reparto=reparto)
+
+
+def _dominio(resultados: list[dict], temporada: str, jornada: int) -> str:
+    """El caso opuesto al relevo: nadie le quita la cabeza a alguien desde hace jornadas.
+
+    Ocupa **el mismo hueco** que el relevo, así que el mensaje nunca lleva dos líneas de liderazgo: o ha
+    cambiado la cabeza, o alguien lleva mucho sin soltarla, pero no las dos cosas.
+
+    Cuenta jornadas **seguidas**, y solo con un líder único: «lleva 6 jornadas sin soltar la cabeza» dicho de
+    dos personas empatadas no es dominio de nadie.
+    """
+    from refranero import DOMINIO
+    from voz import _del_ciclo, con_nombre
+
+    historia = historia_del_liderazgo(resultados, temporada, jornada)
+    if historia["racha"] < RACHA_PARA_DOMINIO or len(historia["lideres"]) != 1:
+        return ""
+    plantilla = _del_ciclo(DOMINIO, jornada).replace("{racha}", str(historia["racha"]))
+    return con_nombre(plantilla, historia["lideres"][0])
+
+
+#: A partir de cuántos empates de la misma pareja se insiste, y a partir de cuántos se habla de tensión.
+#:
+#: Los cortes salen del reparto real: la recurrencia llega a 2, 3 y 4 en las dos temporadas, y 4 es el techo
+#: en 195 jornadas. Con estos cortes agosto reparte los cuatro empates de Andrés R. y Claire en neutro,
+#: insistente, insistente y tenso, en vez de repetir la misma frase cuatro veces.
+EMPATES_PARA_INSISTIR = 2
+EMPATES_PARA_TENSION = 4
+
+#: Jornadas seguidas en cabeza a partir de las cuales se comenta el dominio. Cinco: en agosto lo alcanzó una
+#: sola vez en catorce jornadas, así que distingue al que se instala arriba sin salir cada dos días.
+RACHA_PARA_DOMINIO = 5
+
+
+def historia_del_liderazgo(resultados: list[dict], temporada: str, jornada: int) -> dict:
+    """Cuántas veces ha cambiado la cabeza, quién ha liderado cuántas jornadas y la racha actual.
+
+    Se **deriva** recorriendo las jornadas hasta la de hoy, sin guardar nada: medido, recalcular el marcador en
+    cada jornada cuesta 0,02 s para un mes y 0,23 s para las 181 del histórico, así que persistir esta historia
+    sería estado que mantener a cambio de nada — y este proyecto ya tuvo un payload sobrescrito por una copia
+    vieja.
+
+    `racha` cuenta jornadas **seguidas** con la misma cabeza. La distinción importa: la primera versión de esto
+    mezclaba total acumulado con racha y publicaba «lleva 7 jornadas mandando» mientras mandaba otra persona.
+    """
+    jornadas = sorted({fila["wordle_id"] for fila in resultados_de_temporada(resultados, temporada)
+                       if fila["wordle_id"] <= jornada})
+    cambios, racha = 0, 0
+    jornadas_liderando: dict[str, int] = {}
+    # Cuántas jornadas ha tenido exactamente esta cabeza, para saber si el empate de hoy se repite.
+    cabezas: dict[tuple[str, ...], int] = {}
+    anterior: list[str] | None = None
+
+    for cada in jornadas:
+        previos = [fila for fila in resultados if fila["wordle_id"] < cada]
+        hasta = [fila for fila in resultados if fila["wordle_id"] <= cada]
+        tabla = [f for f in clasificacion(hasta, temporada) if f.get("posicion")]
+        if not tabla:
+            continue
+        lideres = sorted(f["nombre"] for f in tabla if f["posicion"] == tabla[0]["posicion"])
+        # **Se cuenta lo que se anuncia**, y por eso pasa por `hay_relevo` en lugar de comparar los dos
+        # conjuntos de líderes: comparándolos, agosto daba «3 cambios de cabeza» el día del primer relevo
+        # anunciado, porque contaba también el empate alternando entre dos igualados —que a propósito no se
+        # anuncia—. El grupo habría leído un número que no corresponde a nada que se le haya contado.
+        relevo = hay_relevo(
+            [f for f in clasificacion(previos, temporada) if f.get("posicion")],
+            tabla,
+            len({fila["wordle_id"] for fila in previos}),
+        )
+        if relevo:
+            cambios += 1
+            racha = 1
+        elif anterior is not None and set(lideres) != set(anterior):
+            # Cambió quién está arriba sin que sea un relevo anunciable: la racha se corta igual, porque
+            # «lleva N jornadas sin soltar la cabeza» sería falso si la soltó.
+            racha = 1
+        else:
+            racha += 1
+        anterior = lideres
+        cabezas[tuple(lideres)] = cabezas.get(tuple(lideres), 0) + 1
+        for quien in lideres:
+            jornadas_liderando[quien] = jornadas_liderando.get(quien, 0) + 1
+
+    return {
+        "cambios": cambios,
+        "jornadas": jornadas_liderando,
+        "racha": racha,
+        "lideres": anterior or [],
+        "veces_esta_cabeza": cabezas.get(tuple(anterior), 0) if anterior else 0,
+    }
 
 
 def hay_relevo(antes: list[dict], ahora: list[dict], jornadas_previas: int) -> tuple[str, str] | None:
@@ -604,8 +719,14 @@ def bloque_rivalidad(resultados: list[dict], temporada: str, jornada: int) -> st
     tomar el segundo elemento del array como «el segundo» y restar las medias— y que con un empate en cabeza
     producía «le sigue a 0,00».
     """
-    from refranero import RIVALIDAD_EMPATE, RIVALIDAD_MONTON, RIVALIDAD_PELEA
-    from voz import _del_ciclo
+    from refranero import (
+        RIVALIDAD_EMPATE,
+        RIVALIDAD_EMPATE_OTRA_VEZ,
+        RIVALIDAD_EMPATE_TENSION,
+        RIVALIDAD_MONTON,
+        RIVALIDAD_PELEA,
+    )
+    from voz import _del_ciclo, sin_punto_doble
 
     filas = [fila for fila in clasificacion(resultados, temporada) if fila["clasificado"]]
     if len(filas) < 2:
@@ -616,11 +737,22 @@ def bloque_rivalidad(resultados: list[dict], temporada: str, jornada: int) -> st
     nota = _cifra(lider["media_temporada"])
 
     if len(empatados) == 2:
-        return _del_ciclo(RIVALIDAD_EMPATE, jornada).format(
-            a=empatados[0]["nombre"], b=empatados[1]["nombre"], cifra=nota
+        # **La tensión escala por recurrencia, no por duración.** Medido: los empates consecutivos casi no
+        # existen (los cinco de agosto duran una jornada; de las doce rachas del histórico, once duran una).
+        # Lo que se repite es la misma pareja empatando en jornadas salteadas, y eso llega a cuatro veces.
+        veces = historia_del_liderazgo(resultados, temporada, jornada)["veces_esta_cabeza"]
+        registro = (
+            RIVALIDAD_EMPATE_TENSION if veces >= EMPATES_PARA_TENSION
+            else RIVALIDAD_EMPATE_OTRA_VEZ if veces >= EMPATES_PARA_INSISTIR
+            else RIVALIDAD_EMPATE
         )
+        return sin_punto_doble(_del_ciclo(registro, jornada).format(
+            a=empatados[0]["nombre"], b=empatados[1]["nombre"], cifra=nota, veces=veces
+        ))
     if len(empatados) > 2:
-        return _del_ciclo(RIVALIDAD_MONTON, jornada).format(cuantos=len(empatados), cifra=nota)
+        return sin_punto_doble(
+            _del_ciclo(RIVALIDAD_MONTON, jornada).format(cuantos=len(empatados), cifra=nota)
+        )
 
     siguiente = next((fila for fila in filas if fila["posicion"] != lider["posicion"]), None)
     if not siguiente:
@@ -628,9 +760,9 @@ def bloque_rivalidad(resultados: list[dict], temporada: str, jornada: int) -> st
     ventaja = siguiente["media_temporada"] - lider["media_temporada"]
     if ventaja > VENTAJA_MINIMA:
         return ""
-    return _del_ciclo(RIVALIDAD_PELEA, jornada).format(
+    return sin_punto_doble(_del_ciclo(RIVALIDAD_PELEA, jornada).format(
         a=lider["nombre"], b=siguiente["nombre"], cifra=_cifra(ventaja)
-    )
+    ))
 
 
 def _cifra(valor: float) -> str:

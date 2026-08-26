@@ -97,6 +97,22 @@ reconocible, el premio se declara desierto en lugar de dárselo a un abstracto.
 el desempate alternando entre dos que van igualados, ni cuando la temporada aún no tiene jornadas previas
 suficientes para que «antes» signifique algo.
 
+### la-tendencia-del-mes-acompana-al-relevo
+**WHEN** el relevo se anuncia y la cabeza ya había cambiado antes ese mes
+**THEN** se añade cuántas veces ha cambiado y el reparto de jornadas **de los dos que se la juegan**; con un
+solo cambio no se añade nada, porque «y van 1 cambios» no es una tendencia.
+
+### el-dominio-en-cabeza-se-cuenta
+**WHEN** nadie le quita la cabeza al líder desde varias jornadas seguidas
+**THEN** se dice cuántas lleva, en el **mismo hueco** que el relevo —así el mensaje nunca lleva dos líneas de
+liderazgo—; y no se dice de dos empatados, porque un empate no es dominio de nadie.
+
+### la-tension-sube-cuando-el-empate-se-repite
+**WHEN** la misma pareja vuelve a empatar en cabeza en la temporada
+**THEN** la frase sube de tono con las veces que llevan —neutra la primera, insistente a partir de la segunda
+y tensa a partir de la cuarta— y dice cuántas son; la escalada va por **veces que se repite**, no por
+jornadas seguidas, porque un empate casi nunca dura dos jornadas.
+
 ### la-pelea-por-el-primer-puesto-se-cuenta
 **WHEN** el primer puesto está empatado o la ventaja del líder se remonta en una jornada
 **THEN** el mensaje lo dice nombrando a quienes se lo juegan; y con ventaja amplia no se inventa rivalidad.
