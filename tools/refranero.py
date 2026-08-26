@@ -195,56 +195,124 @@ AUSENTE: tuple[str, ...] = (
 
 #: `(condicion, plantilla)`. Las condiciones se implementan en el módulo que compone el resumen, no aquí:
 #: este fichero es solo el texto. Los huecos disponibles van documentados por condición.
-MEMES: tuple[tuple[str, str], ...] = (
-    (
-        "clavada-en-una",
+MEMES: dict[str, tuple[str, ...]] = {
+    # La jornada en que alguien lo clava a la primera.
+    "clavada-en-una": (
         "🎯 *Meme del día:* nadie. Absolutamente nadie. {jugador}: «lo he sacado en 1».",
+        "🎯 *Meme del día:* {jugador} ha abierto el juego, ha escrito una palabra y se ha ido a desayunar.",
+        "🎯 *Meme del día:* un intento. Uno. {jugador}, explícate.",
+        "🎯 *Meme del día:* {jugador} no ha jugado al Wordle, ha jugado a la lotería y le ha tocado.",
+        "🎯 *Meme del día:* el resto pensando la primera palabra y {jugador} ya recogiendo.",
+        "🎯 *Meme del día:* {jugador} en 1. Esto o es telepatía o hay que revisar el sorteo.",
+        "🎯 *Meme del día:* {jugador} lo ha sacado en 1 y no piensa dar explicaciones.",
+        "🎯 *Meme del día:* {jugador}, primer intento, palabra correcta. Aquí se ha roto algo.",
+        "🎯 *Meme del día:* nos hemos levantado todos para nada. {jugador} ya lo tenía en 1.",
+        "🎯 *Meme del día:* {jugador} ha acertado en 1 y el resto seguimos siendo mortales.",
     ),
-    (
-        "solo-uno-lo-saca",
+    # Uno resuelve y el grupo se estrella.
+    "solo-uno-lo-saca": (
         "🎯 *Meme del día:* el grupo entero al fondo del pozo y {jugador} saludando desde el borde.",
+        "🎯 *Meme del día:* {jugador} ha resuelto. El resto seguimos ahí abajo, gritando.",
+        "🎯 *Meme del día:* superviviente único: {jugador}. Los demás, que descansen.",
+        "🎯 *Meme del día:* {jugador} ha salido del laberinto y ha cerrado la puerta por fuera.",
+        "🎯 *Meme del día:* de todos los que entraron, solo volvió {jugador}.",
+        "🎯 *Meme del día:* {jugador} arriba y el resto haciendo cola en el fondo.",
+        "🎯 *Meme del día:* {jugador} lo saca y los demás firmamos el acta de defunción.",
+        "🎯 *Meme del día:* uno de {total}. {jugador}, el último que quedaba en pie.",
     ),
-    (
-        "todos-fallan",
+    # Se estrella el grupo entero.
+    "todos-fallan": (
         "🎯 *Meme del día:* esto ya no es un juego, es una encerrona. {faltan} de {total} sin resolver.",
+        "🎯 *Meme del día:* {faltan} de {total} fuera. Hoy ha ganado el diccionario.",
+        "🎯 *Meme del día:* naufragio general. {faltan} de {total} sin sacarla.",
+        "🎯 *Meme del día:* {faltan} de {total} en blanco. Hoy no hemos jugado, nos han jugado.",
+        "🎯 *Meme del día:* pleno al fracaso: {faltan} de {total}. Un aplauso para la palabra.",
+        "🎯 *Meme del día:* {faltan} de {total} caídos. Ni uno. Ni uno solo.",
+        "🎯 *Meme del día:* hoy la palabra nos ha hecho la cama a {faltan} de {total}.",
     ),
-    (
-        "todos-el-mismo-numero",
+    # Todos coinciden en el mismo número.
+    "todos-el-mismo-numero": (
         "🎯 *Meme del día:* {total} personas, {intentos} intentos cada una. O nos copiamos o somos el mismo.",
+        "🎯 *Meme del día:* {total} de {total} en {intentos}. Sospechosa unanimidad.",
+        "🎯 *Meme del día:* {intentos} intentos, {total} personas, cero discrepancias. Esto es un sindicato.",
+        "🎯 *Meme del día:* todos en {intentos}. Hemos alcanzado la paz mundial.",
+        "🎯 *Meme del día:* {total} cuadrículas idénticas en {intentos}. Da un poco de miedo.",
+        "🎯 *Meme del día:* {intentos} para todos. Hoy nadie destaca y nadie se hunde.",
     ),
-    (
-        "el-lider-se-hunde",
+    # El líder de la temporada firma un desastre.
+    "el-lider-se-hunde": (
         "🎯 *Meme del día:* {jugador} lidera la temporada y hoy ha firmado un {intentos}. El pedestal resbala.",
+        "🎯 *Meme del día:* {jugador} manda en la tabla y hoy ha hecho {intentos}. Se avisa por megafonía.",
+        "🎯 *Meme del día:* el líder {jugador}, hoy en {intentos}. Todos tenemos un mal día, unos más público.",
+        "🎯 *Meme del día:* {jugador} arriba en la temporada, abajo en la jornada: {intentos}.",
+        "🎯 *Meme del día:* {intentos} del líder. {jugador}, la corona pesa.",
+        "🎯 *Meme del día:* {jugador} recordándonos que también es humano, con un {intentos}.",
+        "🎯 *Meme del día:* hoy el líder {jugador} ha jugado como el resto. Peor: {intentos}.",
     ),
-    (
-        "el-ultimo-clava",
+    # El último de la tabla clava la jornada.
+    "el-ultimo-clava": (
         "🎯 *Meme del día:* {jugador}, último de la tabla, resolviendo en {intentos} como si nada. Nos vamos a enterar.",
+        "🎯 *Meme del día:* el farolillo rojo {jugador} en {intentos}. Empieza la remontada o el milagro.",
+        "🎯 *Meme del día:* {jugador} va último y hoy ha hecho {intentos}. Cuidado con el de atrás.",
+        "🎯 *Meme del día:* {intentos} del último clasificado. {jugador} ha venido a avisar.",
+        "🎯 *Meme del día:* {jugador} cierra la tabla y abre la jornada, con {intentos}.",
+        "🎯 *Meme del día:* el último de la lista, {jugador}, hoy el primero de la clase: {intentos}.",
     ),
-    (
-        "remontada-del-dia",
-        "🎯 *Meme del día:* {jugador} ha pasado de comparsa a protagonista en una sola jornada.",
-    ),
-    (
-        "empate-multitudinario",
-        "🎯 *Meme del día:* {cuantos} empatados arriba. Hoy no hay rey, hay asamblea.",
-    ),
-    (
-        "figura-imposible",
-        "🎯 *Meme del día:* {jugador} ha fallado tanto que le ha salido arte. {figura} y sin querer.",
-    ),
-    (
-        "nadie-dibuja-nada",
+    # Nadie deja una figura reconocible.
+    "nadie-dibuja-nada": (
         "🎯 *Meme del día:* {total} cuadrículas y ni una figura. Hoy el álbum es una pared en blanco.",
+        "🎯 *Meme del día:* {total} lienzos y ni una obra. Museo cerrado por inventario.",
+        "🎯 *Meme del día:* cero figuras en {total} cuadrículas. Hoy no somos artistas, somos oficinistas.",
+        "🎯 *Meme del día:* {total} intentos de arte y ni un cuadro. El álbum sigue esperando.",
+        "🎯 *Meme del día:* hoy nadie ha dibujado nada. {total} cuadrículas de puro trámite.",
     ),
-    (
-        "el-grupo-al-completo",
+    # El grupo entero aparece.
+    "el-grupo-al-completo": (
         "🎯 *Meme del día:* {total} de {total}. Hoy no falta nadie, y eso también da miedo.",
+        "🎯 *Meme del día:* asistencia perfecta: {total} de {total}. ¿Quién ha convocado esto?",
+        "🎯 *Meme del día:* {total} de {total} presentes. Hoy no hay excusas que valgan.",
+        "🎯 *Meme del día:* pleno de asistencia, {total} de {total}. Se pasa lista y no falla nadie.",
+        "🎯 *Meme del día:* hoy hemos venido {total} de {total}. Ni una baja.",
     ),
-    (
-        "dia-de-dos-mundos",
+    # Empate multitudinario en cabeza.
+    "empate-multitudinario": (
+        "🎯 *Meme del día:* {cuantos} empatados arriba. Hoy no hay rey, hay asamblea.",
+        "🎯 *Meme del día:* {cuantos} en cabeza. Esto no es un podio, es un ascensor lleno.",
+        "🎯 *Meme del día:* {cuantos} compartiendo el primer puesto. Que alguien traiga más sillas.",
+        "🎯 *Meme del día:* {cuantos} arriba y ninguno manda. Democracia directa.",
+        "🎯 *Meme del día:* primer puesto para {cuantos}. El trofeo habrá que partirlo.",
+    ),
+    # Alguien falla tanto que le sale una figura.
+    "figura-imposible": (
+        "🎯 *Meme del día:* {jugador} ha fallado tanto que le ha salido arte. {figura} y sin querer.",
+        "🎯 *Meme del día:* {jugador} buscaba la palabra y ha encontrado {figura}. Se acepta el cambio.",
+        "🎯 *Meme del día:* {figura} de {jugador}, cortesía de no dar ni una.",
+        "🎯 *Meme del día:* {jugador} no ha resuelto, ha pintado. {figura}, y bien grande.",
+        "🎯 *Meme del día:* el fracaso de {jugador} ha quedado en {figura}. Al menos queda el cuadro.",
+    ),
+    # El catch-all: mucha distancia entre el mejor y el peor.
+    #
+    # **Este es el que necesita más variantes de todos.** Medido sobre 199 jornadas, dispara en el 19% y era
+    # el 83% de todos los memes que salían — con una sola plantilla, así que en agosto se publicó la misma
+    # frase cuatro veces en diez jornadas. Lo cazó el dueño leyendo el canal.
+    "dia-de-dos-mundos": (
         "🎯 *Meme del día:* unos en {mejor} y otros en {peor}. La misma palabra, dos realidades.",
+        "🎯 *Meme del día:* de {mejor} a {peor} en el mismo día. ¿Jugamos todos a lo mismo?",
+        "🎯 *Meme del día:* {mejor} para unos, {peor} para otros. La desigualdad, en cuadrícula.",
+        "🎯 *Meme del día:* hay quien la ha visto en {mejor} y quien la ha sufrido hasta el {peor}.",
+        "🎯 *Meme del día:* del {mejor} al {peor}. Hoy el grupo va en dos vagones distintos.",
+        "🎯 *Meme del día:* {mejor} arriba, {peor} abajo. La misma palabra y dos experiencias.",
+        "🎯 *Meme del día:* unos han jugado en fácil y otros en pesadilla: {mejor} contra {peor}.",
+        "🎯 *Meme del día:* {peor} menos {mejor}. Ahí caben todas nuestras diferencias.",
+        "🎯 *Meme del día:* alguien en {mejor} y alguien en {peor}. Hoy no hay término medio.",
+        "🎯 *Meme del día:* la palabra era la misma. Los resultados, de {mejor} a {peor}.",
+        "🎯 *Meme del día:* {mejor} y {peor} en la misma jornada. Esto es un aula sin nivelar.",
+        "🎯 *Meme del día:* mientras unos cerraban en {mejor}, otros seguían peleando hasta el {peor}.",
+        "🎯 *Meme del día:* de {mejor} a {peor}: hoy el Wordle ha repartido suerte muy mal.",
+        "🎯 *Meme del día:* {mejor} el que más y {peor} el que menos. Un abismo de {hueco}.",
+        "🎯 *Meme del día:* hoy hemos vivido dos jornadas distintas: la del {mejor} y la del {peor}.",
     ),
-)
+}
 
 
 # ─────────────────────────────────────────────────────────────────────────────

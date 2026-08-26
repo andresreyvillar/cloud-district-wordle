@@ -107,6 +107,21 @@ FRASES: dict[str, tuple[str, ...]] = {
         "{dato:.0f} de {jugador}: o es un genio o tiene el diccionario abierto 🤨",
         "{jugador} ha ido directo en {dato:.0f}. Como quien ya conocía el camino 🤨",
         "Enhorabuena a {jugador} por su {dato:.0f}, y que conste nuestra sospecha 🤨",
+        # **Sin 🤨 y sin citar la nota.** El registro tenía el emoji en las 24 frases y el número en 22, así
+        # que veinticuatro textos distintos se leían como el mismo chiste repetido: cambiaban las palabras y
+        # no el molde. Lo cazó el dueño leyendo el canal. Estas insinúan sin la muleta del emoji.
+        "A {jugador} le ha salido a la primera lo que a los demás nos ha costado media mañana.",
+        "{jugador} ha entrado, ha escrito y se ha ido. Como quien tiene prisa por no dar explicaciones.",
+        "Hay quien deduce y hay quien parece que lo consulta. No señalamos a nadie, {jugador}.",
+        "Lo de {jugador} hoy tiene menos de deducción y más de información privilegiada.",
+        "{jugador} ha resuelto esto con una tranquilidad que no se aprende jugando.",
+        "Nos gustaría creer en el talento de {jugador}. Nos gustaría.",
+        "{jugador} ha acertado antes de que al resto se nos ocurriera por dónde empezar.",
+        "El acierto de {jugador} ha sido tan rápido que no ha habido tiempo ni de dudar.",
+        "A ver, {jugador}: nadie te acusa de nada. Solo lo estamos comentando en voz alta.",
+        "{jugador} tiene una intuición admirable, y muy bien informada.",
+        "Lo de {jugador} hoy no ha sido jugar, ha sido confirmar.",
+        "Sin acusaciones: {jugador} simplemente ha tenido una mañana asombrosamente lúcida.",
         *BERRINCHE,
     ),
     # Cuando caen dos o tres en la misma jornada van en una línea, y el verbo cambia. Pasa en 14 de las 167
@@ -118,6 +133,19 @@ FRASES: dict[str, tuple[str, ...]] = {
         "{dato:.0f} intentos, {jugador}. Explicaos 🤨",
         "{jugador} han resuelto en {dato:.0f} y se han quedado tan anchos 🤨",
         "Nadie resuelve en {dato:.0f} por casualidad, y {jugador} menos 🤨",
+        # Sin 🤨 y sin citar la nota, por lo mismo que en singular: el molde repetido cansa más que la frase.
+        "{jugador} han coincidido en resolverla enseguida. Qué casualidad tan bien organizada.",
+        "A {jugador} les ha salido a la primera lo que a los demás nos ha costado la mañana.",
+        "Hay quien deduce y hay quien parece que lo consulta. No señalamos a nadie, {jugador}.",
+        "Lo de {jugador} hoy tiene menos de deducción y más de información compartida.",
+        "{jugador} han resuelto esto con una tranquilidad que no se aprende jugando.",
+        "Nos gustaría creer en el talento de {jugador}. Nos gustaría.",
+        "{jugador} han acertado antes de que al resto se nos ocurriera por dónde empezar.",
+        "A ver, {jugador}: nadie os acusa de nada. Solo lo estamos comentando en voz alta.",
+        "{jugador} tienen una intuición admirable, y muy bien informada.",
+        "Lo de {jugador} hoy no ha sido jugar, ha sido confirmar.",
+        "Sin acusaciones: {jugador} simplemente han tenido una mañana asombrosamente lúcida.",
+        "Dos aciertos así, tan seguidos y tan limpios, invitan a preguntar. {jugador}.",
         *BERRINCHE,
     ),
     "sembrado": (

@@ -1,0 +1,41 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-21T18:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    Variedad del mensaje, a partir de dos avisos del dueño leyendo el canal. El diagnóstico cambió el arreglo
+    en un caso: el meme repetía literalmente la frase (una plantilla para el 83% de los memes), pero la
+    sospecha **no** repetía la frase —49 textos distintos en 50 apariciones— sino el molde, 🤨 en el 100% y la
+    nota en el 92%. Tres rondas de corrección, todas por tests: (1) un test previo usaba el 🤨 como proxy de
+    «es la pulla y no el dato», y lo invalidó quitar el emoji de un tercio de las frases: se sustituyó por la
+    comparación con lo que produce `frase`, que es más estricta; (2) dos aserciones nuevas buscaban literales
+    («figura») donde las variantes dicen «lienzos» u «obra», y se pasaron a comparar contra el registro;
+    (3) el test del umbral de asamblea comparaba dos textos entre sí, así que bajar el umbral seguía dando
+    textos distintos y la mutación M4 pasaba — rehecho contra `None`. Además los propios tests cazaron dos
+    defectos del código nuevo: un choque de `total` en el `format` de `nadie-dibuja-nada`, y esa misma
+    condición afirmando que nadie dibujó cuando lo que faltaba era el patrón (61 de las 80 partidas de agosto
+    no lo tienen).
+
+- run: '2026-08-21T18:50:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Los gates se ancoran en `resumen-diario-compuesto`, que declara solo `publicacion`. Anclarlos en
+    `voz-de-la-jornada` o `comentarios-de-la-jornada` da `specs-coverage` en rojo porque esos slices declaran
+    además `estadisticas` e `ingesta`, y este cambio no toca ninguna de las dos: es texto y selección. Se
+    dejaron sin escribir en lugar de rellenarlas para contentar al gate, que es lo que §6 prohíbe. Los dos
+    slices con escenarios nuevos pasan su cobertura por separado (23/23 y 11/11).

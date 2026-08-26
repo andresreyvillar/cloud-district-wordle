@@ -134,6 +134,26 @@ def _figura_del_dia_por_jugador(resultados: list[dict], jornada: int) -> dict[st
     return dibujos
 
 
+def _figuras_reconocibles_del_dia(resultados: list[dict], jornada: int) -> dict[str, str]:
+    """Solo los dibujos **premiables** del día, por jugador.
+
+    Distinta de `_figura_del_dia_por_jugador`, que devuelve el emoji de cualquier cuadrícula —abstractos
+    incluidos— porque el marcador quiere poner algo al lado de cada nombre. Aquí hace falta lo contrario:
+    saber si hubo arte de verdad, para no llamar «figura» a una mancha ni decir que no hubo ninguna cuando lo
+    que falta es el patrón.
+    """
+    from figures import emoji
+
+    dibujos = {}
+    for fila in _del_dia(resultados, jornada):
+        if not fila.get("pattern"):
+            continue
+        categoria = figura(fila["pattern"])
+        if categoria in FIGURAS:
+            dibujos[fila["slack_user_id"]] = emoji(categoria)
+    return dibujos
+
+
 def bloque_top(resultados: list[dict], temporada: str, jornada: int) -> str:
     """Los cinco primeros del marcador, con el emoji de lo que dibujó cada uno **hoy**.
 
@@ -839,7 +859,20 @@ def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[
     # los dos sitios y «Ovación para Claire» se publicaba dos veces en el mismo mensaje.
     return [
         *anadidos(
-            meme=meme_del_dia(filas, jornada, lider=lider, ultimo=ultimo),
+            meme=meme_del_dia(
+                filas,
+                jornada,
+                lider=lider,
+                ultimo=ultimo,
+                # Los dibujos de hoy, el tamaño del empate en cabeza y cuánta gente juega la temporada:
+                # cuatro formas de meme los necesitan y no se pueden derivar de la jornada sola.
+                figuras=_figuras_reconocibles_del_dia(resultados, jornada),
+                cuadriculas=sum(1 for f in del_dia if f.get("pattern")),
+                empatados_arriba=sum(
+                    1 for f in con_puesto if f["posicion"] == con_puesto[0]["posicion"]
+                ),
+                plantilla=len(con_puesto),
+            ),
             menciones={},
             # **Del estado de ánimo**, no del registro de dificultad: es la última pieza con tono del mensaje
             # y tiene que sonar a lo mismo que la pulla y el conector de arriba.
