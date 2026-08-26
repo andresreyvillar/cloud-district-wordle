@@ -531,7 +531,14 @@ def test_la_pulla_del_sospechoso_abre_el_comentario():
     primera = bloque_la_jornada(filas + hoy, "0", HOY).splitlines()[0]
 
     assert "J0" in primera, f"quien resolvió en 2 abre: {primera}"
-    assert "🤨" in primera, f"y con la pulla, no con el dato: {primera}"
+    # **Se compara con la frase exacta, no con el emoji.** Antes esto exigía un 🤨 en la línea, y el emoji
+    # servía de proxy de «es la pulla y no el dato». Dejó de valer al ampliar el registro con frases que
+    # insinúan sin emoji a propósito: el proxy se rompió aunque el comportamiento era correcto. Comparar con
+    # lo que produce `frase` comprueba lo que el escenario dice, y además no se desafina si el registro crece.
+    from comentarios import frase
+
+    esperada = frase("sospechoso", HOY, "J0", dato=2)
+    assert esperada in primera, f"y con la pulla, no con el dato: {primera!r} · esperaba {esperada!r}"
 
 
 # @scenarios lo-mas-notable-abre-el-comentario

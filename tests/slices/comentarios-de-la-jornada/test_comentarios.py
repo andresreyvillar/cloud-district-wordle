@@ -380,3 +380,32 @@ def test_ninguna_frase_deja_huecos_sin_rellenar():
         for plantilla in plantillas:
             texto = plantilla.format(jugador="Ana", dato=2.0)
             assert "{" not in texto and "}" not in texto, f"{clave}: {plantilla}"
+
+
+# @scenarios la-sospecha-no-repite-el-molde
+def test_la_sospecha_no_repite_siempre_el_mismo_molde():
+    """**El defecto que el dueño leyó en el canal.** El registro tenía 🤨 en las 24 frases y la nota en 22,
+    así que las palabras cambiaban y el molde no: se leía como el mismo chiste todos los días.
+
+    Se comprueba **pasando por la selección real**, no mirando el registro: lo que importa es lo que sale
+    publicado en una serie de jornadas.
+    """
+    from comentarios import frase
+
+    salidas = [frase("sospechoso", j, "Ana", dato=2) for j in range(1, 60)]
+    distintas = set(salidas)
+    assert len(distintas) >= 20, f"pocas frases distintas: {len(distintas)}"
+
+    sin_emoji = [s for s in distintas if "🤨" not in s]
+    sin_nota = [s for s in distintas if "2" not in s]
+    assert len(sin_emoji) >= 8, f"casi todas llevan el mismo emoji: {len(sin_emoji)} de {len(distintas)}"
+    assert len(sin_nota) >= 8, f"casi todas citan la nota: {len(sin_nota)} de {len(distintas)}"
+
+
+# @scenarios la-sospecha-no-repite-el-molde
+def test_la_sospecha_en_plural_tampoco_repite_el_molde():
+    from comentarios import frase
+
+    salidas = {frase("sospechoso", j, "Ana y Bea", dato=2, varios=True) for j in range(1, 60)}
+    sin_emoji = [s for s in salidas if "🤨" not in s]
+    assert len(sin_emoji) >= 8, f"el plural sigue con el mismo molde: {len(sin_emoji)} de {len(salidas)}"

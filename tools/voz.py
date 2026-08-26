@@ -310,6 +310,10 @@ def meme_del_dia(
     jornada: int,
     lider: str | None = None,
     ultimo: str | None = None,
+    figuras: dict[str, str] | None = None,
+    empatados_arriba: int = 0,
+    plantilla: int | None = None,
+    cuadriculas: int = 0,
 ) -> str | None:
     """El meme que describe la jornada, o `None` si la jornada no tiene forma.
 
@@ -317,13 +321,22 @@ def meme_del_dia(
     Si no se cumple ninguna **no hay meme**, y eso es deliberado — un chiste que no encaja delata que lo pone
     una máquina, que es peor que no ponerlo.
 
+    Dentro de la condición que gana, la variante la elige `_del_ciclo` por número de jornada. Antes cada
+    condición tenía **una sola plantilla**, y medido sobre 199 jornadas el catch-all `dia-de-dos-mundos` era
+    el 83% de los memes publicados: en agosto salió la misma frase cuatro veces en diez jornadas. Lo cazó el
+    dueño leyéndolo en el canal.
+
+    `figuras`, `empatados_arriba`, `plantilla` y `cuadriculas` son opcionales porque sus condiciones necesitan
+    datos que esta función no puede derivar de la jornada —los dibujos **reconocibles**, el marcador, cuánta
+    gente hay en la temporada y cuántas cuadrículas se guardaron—. Sin ellos esas cuatro formas simplemente no
+    compiten, en lugar de fallar.
+
     Es **texto**, nunca una imagen. El bot tiene `files:write` y subir una imagen ajena al canal sería un
     problema de derechos y de permisos a la vez; la plantilla consigue el mismo chiste sin ninguno de los dos.
     """
     if not del_dia:
         return None
 
-    plantillas = dict(MEMES)
     total = len(del_dia)
     resueltos = [fila for fila in del_dia if fila["intentos"] < FALLO]
     fallados = total - len(resueltos)
@@ -333,36 +346,65 @@ def meme_del_dia(
     def nombre(fila: dict) -> str:
         return fila.get("nombre") or fila["jugador"]
 
+    def elige(clave: str, **datos) -> str:
+        # Los datos de la condición **pisan** los de la jornada: `nadie-dibuja-nada` habla de cuántas
+        # cuadrículas hay, no de cuánta gente jugó, y pasar los dos con el mismo nombre reventaba el format.
+        huecos = {"total": total, "faltan": fallados, "mejor": mejor, "peor": peor, "hueco": peor - mejor}
+        huecos.update(datos)
+        return _del_ciclo(MEMES[clave], jornada).format(**huecos)
+
     if len(resueltos) == 1 and total >= 3 and fallados >= 2:
         clave = "solo-uno-lo-saca" if resueltos[0]["intentos"] > 1 else "clavada-en-una"
-        return plantillas[clave].format(jugador=nombre(resueltos[0]))
+        return elige(clave, jugador=nombre(resueltos[0]))
 
     if any(fila["intentos"] == 1 for fila in del_dia):
         clavada = next(fila for fila in del_dia if fila["intentos"] == 1)
-        return plantillas["clavada-en-una"].format(jugador=nombre(clavada))
+        return elige("clavada-en-una", jugador=nombre(clavada))
 
-    if resueltos == [] :
-        return plantillas["todos-fallan"].format(faltan=fallados, total=total)
+    if not resueltos:
+        return elige("todos-fallan")
 
     if total >= 4 and mejor == peor:
-        return plantillas["todos-el-mismo-numero"].format(total=total, intentos=mejor)
+        return elige("todos-el-mismo-numero", intentos=mejor)
+
+    # Falló la palabra y aun así le salió un dibujo: la forma más golosa de las que faltaban por implementar.
+    if figuras:
+        fallo_con_arte = next(
+            (fila for fila in del_dia if fila["intentos"] >= FALLO and figuras.get(fila["jugador"])), None
+        )
+        if fallo_con_arte:
+            return elige(
+                "figura-imposible",
+                jugador=nombre(fallo_con_arte),
+                figura=figuras[fallo_con_arte["jugador"]],
+            )
+
+    if empatados_arriba >= 3:
+        return elige("empate-multitudinario", cuantos=empatados_arriba)
 
     if lider:
         del_lider = next((fila for fila in del_dia if nombre(fila) == lider), None)
         if del_lider and del_lider["intentos"] >= FALLO - 1:
-            return plantillas["el-lider-se-hunde"].format(
-                jugador=lider, intentos=del_lider["intentos"]
-            )
+            return elige("el-lider-se-hunde", jugador=lider, intentos=del_lider["intentos"])
 
     if ultimo:
         del_ultimo = next((fila for fila in del_dia if nombre(fila) == ultimo), None)
         if del_ultimo and del_ultimo["intentos"] <= 2:
-            return plantillas["el-ultimo-clava"].format(
-                jugador=ultimo, intentos=del_ultimo["intentos"]
-            )
+            return elige("el-ultimo-clava", jugador=ultimo, intentos=del_ultimo["intentos"])
+
+    # Hoy no falta nadie de los que juegan la temporada.
+    if plantilla and total >= plantilla:
+        return elige("el-grupo-al-completo")
+
+    # Ni una figura reconocible **habiendo cuadrículas**. La distinción no es cosmética: la primera versión
+    # de esto miraba solo si `figuras` estaba vacío, y eso es verdad tanto cuando nadie dibujó nada como
+    # cuando no se guardó ningún patrón — 61 de las 80 partidas de agosto no lo tienen. Habría publicado «ni
+    # una figura» los días en que simplemente no lo sabíamos.
+    if cuadriculas >= 4 and not figuras:
+        return elige("nadie-dibuja-nada", total=cuadriculas)
 
     if peor - mejor >= 4:
-        return plantillas["dia-de-dos-mundos"].format(mejor=mejor, peor=peor)
+        return elige("dia-de-dos-mundos")
 
     return None
 

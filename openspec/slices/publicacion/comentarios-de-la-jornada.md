@@ -87,6 +87,12 @@ clavarla lo lleva [[voz-de-la-jornada]], que es donde está la hora de verdad.
 **WHEN** un comentario habla de más de una persona
 **THEN** la frase concuerda en número: «no han aparecido» y no «no ha aparecido».
 
+### la-sospecha-no-repite-el-molde
+**WHEN** la sospecha se comenta en varias jornadas
+**THEN** las frases no comparten todas la misma forma: unas señalan la nota y otras la insinúan, y no todas
+llevan el mismo emoji — que veinticuatro textos distintos usaran el mismo molde se leía como un solo chiste
+repetido.
+
 ### la-frase-varia-sin-azar
 **WHEN** el mismo hecho se detecta en dos jornadas distintas
 **THEN** el texto puede variar, pero **de forma reproducible**: dos ejecuciones sobre la misma jornada dan
