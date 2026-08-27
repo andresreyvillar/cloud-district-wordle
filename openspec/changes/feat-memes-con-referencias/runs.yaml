@@ -1,0 +1,43 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-27T13:45:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Dos avisos del dueño leyendo el mensaje. El del meme era un fallo de fondo que el conteo escondía: había
+    79 plantillas y cero referencias reconocibles, así que la variedad era de palabras y no de contenido.
+    Una ronda de corrección, y de las que solo se ven mirando el resultado: añadidas al final del registro,
+    las 110 referencias nuevas no salían nunca, porque `_del_ciclo` elige por `jornada % len` y los índices
+    bajos seguían siendo los genéricos — la jornada de hoy caía justo en el último de los viejos. Se
+    intercalaron alternando referencia y genérica. El de los ausentes era un `sorted()` sobre los nombres que
+    destruía el orden de clasificación que `con_puesto` ya traía: hoy nombraba a los tres primeros del
+    alfabeto (13º, 13º y 15º) y escondía a la segunda de la tabla en la coleta.
+
+- run: '2026-08-27T14:05:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Segunda tanda de referencias, esta vez **buscadas** en lugar de escritas de memoria, a petición del dueño.
+    De 189 a 264 plantillas y del 58% al 62% con referencia. Dos rondas de corrección, las dos por
+    sobre-especificación en mis propios tests: (1) el test de referencias llevaba una lista de quince marcas
+    que no cubría las condiciones que citan «clones» o «Consejo Jedi», así que daba rojo con el registro
+    correcto — sustituida por la lista completa, documentada como criterio editorial del test; (2) el test de
+    rotación muestreaba 39 jornadas y comparaba con el tamaño exacto del registro, que ya tiene 47 variantes
+    en `dia-de-dos-mundos` — el rango se deriva ahora del propio registro. Ambas eran números escritos a mano
+    donde debía haber una propiedad.

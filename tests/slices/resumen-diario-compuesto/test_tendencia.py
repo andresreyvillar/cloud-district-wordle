@@ -202,3 +202,31 @@ def test_la_rivalidad_no_publica_el_punto_doble():
     lineas = revisa(empatados, 14) + revisa(salteados, 8)
     assert any("Bea H." in linea and "Ana R." in linea for linea in lineas), "los nombres deben salir"
     assert len(lineas) >= 10, f"pocas frases ejercitadas: {len(lineas)}"
+
+
+# @scenarios los-ausentes-se-nombran-por-orden-de-clasificacion
+def test_los_ausentes_se_nombran_por_orden_de_clasificacion():
+    """**Los tres nombrados son los tres mejor situados que faltan**, no los tres primeros del alfabeto.
+
+    Antes se ordenaba con `sorted()` sobre los nombres, así que quien tuviera la inicial más baja salía
+    nombrado y el líder ausente podía quedar escondido en «y otros 3». Decisión del dueño: la ausencia de
+    quien va primero es más noticia.
+    """
+    from types import SimpleNamespace
+
+    from resumen import AUSENTES_NOMBRADOS, _linea_de_ausentes
+
+    # Zoe va primera y Ana última: alfabéticamente sería justo al contrario.
+    por_puesto = ["Zoe", "Yago", "Xan", "Bea", "Ana"]
+    nombres = {j: j for j in por_puesto}
+    # Nadie ha publicado: faltan todos, así que la coleta se activa.
+    senales = SimpleNamespace(publicacion={})
+    assert _linea_de_ausentes(senales, por_puesto, nombres, 1) == "", "sin señales no se afirma nada"
+
+    # Con señales de otro jugador, los cinco de la tabla cuentan como ausentes.
+    senales = SimpleNamespace(publicacion={"Otro": 1})
+    linea = _linea_de_ausentes(senales, por_puesto, nombres, 1)
+    nombrados = [n for n in por_puesto if n in linea]
+    assert nombrados == por_puesto[:AUSENTES_NOMBRADOS], (
+        f"deben salir los {AUSENTES_NOMBRADOS} mejor clasificados y en su orden: {linea!r}")
+    assert "Ana" not in linea, f"el último clasificado no se nombra: {linea!r}"
