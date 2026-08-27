@@ -64,6 +64,16 @@ indefinidamente sin que nadie se entere.
 **THEN** se usa la v1, que es lo que hay desplegado. El corte lo decide una variable de entorno, no un
 despliegue de código.
 
+### la-jornada-no-se-publica-dos-veces
+**WHEN** el canal ya tiene la captura de la jornada que toca publicar
+**THEN** no se vuelve a publicar y la ejecución termina bien, sin sacar la captura — porque abrir el
+navegador para descubrir después que no había que publicar gasta el runner para nada.
+
+### si-el-canal-no-se-puede-leer-se-publica
+**WHEN** no se puede comprobar si ya se publicó, porque el canal no responde
+**THEN** se publica igualmente: entre dejar al grupo sin resumen y arriesgar un duplicado con el canal
+caído, se elige publicar.
+
 ### una-publicacion-fallida-no-termina-en-exito
 **WHEN** la captura o la subida fallan
 **THEN** la ejecución termina con error, para que el workflow lo marque en rojo. Hoy imprime el fallo y

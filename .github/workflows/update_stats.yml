@@ -2,7 +2,12 @@ name: Hourly Data Update
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    # **Minuto 23 y no en punto.** El :00 es el minuto más disputado de GitHub: todo el mundo programa ahí,
+    # esa cola es la más larga y la primera que se descarta cuando hay presión. Medido sobre este repo con
+    # `0 * * * *`: entre 21 y 23 ejecuciones de 24 en días buenos, y las que salían llegaban con 20-60 min de
+    # retraso (:22, :36, :55). El 26 de agosto, con una caída de Actions, se quedó en 16 de 24 y el 27 en 1
+    # de 12. Cambiar de minuto no arregla las caídas de GitHub, pero sí la contención del minuto en punto.
+    - cron: '23 * * * *'
   workflow_dispatch:
 
 jobs:

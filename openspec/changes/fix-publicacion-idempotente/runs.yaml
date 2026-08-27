@@ -1,0 +1,24 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-27T13:10:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Idempotencia de la publicación, a raíz de un duplicado real en el canal el 26 de agosto: el cron de las
+    17:00 no se disparó por una caída crítica de Actions (15:11-18:01), se lanzó a mano a las 18:47 y el
+    programado llegó a las 19:11 y publicó otra vez. La decisión de lanzarlo a mano fue del agente, que
+    estimó el duplicado como improbable; falló por 26 minutos. De ahí que la guarda viva en el código.
+    Dos rondas de corrección: (1) la lectura del canal quedó antes de comprobar si hay jornada, así que los
+    tests de captura empezaron a llamar a Slack de verdad —cortocircuitado, y de paso se evita una llamada
+    inútil—; (2) la mutación M5 no ponía nada en rojo porque el test dobla `leer_mensajes` entero y el
+    repliegue del lector real nunca se ejecutaba: se hizo el cliente inyectable y se cubrió. Los horarios
+    salen del `:00` porque medido sobre este repo ese minuto perdía 1-3 ejecuciones diarias incluso sin
+    incidentes y llegaba con 20-60 min de retraso.

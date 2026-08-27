@@ -96,7 +96,7 @@ def test_una_captura_fallida_termina_con_error():
     codigo = asyncio.run(
         post_ranking.publicar(
             capturar=captura_que_falla,
-            subir=lambda ruta, texto: True,
+            subir=lambda ruta, texto, titulo: True,
             resultados=[],
         )
     )
@@ -113,7 +113,7 @@ def test_una_subida_fallida_termina_con_error():
     async def captura_ok(objetivo):
         return "captura.png"
 
-    def subida_que_falla(ruta, texto):
+    def subida_que_falla(ruta, texto, titulo):
         return False
 
     codigo = asyncio.run(
@@ -135,7 +135,7 @@ def test_una_publicacion_correcta_termina_bien():
         visto["objetivo"] = objetivo
         return "captura.png"
 
-    def subida_ok(ruta, texto):
+    def subida_ok(ruta, texto, titulo):
         visto["texto"] = texto
         return True
 
@@ -196,3 +196,125 @@ def test_si_el_elemento_no_existe_la_captura_falla_diciendo_cual():
         assert ".no-existe" in str(error), f"el error no dice qué selector falló: {error}"
     else:
         raise AssertionError("debería haber fallado")
+
+
+# ── Idempotencia: la jornada no se publica dos veces ────────────────────────────────────────────────────
+#
+# Existe porque el 26 de agosto de 2026 el grupo recibió el mismo resumen dos veces: el cron de las 17:00 no
+# había corrido por una caída de Actions, se lanzó a mano a las 18:47, y el programado llegó a las 19:13 con
+# 2h11m de retraso. La protección tiene que vivir en el código, no en el criterio de quien lo lanza.
+
+CAPTURA_FALSA = "/tmp/no-existe-captura.png"
+
+
+def _mensaje_del_bot(jornada: int) -> dict:
+    from post_ranking import titulo_de
+
+    return {"bot_id": "B123", "files": [{"title": titulo_de(jornada)}]}
+
+
+# @scenarios la-jornada-no-se-publica-dos-veces
+def test_la_jornada_ya_publicada_no_se_republica():
+    import asyncio
+
+    import post_ranking
+
+    filas = [{"wordle_id": 1694, "player_name": "Ana", "score": 3, "date": "2026-08-27", "pattern": None}]
+    capturas, subidas = [], []
+
+    async def captura(objetivo):
+        capturas.append(objetivo)
+        return CAPTURA_FALSA
+
+    codigo = asyncio.run(
+        post_ranking.publicar(
+            capturar=captura,
+            subir=lambda ruta, texto, titulo: subidas.append(titulo) or True,
+            resultados=filas,
+            leer_mensajes=lambda: [_mensaje_del_bot(1694)],
+        )
+    )
+    assert codigo == 0, "no republicar no es un fallo"
+    assert not subidas, "no debe volver a publicar"
+    assert not capturas, "y no debe ni sacar la captura: es el paso caro"
+
+
+# @scenarios la-jornada-no-se-publica-dos-veces
+def test_una_jornada_distinta_si_se_publica():
+    """La guarda mira **la jornada**, no si hay algún mensaje del bot: el de ayer no bloquea el de hoy."""
+    import asyncio
+
+    import post_ranking
+
+    filas = [{"wordle_id": 1694, "player_name": "Ana", "score": 3, "date": "2026-08-27", "pattern": None}]
+    subidas = []
+
+    async def captura(objetivo):
+        return CAPTURA_FALSA
+
+    codigo = asyncio.run(
+        post_ranking.publicar(
+            capturar=captura,
+            subir=lambda ruta, texto, titulo: subidas.append(titulo) or True,
+            resultados=filas,
+            leer_mensajes=lambda: [_mensaje_del_bot(1693)],
+        )
+    )
+    assert codigo == 0
+    assert len(subidas) == 1, "la jornada de hoy sí se publica"
+    assert "1694" in subidas[0], f"y su captura lleva la marca de la jornada: {subidas[0]}"
+
+
+# @scenarios la-jornada-no-se-publica-dos-veces
+def test_un_mensaje_de_persona_no_bloquea_la_publicacion():
+    """Alguien puede pegar en el canal un fichero con ese título; solo cuenta lo que subió el bot."""
+    from post_ranking import titulo_de, ya_publicada
+
+    de_persona = {"files": [{"title": titulo_de(1694)}]}
+    assert not ya_publicada([de_persona], 1694)
+    assert ya_publicada([_mensaje_del_bot(1694)], 1694)
+
+
+# @scenarios si-el-canal-no-se-puede-leer-se-publica
+def test_sin_poder_leer_el_canal_se_publica():
+    import asyncio
+
+    import post_ranking
+
+    filas = [{"wordle_id": 1694, "player_name": "Ana", "score": 3, "date": "2026-08-27", "pattern": None}]
+    subidas = []
+
+    async def captura(objetivo):
+        return CAPTURA_FALSA
+
+    codigo = asyncio.run(
+        post_ranking.publicar(
+            capturar=captura,
+            subir=lambda ruta, texto, titulo: subidas.append(titulo) or True,
+            resultados=filas,
+            leer_mensajes=lambda: [],  # lo que devuelve `mensajes_recientes` cuando Slack falla
+        )
+    )
+    assert codigo == 0 and len(subidas) == 1, "un canal ilegible no puede dejar al grupo sin mensaje"
+
+
+# @scenarios si-el-canal-no-se-puede-leer-se-publica
+def test_el_lector_del_canal_se_repliega_a_vacio():
+    """**El repliegue del lector real, no del doble.** El test de arriba sustituye `leer_mensajes` entero, así
+    que este camino no se ejercitaba: lo destapó la prueba de mutación al no ponerse en rojo.
+    """
+    from slack_sdk.errors import SlackApiError
+
+    from post_ranking import mensajes_recientes
+
+    class CanalCaido:
+        def conversations_history(self, **_):
+            raise SlackApiError("boom", {"error": "channel_not_found"})
+
+    assert mensajes_recientes(cliente=CanalCaido()) == [], "un fallo de lectura no bloquea la publicación"
+
+    class CanalOk:
+        def conversations_history(self, **_):
+            return {"messages": [{"bot_id": "B1", "files": []}]}
+
+    assert len(mensajes_recientes(cliente=CanalOk())) == 1

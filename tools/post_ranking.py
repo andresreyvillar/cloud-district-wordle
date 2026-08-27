@@ -296,7 +296,65 @@ async def capture_ranking(objetivo: Objetivo) -> str:
         return ruta
 
 
-def upload_to_slack(file_path: str, texto: str) -> bool:
+#: El título de la captura **lleva la jornada**, y por eso se puede saber si ya se publicó.
+#:
+#: Es la señal más barata que existe aquí: no hace falta guardar estado en ninguna parte ni consultar el
+#: reloj, basta con mirar si el canal ya tiene una captura de esta jornada. Se prefirió a comparar fechas
+#: porque una publicación muy retrasada puede cruzar la medianoche UTC —el 26 de agosto el cron llegó con
+#: 2h11m de retraso por una caída de Actions— y ahí la comparación por fecha diría que no se publicó.
+TITULO_DE_LA_CAPTURA = "Ranking Wordle del Día 🏆 · #{jornada}"
+
+
+def titulo_de(jornada: int | None) -> str:
+    """El título de la captura de una jornada. Sin jornada, el de siempre."""
+    if jornada is None:
+        return "Ranking Wordle del Día 🏆"
+    return TITULO_DE_LA_CAPTURA.format(jornada=jornada)
+
+
+def ya_publicada(mensajes: list[dict], jornada: int | None) -> bool:
+    """Si el canal ya tiene la captura de esta jornada.
+
+    **Función pura**: entran los mensajes y la jornada, sale un sí o un no. Lo que la hace verificable sin
+    tocar Slack, y lo que permite fijar en un test que no se republica.
+
+    Existe porque el 26 de agosto el grupo recibió el mismo resumen dos veces: se lanzó a mano al ver que el
+    cron de las 17:00 no había corrido, y el programado llegó 26 minutos después. La protección tiene que
+    estar aquí y no en el criterio de quien lo lanza.
+    """
+    if jornada is None:
+        return False
+    marca = titulo_de(jornada)
+    for mensaje in mensajes:
+        if not mensaje.get("bot_id"):
+            continue
+        for fichero in mensaje.get("files") or []:
+            if (fichero.get("title") or "") == marca:
+                return True
+    return False
+
+
+def mensajes_recientes(limite: int = 30, cliente=None) -> list[dict]:
+    """Los últimos mensajes del canal, para saber si ya se publicó. Un fallo de lectura devuelve vacío.
+
+    El cliente entra por parámetro para poder doblarlo: sin eso, el repliegue ante un fallo de Slack era
+    código sin cubrir —el test de arriba dobla `leer_mensajes` entero, así que nunca pasaba por aquí— y la
+    prueba de mutación lo destapó.
+
+    Devolver vacío ante un fallo significa **publicar**: entre no publicar el resumen del día y arriesgar un
+    duplicado si además el canal no responde, se elige publicar. Un canal caído no puede dejar al grupo sin
+    mensaje.
+    """
+    try:
+        cli = cliente if cliente is not None else WebClient(token=SLACK_TOKEN)
+        respuesta = cli.conversations_history(channel=CHANNEL_ID, limit=limite)
+        return respuesta.get("messages") or []
+    except SlackApiError as error:
+        print(f"No se pudo leer el canal para comprobar duplicados: {error}", file=sys.stderr)
+        return []
+
+
+def upload_to_slack(file_path: str, texto: str, titulo: str) -> bool:
     """Sube la captura. Devuelve si se ha publicado: el que llama decide qué hacer con el fallo."""
     client = WebClient(token=SLACK_TOKEN)
     try:
@@ -304,7 +362,7 @@ def upload_to_slack(file_path: str, texto: str) -> bool:
         client.files_upload_v2(
             channel=CHANNEL_ID,
             file=file_path,
-            title="Ranking Wordle del Día 🏆",
+            title=titulo,
             initial_comment=texto,
         )
         print("Imagen publicada correctamente.")
@@ -314,7 +372,9 @@ def upload_to_slack(file_path: str, texto: str) -> bool:
         return False
 
 
-async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=None) -> int:
+async def publicar(
+    capturar=capture_ranking, subir=upload_to_slack, resultados=None, leer_mensajes=mensajes_recientes
+) -> int:
     """El flujo de publicación, con la captura y la subida por parámetro para poder doblarlas.
 
     **Devuelve el código de salida.** Antes cualquier fallo se imprimía y la ejecución terminaba bien: el
@@ -322,6 +382,16 @@ async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=N
     """
     objetivo = objetivo_de_captura()
     filas = leer_resultados() if resultados is None else resultados
+    jornada = max(fila["wordle_id"] for fila in filas) if filas else None
+
+    # **La comprobación va antes de la captura**, que es el paso caro: abrir un navegador para descubrir
+    # después que no hay que publicar sería tirar medio minuto y un runner.
+    # Sin jornada no se lee el canal: no hay nada que comparar, y una lectura de más es una llamada de red
+    # que además metía a Slack dentro de los tests.
+    if jornada is not None and ya_publicada(leer_mensajes(), jornada):
+        print(f"La jornada {jornada} ya está publicada en el canal: no se republica.")
+        return 0
+
     medallas = seccion_de_medallas(filas)
     print("Medallas de hoy:" if medallas else "Hoy no hay medallas nuevas.")
     if medallas:
@@ -335,8 +405,11 @@ async def publicar(capturar=capture_ranking, subir=upload_to_slack, resultados=N
 
     # Las señales se leen **después** de la captura: es lo último que se necesita y lo más frágil, así que si
     # el canal no responde ya está todo lo demás listo para publicar.
-    jornada = max(fila["wordle_id"] for fila in filas) if filas else None
-    publicado = subir(ruta, comentario(medallas, objetivo, filas, senales=leer_el_canal(jornada)))
+    publicado = subir(
+        ruta,
+        comentario(medallas, objetivo, filas, senales=leer_el_canal(jornada)),
+        titulo_de(jornada),
+    )
     if os.path.exists(ruta):
         os.remove(ruta)
     return 0 if publicado else 1
