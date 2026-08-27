@@ -57,7 +57,18 @@ def test_una_jornada_que_todavia_no_cuenta_publica_sus_figuras():
 
     ultima = album(filas, "2026-09")["ultima_jornada"]
     assert ultima["jornada"] == 1700
-    assert ultima["figuras"] == {"U_Ana": "flores", "U_Bea": "loro"}
+    # **La categoría se deriva del clasificador, no se escribe a mano.** Lo que este escenario comprueba es
+    # que los dibujos del día aparecen aunque la jornada no cuente todavía, no qué etiqueta lleva cada uno:
+    # el patrón de Bea cumple a la vez la regla del loro y la del geométrico, así que al versionar el orden
+    # de reglas (`PRIMERA_JORNADA_GEOMETRIA_PRIMERO`) cambió de categoría y este test se puso rojo por un
+    # motivo que no era el suyo.
+    from figures import figura
+
+    assert ultima["figuras"] == {
+        "U_Ana": figura(FLOR, 1700),
+        "U_Bea": figura(LORO, 1700),
+    }
+    assert set(ultima["figuras"]) == {"U_Ana", "U_Bea"}, "los dos jugadores del día están"
 
 
 # @scenarios sin-cuadricula-no-hay-figura

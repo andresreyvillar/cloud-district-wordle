@@ -104,7 +104,7 @@ def _obra_del_dia(resultados: list[dict], temporada: str, jornada: int):
     recalibración.
     """
     candidatas = [
-        (fila, figura(fila["pattern"]))
+        (fila, figura(fila["pattern"], jornada))
         for fila in _del_dia(resultados, jornada)
         if fila.get("pattern")
     ]
@@ -130,7 +130,7 @@ def _figura_del_dia_por_jugador(resultados: list[dict], jornada: int) -> dict[st
     dibujos = {}
     for fila in _del_dia(resultados, jornada):
         if fila.get("pattern"):
-            dibujos[fila["slack_user_id"]] = emoji(figura(fila["pattern"]))
+            dibujos[fila["slack_user_id"]] = emoji(figura(fila["pattern"], jornada))
     return dibujos
 
 
@@ -148,7 +148,7 @@ def _figuras_reconocibles_del_dia(resultados: list[dict], jornada: int) -> dict[
     for fila in _del_dia(resultados, jornada):
         if not fila.get("pattern"):
             continue
-        categoria = figura(fila["pattern"])
+        categoria = figura(fila["pattern"], jornada)
         if categoria in FIGURAS:
             dibujos[fila["slack_user_id"]] = emoji(categoria)
     return dibujos

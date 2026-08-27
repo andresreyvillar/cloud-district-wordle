@@ -74,6 +74,21 @@ MAXIMO_AMARILLO_DEL_LORO = 2
 #: precisamente lo que dejaba fuera dibujos regulares, y por lo que existe la vía del espejo.
 DENSIDAD_MAXIMA_DEL_GEOMETRICO = 0.4
 
+#: Primera jornada que se clasifica con la geometría por delante del loro.
+#:
+#: **El cambio no es retroactivo, por decisión del dueño.** Las cuadrículas anteriores conservan la categoría
+#: que tenían cuando se jugaron, igual que la temporada 0 se rige por las reglas que estaban en vigor entonces
+#: (`seasons.dias_de_temporada`). Lo contrario reescribiría el álbum de todo el mundo hacia atrás: medido, el
+#: reorden mueve 42 de las 1.706 cuadrículas del histórico, todas de loro a geométrico, y como el geométrico
+#: vale 3 puntos y el loro 2, subiría la puntuación de quien las tenga en partidas ya jugadas y comentadas.
+PRIMERA_JORNADA_GEOMETRIA_PRIMERO = 1694
+
+
+def geometria_primero(jornada: int | None) -> bool:
+    """Si a esta jornada le toca el orden nuevo. Sin jornada, el histórico."""
+    return jornada is not None and jornada >= PRIMERA_JORNADA_GEOMETRIA_PRIMERO
+
+
 #: Amarillos mínimos de una flor: dos pétalos. Con uno solo no hay flor, hay un amarillo.
 MINIMO_AMARILLO_DE_LA_FLOR = 2
 
@@ -263,8 +278,13 @@ def es_flor(r: Rasgos) -> bool:
     return r.petalos_libres >= MINIMO_PETALOS_LIBRES
 
 
-def figura(patron: str) -> str:
+def figura(patron: str, jornada: int | None = None) -> str:
     """La categoría de una cuadrícula. Siempre devuelve una: `abstracto` es la respuesta por defecto.
+
+    `jornada` decide **qué orden de reglas se aplica**, porque el orden cambió y el cambio no es retroactivo
+    (ver `PRIMERA_JORNADA_GEOMETRIA_PRIMERO`). Sin jornada se usa el orden histórico: es lo que quieren las
+    herramientas que clasifican un patrón fuera de contexto, como la calibración contra el etiquetado humano,
+    que se hizo con las reglas de entonces.
 
     El orden de las reglas es parte de la calibración y no es cosmético: el loro se decide antes que la
     flor porque comparten el amarillo, y el geométrico antes que la flor porque una pirámide con un
@@ -283,10 +303,21 @@ def figura(patron: str) -> str:
     # lienzo, así que tampoco hay figura.
     if not r.resuelto or r.alto == 0:
         return ABSTRACTO
-    if es_loro(r):
-        return LORO
-    if es_geometrico(r):
-        return GEOMETRICO
+
+    # **El orden cambia a partir de una jornada, y no hacia atrás.** Con el orden nuevo la geometría se
+    # decide primero y ya no se avanza: una pirámide con un amarillo suelto es un geométrico, no un loro.
+    # Medido, mueve 42 de 1.706 cuadrículas, todas de loro a geométrico, y ninguna flor.
+    if geometria_primero(jornada):
+        if es_geometrico(r):
+            return GEOMETRICO
+        if es_loro(r):
+            return LORO
+    else:
+        if es_loro(r):
+            return LORO
+        if es_geometrico(r):
+            return GEOMETRICO
+
     if es_flor(r):
         return FLORES
     # Última oportunidad antes de rendirse: un dibujo regular con demasiada masa para el techo de densidad

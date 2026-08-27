@@ -1,0 +1,25 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-27T14:35:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Reorden de las reglas de figura, no retroactivo por decisión explícita del dueño. Lo que convirtió esto en
+    un clasificador versionado y no en un reorden a secas fue esa condición: `figura` pasa a recibir la
+    jornada y los cinco llamadores de producción la pasan, porque sin eso el orden nuevo no se aplicaría
+    nunca. Se avisó antes de implementar de que el reorden **no** arregla la cuadrícula simétrica que motivó
+    la conversación —densidad 0,70 contra un techo de 0,40, así que no es geométrica— y el dueño lo pidió
+    igualmente. Verificado contra producción: con el corte en 1694, cero cuadrículas cambian de categoría, y
+    las 42 que se moverían quedan todas antes del corte, así que no hay que rematerializar el histórico. Una
+    ronda de corrección: un test de `figuras-de-la-jornada` escribía a mano la categoría de un fixture que
+    resulta ser ambiguo —cumple loro y geométrico—, y se puso rojo por un motivo que no era el suyo; se ató a
+    lo que el escenario dice en lugar de al literal. La mutación M1, que hace el cambio retroactivo, pone en
+    rojo 19 tests de cinco slices: la suite ya fijaba las clasificaciones del histórico.
