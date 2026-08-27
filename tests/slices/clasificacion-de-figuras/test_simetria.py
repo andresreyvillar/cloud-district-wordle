@@ -60,12 +60,12 @@ def test_una_sola_celda_rota_niega_el_espejo():
     assert figura(ARCO_ROTO) == ABSTRACTO
 
 
-# @scenarios el-espejo-no-le-quita-figura-a-nadie
+# @scenarios el-espejo-no-le-quita-figura-a-nadie-en-el-orden-historico
 def test_el_espejo_no_le_quita_la_flor_a_unos_petalos_simetricos():
     assert figura(FLOR_SIMETRICA) == FLORES
 
 
-# @scenarios el-espejo-no-le-quita-figura-a-nadie
+# @scenarios el-espejo-no-le-quita-figura-a-nadie-en-el-orden-historico
 def test_el_espejo_no_le_quita_el_loro_a_un_loro_simetrico():
     assert figura(LORO_SIMETRICO) == LORO
 
@@ -116,7 +116,7 @@ def test_una_fila_truncada_no_es_un_espejo():
     assert figura("GGGG/GGGG/GGGGG") == ABSTRACTO
 
 
-# @scenarios el-espejo-no-le-quita-figura-a-nadie
+# @scenarios el-espejo-no-le-quita-figura-a-nadie-en-el-orden-historico
 def test_ninguna_cuadricula_con_figura_pierde_su_figura():
     """El invariante que hace el cambio seguro: el espejo solo asciende abstractos.
 

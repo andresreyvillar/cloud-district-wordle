@@ -60,7 +60,7 @@ def test_una_jornada_que_todavia_no_cuenta_publica_sus_figuras():
     # **La categoría se deriva del clasificador, no se escribe a mano.** Lo que este escenario comprueba es
     # que los dibujos del día aparecen aunque la jornada no cuente todavía, no qué etiqueta lleva cada uno:
     # el patrón de Bea cumple a la vez la regla del loro y la del geométrico, así que al versionar el orden
-    # de reglas (`PRIMERA_JORNADA_GEOMETRIA_PRIMERO`) cambió de categoría y este test se puso rojo por un
+    # de reglas (`PRIMERA_JORNADA_DEL_ORDEN_NUEVO`) cambió de categoría y este test se puso rojo por un
     # motivo que no era el suyo.
     from figures import figura
 

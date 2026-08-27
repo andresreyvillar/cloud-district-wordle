@@ -1,0 +1,22 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-27T13:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El espejo por delante de la flor, aprovechando el corte no retroactivo que ya existía: con él cambia una
+    sola cuadrícula de 1.706, y sin él serían 47. Una ronda de corrección, y de las buenas: escrito sin
+    umbral, el cambio le quitaba la categoría a flores legítimas —el fixture de flor del álbum es simétrico de
+    dos filas— y lo pusieron en rojo los tests del álbum, no un test nuevo. Detrás había una incoherencia de
+    fondo: el logro exigía cuerpo >= 3 y la categoría no exigía nada, así que las dos reglas discrepaban sobre
+    qué es un espejo. Se arregló compartiendo un único `es_espejo_reconocible` en `figures.py`, del que
+    `badges.py` tira, en lugar de duplicar el umbral. La mutación que hace el orden retroactivo pone 21 tests
+    en rojo.
