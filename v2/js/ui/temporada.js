@@ -31,6 +31,7 @@ const FALLO = 7;
 export const LOGROS = [
   { id: 'suertudo', nombre: 'Suertud@', regla: 'Resolver en un solo intento' },
   { id: 'dia-imposible', nombre: 'El día imposible', regla: 'Resolver en ≤4 un día de media ≥5,5' },
+  { id: 'espejo-perfecto', nombre: 'Espejo perfecto', regla: 'Una cuadrícula simétrica fila a fila, de tres filas o más' },
   { id: 'superviviente', nombre: 'Superviviente', regla: 'Resolver en ≤4 tres días de media ≥4,5' },
   { id: 'ornitologo', nombre: 'Ornitólog@', regla: 'Cinco loros 🦜 en la temporada' },
   { id: 'arquitecto', nombre: 'Arquitect@', regla: 'Cuatro geométricos 📐 en la temporada' },
