@@ -34,11 +34,11 @@ def test_el_espejo_con_cuerpo_suficiente_da_el_logro():
 # @scenarios el-espejo-perfecto-tiene-su-logro
 def test_el_espejo_trivial_no_da_el_logro():
     """Con cuerpo de una fila lo tendría el 43% del grupo: no distinguiría a nadie."""
-    from badges import MINIMO_CUERPO_DEL_ESPEJO, medallas_permanentes
+    from badges import CUERPO_MINIMO_DEL_ESPEJO, medallas_permanentes
     from figures import rasgos
 
     r = rasgos(ESPEJO_TRIVIAL)
-    assert r.espejo and r.alto < MINIMO_CUERPO_DEL_ESPEJO, f"el fixture debe ser trivial: {r}"
+    assert r.espejo and r.alto < CUERPO_MINIMO_DEL_ESPEJO, f"el fixture debe ser trivial: {r}"
     filas = [_partida("Ana", 1, "2099-01-05", 2, ESPEJO_TRIVIAL)]
     assert "espejo-perfecto" not in medallas_permanentes(filas).get("Ana", [])
 
@@ -82,13 +82,13 @@ def test_una_cuadricula_alta_pero_asimetrica_no_da_el_logro():
     quitar la exigencia de simetría no ponía nada en rojo: el logro se habría dado a cualquier cuadrícula de
     tres filas. Lo destapó la prueba de mutación.
     """
-    from badges import MINIMO_CUERPO_DEL_ESPEJO, medallas_permanentes
+    from badges import CUERPO_MINIMO_DEL_ESPEJO, medallas_permanentes
     from figures import rasgos
 
     torcida = "Y..../GG.../GG.GG/GGGGG"
     r = rasgos(torcida)
     assert not r.espejo, f"el fixture debe ser asimétrico: {r}"
-    assert r.alto >= MINIMO_CUERPO_DEL_ESPEJO, f"y alto de sobra: {r}"
+    assert r.alto >= CUERPO_MINIMO_DEL_ESPEJO, f"y alto de sobra: {r}"
 
     filas = [_partida("Ana", 1, "2099-01-05", 4, torcida)]
     assert "espejo-perfecto" not in medallas_permanentes(filas).get("Ana", [])

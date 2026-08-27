@@ -21,7 +21,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from calendario import solo_laborables
-from figures import rasgos
+from figures import CUERPO_MINIMO_DEL_ESPEJO, es_espejo_reconocible, rasgos
 
 # El umbral de muestra vive en `seasons` porque es parte de qué es un día de temporada. Se importa en lugar
 # de copiarse: el docstring de este módulo ya decía que quería ser el mismo criterio, y ahora lo es.
@@ -58,21 +58,6 @@ MINIMO_DIAS_PARA_METRONOMO = 10
 #: Excluir agosto de 2026 —el mes casi sin patrones— movía cada cifra menos de dos puntos, así que no se
 #: excluye: un umbral que dependa de qué meses se miren no es un umbral.
 MINIMO_ORNITOLOGO = 5
-#: Filas de cuerpo que ha de tener un espejo para ser una gesta y no un accidente.
-#:
-#: **Tres, y el umbral es lo que hace el logro.** De los 19 espejos del histórico, siete tienen una sola fila
-#: de cuerpo (`.GGG./GGGGG`) y son simétricos casi por casualidad. Medido sobre 1.706 cuadrículas:
-#:
-#:     cuerpo >= 1   19 (1,10%)  10 jugadores de 23
-#:     cuerpo >= 2   12 (0,70%)   9 jugadores
-#:     cuerpo >= 3    7 (0,41%)   7 jugadores   <- este
-#:     cuerpo >= 4    1 (0,06%)   1 jugador
-#:
-#: Con uno, lo tendría el 43% del grupo y no distinguiría a nadie —el error que ya se cometió con una medalla
-#: que tenían quince de dieciséis—. Con cuatro solo existiría una en toda la historia. Con tres sale una cada
-#: cinco meses y la han logrado siete personas distintas: raro, y de verdad.
-MINIMO_CUERPO_DEL_ESPEJO = 3
-
 MINIMO_ARQUITECTO = 4
 MINIMO_FLORISTA = 11
 MINIMO_ABSTRACTO = 7
@@ -264,8 +249,10 @@ def medallas_permanentes(
         if "espejo-perfecto" not in palmares[jugador]:
             # Sin comprobar antes si hay patrón: `rasgos(None)` ya devuelve `espejo=False`, así que la guarda
             # era código sin efecto — la prueba de mutación lo destapó al no poder ponerla en rojo.
-            r = rasgos(fila.get("pattern"))
-            if r.espejo and r.alto >= MINIMO_CUERPO_DEL_ESPEJO:
+            # **El mismo predicado que usa el clasificador.** Tenerlo duplicado hacía que el logro y la
+            # categoría discreparan sobre qué es un espejo, y este repositorio ya se ha equivocado tres veces
+            # por contar lo mismo en dos sitios.
+            if es_espejo_reconocible(rasgos(fila.get("pattern"))):
                 palmares[jugador].append("espejo-perfecto")
 
         if (

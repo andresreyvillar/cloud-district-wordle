@@ -73,9 +73,21 @@ partidas ya jugadas se reescriben hacia atrás.
 **WHEN** una sola celda rompe la simetría de una cuadrícula
 **THEN** el espejo no se le concede, y la partida sigue siendo abstracta.
 
-### el-espejo-no-le-quita-figura-a-nadie
-**WHEN** una cuadrícula simétrica ya se reconoce como loro, como flor o como geométrica por su densidad
-**THEN** conserva esa categoría: el espejo solo se consulta cuando ninguna otra regla reconoce nada.
+### el-espejo-no-le-quita-figura-a-nadie-en-el-orden-historico
+**WHEN** una cuadrícula simétrica anterior al corte de reglas ya se reconoce como loro, como flor o como
+geométrica por su densidad
+**THEN** conserva esa categoría: en el orden histórico el espejo solo se consulta cuando ninguna otra regla
+reconoce nada, y así ninguna partida ya jugada pierde su figura.
+
+### desde-el-corte-el-espejo-gana-a-la-flor
+**WHEN** una cuadrícula a partir del corte es un espejo reconocible y además cumple la regla de la flor
+**THEN** se clasifica como geométrica: un palíndromo perfecto es más difícil que unos pétalos, y la invariante
+de no robarle la figura a nadie existía para proteger el histórico, que el corte ya protege.
+
+### el-espejo-de-una-o-dos-filas-no-cuenta
+**WHEN** una cuadrícula simétrica tiene el cuerpo por debajo del mínimo
+**THEN** no se le reconoce el espejo, ni para la categoría ni para el logro: es el **mismo** umbral en los dos
+sitios, porque con umbrales distintos un espejo de dos filas le quitaba la categoría a una flor legítima.
 
 ### cuerpo-vacio-no-es-espejo
 **WHEN** se acierta a la primera y la cuadrícula es solo la banda verde
