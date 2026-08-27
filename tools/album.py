@@ -114,7 +114,7 @@ def album(resultados: list[dict], temporada: str) -> dict:
             sin_patron += 1
             continue
         jugador = fila["slack_user_id"]
-        categoria = figura(patron)
+        categoria = figura(patron, fila["wordle_id"])
         reparto[categoria] += 1
         recuentos.setdefault(jugador, Counter())[categoria] += 1
         nombre_de[jugador] = fila.get("player_name") or jugador
@@ -157,7 +157,7 @@ def _ultima_jornada(resultados: list[dict], temporada: str) -> dict:
     return {
         "jornada": jornada,
         "figuras": {
-            fila["slack_user_id"]: figura(fila["pattern"])
+            fila["slack_user_id"]: figura(fila["pattern"], fila["wordle_id"])
             for fila in de_la_temporada
             if fila["wordle_id"] == jornada and fila.get("pattern")
         },

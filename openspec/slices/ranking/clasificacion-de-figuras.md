@@ -55,6 +55,16 @@ clasificador reimplementado en JavaScript sería una segunda verdad.
 **THEN** cada jugador lleva el recuento de sus partidas por categoría, derivado del patrón crudo de cada
 resultado y sin que la categoría se almacene en ninguna columna.
 
+### la-geometria-se-decide-antes-que-el-loro
+**WHEN** se clasifica una cuadrícula de una jornada a partir de la que rige el orden nuevo
+**THEN** se comprueba primero si es geométrica y, si lo es, no se avanza — una pirámide con un amarillo
+suelto es un geométrico y no un loro.
+
+### el-cambio-de-orden-no-es-retroactivo
+**WHEN** se clasifica una cuadrícula anterior a esa jornada
+**THEN** conserva la categoría que tenía con el orden antiguo, de modo que ni el álbum ni las medallas de
+partidas ya jugadas se reescriben hacia atrás.
+
 ### espejo-exacto-es-geometrico
 **WHEN** una cuadrícula que iba a salir abstracta tiene todas las filas del cuerpo iguales leídas al revés
 **THEN** cuenta como geométrica, aunque tenga demasiada tinta para el techo de densidad.
