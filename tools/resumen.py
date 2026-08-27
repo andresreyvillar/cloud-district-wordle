@@ -336,6 +336,10 @@ def _linea_de_ausentes(senales, habituales: list[str], nombres: dict[str, str], 
 
     Se deriva de que **no hay mensaje suyo en el canal**, no de la tabla: la tabla no distingue «no jugó» de
     «jugó y aún no se ha ingerido».
+
+    Los nombres salen **por orden de clasificación**, así que los tres que se nombran son los tres mejor
+    situados que faltan y el resto queda en la coleta. Antes iban por orden alfabético, que nombraba a quien
+    tuviera la inicial más baja.
     """
     from refranero import AUSENTES_DEL_DIA
     from voz import _del_ciclo
@@ -343,7 +347,10 @@ def _linea_de_ausentes(senales, habituales: list[str], nombres: dict[str, str], 
     publicacion = getattr(senales, "publicacion", None) or {}
     if not publicacion:
         return ""
-    faltan = sorted(nombres.get(j, j) for j in set(habituales) - set(publicacion))
+    # **En orden de clasificación, no alfabético.** `habituales` llega ya ordenado del mejor al peor —es la
+    # clasificación—, así que basta con no destruir ese orden: la ausencia del primero es más noticia que la
+    # del duodécimo, y con `sorted()` salían por la inicial del nombre. Decisión del dueño.
+    faltan = [nombres.get(j, j) for j in habituales if j not in publicacion]
     if not faltan:
         return ""
 

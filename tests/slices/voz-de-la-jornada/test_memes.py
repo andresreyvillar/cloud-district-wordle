@@ -27,9 +27,13 @@ def test_la_misma_forma_no_publica_siempre_la_misma_frase():
     """**El defecto que motivó esto.** `dia-de-dos-mundos` tenía una sola plantilla y era el 83% de los memes
     publicados: en agosto salió la misma frase cuatro veces en diez jornadas, y lo cazó el dueño leyéndolo.
     """
-    salidas = {meme_del_dia(_filas(DOS_MUNDOS), j) for j in range(1, 40)}
-    assert len(salidas) == len(MEMES["dia-de-dos-mundos"]), (
-        f"la forma tiene {len(MEMES['dia-de-dos-mundos'])} variantes y salieron {len(salidas)}")
+    # **El rango se deriva del registro**, no es un número escrito a mano: la primera versión muestreaba 39
+    # jornadas y comparaba con el tamaño exacto, así que al crecer el registro el test se puso rojo sin que
+    # el comportamiento hubiera cambiado.
+    variantes = MEMES["dia-de-dos-mundos"]
+    salidas = {meme_del_dia(_filas(DOS_MUNDOS), j) for j in range(1, len(variantes) + 1)}
+    assert len(salidas) == len(variantes), (
+        f"un ciclo completo debe dar {len(variantes)} frases distintas y dio {len(salidas)}")
     assert all(s and "3" in s and "7" in s for s in salidas), "todas rellenan mejor y peor"
 
 
@@ -93,3 +97,170 @@ def test_no_se_dice_que_nadie_dibujo_cuando_no_hay_cuadriculas():
 def test_una_jornada_sin_forma_sigue_sin_meme():
     """La horquilla corta y sin nada llamativo: no se fuerza un chiste."""
     assert meme_del_dia(_filas({"Ana": 3, "Bea": 4, "Cris": 4}), 1) is None
+
+
+#: Lo que cuenta como referencia reconocible. Vive **en el test** y no en `refranero`: es el criterio
+#: editorial con el que se juzga el registro, no algo que la producción necesite saber. Una lista corta daría
+#: falsos rojos —la primera versión de este test tenía quince marcas y no cubría las condiciones que citan
+#: «clones» o «Consejo Jedi»—, así que están las que se usaron al poblarlo.
+MARCAS = (
+    "Konami",
+    "modo dios",
+    "Matrix",
+    "Chiquito",
+    "Pasapalabra",
+    "puedo leer",
+    "Iniesta",
+    "Saiyan",
+    "efectividad",
+    "Fuerza",
+    "Sexto Sentido",
+    "por favor",
+    "Rubius",
+    "bote",
+    "quedar uno",
+    "Fábrica",
+    "impostores",
+    "YOU DIED",
+    "Titanic",
+    "El Hoyo",
+    "Fauno",
+    "juegos del hambre",
+    "Chanquete",
+    "bomba",
+    "jefe final",
+    "zero points",
+    "GAME OVER",
+    "rosco",
+    "Boda Roja",
+    "peor día",
+    "Chernóbil",
+    "comodín",
+    "Amanece",
+    "pesadilla",
+    "banca",
+    "Dark Souls",
+    "clones",
+    "Smith",
+    "Cuéntame",
+    "Ctrl+C",
+    "Consejo Jedi",
+    "Black Mirror",
+    "rayo azul",
+    "Ícaro",
+    "trono",
+    "Mufasa",
+    "Cersei",
+    "Alonso",
+    "boss fight",
+    "Rocky",
+    "Karate Kid",
+    "Leicester",
+    "Cenicienta",
+    "Prado",
+    "Bob Ross",
+    "conceptual",
+    "Paint",
+    "Museo",
+    "arte moderno",
+    "Vengadores",
+    "Grand Prix",
+    "vecinos",
+    "Telerín",
+    "Gran Hermano",
+    "mosqueteros",
+    "Picasso",
+    "modo creativo",
+    "Tetris",
+    "subasta",
+    "pastilla",
+    "Revés",
+    "primera clase",
+    "modo historia",
+    "Bowser",
+    "silla azul",
+    "Interstellar",
+    "nivel 100",
+    "calabaza",
+    "invierno",
+    "ouija",
+    "se avecina",
+    "matchmaking",
+    "speedrun",
+    "Eurovisión",
+    "laberinto",
+    "sindicato",
+    "condensador de fluzo",
+    "sayonara",
+    "hadouken",
+    "mosquis",
+    "Juan Cuesta",
+    "IDDQD",
+    "wololo",
+    "oferta",
+    "no soy tonto",
+    "sul sul",
+    "paellera",
+    "Concha",
+    "Silent Hill",
+    "pastel era mentira",
+    "checkpoint",
+    "Goonies",
+    "alarma",
+    "pantalla de continuar",
+    "follón",
+    "pecadores",
+    "apagón",
+    "T-Rex",
+    "Alien",
+    "comodín de la llamada",
+    "Buscaminas",
+    "Sims",
+    "PC Fútbol",
+    "clonado",
+    "Camera Café",
+    "Multiplícate por cero",
+    "multiplícate por cero",
+    "Hasta luego, Lucas",
+    "Torrente",
+    "espada maestra",
+    "mármol",
+    "quórum",
+    "escalera del 21",
+    "sillas azules",
+    "pinceles",
+    "Minecraft",
+    "esculpido",
+    "Mario",
+    "escalera A",
+    "niebla",
+    "sala de máquinas",
+    "aldeano",
+    "pedales",
+)
+
+
+def _cita(frase: str) -> bool:
+    return any(m.lower() in frase.lower() for m in MARCAS)
+
+
+# @scenarios el-meme-del-dia-necesita-que-pase-algo
+def test_el_meme_cita_algo_reconocible_y_no_al_final_del_ciclo():
+    """**Los dos fallos que el dueño leyó.** El registro tenía 79 plantillas y ninguna referencia; y añadidas
+    al final no salían nunca, porque `_del_ciclo` elige por `jornada % len` y los índices bajos seguían siendo
+    los genéricos — la jornada del día caía justo en el último de los viejos.
+    """
+    from voz import _del_ciclo
+
+    for clave, plantillas in MEMES.items():
+        con = [p for p in plantillas if _cita(p)]
+        assert len(con) * 3 >= len(plantillas), f"{clave} apenas cita nada: {len(con)} de {len(plantillas)}"
+        # **Repartidas por el ciclo, no agrupadas al final.** Con la lista alterna, un tercio de la primera
+        # mitad ya cita algo; agrupadas al final, la primera mitad no citaría ninguna.
+        mitad = plantillas[: len(plantillas) // 2]
+        citan = sum(1 for p in mitad if _cita(p))
+        assert citan * 3 >= len(mitad), f"{clave} tiene las referencias al final del ciclo: {citan}/{len(mitad)}"
+
+    # Y a través de la selección real, sobre una tirada de jornadas consecutivas.
+    salidas = [_del_ciclo(MEMES["dia-de-dos-mundos"], j) for j in range(1694, 1704)]
+    assert sum(1 for s in salidas if _cita(s)) >= 4, f"pocas referencias en diez jornadas: {salidas}"

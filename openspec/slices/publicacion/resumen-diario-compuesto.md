@@ -78,6 +78,11 @@ título.
 **WHEN** quien abrió la jornada ha abierto además la mayoría de las jornadas recientes
 **THEN** se dice que es su costumbre, con el recuento; y si no, solo que hoy abrió.
 
+### los-ausentes-se-nombran-por-orden-de-clasificacion
+**WHEN** faltan más personas de las que se pueden nombrar
+**THEN** los que se nombran son los **mejor clasificados** de entre los ausentes, porque la ausencia de quien
+va primero es más noticia que la de quien va último; y no se nombran por orden alfabético.
+
 ### los-ausentes-se-nombran-sin-listarlos-todos
 **WHEN** falta más gente de la que se puede nombrar
 **THEN** se nombran unos pocos y el resto se resume, de modo que el mensaje no crezca con el grupo.
