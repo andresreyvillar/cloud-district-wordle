@@ -21,6 +21,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from calendario import solo_laborables
+from figures import rasgos
 
 # El umbral de muestra vive en `seasons` porque es parte de qué es un día de temporada. Se importa en lugar
 # de copiarse: el docstring de este módulo ya decía que quería ser el mismo criterio, y ahora lo es.
@@ -57,6 +58,21 @@ MINIMO_DIAS_PARA_METRONOMO = 10
 #: Excluir agosto de 2026 —el mes casi sin patrones— movía cada cifra menos de dos puntos, así que no se
 #: excluye: un umbral que dependa de qué meses se miren no es un umbral.
 MINIMO_ORNITOLOGO = 5
+#: Filas de cuerpo que ha de tener un espejo para ser una gesta y no un accidente.
+#:
+#: **Tres, y el umbral es lo que hace el logro.** De los 19 espejos del histórico, siete tienen una sola fila
+#: de cuerpo (`.GGG./GGGGG`) y son simétricos casi por casualidad. Medido sobre 1.706 cuadrículas:
+#:
+#:     cuerpo >= 1   19 (1,10%)  10 jugadores de 23
+#:     cuerpo >= 2   12 (0,70%)   9 jugadores
+#:     cuerpo >= 3    7 (0,41%)   7 jugadores   <- este
+#:     cuerpo >= 4    1 (0,06%)   1 jugador
+#:
+#: Con uno, lo tendría el 43% del grupo y no distinguiría a nadie —el error que ya se cometió con una medalla
+#: que tenían quince de dieciséis—. Con cuatro solo existiría una en toda la historia. Con tres sale una cada
+#: cinco meses y la han logrado siete personas distintas: raro, y de verdad.
+MINIMO_CUERPO_DEL_ESPEJO = 3
+
 MINIMO_ARQUITECTO = 4
 MINIMO_FLORISTA = 11
 MINIMO_ABSTRACTO = 7
@@ -74,6 +90,7 @@ class Medalla:
 CATALOGO: tuple[Medalla, ...] = (
     Medalla("suertudo", "Suertud@", "🍀", "legendario", "permanente"),
     Medalla("dia-imposible", "El día imposible", "🗿", "legendario", "permanente"),
+    Medalla("espejo-perfecto", "Espejo perfecto", "🪞", "legendario", "permanente"),
     Medalla("superviviente", "Superviviente", "🛡️", "legendario", "temporada"),
     Medalla("metronomo", "Metrónom@", "📅", "raro", "temporada"),
     Medalla("verdugo", "Verdugo", "🎯", "comun", "temporada"),
@@ -239,6 +256,17 @@ def medallas_permanentes(
 
         if fila["score"] == 1 and "suertudo" not in palmares[jugador]:
             palmares[jugador].append("suertudo")
+
+        # El espejo perfecto: cuadrícula simétrica fila a fila y con cuerpo suficiente para que sea una gesta.
+        # Se mira el rasgo, no la categoría: en `figures.figura()` el espejo se consulta en último lugar, así
+        # que una cuadrícula simétrica puede acabar etiquetada como flor —le pasó a la de cuatro filas del
+        # 27 de agosto— y la medalla se perdería si dependiera de la etiqueta.
+        if "espejo-perfecto" not in palmares[jugador]:
+            # Sin comprobar antes si hay patrón: `rasgos(None)` ya devuelve `espejo=False`, así que la guarda
+            # era código sin efecto — la prueba de mutación lo destapó al no poder ponerla en rojo.
+            r = rasgos(fila.get("pattern"))
+            if r.espejo and r.alto >= MINIMO_CUERPO_DEL_ESPEJO:
+                palmares[jugador].append("espejo-perfecto")
 
         if (
             dificultad.get(fila["wordle_id"], 0) >= UMBRAL_DIA_IMPOSIBLE

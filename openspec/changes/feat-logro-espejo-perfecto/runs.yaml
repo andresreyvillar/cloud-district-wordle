@@ -1,0 +1,25 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-27T13:55:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    Logro del espejo perfecto, a petición del dueño tras ver que su mejor cuadrícula —simétrica de cuatro
+    filas, jornada #1694— se etiquetaba «flores» y no ganaba nada. El umbral se eligió midiendo: sin él lo
+    tendría el 43% del grupo. Tres rondas de corrección, todas por tests: (1) el fichero nuevo se llamaba
+    `test_medallas.py` y colisionaba por nombre de módulo con el del slice de resumen, lo que rompía la
+    recolección de la suite entera —renombrado a `test_espejo_perfecto.py`—; (2) la mutación que quitaba la
+    guarda de `pattern` no mordía porque `rasgos(None)` ya devuelve `espejo=False`: la guarda era código sin
+    efecto y se retiró; (3) la mutación que quitaba la exigencia de simetría tampoco mordía, porque ningún
+    fixture era alto **y** asimétrico a la vez — añadido. Además el cambio destapó una drift real: el logro
+    se añadió primero solo a `badges.CATALOGO` y la web se quedaba sin él, así que el resumen habría
+    anunciado un logro que la pestaña de temporada no sabe explicar. Hay ahora un test que cruza los dos
+    catálogos.

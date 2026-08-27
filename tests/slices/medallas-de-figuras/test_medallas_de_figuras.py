@@ -55,7 +55,8 @@ def test_las_cinco_medallas_estan_en_el_catalogo_con_su_nivel():
 
     claves = {m.clave for m in CATALOGO}
     assert {"ornitologo", "arquitecto", "florista", "abstracto", "coleccionista"} <= claves
-    assert len(CATALOGO) == 12, "siete de antes más cinco de figuras"
+    assert len(CATALOGO) == 13, "siete de antes, cinco de figuras y el espejo perfecto"
+    assert len({m.clave for m in CATALOGO}) == len(CATALOGO), "sin claves repetidas"
 
     # El nivel no es decorativo: ordena la presentación y dice cuánto cuesta conseguirla.
     assert POR_CLAVE["ornitologo"].nivel == "legendario"
@@ -170,3 +171,25 @@ def test_el_resumen_pide_la_columna_del_patron():
     from post_ranking import COLUMNAS
 
     assert "pattern" in COLUMNAS
+
+
+# @scenarios el-catalogo-completo-aparece-en-la-temporada
+def test_el_catalogo_de_python_y_el_de_la_web_no_se_separan():
+    """**El riesgo que este cambio destapó.** El logro se añadió primero a `badges.CATALOGO` y la web se quedó
+    sin él: el resumen diario habría anunciado un logro que la pestaña de temporada no sabe explicar.
+
+    Nada lo impedía, porque cada lado tiene su lista y sus tests. Este cruza los dos.
+    """
+    import re
+    from pathlib import Path
+
+    from badges import CATALOGO
+
+    vista = Path(__file__).resolve().parents[3] / "v2" / "js" / "ui" / "temporada.js"
+    fuente = vista.read_text(encoding="utf-8")
+    bloque = fuente[fuente.index("export const LOGROS = [") : fuente.index("];", fuente.index("export const LOGROS = ["))]
+    en_la_web = set(re.findall(r"id: '([^']+)'", bloque))
+    en_python = {m.clave for m in CATALOGO}
+
+    assert en_python == en_la_web, (
+        f"solo en Python: {sorted(en_python - en_la_web)} · solo en la web: {sorted(en_la_web - en_python)}")

@@ -60,6 +60,15 @@ ser imposible, y su rareza medida corresponde con su nivel.
 **WHEN** la tira de un jugador muestra N partidas de una categoría
 **THEN** la medalla de esa categoría usa exactamente ese N, sin un segundo recuento que pueda divergir.
 
+### el-espejo-perfecto-tiene-su-logro
+**WHEN** alguien deja una cuadrícula simétrica fila a fila y con cuerpo suficiente
+**THEN** gana un logro permanente y se anuncia el día que ocurre; y una cuadrícula simétrica de una sola fila
+de cuerpo **no** lo gana, porque es simétrica por accidente y lo tendría casi medio grupo.
+
+### el-logro-del-espejo-mira-el-rasgo-y-no-la-categoria
+**WHEN** una cuadrícula simétrica está clasificada como flor o como loro
+**THEN** el logro se concede igualmente, porque la simetría es un rasgo del dibujo y no su etiqueta.
+
 ### sin-patron-no-da-medalla
 **WHEN** las partidas de un jugador no tienen cuadrícula guardada
 **THEN** no gana ninguna medalla de figura, y tampoco la pierde quien sí las tiene.
@@ -72,9 +81,10 @@ ser imposible, y su rareza medida corresponde con su nivel.
 **WHEN** el resumen diario decide de qué temporada son las medallas
 **THEN** usa la misma función que el resto del sistema, no el prefijo de la fecha.
 
-### las-doce-medallas-aparecen-en-la-temporada
+### el-catalogo-completo-aparece-en-la-temporada
 **WHEN** se pinta el bloque de logros de una temporada
-**THEN** aparecen las doce del catálogo, cada una con su nombre y la regla que la concede.
+**THEN** aparecen **todas** las del catálogo, cada una con su nombre, su regla y su icono; el número no se
+escribe en el escenario, porque cada logro nuevo lo dejaba desfasado.
 
 ### cada-medalla-de-figura-tiene-su-icono
 **WHEN** se pinta una medalla

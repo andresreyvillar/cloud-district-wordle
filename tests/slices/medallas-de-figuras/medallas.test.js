@@ -18,9 +18,9 @@ const SPRITE = fileURLToPath(new URL('../../../v2/assets/icons/logros.svg', impo
 
 const DE_FIGURA = ['ornitologo', 'arquitecto', 'florista', 'coleccionista', 'abstracto'];
 
-/** @scenarios las-doce-medallas-aparecen-en-la-temporada */
-test('la vista lista las doce medallas, con las cinco de figuras', () => {
-  assert.equal(LOGROS.length, 12);
+/** @scenarios el-catalogo-completo-aparece-en-la-temporada */
+test('la vista lista el catálogo completo, con las cinco de figuras', () => {
+  assert.equal(LOGROS.length, 13);
 
   const ids = LOGROS.map((l) => l.id);
   for (const clave of DE_FIGURA) {
