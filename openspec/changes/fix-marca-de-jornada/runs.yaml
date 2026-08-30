@@ -1,0 +1,23 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-30T08:10:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Triplicado real en el canal dos días seguidos, y el fallo era de la guarda que se añadió tres días antes
+    para evitar exactamente eso. Causa: Slack devuelve el título con el emoji convertido a código corto
+    (`:trophy:`), así que la comparación por igualdad del título completo nunca se cumplía. El test que debía
+    cazarlo construía el mensaje falso con `titulo_de`, de modo que coincidía por construcción — tercera vez
+    en el proyecto que un test prueba una función sin su uso real. El test nuevo usa el texto literal que
+    devolvió Slack. Una ronda de corrección: la búsqueda por subcadena confundía `· #1694` con `· #16940`, y
+    lo cazó su propio test, así que la marca quedó anclada con un `(?!\\d)`. La mutación que quita el
+    separador de la marca no pone nada en rojo y se declara como equivalente para los títulos reales, en
+    lugar de escribir un test artificial para matarla.
