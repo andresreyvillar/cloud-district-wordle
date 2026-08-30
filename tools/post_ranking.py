@@ -8,6 +8,7 @@ la imagen y a dónde lleva el enlace).
 
 import asyncio
 import os
+import re
 import sys
 from dataclasses import dataclass
 
@@ -304,6 +305,17 @@ async def capture_ranking(objetivo: Objetivo) -> str:
 #: 2h11m de retraso por una caída de Actions— y ahí la comparación por fecha diría que no se publicó.
 TITULO_DE_LA_CAPTURA = "Ranking Wordle del Día 🏆 · #{jornada}"
 
+#: Lo que se busca en el título para saber si ya se publicó. **No se compara el título entero.**
+#:
+#: Slack devuelve el emoji convertido a su código corto: se envía «Ranking Wordle del Día 🏆 · #1694» y
+#: `conversations.history` devuelve «Ranking Wordle del Día :trophy: · #1694». Comparando el título completo
+#: la igualdad nunca se cumplía, así que la guarda no detectaba nada y las tres ventanas del cron publicaban:
+#: el grupo recibió el resumen **por triplicado** los días 28 y 29 de agosto de 2026.
+#:
+#: El test que debía cazarlo construía el mensaje falso llamando a `titulo_de`, así que coincidía por
+#: construcción y nunca ejercitó la ida y vuelta real.
+MARCA_DE_JORNADA = "· #{jornada}"
+
 
 def titulo_de(jornada: int | None) -> str:
     """El título de la captura de una jornada. Sin jornada, el de siempre."""
@@ -313,7 +325,7 @@ def titulo_de(jornada: int | None) -> str:
 
 
 def ya_publicada(mensajes: list[dict], jornada: int | None) -> bool:
-    """Si el canal ya tiene la captura de esta jornada.
+    """Si el canal ya tiene la captura de esta jornada, buscando **la marca** y no el título entero.
 
     **Función pura**: entran los mensajes y la jornada, sale un sí o un no. Lo que la hace verificable sin
     tocar Slack, y lo que permite fijar en un test que no se republica.
@@ -324,12 +336,14 @@ def ya_publicada(mensajes: list[dict], jornada: int | None) -> bool:
     """
     if jornada is None:
         return False
-    marca = titulo_de(jornada)
+    # La marca no puede ir seguida de otra cifra: `· #1694` es prefijo de `· #16940`, y una búsqueda por
+    # subcadena daría por publicada una jornada que no lo está. Lo cazó su propio test.
+    marca = re.compile(re.escape(MARCA_DE_JORNADA.format(jornada=jornada)) + r"(?!\d)")
     for mensaje in mensajes:
         if not mensaje.get("bot_id"):
             continue
         for fichero in mensaje.get("files") or []:
-            if (fichero.get("title") or "") == marca:
+            if marca.search(fichero.get("title") or ""):
                 return True
     return False
 

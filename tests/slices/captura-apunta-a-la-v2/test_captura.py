@@ -318,3 +318,35 @@ def test_el_lector_del_canal_se_repliega_a_vacio():
             return {"messages": [{"bot_id": "B1", "files": []}]}
 
     assert len(mensajes_recientes(cliente=CanalOk())) == 1
+
+
+# @scenarios la-jornada-no-se-publica-dos-veces
+def test_la_guarda_reconoce_el_titulo_tal_como_lo_devuelve_slack():
+    """**El fallo que publicó el resumen por triplicado.** Slack convierte el emoji del título a su código
+    corto: se envía «Ranking Wordle del Día 🏆 · #1694» y `conversations.history` devuelve
+    «Ranking Wordle del Día :trophy: · #1694».
+
+    Comparando el título completo la igualdad nunca se cumplía. Y el test que debía cazarlo construía el
+    mensaje falso con la propia `titulo_de`, así que coincidía por construcción: nunca ejercitó la ida y
+    vuelta real. Este usa el texto **literal que devolvió Slack** el 28 de agosto de 2026.
+    """
+    from post_ranking import ya_publicada
+
+    como_lo_devuelve_slack = {
+        "bot_id": "B123",
+        "files": [{"title": "Ranking Wordle del Día :trophy: · #1694", "name": "ranking_snapshot.png"}],
+    }
+    assert ya_publicada([como_lo_devuelve_slack], 1694), "con el emoji convertido tiene que detectarlo"
+    assert not ya_publicada([como_lo_devuelve_slack], 1695), "y no confundir una jornada con otra"
+
+
+# @scenarios la-jornada-no-se-publica-dos-veces
+def test_la_marca_no_confunde_jornadas_que_comparten_digitos():
+    """`#169` no puede dar por publicada la `#1694`, ni al revés."""
+    from post_ranking import ya_publicada
+
+    def con(titulo):
+        return [{"bot_id": "B1", "files": [{"title": titulo}]}]
+
+    assert not ya_publicada(con("Ranking Wordle del Día :trophy: · #169"), 1694)
+    assert not ya_publicada(con("Ranking Wordle del Día :trophy: · #16940"), 1694)
