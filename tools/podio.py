@@ -14,7 +14,7 @@ que publica la web ([ADR 0008](../openspec/decisions/0008-donde-vive-el-calculo.
 from __future__ import annotations
 
 from badges import ORDEN_NIVEL, POR_CLAVE, medallas_de_temporada
-from seasons import TEMPORADA_CERO, etiqueta, temporada_de
+from seasons import MESES, TEMPORADA_CERO, ordinal, temporada_de
 from standings import clasificacion
 
 #: Cuántos suben al podio.
@@ -85,7 +85,16 @@ def texto(resultados: list[dict], temporada: str, jornada: int) -> str:
     if not tabla:
         return ""
 
-    lineas = [f"🏆 *{etiqueta(temporada)} — así queda el podio*", ""]
+    # **Abre presentando el juego y el mes.** Sale una vez al mes y no tiene el contexto del mensaje diario:
+    # quien lo lee puede llevar semanas sin mirar la tabla. Decisión del dueño.
+    lineas = [
+        f"Ya tenemos los resultados de *Cloud District Wordle* del mes de {mes_y_año(temporada)} 🎉",
+        "",
+        # El mes va **solo en la presentación**: con `etiqueta()` completa aquí, «agosto de 2026» salía dos
+        # veces en dos líneas seguidas.
+        f"🏆 *Así queda el podio · Temporada {ordinal(temporada)}*",
+        "",
+    ]
     medalla = {1: "🥇", 2: "🥈", 3: "🥉"}
     anterior = None
     for fila in tabla:
@@ -107,3 +116,9 @@ def texto(resultados: list[dict], temporada: str, jornada: int) -> str:
 
     lineas += ["", _del_ciclo(NUEVA_TEMPORADA, jornada)]
     return "\n".join(lineas)
+
+
+def mes_y_año(temporada: str) -> str:
+    """«agosto de 2026», para quien no sabe qué es «Temporada 1»."""
+    año, mes = (int(parte) for parte in temporada.split("-"))
+    return f"{MESES[mes - 1]} de {año}"

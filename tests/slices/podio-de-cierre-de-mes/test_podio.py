@@ -149,7 +149,7 @@ def test_el_flujo_no_publica_cuando_no_toca():
         subidas.append(("captura", objetivo.nombre))
         return "/tmp/no-existe.png"
 
-    def subida(ruta, texto_, titulo):
+    def subida(ruta, texto_, titulo, canal=None):
         subidas.append(("subida", titulo))
         return True
 
@@ -177,10 +177,26 @@ def test_la_imagen_es_la_del_podio_de_esa_temporada():
         return "/tmp/no-existe.png"
 
     codigo = asyncio.run(post_podium.celebrar(
-        capturar=captura, subir=lambda r, t, ti: True,
+        capturar=captura, subir=lambda r, t, ti, canal=None: True,
         resultados=AGOSTO_JUGADO + SEPTIEMBRE_JUGADO, leer_mensajes=lambda: []))
     assert codigo == 0
     assert len(capturado) == 1
     objetivo = capturado[0]
     assert objetivo.url.endswith("/t/2026-08"), objetivo.url
     assert objetivo.espera == ".podio-card" and objetivo.captura == ".podio"
+
+
+# @scenarios el-mensaje-abre-presentando-el-juego-y-el-mes
+def test_el_mensaje_abre_presentando_el_juego_y_el_mes():
+    """El cierre sale una vez al mes y no tiene el contexto del mensaje diario: quien lo lee puede llevar
+    semanas sin mirar la tabla, así que la primera línea dice qué es y de qué mes. Decisión del dueño.
+    """
+    from podio import mes_y_año
+
+    mensaje = texto(AGOSTO_JUGADO + SEPTIEMBRE_JUGADO, "2026-08", 6)
+    primera = mensaje.splitlines()[0]
+    assert primera.startswith("Ya tenemos los resultados de *Cloud District Wordle*"), primera
+    assert mes_y_año("2026-08") == "agosto de 2026"
+    assert "agosto de 2026" in primera, primera
+    # Y el mes no se repite en el encabezado del podio, que iba justo debajo.
+    assert mensaje.count("agosto de 2026") == 1, mensaje

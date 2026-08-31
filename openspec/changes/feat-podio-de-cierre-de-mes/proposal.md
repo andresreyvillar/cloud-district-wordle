@@ -39,7 +39,9 @@ cerrado, y el pico de publicación del canal está entre las 08:00 y las 10:00.
 ## Así queda con los datos de agosto
 
 ```
-🏆 Temporada 1 · agosto 2026 — así queda el podio
+Ya tenemos los resultados de *Cloud District Wordle* del mes de agosto de 2026 🎉
+
+🏆 *Así queda el podio · Temporada 1*
 
 🥇 Andrés R. — 3,81
 🥈 Claire — 3,92
@@ -57,3 +59,21 @@ Se lleva además 📅 🌀 🗂️ 💪 ✨ 🎯 de la temporada.
 - **No celebra tras un salto de meses**: el mes en curso ha de ser consecutivo al cerrado, o se estaría
   felicitando otra vez a quien ganó algo ya celebrado.
 - No escribe nada en Supabase.
+
+
+## Publicarlo en otro canal, aplazado
+
+Se pidió publicarlo además en un canal con mucha más gente, con contexto para quien no juega. **Está
+aplazado por el dueño** y no se ha dejado andamiaje: sin el identificador del canal sería código que no se
+ejecuta.
+
+Lo que hará falta cuando se retome, y no es código:
+
+- que `@wordlebot` sea **miembro** de ese canal, porque sin eso `files_upload_v2` falla;
+- su identificador, que el bot no puede buscar: su token tiene `channels:history`, `groups:history`,
+  `users:read` y `files:write`, y le falta `channels:read`.
+
+Y un detalle que condiciona el diseño: **el bot no tiene `chat:write`**. Publica subiendo un fichero con
+comentario, así que un mensaje sin imagen no es una opción disponible en ninguno de los dos canales.
+
+De momento el cierre abre con la frase de presentación también en el canal del grupo, que es lo que se pidió.

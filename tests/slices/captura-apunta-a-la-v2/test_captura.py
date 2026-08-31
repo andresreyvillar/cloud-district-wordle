@@ -96,7 +96,7 @@ def test_una_captura_fallida_termina_con_error():
     codigo = asyncio.run(
         post_ranking.publicar(
             capturar=captura_que_falla,
-            subir=lambda ruta, texto, titulo: True,
+            subir=lambda ruta, texto, titulo, canal=None: True,
             resultados=[],
         )
     )
@@ -113,7 +113,7 @@ def test_una_subida_fallida_termina_con_error():
     async def captura_ok(objetivo):
         return "captura.png"
 
-    def subida_que_falla(ruta, texto, titulo):
+    def subida_que_falla(ruta, texto, titulo, canal=None):
         return False
 
     codigo = asyncio.run(
@@ -135,7 +135,7 @@ def test_una_publicacion_correcta_termina_bien():
         visto["objetivo"] = objetivo
         return "captura.png"
 
-    def subida_ok(ruta, texto, titulo):
+    def subida_ok(ruta, texto, titulo, canal=None):
         visto["texto"] = texto
         return True
 
@@ -229,7 +229,7 @@ def test_la_jornada_ya_publicada_no_se_republica():
     codigo = asyncio.run(
         post_ranking.publicar(
             capturar=captura,
-            subir=lambda ruta, texto, titulo: subidas.append(titulo) or True,
+            subir=lambda ruta, texto, titulo, canal=None: subidas.append(titulo) or True,
             resultados=filas,
             leer_mensajes=lambda: [_mensaje_del_bot(1694)],
         )
@@ -255,7 +255,7 @@ def test_una_jornada_distinta_si_se_publica():
     codigo = asyncio.run(
         post_ranking.publicar(
             capturar=captura,
-            subir=lambda ruta, texto, titulo: subidas.append(titulo) or True,
+            subir=lambda ruta, texto, titulo, canal=None: subidas.append(titulo) or True,
             resultados=filas,
             leer_mensajes=lambda: [_mensaje_del_bot(1693)],
         )
@@ -290,7 +290,7 @@ def test_sin_poder_leer_el_canal_se_publica():
     codigo = asyncio.run(
         post_ranking.publicar(
             capturar=captura,
-            subir=lambda ruta, texto, titulo: subidas.append(titulo) or True,
+            subir=lambda ruta, texto, titulo, canal=None: subidas.append(titulo) or True,
             resultados=filas,
             leer_mensajes=lambda: [],  # lo que devuelve `mensajes_recientes` cuando Slack falla
         )
