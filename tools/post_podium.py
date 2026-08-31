@@ -37,6 +37,8 @@ from post_ranking import (  # noqa: E402
 TITULO_DEL_PODIO = "Podio del mes 🏆 · {temporada}"
 
 
+
+
 def ya_celebrado(mensajes: list[dict], temporada: str) -> bool:
     """Si el canal ya tiene el podio de ese mes.
 
@@ -93,6 +95,7 @@ async def celebrar(
         return 1
 
     publicado = subir(ruta, cuerpo, TITULO_DEL_PODIO.format(temporada=temporada))
+
     if os.path.exists(ruta):
         os.remove(ruta)
     return 0 if publicado else 1

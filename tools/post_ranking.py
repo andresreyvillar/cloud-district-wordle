@@ -369,7 +369,7 @@ def ya_publicada(mensajes: list[dict], jornada: int | None) -> bool:
     return False
 
 
-def mensajes_recientes(limite: int = 30, cliente=None) -> list[dict]:
+def mensajes_recientes(limite: int = 30, cliente=None, canal: str | None = None) -> list[dict]:
     """Los últimos mensajes del canal, para saber si ya se publicó. Un fallo de lectura devuelve vacío.
 
     El cliente entra por parámetro para poder doblarlo: sin eso, el repliegue ante un fallo de Slack era
@@ -382,20 +382,26 @@ def mensajes_recientes(limite: int = 30, cliente=None) -> list[dict]:
     """
     try:
         cli = cliente if cliente is not None else WebClient(token=SLACK_TOKEN)
-        respuesta = cli.conversations_history(channel=CHANNEL_ID, limit=limite)
+        respuesta = cli.conversations_history(channel=canal or CHANNEL_ID, limit=limite)
         return respuesta.get("messages") or []
     except SlackApiError as error:
         print(f"No se pudo leer el canal para comprobar duplicados: {error}", file=sys.stderr)
         return []
 
 
-def upload_to_slack(file_path: str, texto: str, titulo: str) -> bool:
-    """Sube la captura. Devuelve si se ha publicado: el que llama decide qué hacer con el fallo."""
+def upload_to_slack(file_path: str, texto: str, titulo: str, canal: str | None = None) -> bool:
+    """Sube la captura. Devuelve si se ha publicado: el que llama decide qué hacer con el fallo.
+
+    `canal` permite publicar en otro distinto del habitual —el cierre de mes va también a un canal con más
+    gente—. Se publica **subiendo un fichero con comentario** y no con `chat.postMessage` porque el token del
+    bot tiene `files:write` y no `chat:write`: el mensaje sin imagen no es una opción disponible.
+    """
     client = WebClient(token=SLACK_TOKEN)
+    destino = canal or CHANNEL_ID
     try:
-        print(f"Subiendo captura a Slack (Canal: {CHANNEL_ID})...")
+        print(f"Subiendo captura a Slack (Canal: {destino})...")
         client.files_upload_v2(
-            channel=CHANNEL_ID,
+            channel=destino,
             file=file_path,
             title=titulo,
             initial_comment=texto,

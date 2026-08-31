@@ -57,6 +57,12 @@ a quien ganó un mes ya celebrado.
 **WHEN** dos personas empatan en un puesto del podio
 **THEN** suben las dos, porque cortar por número de filas partiría el empate por la mitad.
 
+### el-mensaje-abre-presentando-el-juego-y-el-mes
+**WHEN** se publica el cierre de mes
+**THEN** la primera línea dice de qué juego y de qué mes son los resultados, porque el mensaje sale una vez al
+mes y quien lo lee puede llevar semanas sin mirar la tabla; y el mes **no se repite** en el encabezado del
+podio, que va justo debajo.
+
 ### se-felicita-al-campeon-con-sus-medallas
 **WHEN** hay un campeón único
 **THEN** se le nombra y se enseñan las medallas que ganó **en esa temporada**, de la más difícil a la más común.
