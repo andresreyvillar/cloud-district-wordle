@@ -60,6 +60,25 @@ def _url(worker: str) -> str:
     return f"https://{worker}.{SUBDOMINIO}.workers.dev/"
 
 
+#: El podio de una temporada cerrada, para el mensaje de cierre de mes. La URL lleva el mes: no es un objetivo
+#: fijo como los otros, así que se construye con `objetivo_del_podio`.
+RUTA_DEL_PODIO = "/2/t/{temporada}"
+
+
+def objetivo_del_podio(temporada: str) -> Objetivo:
+    """De dónde se fotografía el podio de un mes cerrado.
+
+    Reutiliza la web en lugar de dibujar el podio aquí: es el mismo que el grupo ve en la pestaña de la
+    temporada, así que la imagen del mensaje y la página no pueden decir cosas distintas.
+    """
+    return Objetivo(
+        nombre=f"podio-{temporada}",
+        url=_url("cloud-district-wordle").rstrip("/") + RUTA_DEL_PODIO.format(temporada=temporada),
+        espera=".podio-card",
+        captura=".podio",
+    )
+
+
 OBJETIVOS: dict[str, Objetivo] = {
     "v1": Objetivo(
         nombre="v1",
