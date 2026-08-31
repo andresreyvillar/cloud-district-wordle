@@ -4,18 +4,24 @@ on:
   schedule:
     # Monday to Friday only: a season is its weekdays, so there is no weekend matchday to publish.
     # Running on Saturday would re-publish Friday's, because the matchday comes from the data.
-    # **Tres ventanas, y en los minutos que sí se disparaban.**
+    # **Medianoche de Madrid, y por una razón del juego.**
     #
-    # El resumen tenía una sola oportunidad al día, así que un descarte del planificador dejaba al grupo sin
-    # mensaje. Las tres son seguras porque `post_ranking` es idempotente: comprueba si el canal ya tiene la
-    # captura de esta jornada y sale sin hacer nada, así que publica la primera que entre.
+    # 22:00 UTC son las 00:00 de Madrid en horario de verano. A esa hora el juego **todavía no ha cambiado de
+    # palabra**: su índice avanza a medianoche de Nueva York, o sea a las 06:00 de Madrid. Así que a las 00:00
+    # la palabra sigue siendo la que el grupo ha jugado todo el día y coincide con la jornada que resume el
+    # mensaje; a cualquier otra hora habría desfase de un día.
     #
-    # Estuvieron en `:07` y `:37` para huir del minuto congestionado, y salió mal: con `0 17` el mensaje se
-    # publicaba puntualmente a las 17:36-17:39 todos los días, y con `:07` llegó de madrugada, entre siete y
-    # ocho horas tarde. Se vuelve a lo medido.
-    - cron: '0 17 * * 1-5'
-    - cron: '30 17 * * 1-5'
-    - cron: '0 18 * * 1-5'
+    # Riesgo de destripar la partida, medido sobre el canal: 2 de 1748 resultados se publicaron entre las
+    # 00:00 y las 06:00 de Madrid (0,1%).
+    #
+    # **Deriva de invierno aceptada por el dueño**: los cron de GitHub son UTC y no saben de horario de
+    # verano, así que a partir de finales de octubre esto serán las 23:00 de Madrid.
+    #
+    # Tres ventanas y todas en minutos que sí se disparaban (:00 y :30). Son seguras porque `post_ranking` es
+    # idempotente: publica la primera que entre y las otras dos son red de seguridad.
+    - cron: '0 22 * * 1-5'
+    - cron: '30 22 * * 1-5'
+    - cron: '0 23 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -33,7 +39,10 @@ jobs:
           # `certifi` va explícito aunque hoy llegue como dependencia de supabase: lo usa `contexto_tls()`
           # para verificar el TLS de Slack, y la lectura del canal está envuelta en un `try` que publicaría
           # el resumen sin señales y sin que nadie se enterara si el paquete dejara de estar.
-          pip install slack_sdk python-dotenv supabase playwright certifi
+          # `msgpack` lo usa `tools/palabra.py` para descifrar la lista de soluciones del juego. Sin él la
+          # línea de la palabra no sale —está envuelta y falla en silencio—, así que va explícito para que
+          # una ausencia se vea aquí y no en un mensaje sin palabra que nadie relacione con esto.
+          pip install slack_sdk python-dotenv supabase playwright certifi msgpack
           playwright install chromium --with-deps
 
       - name: Update data before snapshot

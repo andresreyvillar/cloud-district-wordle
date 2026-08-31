@@ -1,0 +1,24 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-31T18:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    La palabra del día con su significado, y el cron movido a medianoche de Madrid. La hora no es una
+    preferencia: el índice del juego avanza a medianoche de Nueva York (06:00 de Madrid), así que a las 00:00
+    la palabra todavía coincide con la jornada que se resume, y el riesgo de destripar la partida es de 2
+    resultados en 1748 (0,1%). Medido antes de decidir. La cobertura del Wikcionario se midió dos veces: la
+    primera dio 18/25 y era falsa —veinticinco peticiones seguidas activan el límite de Wikimedia—, y con
+    pausa salió 24/25. Tres rondas de corrección, todas mías: (1) el test de «nada se persiste» buscaba la
+    subcadena `open(` y casaba con `urlopen(`, así que daba rojo con el módulo correcto — rehecho sobre el
+    árbol sintáctico; (2) faltaba el test del respaldo por mayúscula inicial, que la cobertura destapó;
+    (3) el flag nuevo de la previsualización quedó insertado después del `parse_args()`. El guardarraíl que
+    impide leer por delante se verificó por mutación: quitarlo pone dos escenarios en rojo.

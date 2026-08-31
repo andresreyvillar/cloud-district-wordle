@@ -21,7 +21,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from post_ranking import (  # noqa: E402
+from post_ranking import (
+    leer_la_palabra,  # noqa: E402
     OBJETIVOS,
     comentario,
     leer_el_canal,
@@ -36,6 +37,7 @@ from badges import texto_de_medallas  # noqa: E402
 def main() -> int:
     parser = argparse.ArgumentParser(description="El mensaje de la tarde, sin publicarlo.")
     parser.add_argument("--sin-canal", action="store_true", help="no leer las señales del canal")
+    parser.add_argument("--sin-palabra", action="store_true", help="no buscar la palabra del día")
     args = parser.parse_args()
 
     resultados = leer_resultados()
@@ -46,12 +48,15 @@ def main() -> int:
     jornada = max(fila["wordle_id"] for fila in resultados)
     temporada = temporada_del_resumen(resultados)
     senales = None if args.sin_canal else leer_el_canal(jornada)
+    # La palabra se busca igual que en el cron, para que la previsualización sea el mensaje de verdad y no
+    # una versión sin la línea de apertura.
+    palabra = None if args.sin_palabra else leer_la_palabra(jornada, resultados)
 
     print(f"[jornada {jornada} · temporada {temporada} · resumen_activo={resumen_activo()}]")
-    print(f"[señales del canal: {'sí' if senales else 'no'}]")
+    print(f"[señales del canal: {'sí' if senales else 'no'} · palabra: {'sí' if palabra else 'no'}]")
     print("=" * 78)
     print(comentario(texto_de_medallas(resultados, temporada, jornada), objetivo_de_captura(), resultados,
-                     senales=senales))
+                     senales=senales, palabra=palabra))
     print("=" * 78)
     return 0
 

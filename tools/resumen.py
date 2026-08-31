@@ -154,6 +154,25 @@ def _figuras_reconocibles_del_dia(resultados: list[dict], jornada: int) -> dict[
     return dibujos
 
 
+def bloque_palabra(palabra: tuple[str, str] | None) -> str:
+    """La palabra de la jornada con su significado, o nada si no se pudo averiguar.
+
+    **Abre el mensaje**, por delante de todo lo demás: es el dato que el grupo no tiene por su cuenta —cada
+    uno conoce su resultado, pero nadie ve la palabra escrita ni lo que significa—.
+
+    Entra por parámetro y no se busca aquí: la red vive en el borde (§10), y así el mensaje entero sigue
+    siendo reproducible en un test. Sin acepción se publica la palabra sola, que ya es más de lo que había.
+    """
+    if not palabra:
+        return ""
+    termino, acepcion = palabra
+    if not termino:
+        return ""
+    if not acepcion:
+        return f"📖 *La palabra de hoy:* {termino.upper()}"
+    return f"📖 *La palabra de hoy:* {termino.upper()} — {acepcion}"
+
+
 def bloque_top(resultados: list[dict], temporada: str, jornada: int) -> str:
     """Los cinco primeros del marcador, con el emoji de lo que dibujó cada uno **hoy**.
 
@@ -929,10 +948,19 @@ def _pulla_del_album(resultados: list[dict], temporada: str, jornada: int) -> st
     return pullas_de_lideres(None, quien, jornada).get("album", "") if quien else ""
 
 
-def resumen_del_dia(resultados: list[dict], temporada: str, jornada: int, senales=None) -> str:
-    """El resumen completo. **Una sección sin datos no se imprime**, no se imprime vacía."""
+def resumen_del_dia(
+    resultados: list[dict], temporada: str, jornada: int, senales=None, palabra=None
+) -> str:
+    """El resumen completo. **Una sección sin datos no se imprime**, no se imprime vacía.
+
+    `palabra` es `(palabra, acepcion)` de la jornada, o `None`. Entra por parámetro porque averiguarla es red
+    y la red vive en el borde: así el mensaje sigue fijándose en un test.
+    """
     del_dia = _del_dia(resultados, jornada)
     secciones = [
+        # **Abre el mensaje.** Es lo único que el grupo no sabe ya: cada uno tiene su resultado, pero la
+        # palabra escrita y su significado no los ha visto nadie.
+        bloque_palabra(palabra),
         bloque_la_jornada(resultados, temporada, jornada, senales),
         # **Una** línea de cierre —el meme si la jornada tiene forma, y si no el proverbio— entre la jornada y
         # los rankings. Tres frases seguidas era un tercer bloque de comentarios y el mensaje ya tiene dos.
