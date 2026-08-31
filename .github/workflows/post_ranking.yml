@@ -4,14 +4,18 @@ on:
   schedule:
     # Monday to Friday only: a season is its weekdays, so there is no weekend matchday to publish.
     # Running on Saturday would re-publish Friday's, because the matchday comes from the data.
-    # **Tres ventanas, y ninguna en punto.** El resumen tenía una sola oportunidad al día, así que un
-    # descarte del planificador dejaba al grupo sin mensaje: el 26 de agosto la ventana de las 17:00 llegó a
-    # las 19:11, con 2h11m de retraso. Las tres son seguras porque `post_ranking` es idempotente —comprueba
-    # si el canal ya tiene la captura de esta jornada y sale sin hacer nada—, así que publica la primera que
-    # entre y las otras dos son red de seguridad.
-    - cron: '7 17 * * 1-5'
-    - cron: '37 17 * * 1-5'
-    - cron: '7 18 * * 1-5'
+    # **Tres ventanas, y en los minutos que sí se disparaban.**
+    #
+    # El resumen tenía una sola oportunidad al día, así que un descarte del planificador dejaba al grupo sin
+    # mensaje. Las tres son seguras porque `post_ranking` es idempotente: comprueba si el canal ya tiene la
+    # captura de esta jornada y sale sin hacer nada, así que publica la primera que entre.
+    #
+    # Estuvieron en `:07` y `:37` para huir del minuto congestionado, y salió mal: con `0 17` el mensaje se
+    # publicaba puntualmente a las 17:36-17:39 todos los días, y con `:07` llegó de madrugada, entre siete y
+    # ocho horas tarde. Se vuelve a lo medido.
+    - cron: '0 17 * * 1-5'
+    - cron: '30 17 * * 1-5'
+    - cron: '0 18 * * 1-5'
   workflow_dispatch:
 
 jobs:
