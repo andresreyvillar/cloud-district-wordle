@@ -526,6 +526,33 @@ RIVALIDAD_PELEA: tuple[str, ...] = (
     "🔥 *Pelea por el primer puesto:* {a} delante, {b} pegado a {cifra}. Sin distancia para relajarse.",
     "🔥 *Pelea por el primer puesto:* {a} aguanta arriba por {cifra} sobre {b}.",
     "🔥 *Pelea por el primer puesto:* {b} a {cifra} de {a}: esto no está decidido.",
+    # Más maneras de decir lo mismo. Con ocho frases el registro sonaba a una sola: «le respira en el cuello»
+    # se quedó como la marca de la casa. Estas son variantes de la misma idea —la distancia es nada— para que
+    # el ciclo no cante.
+    "🔥 *Pelea por el primer puesto:* {b} le pisa los talones a {a}, a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} manda por {cifra} y {b} no le pierde de vista.",
+    "🔥 *Pelea por el primer puesto:* {b} va a rueda de {a}. {cifra} de nada.",
+    "🔥 *Pelea por el primer puesto:* {a} lleva a {b} en el retrovisor, a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {cifra} separan a {a} de {b}. Un suspiro.",
+    "🔥 *Pelea por el primer puesto:* {b} está a tiro de piedra de {a}: {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} primero, {b} con la mano en el hombro. {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {b} no pierde comba: {cifra} de {a}.",
+    "🔥 *Pelea por el primer puesto:* {b} pegado a {a} como una lapa, a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} va delante por {cifra}. Medio paso, vamos.",
+    "🔥 *Pelea por el primer puesto:* {b} en la estela de {a}, a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {b} va a rebufo de {a}. {cifra} y a esperar el error.",
+    "🔥 *Pelea por el primer puesto:* {a} arriba, con {b} marcándole la sombra a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {cifra}. Lo que {a} le saca a {b} cabe en un pañuelo.",
+    "🔥 *Pelea por el primer puesto:* {b} le mide las zancadas a {a}: {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} y {b} a {cifra}. Coyote y Correcaminos, temporada larga.",
+    "🔥 *Pelea por el primer puesto:* {b} lleva el rayo azul cargado y {a} va a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {a} por delante {cifra}. Photo finish si esto acabara hoy.",
+    "🔥 *Pelea por el primer puesto:* {b} a {cifra} de {a}. Un mal día y cambian los papeles.",
+    "🔥 *Pelea por el primer puesto:* {cifra} de ventaja para {a}. Ni para estirar las piernas.",
+    "🔥 *Pelea por el primer puesto:* {b} viene lanzado y {a} solo tiene {cifra} de colchón.",
+    "🔥 *Pelea por el primer puesto:* {a} defiende {cifra} sobre {b}. Se defiende poco con eso.",
+    "🔥 *Pelea por el primer puesto:* {b} asomando por detrás de {a}, a {cifra}.",
+    "🔥 *Pelea por el primer puesto:* {cifra} entre {a} y {b}. Esto se decide en la última jornada.",
 )
 
 #: El **segundo y el tercer** empate de la misma pareja en la temporada. Llevan además `{veces}`.
