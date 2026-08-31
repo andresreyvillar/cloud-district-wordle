@@ -234,7 +234,9 @@ def seccion_de_medallas(resultados):
     return texto_de_medallas(resultados, temporada_del_resumen(resultados), jornada)
 
 
-def comentario(seccion_medallas: str, objetivo: Objetivo, resultados=None, senales=None) -> str:
+def comentario(
+    seccion_medallas: str, objetivo: Objetivo, resultados=None, senales=None, palabra=None
+) -> str:
     """El texto que acompaña a la captura.
 
     El enlace es **el del objetivo que se ha fotografiado**: mandar una foto de una web y un enlace a otra
@@ -247,7 +249,7 @@ def comentario(seccion_medallas: str, objetivo: Objetivo, resultados=None, senal
     if resultados and resumen_activo():
         jornada = max(fila["wordle_id"] for fila in resultados)
         cuerpo = resumen_del_dia(
-            resultados, temporada_del_resumen(resultados), jornada, senales=senales
+            resultados, temporada_del_resumen(resultados), jornada, senales=senales, palabra=palabra
         )
         if cuerpo:
             partes.append(cuerpo)
@@ -386,6 +388,23 @@ def upload_to_slack(file_path: str, texto: str, titulo: str) -> bool:
         return False
 
 
+def leer_la_palabra(jornada: int | None, filas: list[dict]):
+    """La palabra de la jornada y su significado, o `None`. Envuelto: un fallo no impide publicar.
+
+    Se le pasa la **última jornada de la tabla** como techo, que es lo que impide leer por delante: pedir una
+    palabra que el grupo aún no ha jugado devuelve `None` aunque esté en el fichero.
+    """
+    if jornada is None or not filas:
+        return None
+    from palabra import palabra_del_dia
+
+    try:
+        return palabra_del_dia(jornada, max(fila["wordle_id"] for fila in filas))
+    except Exception as error:  # noqa: BLE001 — la palabra es un adorno; el resumen no depende de ella
+        print(f"palabra del día: se publica sin ella ({error})", file=sys.stderr)
+        return None
+
+
 async def publicar(
     capturar=capture_ranking, subir=upload_to_slack, resultados=None, leer_mensajes=mensajes_recientes
 ) -> int:
@@ -419,9 +438,12 @@ async def publicar(
 
     # Las señales se leen **después** de la captura: es lo último que se necesita y lo más frágil, así que si
     # el canal no responde ya está todo lo demás listo para publicar.
+    # La palabra se busca aquí, en el borde, y **nunca por delante de la jornada jugada**: el guardarraíl de
+    # `palabra_de` recibe la última jornada de la tabla, así que no se puede leer por delante.
+    palabra = leer_la_palabra(jornada, filas)
     publicado = subir(
         ruta,
-        comentario(medallas, objetivo, filas, senales=leer_el_canal(jornada)),
+        comentario(medallas, objetivo, filas, senales=leer_el_canal(jornada), palabra=palabra),
         titulo_de(jornada),
     )
     if os.path.exists(ruta):
