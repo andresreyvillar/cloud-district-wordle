@@ -1,0 +1,23 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-31T19:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Cierre de mes con podio, a petición del dueño. Se avisó antes de implementar de dos cosas que no se podían
+    hacer como se pidieron —el cron no puede expresar «el primer día de competición del mes», porque día del
+    mes y día de la semana se combinan con O; y Slack no ejecuta animaciones— y el dueño eligió imagen
+    estática y condición en el código. Se reutiliza el podio que la web ya pinta y la captura de Playwright que
+    ya existe, así que no hay dependencias nuevas. Dos rondas de corrección: (1) `replace(".", ",")` sobre la
+    línea entera convertía «Andrés R.» en «Andrés R,» —varios nombres del grupo acaban en punto—, resuelto
+    reutilizando `_cifra` del compositor en lugar de repetir el formateo; (2) la aserción de los empates decía
+    «al menos dos» y cortar por filas dejaba justo dos, así que la mutación pasaba — atada a que estén todos
+    los que tienen puesto de podio.

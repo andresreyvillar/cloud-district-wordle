@@ -1,0 +1,39 @@
+name: Monthly Podium Post
+
+on:
+  schedule:
+    # **Del día 1 al 7, y a las 11:00 de Madrid.**
+    #
+    # No se puede expresar «el primer día de competición del mes» en cron: al restringir día del mes y día de
+    # la semana a la vez, cron los interpreta como O y no como Y, así que `1-7 * 1-5` dispararía además todos
+    # los laborables. La condición vive en el código y sale de los datos.
+    #
+    # Del 1 al 7 porque el mensaje es idempotente y GitHub descarta ventanas: si el día 1 no corre, se
+    # publica el 2 y el cierre no se pierde. A las 09:00 UTC porque a esa hora ya ha jugado la mayoría —el
+    # pico del canal está entre las 08:00 y las 10:00 de Madrid— y hace falta al menos un resultado del mes
+    # nuevo para saber que el anterior ha cerrado.
+    - cron: '0 9 1-7 * *'
+  workflow_dispatch:
+
+jobs:
+  post-podium:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install slack_sdk python-dotenv supabase playwright certifi
+          playwright install chromium --with-deps
+
+      - name: Post the closing month's podium
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: python3 tools/post_podium.py

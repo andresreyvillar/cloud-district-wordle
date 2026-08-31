@@ -989,3 +989,43 @@ DOMINIO: tuple[str, ...] = (
     "👑 {racha} jornadas de reinado de {jugador}. Alguien tendrá que hacer algo.",
     "👑 {jugador} sigue arriba por {racha}ª jornada consecutiva.",
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# El cierre de mes: se felicita al campeón y se desea suerte a quien arranca.
+#
+# Sale **una vez al mes**, así que no hacen falta decenas: con doce de cada registro, la primera repetición
+# cae a un año vista. Llevan `{jugador}`.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Felicitación al campeón del mes.
+PODIO_CAMPEON: tuple[str, ...] = (
+    "👑 Campeón del mes: {jugador}. Se lo ha ganado jornada a jornada.",
+    "👑 {jugador} se lleva el mes. Y no por un día suelto: por treinta.",
+    "👑 El mes es de {jugador}. Un aplauso, que esto no se gana con suerte.",
+    "👑 {jugador} arriba y bien merecido. Enhorabuena.",
+    "👑 Se cierra el mes con {jugador} en lo más alto. Chapó.",
+    "👑 {jugador} campeón. Que conste en acta y que dure el recuerdo.",
+    "👑 {jugador} ha ganado el mes. Nadie ha aguantado tanto tan arriba.",
+    "👑 Campeón: {jugador}. El resto ya sabemos a quién hay que tumbar.",
+    "👑 {jugador} se corona. Un mes entero sin bajarse del sitio.",
+    "👑 El trofeo del mes, para {jugador}. Y el mérito también.",
+    "👑 {jugador} lo ha hecho. Enhorabuena de parte de todos los que hemos quedado detrás.",
+    "👑 Campeón del mes: {jugador}, por constancia y no por casualidad.",
+)
+
+#: Ánimo para la temporada que empieza.
+NUEVA_TEMPORADA: tuple[str, ...] = (
+    "🔄 Y el marcador vuelve a cero. Suerte a todos en la temporada nueva.",
+    "🔄 Empieza mes nuevo y todos empatados a nada. Que gane el mejor.",
+    "🔄 Borrón y cuenta nueva: la tabla arranca vacía. Suerte.",
+    "🔄 Mes nuevo, marcador a cero. Aquí nadie llega con ventaja.",
+    "🔄 Se reinicia todo. El que iba último ya no va último: suerte a todos.",
+    "🔄 Temporada nueva, cero jornadas jugadas. A por ella.",
+    "🔄 Todos a cero otra vez. Aquí no hay herencias, hay que volver a ganárselo.",
+    "🔄 Arranca el mes y la tabla está en blanco. Suerte, y que sea reñido.",
+    "🔄 Marcador reiniciado. Lo de ayer ya es historia; lo de mañana está por escribir.",
+    "🔄 Nueva temporada, mismas ganas. Suerte a todos.",
+    "🔄 De cero otra vez. Que empiece el baile.",
+    "🔄 Página nueva. Suerte a los que arrancan hoy, que son todos.",
+)
