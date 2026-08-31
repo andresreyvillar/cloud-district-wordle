@@ -1,0 +1,18 @@
+# Run records del change pack (§11).
+
+- run: '2026-08-31T17:15:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    Reversión de un cambio propio que la evidencia no sostiene. Los cron se movieron fuera del `:00` siguiendo
+    la recomendación de la documentación de GitHub, y la fiabilidad cayó de 21-23 ejecuciones diarias a entre
+    2 y 6, con huecos de hasta 18,5 horas; el resumen pasó de publicarse a las 17:36-17:39 a llegar de
+    madrugada. El primer hueco grande empezó nueve horas antes del cambio, así que la degradación la arrancaron
+    los incidentes de Actions del 26 de agosto y no el cambio — pero el cambio tampoco la arregló y contradice
+    la medida, así que se deshace. Sin escenarios nuevos: es configuración de infraestructura, no
+    comportamiento observable de producto.
