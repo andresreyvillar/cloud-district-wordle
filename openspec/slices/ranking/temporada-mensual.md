@@ -97,6 +97,11 @@ el reloj.
 **WHEN** el pipeline materializa una temporada
 **THEN** queda una fila con su carga útil y la marca de tiempo del cálculo.
 
+### al-cerrar-un-mes-su-instantanea-se-actualiza
+**WHEN** una temporada deja de estar en curso porque empieza la siguiente
+**THEN** se rematerializa también ella, no solo la nueva, porque su estado vive dentro de la instantánea y si
+nadie la reescribe la web sigue anunciándola como abierta después de cerrar.
+
 ### recalcular-actualiza-en-lugar-de-duplicar
 **WHEN** se materializa dos veces la misma temporada
 **THEN** sigue habiendo una sola fila para ella y su marca de tiempo se actualiza.
