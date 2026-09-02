@@ -111,6 +111,29 @@ def leer_resultados(url: str, clave: str) -> list[dict]:
         desplazamiento += PAGINA
 
 
+#: Cuántas temporadas se rematerializan además de la en curso.
+#:
+#: **Una, y hace falta.** El estado («en curso» / «cerrada») vive dentro de la instantánea, y el cron
+#: rematerializaba solo la temporada en curso: cuando agosto de 2026 dejó de estar en curso nadie la volvió a
+#: escribir, así que su instantánea se quedó congelada con el `estado: en curso` del último día que lo estuvo
+#: y **la web siguió anunciándola como abierta dos días después de cerrar**. Lo vio el dueño.
+#:
+#: Con una basta: solo la última cerrada puede tener el estado obsoleto, porque las anteriores ya se
+#: escribieron estando cerradas. Rematerializar todas cada hora sería recalcular el histórico entero —181
+#: jornadas— para arreglar una etiqueta.
+RECIEN_CERRADAS = 1
+
+
+def por_defecto(lista: list[dict]) -> list[str]:
+    """Las temporadas que se rematerializan en una ejecución normal: la en curso y la que acaba de cerrar.
+
+    `lista` llega de más reciente a más antigua, así que la que acaba de cerrar es la siguiente a la en curso.
+    """
+    en_curso = [e["temporada"] for e in lista if e["estado"] == EN_CURSO]
+    cerradas = [e["temporada"] for e in lista if e["estado"] != EN_CURSO]
+    return en_curso + cerradas[:RECIEN_CERRADAS]
+
+
 def main(argv: list[str] | None = None) -> int:
     analizador = argparse.ArgumentParser(description="Materializa las instantáneas de temporada.")
     analizador.add_argument("--todas", action="store_true", help="recalcula el histórico completo")
@@ -128,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
     objetivo = (
         [entrada["temporada"] for entrada in lista]
         if argumentos.todas
-        else [entrada["temporada"] for entrada in lista if entrada["estado"] == EN_CURSO]
+        else por_defecto(lista)
     )
 
     for entrada in lista:

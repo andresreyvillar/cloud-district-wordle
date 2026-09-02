@@ -1,0 +1,21 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-02T07:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    La web anunciaba agosto como «en curso» dos días después de cerrar. El diagnóstico descartó primero la
+    causa aparente: `temporadas()` ya devolvía el estado correcto, así que el cálculo no era el problema. El
+    fallo estaba en **cuándo se escribe**: el estado viaja dentro de la instantánea y el cron materializaba
+    solo la temporada en curso, de modo que agosto salió del filtro el 1 de septiembre y se quedó congelada
+    con la instantánea de las 01:42 de ese día. Se añade la última cerrada al objetivo por defecto —una, no
+    todas: solo ella puede tener el estado obsoleto, y recalcular el histórico cada hora son 181 jornadas
+    para arreglar una etiqueta.

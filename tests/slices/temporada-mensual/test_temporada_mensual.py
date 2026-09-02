@@ -375,3 +375,31 @@ def test_una_temporada_numerada_no_aplica_umbral_porque_la_imputacion_ya_lo_hace
     assert tabla["esporadico"]["posicion"] is not None
     # y aun clasificando, la imputación le impide ganar con una sola partida
     assert tabla["constante"]["posicion"] < tabla["esporadico"]["posicion"]
+
+
+# @scenarios al-cerrar-un-mes-su-instantanea-se-actualiza
+def test_al_cerrar_un_mes_tambien_se_rematerializa_ese_mes():
+    """**El fallo que el dueño vio en la web.** El estado («en curso» / «cerrada») vive dentro de la
+    instantánea, y el cron rematerializaba solo la temporada en curso: agosto de 2026 se quedó congelada con
+    el `estado: en curso` del 1 de septiembre a las 01:42 y la web la anunciaba abierta dos días después.
+    """
+    from materialize_seasons import RECIEN_CERRADAS, por_defecto
+
+    lista = [
+        {"temporada": "2026-09", "estado": "en curso"},
+        {"temporada": "2026-08", "estado": "cerrada"},
+        {"temporada": "0", "estado": "cerrada"},
+    ]
+    objetivo = por_defecto(lista)
+    assert "2026-09" in objetivo, "la en curso siempre"
+    assert "2026-08" in objetivo, "y la que acaba de cerrar, que es la que tiene el estado obsoleto"
+    assert "0" not in objetivo, "el histórico no se recalcula cada hora: son 181 jornadas"
+    assert len(objetivo) == 1 + RECIEN_CERRADAS
+
+
+# @scenarios al-cerrar-un-mes-su-instantanea-se-actualiza
+def test_con_una_sola_temporada_no_se_inventa_nada():
+    from materialize_seasons import por_defecto
+
+    assert por_defecto([{"temporada": "2026-09", "estado": "en curso"}]) == ["2026-09"]
+    assert por_defecto([]) == []
