@@ -36,5 +36,11 @@
   // Sin él, `scheduled` no hace nada: el disparador está apagado por defecto.
   "triggers": {
     "crons": ["10 * * * *"]
+  },
+  // **Los logs del cron hacen falta para saber si funciona.** Se desplegó sin esto y el primer disparo no
+  // dejó rastro: no había forma de distinguir «el cron no se disparó» de «se disparó y GitHub rechazó el
+  // token», que son dos problemas con arreglos opuestos. Un `scheduled` sin logs es un fallo invisible.
+  "observability": {
+    "enabled": true
   }
 }
