@@ -21,5 +21,20 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS"
+  },
+  // **El reloj de repuesto del pipeline.** El planificador de GitHub no garantiza las ventanas programadas
+  // —su documentación dice que los trabajos en cola pueden descartarse, y aquí se midió: 5 o 6 de 24 al día,
+  // con huecos de hasta 6 horas—, así que el reloj se trae aquí y despierta el workflow por `workflow_dispatch`.
+  //
+  // El minuto 10 y no el 0: el cron de GitHub sigue declarado a en punto, y separarlos evita que las dos
+  // ventanas coincidan siempre. Coincidir no rompe nada —el pipeline es idempotente— pero gasta dos runners.
+  //
+  // Necesita el secreto `GITHUB_TOKEN` con permiso de Actions:
+  //
+  //     npx wrangler secret put GITHUB_TOKEN
+  //
+  // Sin él, `scheduled` no hace nada: el disparador está apagado por defecto.
+  "triggers": {
+    "crons": ["10 * * * *"]
   }
 }

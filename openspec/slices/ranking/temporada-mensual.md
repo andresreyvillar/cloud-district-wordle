@@ -102,6 +102,16 @@ el reloj.
 **THEN** se rematerializa también ella, no solo la nueva, porque su estado vive dentro de la instantánea y si
 nadie la reescribe la web sigue anunciándola como abierta después de cerrar.
 
+### el-pipeline-tiene-un-reloj-de-repuesto
+**WHEN** el planificador de la forja descarta la ventana horaria
+**THEN** un reloj independiente despierta el mismo workflow, de modo que la sincronización ocurre al menos una
+vez por hora; despertarlo dos veces no duplica nada, porque el pipeline es idempotente.
+
+### un-fallo-de-red-se-reintenta
+**WHEN** una lectura o escritura de la instantánea falla por un problema transitorio de red
+**THEN** se reintenta unas cuantas veces antes de rendirse, en lugar de perder la ejecución entera; y un error
+que no es de red —credenciales, esquema— falla a la primera, porque reintentarlo solo retrasa el diagnóstico.
+
 ### recalcular-actualiza-en-lugar-de-duplicar
 **WHEN** se materializa dos veces la misma temporada
 **THEN** sigue habiendo una sola fila para ella y su marca de tiempo se actualiza.

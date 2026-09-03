@@ -403,3 +403,63 @@ def test_con_una_sola_temporada_no_se_inventa_nada():
 
     assert por_defecto([{"temporada": "2026-09", "estado": "en curso"}]) == ["2026-09"]
     assert por_defecto([]) == []
+
+
+# @scenarios un-fallo-de-red-se-reintenta
+def test_un_timeout_se_reintenta_y_acaba_pasando():
+    """**El fallo medido en producción.** 4 de 200 ejecuciones del cron murieron con `httpx.ReadTimeout`
+    escribiendo en Supabase, y sin reintento esa hora se perdía entera.
+    """
+    from httpx import ReadTimeout
+
+    from materialize_seasons import con_reintento
+
+    esperas, intentos = [], []
+
+    def falla_una_vez():
+        intentos.append(1)
+        if len(intentos) == 1:
+            raise ReadTimeout("The read operation timed out")
+        return "escrito"
+
+    assert con_reintento(falla_una_vez, que="prueba", dormir=esperas.append) == "escrito"
+    assert len(intentos) == 2, "reintenta una vez y pasa"
+    assert esperas, "y espera antes de reintentar"
+
+
+# @scenarios un-fallo-de-red-se-reintenta
+def test_si_falla_siempre_el_fallo_se_propaga():
+    """Si Supabase está caído de verdad, tres intentos no lo arreglan: el fallo tiene que verse."""
+    from httpx import ReadTimeout
+
+    import pytest
+
+    from materialize_seasons import INTENTOS_DE_RED, con_reintento
+
+    intentos = []
+
+    def siempre_falla():
+        intentos.append(1)
+        raise ReadTimeout("boom")
+
+    with pytest.raises(ReadTimeout):
+        con_reintento(siempre_falla, que="prueba", dormir=lambda _: None)
+    assert len(intentos) == INTENTOS_DE_RED, f"se intenta {INTENTOS_DE_RED} veces y se rinde"
+
+
+# @scenarios un-fallo-de-red-se-reintenta
+def test_un_error_que_no_es_de_red_no_se_reintenta():
+    """Unas credenciales mal puestas fallan igual las tres veces: reintentarlas retrasa el diagnóstico."""
+    import pytest
+
+    from materialize_seasons import con_reintento
+
+    intentos = []
+
+    def credenciales_mal():
+        intentos.append(1)
+        raise ValueError("Invalid API key")
+
+    with pytest.raises(ValueError):
+        con_reintento(credenciales_mal, que="prueba", dormir=lambda _: None)
+    assert len(intentos) == 1, "no se reintenta"

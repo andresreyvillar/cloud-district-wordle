@@ -63,4 +63,59 @@ export default {
     // La v1: se delega tal cual, incluido su 404.
     return env.ASSETS.fetch(request);
   },
+
+  /**
+   * El **reloj de repuesto** del pipeline: cada hora despierta el workflow de datos de GitHub.
+   *
+   * Existe porque el planificador de GitHub no garantiza nada. Su documentación lo dice —«algunos trabajos en
+   * cola pueden descartarse»— y este repositorio lo ha medido: de 24 ejecuciones diarias esperadas salían
+   * entre 5 y 6, con huecos de 3 a 6 horas. Se probó lo único que GitHub recomienda, mover el cron fuera del
+   * minuto en punto, y empeoró; se revirtió y siguió igual. Los cron de Workers sí son fiables, y este Worker
+   * ya estaba desplegado, así que el reloj se cambia de sitio en lugar de añadir un proveedor.
+   *
+   * **No duplica trabajo.** `workflow_dispatch` lanza el mismo workflow que el cron de GitHub, y el pipeline
+   * es idempotente: la ingesta no reescribe resultados ya guardados y la materialización hace `upsert`. Si
+   * las dos ventanas coinciden, la segunda recalcula lo mismo.
+   *
+   * **Falla en silencio y a propósito.** Un error aquí no puede afectar a la web: es un `scheduled` aparte de
+   * `fetch`, así que ni comparte camino ni puede tirar lo que el grupo usa a diario. Sin `GITHUB_TOKEN`
+   * configurado no hace nada, que es el estado por defecto.
+   */
+  async scheduled(evento, env, contexto) {
+    if (!env.GITHUB_TOKEN) {
+      console.log('sin GITHUB_TOKEN: el disparador está apagado');
+      return;
+    }
+    contexto.waitUntil(despierta(env));
+  },
 };
+
+/** El workflow que se despierta y en qué rama. Van juntos: despertar otro en otra rama no es un caso de uso. */
+const WORKFLOW = 'update_stats.yml';
+const RAMA = 'main';
+const REPO = 'andresreyvillar/cloud-district-wordle';
+
+async function despierta(env) {
+  const url = `https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches`;
+  try {
+    const respuesta = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        // GitHub exige User-Agent y responde 403 sin él.
+        'User-Agent': 'cloud-district-wordle-cron',
+      },
+      body: JSON.stringify({ ref: RAMA }),
+    });
+    // 204 es el éxito de este endpoint: acepta y no devuelve cuerpo.
+    if (respuesta.status !== 204) {
+      console.error(`dispatch devolvió ${respuesta.status}: ${await respuesta.text()}`);
+      return;
+    }
+    console.log(`${WORKFLOW} despertado en ${RAMA}`);
+  } catch (error) {
+    console.error(`no se pudo despertar ${WORKFLOW}: ${error}`);
+  }
+}
