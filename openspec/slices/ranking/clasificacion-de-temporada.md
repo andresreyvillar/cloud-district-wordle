@@ -36,7 +36,7 @@ imputado(día) = min( max( dificultad(día), media_personal ) + margen , 7 )
 
 dificultad(día)  = media de intentos del grupo ese día
 media_personal   = media del jugador en la temporada, contando SOLO sus días jugados
-margen           = 0,5
+margen(n)        = 0,5 + 0,15 × (n − 1)   ← n es la enésima ausencia del mes
 ```
 
 Cada pieza está por una razón medida: `dificultad` hace que faltar un día fácil apenas penalice y faltar un
@@ -72,6 +72,12 @@ lo que muestra la web y lo que publica el bot no pueden divergir.
 ### jugar-poco-no-da-ventaja
 **WHEN** un jugador con muy buena media juega solo unos pocos días de la temporada
 **THEN** no adelanta a quien ha jugado todos los días con una media parecida.
+
+### faltar-mucho-cuesta-mas-que-faltar-poco
+**WHEN** dos jugadores faltan un número muy distinto de días
+**THEN** el castigo por ausencia **crece con las ausencias**, de modo que faltar un día sigue costando poco y
+faltar casi todo el mes cuesta mucho; con un castigo igual para cada falta, quien jugó 1 de 21 jornadas
+quedaba por delante de quien jugó 18.
 
 ### empate-se-rompe-por-participacion
 **WHEN** dos jugadores tienen la misma media final

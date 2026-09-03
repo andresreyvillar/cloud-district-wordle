@@ -218,3 +218,63 @@ def test_la_carga_util_sigue_siendo_serializable():
 
     base = {"r1": 4, "r2": 4, "r3": 4, "r4": 5, "r5": 3}
     json.dumps(instantanea(jornada(0, 1600, {"lider": 2, **base}), MES))
+
+
+# @scenarios faltar-mucho-cuesta-mas-que-faltar-poco
+def test_el_castigo_por_faltar_crece_con_las_ausencias():
+    """El margen de la enésima falta, que es lo que distingue faltar un día de faltar todo el mes."""
+    from tools.standings import MARGEN, PASO_DEL_MARGEN, imputar, margen_de
+
+    assert margen_de(1) == MARGEN, "la primera falta cuesta el margen base"
+    assert margen_de(2) == MARGEN + PASO_DEL_MARGEN
+    assert margen_de(10) == MARGEN + PASO_DEL_MARGEN * 9
+    # Y el tope del fallo sigue mandando: ninguna ausencia penaliza más que la peor partida posible.
+    assert imputar(4.0, 4.0, 100) == 7.0
+
+
+# @scenarios faltar-mucho-cuesta-mas-que-faltar-poco
+def test_quien_juega_uno_de_veintiuno_no_adelanta_a_quien_juega_dieciocho():
+    """**El caso real que lo motivó.** En agosto de 2026, con un margen igual para cada falta, quien jugó 1
+    jornada de 21 quedaba 14º y quien jugó 18 quedaba 16º: la regla premiaba no aparecer.
+
+    El fixture necesita **la escala del mes**: con cinco jornadas el margen fijo bastaba, y por eso el
+    escenario `jugar-poco-no-da-ventaja` estaba en verde mientras el defecto existía en producción.
+    """
+    from tools.standings import clasificacion
+
+    relleno = {f"r{i}": 4 for i in range(1, 6)}
+    filas: list[dict] = []
+    for i in range(21):
+        scores = {**relleno, "constante": 5}          # juega los 21 días, media 5,00
+        if i == 0:
+            scores["fantasma"] = 4                     # juega uno solo, y mejor
+        filas += jornada(i, 1600, scores)
+
+    tabla = {f["nombre"]: f for f in clasificacion(filas, MES)}
+    assert tabla["fantasma"]["media_jugada"] < tabla["constante"]["media_jugada"], "el fixture no vale"
+    assert tabla["fantasma"]["jugados"] == 1 and tabla["constante"]["jugados"] == 21
+    assert tabla["constante"]["posicion"] < tabla["fantasma"]["posicion"], (
+        f"quien juega todos los días va delante: {tabla['constante']['media_temporada']} "
+        f"contra {tabla['fantasma']['media_temporada']}")
+
+
+# @scenarios faltar-mucho-cuesta-mas-que-faltar-poco
+def test_faltar_un_solo_dia_apenas_penaliza():
+    """La otra mitad de la regla: el creciente **no** puede castigar a quien falta un día por un imprevisto.
+    Con la primera ausencia el margen es el base, igual que antes del cambio.
+    """
+    from tools.standings import MARGEN, clasificacion, imputar
+
+    assert imputar(3.0, 4.0, 1) == 4.0 + MARGEN, "la primera falta cuesta lo de siempre"
+
+    relleno = {f"r{i}": 4 for i in range(1, 6)}
+    filas: list[dict] = []
+    for i in range(21):
+        scores = {**relleno, "puntual": 4}
+        if i != 0:
+            scores["casi_puntual"] = 4               # falta uno de los veintiún días
+        filas += jornada(i, 1600, scores)
+
+    tabla = {f["nombre"]: f for f in clasificacion(filas, MES)}
+    coste = tabla["casi_puntual"]["media_temporada"] - tabla["puntual"]["media_temporada"]
+    assert 0 < coste < 0.05, f"una falta de veintiuna apenas mueve la media: {coste:+.3f}"
