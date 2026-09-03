@@ -50,3 +50,39 @@ esto sin haber creado el token todavía.
 - No recupera ventanas perdidas hacia atrás: garantiza la siguiente, no rehace la anterior.
 - No mueve el pipeline fuera de GitHub Actions. Si esto tampoco basta, el siguiente paso sería reescribirlo
   en el Worker, que es mucho más trabajo.
+
+
+## El reloj de Cloudflare no funcionó, y quién lo sustituye
+
+Tres ventanas consecutivas (09:10, 10:10 y 11:10) no dispararon nada. El Cron Trigger estaba registrado —cada
+deploy lo imprime— y el manejador desplegado (`Handlers: fetch, scheduled`), pero no se invocó. Descartado que
+fuera el código: la misma llamada con las credenciales de `gh` disparó sin error. Indicio de dónde estaba el
+problema: el registro de triggers tardó **356 segundos** frente a 6 en los deploys anteriores, lo que coincide
+con los informes de la comunidad de Cloudflare sobre su planificador quedándose colgado.
+
+**Se desplegó sin observabilidad**, así que el primer fallo no dejó rastro y no se podía distinguir «el cron no
+se disparó» de «se disparó y GitHub rechazó el token» — dos problemas con arreglos opuestos. Un `scheduled` sin
+logs es un fallo invisible, y eso debió preverse. Está declarada desde entonces.
+
+El cron de Cloudflare **se deja puesto**: no cuesta nada y si su planificador se recupera empieza a funcionar
+solo. Queda anotado que está sin verificar.
+
+### El reloj que sí manda: cron-job.org
+
+```
+URL     https://api.github.com/repos/andresreyvillar/cloud-district-wordle/actions/workflows/update_stats.yml/dispatches
+Método  POST · cada hora, minuto 25
+Cuerpo  {"ref":"main"}
+
+Authorization        Bearer <token>   ← vive SOLO en cron-job.org
+Accept               application/vnd.github+json
+X-GitHub-Api-Version 2022-11-28
+Content-Type         application/json
+```
+
+El token es un PAT de grano fino, limitado a este repositorio y con `Actions: Read and write`. **No está en el
+repositorio ni debe estarlo**, y tampoco en ninguna conversación: el primero que se creó se pegó por descuido
+en un chat y hubo que revocarlo y rehacerlo.
+
+Tres minutos distintos a propósito —`:00` GitHub, `:10` Cloudflare, `:25` cron-job.org—: si algún día
+funcionan los tres, el pipeline es idempotente y las ejecuciones de más solo recalculan lo mismo.

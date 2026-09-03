@@ -7,7 +7,10 @@
 - [x] Cron Trigger en `wrangler.jsonc`, en un minuto distinto del de GitHub.
 - [x] Dos escenarios nuevos, tres tests de Python y cuatro de JavaScript.
 - [x] Gate 4c: cuatro mutaciones, cada una mata su escenario.
-- [ ] **A mano**: `npx wrangler secret put GITHUB_TOKEN` y `npx wrangler deploy`.
+- [x] **A mano**: `npx wrangler secret put GITHUB_TOKEN` y `npx wrangler deploy`.
+- [x] Comprobar el cron de Cloudflare: **tres ventanas sin disparar**, se descarta como reloj fiable.
+- [x] Declarar observabilidad, que faltaba y hacía el fallo invisible.
+- [x] Montar cron-job.org al minuto 25 (configuración documentada en el proposal).
 - [ ] Observar dos días si la cadencia horaria se cumple.
 
 ## Comandos de verificación
