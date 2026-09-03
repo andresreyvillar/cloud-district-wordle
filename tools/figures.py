@@ -84,18 +84,26 @@ DENSIDAD_MAXIMA_DEL_GEOMETRICO = 0.4
 PRIMERA_JORNADA_DEL_ORDEN_NUEVO = 1694
 
 
-#: Filas de cuerpo que ha de tener un espejo para que se le reconozca como tal.
+#: Filas de cuerpo que ha de tener un espejo para **clasificarse** como geométrico.
 #:
-#: **El mismo umbral que usa el logro**, y esto no es cosmético: sin compartirlo, un espejo de dos filas —que
-#: el logro considera un accidente— le quitaba la categoría a una flor legítima, y las dos reglas discrepaban
-#: sobre qué es un espejo de verdad. Lo destaparon los tests del álbum, cuyo fixture de flor resulta ser
-#: simétrico. Medido sobre 1.706 cuadrículas: de los 19 espejos, siete tienen una sola fila de cuerpo y cinco
-#: tienen dos; solo siete llegan a tres.
-CUERPO_MINIMO_DEL_ESPEJO = 3
+#: **Dos, y es un umbral distinto del que pide el logro.** Los dos vivieron un tiempo compartidos, porque con
+#: umbrales distintos y sin corte de reglas un espejo de dos filas le robaba la categoría a flores legítimas
+#: del histórico —lo cazaron los tests del álbum, cuyo fixture de flor resulta ser simétrico—. Con el corte de
+#: `PRIMERA_JORNADA_DEL_ORDEN_NUEVO` esa objeción desaparece: el histórico ya no se reclasifica, así que bajar
+#: este umbral solo afecta a lo que se juegue de aquí en adelante. Medido: **cambia una cuadrícula de 1.758**.
+#:
+#: Se bajó por decisión del dueño, sobre un caso concreto: `.Y.Y./G.Y.G/GGGGG`, dos filas y palíndromo
+#: perfecto en las dos, se etiquetaba «flores» porque `.Y.Y.` cumple además la regla de la flor.
+CUERPO_MINIMO_DEL_ESPEJO = 2
 
 
 def es_espejo_reconocible(r: Rasgos) -> bool:
-    """Un espejo con cuerpo suficiente para no ser simetría por casualidad."""
+    """Un espejo con cuerpo suficiente para **clasificarse** como geométrico.
+
+    El logro del espejo perfecto pide más cuerpo y tiene su propio umbral (`badges.CUERPO_MINIMO_DEL_LOGRO`):
+    reconocer un dibujo y considerarlo una gesta son dos decisiones distintas, y el dueño las separó a
+    propósito. Que divergan está fijado por un test, para que no vuelvan a juntarse por descuido.
+    """
     return r.espejo and r.alto >= CUERPO_MINIMO_DEL_ESPEJO
 
 

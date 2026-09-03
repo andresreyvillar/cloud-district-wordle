@@ -84,10 +84,15 @@ reconoce nada, y así ninguna partida ya jugada pierde su figura.
 **THEN** se clasifica como geométrica: un palíndromo perfecto es más difícil que unos pétalos, y la invariante
 de no robarle la figura a nadie existía para proteger el histórico, que el corte ya protege.
 
-### el-espejo-de-una-o-dos-filas-no-cuenta
-**WHEN** una cuadrícula simétrica tiene el cuerpo por debajo del mínimo
-**THEN** no se le reconoce el espejo, ni para la categoría ni para el logro: es el **mismo** umbral en los dos
-sitios, porque con umbrales distintos un espejo de dos filas le quitaba la categoría a una flor legítima.
+### el-espejo-de-una-fila-no-cuenta
+**WHEN** una cuadrícula simétrica tiene una sola fila de cuerpo
+**THEN** no se le reconoce el espejo: una banda sobre el suelo es palíndroma por casualidad, no por dibujo.
+
+### reconocer-un-espejo-y-premiarlo-piden-cuerpos-distintos
+**WHEN** una cuadrícula simétrica tiene dos filas de cuerpo
+**THEN** se **clasifica** como geométrica, pero **no** se lleva el logro del espejo perfecto: reconocer un
+dibujo y considerarlo una gesta son dos decisiones distintas, y el logro exige más cuerpo porque su valor está
+en lo raro que es.
 
 ### cuerpo-vacio-no-es-espejo
 **WHEN** se acierta a la primera y la cuadrícula es solo la banda verde

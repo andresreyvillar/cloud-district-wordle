@@ -7,7 +7,11 @@ from __future__ import annotations
 
 LORO = ".G.../.G..G/.GY../GGGGG"
 GEOMETRICO = "..G../..G../GGGGG"
-FLOR = "Y...Y/..Y../GGGGG"
+# **No simétrica a propósito.** `Y...Y/..Y../GGGGG` es palíndroma en sus dos filas, así que desde
+# que el espejo de dos filas se clasifica como geométrico (`figures.CUERPO_MINIMO_DEL_ESPEJO`) dejó
+# de ser una flor: los tests del álbum que la usaban empezaron a medir la regla del espejo sin
+# querer. Esta lo es de verdad y no tiene simetría.
+FLOR = "Y..../..Y../GGGGG"
 
 HISTORICO = "2026-03-02"
 

@@ -21,7 +21,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from calendario import solo_laborables
-from figures import CUERPO_MINIMO_DEL_ESPEJO, es_espejo_reconocible, rasgos
+from figures import rasgos
 
 # El umbral de muestra vive en `seasons` porque es parte de qué es un día de temporada. Se importa en lugar
 # de copiarse: el docstring de este módulo ya decía que quería ser el mismo criterio, y ahora lo es.
@@ -58,6 +58,22 @@ MINIMO_DIAS_PARA_METRONOMO = 10
 #: Excluir agosto de 2026 —el mes casi sin patrones— movía cada cifra menos de dos puntos, así que no se
 #: excluye: un umbral que dependa de qué meses se miren no es un umbral.
 MINIMO_ORNITOLOGO = 5
+#: Filas de cuerpo que ha de tener un espejo para ser una **gesta** y no solo un dibujo reconocible.
+#:
+#: **Tres, y a propósito es más que el de la categoría** (`figures.CUERPO_MINIMO_DEL_LOGRO`, que está en dos).
+#: Reconocer un dibujo y premiarlo son dos decisiones distintas: la categoría dice «esto es un espejo» y el
+#: logro dice «esto casi no pasa nunca». Medido sobre 1.758 cuadrículas, de los 20 espejos siete tienen una
+#: fila de cuerpo y seis tienen dos; solo siete llegan a tres, de siete personas distintas y uno cada cinco
+#: meses. Con dos lo tendrían nueve de veintitrés jugadores y dejaría de distinguir a nadie — el error que ya
+#: se cometió con una medalla que tenían quince de dieciséis.
+CUERPO_MINIMO_DEL_LOGRO = 3
+
+
+def es_gesta_de_espejo(r) -> bool:
+    """Un espejo con cuerpo suficiente para llevarse el logro."""
+    return r.espejo and r.alto >= CUERPO_MINIMO_DEL_LOGRO
+
+
 MINIMO_ARQUITECTO = 4
 MINIMO_FLORISTA = 11
 MINIMO_ABSTRACTO = 7
@@ -252,7 +268,7 @@ def medallas_permanentes(
             # **El mismo predicado que usa el clasificador.** Tenerlo duplicado hacía que el logro y la
             # categoría discreparan sobre qué es un espejo, y este repositorio ya se ha equivocado tres veces
             # por contar lo mismo en dos sitios.
-            if es_espejo_reconocible(rasgos(fila.get("pattern"))):
+            if es_gesta_de_espejo(rasgos(fila.get("pattern"))):
                 palmares[jugador].append("espejo-perfecto")
 
         if (

@@ -13,7 +13,11 @@ import pytest
 
 LORO = ".G.../.G..G/.GY../GGGGG"
 GEOMETRICO = "..G../..G../GGGGG"
-FLOR = "Y...Y/..Y../GGGGG"
+# **No simétrica a propósito.** `Y...Y/..Y../GGGGG` es palíndroma en sus dos filas, así que desde
+# que el espejo de dos filas se clasifica como geométrico (`figures.CUERPO_MINIMO_DEL_ESPEJO`) dejó
+# de ser una flor: los tests del álbum que la usaban empezaron a medir la regla del espejo sin
+# querer. Esta lo es de verdad y no tiene simetría.
+FLOR = "Y..../..Y../GGGGG"
 #: **Asimétrico a propósito.** El anterior (`GG.GG/GGYGG/GG.GG`) era un espejo perfecto sin que nadie
 #: lo hubiera notado, así que al añadirse la regla del espejo dejó de ser abstracto. Se sustituyó el
 #: fixture, no la aserción.

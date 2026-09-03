@@ -1,0 +1,24 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-03T11:40:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Bajar a dos filas el umbral del espejo **solo para la categoría**, decisión del dueño sobre un caso
+    concreto que trajo (jornada #1701, `.Y.Y./G.Y.G`). Hay una corrección de un aviso propio: se advirtió que
+    cuatro flores legítimas se convertirían en geométricas, y era falso — todas son anteriores al corte de
+    reglas, que ya las protege; el aviso valía para un cambio retroactivo y este no lo es. El impacto real es
+    una cuadrícula de 1.758. Los dos umbrales se separan y su divergencia queda fijada por un test, porque
+    estuvieron unidos por un motivo que dejó de aplicar y sin eso alguien los volvería a juntar. Dos rondas de
+    corrección, las dos por fixtures que medían otra cosa: `FLOR = "Y...Y/..Y../GGGGG"`, usado en cuatro
+    ficheros, es palíndromo en sus dos filas y dejó de ser flor; y el test de «patrón no ambiguo» usaba ese
+    mismo patrón, así que su premisa era falsa — ahora comprueba que el fixture cumple una sola regla en lugar
+    de suponerlo.
