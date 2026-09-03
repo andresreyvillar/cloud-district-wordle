@@ -20,6 +20,7 @@ import argparse
 import datetime
 import os
 import sys
+import time
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
@@ -85,7 +86,51 @@ class TablaSupabase:
         self.cliente = create_client(url, clave)
 
     def upsert(self, fila: dict, clave: tuple[str, ...]) -> None:
-        self.cliente.table(TABLA).upsert(fila, on_conflict=", ".join(clave)).execute()
+        con_reintento(
+            lambda: self.cliente.table(TABLA).upsert(fila, on_conflict=", ".join(clave)).execute(),
+            que="escribir la instantánea",
+        )
+
+
+#: Cuántas veces se intenta una operación de red antes de rendirse, y cuánto se espera entre intentos.
+#:
+#: **Un fallo transitorio costaba la hora entera.** Medido sobre 200 ejecuciones del cron: 4 fallaron (2%),
+#: todas con `httpx.ReadTimeout` escribiendo en Supabase, y sin reintento el workflow moría y esa hora se
+#: perdía. Con el planificador de GitHub descartando ya la mayoría de las ventanas, perder también las que sí
+#: se disparan por un timeout de un segundo es el fallo más barato de arreglar que había.
+#:
+#: Tres intentos con espera creciente: si Supabase está caído de verdad, tres intentos en doce segundos no lo
+#: arreglan y el fallo se propaga —que es lo correcto—; si fue un pico, el segundo intento pasa.
+INTENTOS_DE_RED = 3
+ESPERA_ENTRE_INTENTOS = 4.0
+
+
+def con_reintento(operacion, que: str, intentos: int = INTENTOS_DE_RED, dormir=time.sleep):
+    """Ejecuta `operacion`, reintentando los fallos de red. Devuelve su resultado.
+
+    `dormir` entra por parámetro para que los tests no esperen de verdad.
+
+    **Solo reintenta lo que puede ser transitorio.** Un error de credenciales o un esquema que no cuadra
+    fallan igual las tres veces, así que reintentarlos solo retrasa el diagnóstico: se distinguen por tipo.
+    """
+    from httpx import HTTPError, TimeoutException
+
+    transitorios = (TimeoutException, HTTPError, ConnectionError, OSError)
+    for intento in range(1, intentos + 1):
+        try:
+            return operacion()
+        except transitorios as error:
+            if intento == intentos:
+                print(f"{que}: {intentos} intentos y sigue fallando", file=sys.stderr)
+                raise
+            espera = ESPERA_ENTRE_INTENTOS * intento
+            print(
+                f"{que}: fallo transitorio ({type(error).__name__}), "
+                f"intento {intento}/{intentos}, reintentando en {espera:.0f}s",
+                file=sys.stderr,
+            )
+            dormir(espera)
+    raise AssertionError("inalcanzable")
 
 
 def leer_resultados(url: str, clave: str) -> list[dict]:
@@ -95,13 +140,18 @@ def leer_resultados(url: str, clave: str) -> list[dict]:
     cliente = create_client(url, clave)
     filas, desplazamiento = [], 0
     while True:
-        pagina = (
-            cliente.table("wordle_results")
-            .select(COLUMNAS)
-            .order("wordle_id")
-            .range(desplazamiento, desplazamiento + PAGINA - 1)
-            .execute()
-            .data
+        # La lectura también reintenta: paginar 1.700 filas son varias llamadas, y que la cuarta falle por un
+        # timeout tira la ejecución igual que si fallara la escritura.
+        pagina = con_reintento(
+            lambda: (
+                cliente.table("wordle_results")
+                .select(COLUMNAS)
+                .order("wordle_id")
+                .range(desplazamiento, desplazamiento + PAGINA - 1)
+                .execute()
+                .data
+            ),
+            que="leer los resultados",
         )
         if not pagina:
             return filas

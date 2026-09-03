@@ -1,0 +1,22 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-03T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    Garantizar la sincronización horaria, a petición del dueño, con las dos medidas que él eligió de las
+    cuatro propuestas. El diagnóstico separó dos causas que se estaban confundiendo: las ventanas descartadas
+    por el planificador de GitHub (la gorda, ajena al repositorio) y un 2% de fallos por `httpx.ReadTimeout`
+    contra Supabase que nadie había visto porque el workflow moría en silencio. El reloj de repuesto se monta
+    en el Worker que ya sirve la web, así que no añade proveedor, y va en `scheduled` —aparte de `fetch`— para
+    que un fallo del disparador no pueda tocar la web. Queda apagado hasta que exista el secreto
+    `GITHUB_TOKEN`, que es trabajo manual del dueño: sin él el manejador no hace nada, y eso es lo que hace
+    seguro desplegar esto antes de crear el token.
