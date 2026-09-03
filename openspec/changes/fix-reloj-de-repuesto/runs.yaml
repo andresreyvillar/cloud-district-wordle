@@ -20,3 +20,21 @@
     que un fallo del disparador no pueda tocar la web. Queda apagado hasta que exista el secreto
     `GITHUB_TOKEN`, que es trabajo manual del dueño: sin él el manejador no hace nada, y eso es lo que hace
     seguro desplegar esto antes de crear el token.
+
+- run: '2026-09-03T13:50:00Z'
+  fase: verify
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    tests: pass
+  rondas_correccion: 3
+  notas: >-
+    El reloj de repuesto en Cloudflare —recomendación propia— **no funcionó**: tres ventanas consecutivas sin
+    disparar, con el trigger registrado y el manejador desplegado. Se agotó el límite de tres intentos y se
+    cambió de enfoque en lugar de seguir insistiendo. Dos errores propios en el camino: recomendar Cloudflare
+    sobre cron-job.org sin haberlo probado, y desplegar el disparador sin observabilidad, con lo que el primer
+    fallo no dejó rastro y no se podía distinguir un cron que no se dispara de un token rechazado. El reloj
+    definitivo es cron-job.org al minuto 25, configurado por el dueño; su token es un PAT de grano fino que
+    vive solo allí. El primero que se creó se pegó por descuido en la conversación y se revocó — se verificó
+    que no había quedado en ningún fichero ni commit.
