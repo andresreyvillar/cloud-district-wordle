@@ -1,0 +1,24 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-03T09:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Endurecer la penalización por faltar, a petición del dueño. Primero se corrigió su supuesto: la fórmula no
+    era «media del día + un porcentaje» sino `min(max(dificultad, media_personal) + margen, 7)`, y ese matiz
+    cambió el diseño — el problema no era el tamaño del margen sino que el `max` blinda a quien casi no juega,
+    así que un margen fijo mayor castigaba igual a quien falta cuatro días que a quien falta veinte. Se
+    midieron cuatro opciones sobre agosto y se eligió la creciente con paso 0,15: concentra el castigo en quien
+    no aparece (+2,14 con veinte faltas frente a +0,80) sin tocar a quien falta poco (+0,28 con cuatro, donde
+    el fijo de 1,0 subía a +0,31). Hallazgo del camino: el escenario `jugar-poco-no-da-ventaja` ya cubría esto
+    y estaba en verde mientras el defecto existía en producción, porque su fixture tiene cinco jornadas y a esa
+    escala el margen fijo basta; el test nuevo usa veintiuna. Una ronda de corrección: la prosa de la página de
+    reglas llevaba markdown y un test existente lo cazó, porque esa página no lo renderiza.

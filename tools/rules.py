@@ -197,18 +197,29 @@ def catalogo() -> tuple[Regla, ...]:
             que_hace=(
                 "La clasificación se calcula sobre los días de la temporada, no sobre las partidas que "
                 "jugaste. A cada día que faltas se le pone una nota: la peor entre la dificultad de ese día "
-                "y tu propia media, más medio intento, con el tope en el fallo."
+                "y tu propia media, más un margen, con el tope en el fallo. El margen crece con las "
+                "ausencias: tu primera falta del mes suma medio intento, la segunda 0,65, la tercera 0,80, "
+                "y así. Faltar un día cuesta poco; faltar casi todo el mes cuesta mucho."
             ),
             por_que=(
                 "Sin esto gana quien juega poco: promediar solo lo jugado depura tus peores días. Medido "
                 "sobre el histórico, el campeón cambia en 6 de 8 meses, y en cinco de esos seis el campeón "
-                "actual jugó menos de la mitad de los días. El medio intento de margen impide que callarse "
-                "un mal resultado salga mejor que publicarlo."
+                "actual jugó menos de la mitad de los días. El margen impide que callarse un mal resultado "
+                "salga mejor que publicarlo. Y crece porque con un margen igual para cada falta seguía "
+                "premiando no aparecer: en agosto de 2026, quien jugó 1 jornada de 21 quedaba por delante de "
+                "quien jugó 18, porque a quien casi no juega se le aplica su propia media como suelo y el "
+                "castigo se reducía al margen."
             ),
             estado=APLICADA,
             votada=False,
             parametros=(
-                _p("margen", standings.MARGEN, "standings.MARGEN", "intentos"),
+                _p("margen de la 1ª falta", standings.MARGEN, "standings.MARGEN", "intentos"),
+                _p(
+                    "lo que sube por falta",
+                    standings.PASO_DEL_MARGEN,
+                    "standings.PASO_DEL_MARGEN",
+                    "intentos",
+                ),
                 _p("tope", badges.FALLO, "badges.FALLO", "intentos"),
             ),
         ),
