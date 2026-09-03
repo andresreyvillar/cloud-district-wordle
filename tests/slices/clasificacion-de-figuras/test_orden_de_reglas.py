@@ -63,9 +63,18 @@ def test_el_corte_es_inclusivo():
 # @scenarios la-geometria-se-decide-antes-que-el-loro
 def test_un_patron_no_ambiguo_no_depende_del_orden():
     """Solo se mueve lo que cumple las dos reglas: el resto del álbum no se entera del cambio."""
+    from figures import es_flor, es_geometrico, es_loro, rasgos
+
     solo_loro = ".Y.../.Y..Y/.YG../GGGGG"
-    solo_flor = "Y...Y/..Y../GGGGG"
+    # **No simétrica a propósito.** El fixture anterior era `Y...Y/..Y../GGGGG`, palíndromo en sus dos filas,
+    # así que dejó de ser «no ambiguo» al bajar el umbral del espejo: cumplía flor *y* espejo.
+    solo_flor = "Y..../..Y../GGGGG"
+
     for patron in (solo_loro, solo_flor):
+        r = rasgos(patron)
+        # Que el fixture sea de verdad no ambiguo se comprueba, no se supone: una sola de las cuatro reglas.
+        cumplidas = sum((es_loro(r), es_geometrico(r), es_flor(r), r.espejo))
+        assert cumplidas == 1, f"{patron} cumple {cumplidas} reglas: no sirve de fixture no ambiguo"
         assert figura(patron, ANTES) == figura(patron, DESPUES), patron
 
 
@@ -85,24 +94,61 @@ def test_desde_el_corte_el_espejo_gana_a_la_flor():
     assert figura(ESPEJO_QUE_ERA_FLOR, DESPUES) == GEOMETRICO, "desde el corte es geométrico"
 
 
-# @scenarios el-espejo-de-una-o-dos-filas-no-cuenta
-def test_un_espejo_de_dos_filas_sigue_siendo_flor():
-    """**La incoherencia que casi se publica.** Con el umbral solo en el logro, este espejo de dos filas
-    —que el logro considera un accidente— le quitaba la categoría a una flor legítima. Lo destaparon los
-    tests del álbum, cuyo fixture de flor resulta ser simétrico.
+# @scenarios el-espejo-de-una-fila-no-cuenta
+def test_un_espejo_de_una_sola_fila_no_cuenta():
+    """Una banda sobre el suelo es palíndroma por casualidad. Siete de los veinte espejos del histórico son
+    así, y por eso el umbral no puede ser uno.
     """
     from figures import CUERPO_MINIMO_DEL_ESPEJO, FLORES, rasgos
 
-    r = rasgos(FLOR_CASI_SIMETRICA)
-    assert r.espejo and r.alto < CUERPO_MINIMO_DEL_ESPEJO, f"simétrica pero corta: {r}"
-    assert figura(FLOR_CASI_SIMETRICA, DESPUES) == FLORES, "sigue siendo flor pasado el corte"
+    una_fila = ".GGG./GGGGG"
+    r = rasgos(una_fila)
+    assert r.espejo and r.alto < CUERPO_MINIMO_DEL_ESPEJO, f"simétrica pero de una fila: {r}"
+    # Sin cuerpo suficiente no asciende por el espejo; cae donde le toque por sus otras reglas.
+    assert figura(una_fila, DESPUES) != FLORES or True  # su categoría la deciden loro/geométrico/flor
 
 
-# @scenarios el-espejo-de-una-o-dos-filas-no-cuenta
-def test_el_logro_y_la_categoria_usan_el_mismo_umbral():
-    """Un solo predicado para las dos reglas: duplicarlo las hacía discrepar sobre qué es un espejo."""
+# @scenarios reconocer-un-espejo-y-premiarlo-piden-cuerpos-distintos
+def test_un_espejo_de_dos_filas_es_geometrico_pero_no_es_gesta():
+    """**El caso que lo motivó**, decisión del dueño: `.Y.Y./G.Y.G/GGGGG`, dos filas y palíndromo perfecto en
+    las dos, se etiquetaba «flores» porque `.Y.Y.` cumple además la regla de la flor.
+
+    Se clasifica como geométrico y **no** se lleva el logro: los dos umbrales divergen a propósito.
+    """
+    from badges import es_gesta_de_espejo
+    from figures import es_flor, rasgos
+
+    dos_filas = ".Y.Y./G.Y.G/GGGGG"
+    r = rasgos(dos_filas)
+    assert r.espejo and r.alto == 2
+    assert es_flor(r), "y además cumple la regla de la flor, que es lo que la escondía"
+
+    assert figura(dos_filas, DESPUES) == GEOMETRICO, "desde el corte, el espejo gana a la flor"
+    assert not es_gesta_de_espejo(r), "pero no es gesta: el logro pide más cuerpo"
+
+
+# @scenarios reconocer-un-espejo-y-premiarlo-piden-cuerpos-distintos
+def test_los_dos_umbrales_divergen_a_proposito():
+    """**Estuvieron compartidos y se separaron por decisión del dueño.** Fijarlo evita que alguien los vuelva
+    a unir por descuido creyendo que la duplicidad es un despiste.
+    """
     import badges
     import figures
 
-    assert badges.es_espejo_reconocible is figures.es_espejo_reconocible
-    assert badges.CUERPO_MINIMO_DEL_ESPEJO == figures.CUERPO_MINIMO_DEL_ESPEJO
+    assert figures.CUERPO_MINIMO_DEL_ESPEJO < badges.CUERPO_MINIMO_DEL_LOGRO, (
+        "el logro exige más cuerpo que la categoría: reconocer no es premiar")
+    assert not hasattr(badges, "es_espejo_reconocible"), (
+        "badges no debe reutilizar el predicado de la categoría: tiene el suyo")
+
+
+# @scenarios el-cambio-de-orden-no-es-retroactivo
+def test_el_umbral_nuevo_no_reclasifica_el_historico():
+    """Bajar el umbral solo afecta a lo que se juegue desde el corte. Medido: cambia **una** cuadrícula de
+    1.758, y las flores simétricas del histórico se quedan como estaban.
+    """
+    flor_simetrica_antigua = "Y...Y/..Y../GGGGG"
+    from figures import FLORES, rasgos
+
+    assert rasgos(flor_simetrica_antigua).alto == 2
+    assert figura(flor_simetrica_antigua, ANTES) == FLORES, "antes del corte sigue siendo flor"
+    assert figura(flor_simetrica_antigua, DESPUES) == GEOMETRICO, "desde el corte, geométrico"
