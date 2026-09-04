@@ -369,12 +369,19 @@ def ya_publicada(mensajes: list[dict], jornada: int | None) -> bool:
     return False
 
 
-def mensajes_recientes(limite: int = 30, cliente=None, canal: str | None = None) -> list[dict]:
+def mensajes_recientes(
+    limite: int = 30, cliente=None, canal: str | None = None, paginas: int = 1
+) -> list[dict]:
     """Los últimos mensajes del canal, para saber si ya se publicó. Un fallo de lectura devuelve vacío.
 
     El cliente entra por parámetro para poder doblarlo: sin eso, el repliegue ante un fallo de Slack era
     código sin cubrir —el test de arriba dobla `leer_mensajes` entero, así que nunca pasaba por aquí— y la
     prueba de mutación lo destapó.
+
+    `paginas` existe porque **cuánta historia hace falta depende de qué se busca**: el resumen diario reconoce
+    un mensaje publicado minutos antes y le basta una página, pero el cierre de mes tiene que reconocer uno de
+    hasta siete días atrás. Con una sola página el podio de agosto se republicó tres días después: estaba en
+    la posición 44 del historial y la ventana llegaba a la 30.
 
     Devolver vacío ante un fallo significa **publicar**: entre no publicar el resumen del día y arriesgar un
     duplicado si además el canal no responde, se elige publicar. Un canal caído no puede dejar al grupo sin
@@ -382,8 +389,17 @@ def mensajes_recientes(limite: int = 30, cliente=None, canal: str | None = None)
     """
     try:
         cli = cliente if cliente is not None else WebClient(token=SLACK_TOKEN)
-        respuesta = cli.conversations_history(channel=canal or CHANNEL_ID, limit=limite)
-        return respuesta.get("messages") or []
+        mensajes: list[dict] = []
+        cursor = None
+        for _ in range(max(1, paginas)):
+            respuesta = cli.conversations_history(
+                channel=canal or CHANNEL_ID, limit=limite, **({"cursor": cursor} if cursor else {})
+            )
+            mensajes += respuesta.get("messages") or []
+            cursor = (respuesta.get("response_metadata") or {}).get("next_cursor")
+            if not cursor:
+                break
+        return mensajes
     except SlackApiError as error:
         print(f"No se pudo leer el canal para comprobar duplicados: {error}", file=sys.stderr)
         return []

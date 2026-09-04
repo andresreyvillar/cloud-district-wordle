@@ -1,0 +1,21 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-04T14:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El podio de agosto se publicó dos veces, el 1 y el 4 de septiembre, desde la guarda que se añadió para
+    evitar precisamente eso. Causa: `mensajes_recientes` se escribió para el resumen diario —que reconoce un
+    mensaje de minutos antes y le basta una ventana de 30— y el cierre de mes la reutilizó sin ajustarla,
+    cuando su cron corre del día 1 al 7 y la marca puede estar a siete días. El original estaba en la posición
+    44 del historial. Es la segunda vez que esta guarda falla y las dos veces falló **publicando**, que es el
+    modo de fallo caro: el grupo ve el duplicado. Una ronda de corrección: los dobles de los tests del podio
+    no aceptaban el parámetro nuevo. El mensaje duplicado no se borra: eso lo decide el dueño.
