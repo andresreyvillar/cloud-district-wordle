@@ -71,6 +71,12 @@ podio, que va justo debajo.
 **WHEN** el primer puesto está empatado
 **THEN** se felicita a todos los empatados y no se eligen medallas de uno solo.
 
+### la-comprobacion-alcanza-los-dias-que-el-cron-corre
+**WHEN** se comprueba si el mes ya se celebró
+**THEN** se lee bastante historial del canal para reconocer el mensaje aunque se publicara varios días antes:
+el cron corre durante los primeros días del mes, así que una ventana corta lo republica cuando el original ya
+ha quedado atrás.
+
 ### el-cierre-no-se-publica-dos-veces
 **WHEN** el canal ya tiene el podio de ese mes
 **THEN** no se vuelve a publicar y la ejecución termina bien.

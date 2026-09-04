@@ -36,6 +36,17 @@ from post_ranking import (  # noqa: E402
 #: El título de la imagen lleva el mes celebrado: es la marca que hace posible no repetir el mensaje.
 TITULO_DEL_PODIO = "Podio del mes 🏆 · {temporada}"
 
+#: Páginas de historial que se leen para saber si el mes ya se celebró. Cada página son 30 mensajes.
+#:
+#: **Cinco, con margen de sobra.** El cron corre del día 1 al 7, así que la marca puede estar a siete días de
+#: distancia; el canal mueve hasta 17 mensajes al día, unos 120 en esa ventana. Con una sola página —la que
+#: le basta al resumen diario, que reconoce un mensaje de minutos antes— el podio de agosto se republicó el
+#: día 4: el original estaba en la posición 44 y la ventana llegaba a la 30.
+#:
+#: Se paginan siempre y no solo hasta encontrarla porque esto corre una vez al mes: cinco llamadas de más al
+#: mes no compensan la complejidad de parar antes.
+PAGINAS_DE_HISTORIA = 5
+
 
 
 
@@ -77,7 +88,11 @@ async def celebrar(
         print("no hay mes cerrado que celebrar todavía")
         return 0
 
-    if ya_celebrado(leer_mensajes(), temporada):
+    # **Hace falta mucha más historia que en el mensaje diario.** El cron corre del 1 al 7, así que la
+    # comprobación tiene que alcanzar hasta siete días atrás; medido, el canal mueve hasta 17 mensajes al día,
+    # o sea ~120. Con la ventana de 30 que hereda el resumen diario el podio de agosto se republicó tres días
+    # después: el original estaba en la posición 44 del historial.
+    if ya_celebrado(leer_mensajes(paginas=PAGINAS_DE_HISTORIA), temporada):
         print(f"el podio de {temporada} ya está publicado: no se repite")
         return 0
 

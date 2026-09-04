@@ -155,14 +155,14 @@ def test_el_flujo_no_publica_cuando_no_toca():
 
     # Sin mes nuevo: no se celebra y **no se saca la captura**, que es el paso caro.
     codigo = asyncio.run(post_podium.celebrar(
-        capturar=captura, subir=subida, resultados=AGOSTO_JUGADO, leer_mensajes=lambda: []))
+        capturar=captura, subir=subida, resultados=AGOSTO_JUGADO, leer_mensajes=lambda **_: []))
     assert codigo == 0 and not subidas
 
     # Ya celebrado: tampoco.
     marca = {"bot_id": "B1", "files": [{"title": "Podio del mes :trophy: · 2026-08"}]}
     codigo = asyncio.run(post_podium.celebrar(
         capturar=captura, subir=subida, resultados=AGOSTO_JUGADO + SEPTIEMBRE_JUGADO,
-        leer_mensajes=lambda: [marca]))
+        leer_mensajes=lambda **_: [marca]))
     assert codigo == 0 and not subidas
 
 
@@ -178,7 +178,7 @@ def test_la_imagen_es_la_del_podio_de_esa_temporada():
 
     codigo = asyncio.run(post_podium.celebrar(
         capturar=captura, subir=lambda r, t, ti, canal=None: True,
-        resultados=AGOSTO_JUGADO + SEPTIEMBRE_JUGADO, leer_mensajes=lambda: []))
+        resultados=AGOSTO_JUGADO + SEPTIEMBRE_JUGADO, leer_mensajes=lambda **_: []))
     assert codigo == 0
     assert len(capturado) == 1
     objetivo = capturado[0]
@@ -200,3 +200,69 @@ def test_el_mensaje_abre_presentando_el_juego_y_el_mes():
     assert "agosto de 2026" in primera, primera
     # Y el mes no se repite en el encabezado del podio, que iba justo debajo.
     assert mensaje.count("agosto de 2026") == 1, mensaje
+
+
+# @scenarios la-comprobacion-alcanza-los-dias-que-el-cron-corre
+def test_la_comprobacion_alcanza_mas_alla_de_una_pagina():
+    """**El fallo real: el podio de agosto se publicó dos veces.**
+
+    El original quedó en la posición 44 del historial y la guarda leía 30 mensajes, así que no lo encontró y
+    republicó tres días después. El cron corre del 1 al 7 y el canal mueve hasta 17 mensajes al día: la
+    comprobación tiene que alcanzar unos 120, no 30.
+    """
+    import post_podium
+
+    marca = {"bot_id": "B1", "files": [{"title": "Podio del mes :trophy: · 2026-08"}]}
+    relleno = [{"user": "U1", "text": "La palabra del día #1700 4/6"} for _ in range(43)]
+
+    paginas_pedidas = []
+
+    def historial(**kwargs):
+        paginas_pedidas.append(kwargs.get("paginas", 1))
+        # Solo devuelve la marca si se piden páginas suficientes para llegar a la posición 44.
+        cuantos = 30 * kwargs.get("paginas", 1)
+        return (relleno + [marca])[:cuantos]
+
+    subidas = []
+
+    async def captura(objetivo):
+        return "/tmp/no-existe.png"
+
+    codigo = asyncio.run(
+        post_podium.celebrar(
+            capturar=captura,
+            subir=lambda r, t, ti, canal=None: subidas.append(ti) or True,
+            resultados=AGOSTO_JUGADO + SEPTIEMBRE_JUGADO,
+            leer_mensajes=historial,
+        )
+    )
+    assert codigo == 0
+    assert paginas_pedidas and paginas_pedidas[0] > 1, (
+        f"el podio tiene que pedir más de una página: pidió {paginas_pedidas}")
+    assert not subidas, "con el original a 44 mensajes de distancia, no debe republicar"
+
+
+# @scenarios la-comprobacion-alcanza-los-dias-que-el-cron-corre
+def test_el_lector_del_canal_pagina_de_verdad():
+    """La paginación se comprueba sobre el lector real, no sobre el doble: es donde estaba el fallo."""
+    from post_ranking import mensajes_recientes
+
+    class CanalConDosPaginas:
+        def __init__(self):
+            self.llamadas = []
+
+        def conversations_history(self, **kwargs):
+            self.llamadas.append(kwargs)
+            if "cursor" not in kwargs:
+                return {"messages": [{"ts": "1"}], "response_metadata": {"next_cursor": "abc"}}
+            return {"messages": [{"ts": "2"}]}
+
+    canal = CanalConDosPaginas()
+    assert len(mensajes_recientes(cliente=canal, paginas=3)) == 2, "junta las dos páginas"
+    assert len(canal.llamadas) == 2, "para y no pide una tercera cuando se acaba el historial"
+    assert canal.llamadas[1].get("cursor") == "abc", "usa el cursor que le dio la primera"
+
+    # Con una sola página no pagina, que es lo que quiere el resumen diario.
+    canal2 = CanalConDosPaginas()
+    assert len(mensajes_recientes(cliente=canal2, paginas=1)) == 1
+    assert len(canal2.llamadas) == 1
