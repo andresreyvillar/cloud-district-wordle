@@ -2,6 +2,20 @@ name: Hourly Data Update
 
 on:
   schedule:
+    # **El disparo de GitHub ya no vale una sincronización, vale un latido de casi seis horas.**
+    #
+    # Su planificador no cumple lo declarado: con `0 * * * *` da 6-8 ejecuciones de 24 al día, a minutos
+    # arbitrarios (27, 34, 07, 54…). Se probaron dos relojes externos y ninguno funciona — el cron de
+    # Cloudflare no invoca el Worker (comprobado escuchando sus logos: 23 invocaciones `fetch` y cero de
+    # cron) y cron-job.org no ha disparado nunca. Así que en lugar de pelear por más disparos, **cada disparo
+    # cubre más tiempo**: el job sincroniza cada 55 minutos durante casi seis horas.
+    #
+    # Con 6-8 disparos al día y casi seis horas de cobertura cada uno, la cadencia horaria se cumple aunque
+    # GitHub se salte la mayoría de las ventanas.
+    #
+    # No se auto-despierta: el `GITHUB_TOKEN` automático **no puede** lanzar `workflow_dispatch` —GitHub lo
+    # bloquea para evitar bucles— y montar un PAT solo para esto añadiría una credencial que mantener.
+    #
     # **Vuelta al minuto en punto, contra lo que recomienda la documentación.**
     #
     # GitHub aconseja huir del `:00` porque es el más congestionado, y por eso esto estuvo en `:23`. La medida
@@ -12,10 +26,25 @@ on:
     # siguiente paso es un disparador externo por `workflow_dispatch`, no otro minuto.
     - cron: '0 * * * *'
   workflow_dispatch:
+    inputs:
+      vueltas:
+        description: 'Cuántas sincronizaciones horarias hace esta ejecución'
+        default: '1'
+
+# **Una sola ejecución viva, y la última manda.** Cada disparo de GitHub cancela el latido en curso y arranca
+# uno nuevo, así que la ventana de cobertura se reinicia en cada disparo en lugar de acumular latidos
+# solapados. Cancelar a media sincronización es seguro: la ingesta no reescribe resultados ya guardados y la
+# materialización hace `upsert`.
+concurrency:
+  group: sincronizacion-horaria
+  cancel-in-progress: true
 
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    # El techo de GitHub para un job son 360 minutos; 350 deja margen para que el propio job decida cuándo
+    # termina en lugar de morir cancelado a media sincronización.
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
 
@@ -26,17 +55,45 @@ jobs:
       - name: Install dependencies
         run: pip install slack_sdk python-dotenv supabase
 
-      - name: Run Extraction
+      # **El latido**: sincroniza, espera y repite, todo dentro del mismo job.
+      #
+      # Los dos comandos son los de siempre —ingesta y materialización de la temporada en curso, que es una
+      # decisión y no un efecto secundario (ADR 0008)—; lo único nuevo es que se repiten.
+      #
+      # 55 minutos de espera y no 60: con los ~35 segundos que tarda la sincronización, el ciclo queda en
+      # unos 56 minutos, así que **ningún hueco pasa de una hora** aunque la ejecución empiece a mitad de
+      # hora.
+      #
+      # Siete vueltas, que es el óptimo medido: cubren **5,5 h** por disparo y el job dura 334 minutos, bajo
+      # el techo de 350 (el límite duro de GitHub son 360 y mata el job). Ocho no caben —390 minutos—. El
+      # hueco máximo observado en el planificador de GitHub es de 5,6 h y la mediana de 3,6, así que siete
+      # vueltas cubren todos los huecos reales salvo el peor, y al peor le faltarían seis minutos.
+      #
+      # Un fallo de una vuelta **no aborta el latido**: se registra y se sigue, porque perder una hora es
+      # mejor que perder las cinco siguientes. La suma de fallos sí se propaga al final.
+      - name: Sync every hour for as long as this heartbeat lives
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 tools/extract_slack.py | python3 tools/add_results.py
-
-      - name: Materialize the running season
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        # Only the running season: recalculating a closed one is a decision, not a side effect (ADR 0008).
-        run: python3 tools/materialize_seasons.py
+        run: |
+          VUELTAS="${{ inputs.vueltas || '7' }}"
+          ESPERA=3300
+          fallos=0
+          for vuelta in $(seq 1 "$VUELTAS"); do
+            if [ "$vuelta" -gt 1 ]; then
+              echo "── esperando $((ESPERA / 60)) min hasta la vuelta $vuelta de $VUELTAS"
+              sleep "$ESPERA"
+            fi
+            echo "── vuelta $vuelta/$VUELTAS · $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            if python3 tools/extract_slack.py | python3 tools/add_results.py \
+               && python3 tools/materialize_seasons.py; then
+              echo "   sincronizado"
+            else
+              fallos=$((fallos + 1))
+              echo "   ::warning::la vuelta $vuelta falló; el latido sigue"
+            fi
+          done
+          echo "── latido terminado · vueltas $VUELTAS · fallos $fallos"
+          [ "$fallos" -eq 0 ]
