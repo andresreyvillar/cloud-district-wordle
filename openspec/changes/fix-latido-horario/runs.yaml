@@ -1,0 +1,23 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-07T11:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Cuarto intento sobre el mismo problema, y el primero que no depende de un reloj ajeno. Los tres anteriores
+    y su resultado: mover el cron de minuto (empeoró, revertido), el cron del Worker de Cloudflare (cero
+    disparos en cuatro días, descartado escuchando sus logs: 23 invocaciones `fetch` y cero de cron) y
+    cron-job.org (cero disparos, sin diagnóstico porque su historial está en su panel). Las dos
+    recomendaciones externas fueron mías y las dos fallaron. El enfoque cambia: en lugar de pedir más disparos,
+    cada disparo cubre 5,5 h sincronizando cada 55 minutos dentro del mismo job. Los números salen de tres
+    medidas: el hueco máximo del planificador de GitHub (5,6 h), el techo de 360 minutos por job y los ~35 s
+    que tarda una sincronización. No se auto-despierta porque el `GITHUB_TOKEN` automático no puede lanzar
+    `workflow_dispatch`, y no hace falta. Una ronda de corrección: seis vueltas daban 4,6 h de cobertura y el
+    hueco máximo real es de 5,6 — se subió a siete, que es el máximo que cabe bajo el techo. El bucle se probó
+    en local con esperas de 1 s, incluido el caso de fallo parcial y su código de salida.
