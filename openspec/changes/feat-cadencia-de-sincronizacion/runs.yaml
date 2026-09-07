@@ -1,0 +1,24 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-07T15:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Quinto intento sobre el cron horario, y el primero que cambia el requisito en lugar del mecanismo. El
+    dueño pidió investigar si hay algo más simple: no lo hay — la documentación y los artículos solo
+    recomiendan un disparador externo, que ya falló dos veces aquí. Lo que sí cambió es que fijó dos números
+    (>=12 al día, hueco <=2 h) y dijo que la puntualidad no importa, y eso convierte una esperanza en un
+    requisito auditable. Dos rondas de corrección, las dos por huecos que los tests del propio criterio
+    destaparon: (1) midiendo solo entre ejecuciones, doce agrupadas en dos horas pasaban por buenas dejando
+    veintidós de silencio — se añadieron los bordes, y para juzgar la cola hizo falta que el instante de
+    referencia entrara por parámetro (§10); (2) un conjunto vacío no tenía huecos excesivos ni días flojos,
+    así que se declaraba cumplido. Suelo auditado antes del cambio: 119 ejecuciones en 15 días, hueco máximo
+    15,7 h, 64 huecos excesivos, 12 días por debajo.

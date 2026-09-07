@@ -24,7 +24,16 @@ on:
     # puede ser capacidad reservada en el `:00`, o menos prioridad para un horario recién registrado — así que
     # se vuelve a lo medido en lugar de a lo recomendado. Si el planificador se recupera y esto sigue mal, el
     # siguiente paso es un disparador externo por `workflow_dispatch`, no otro minuto.
-    - cron: '0 * * * *'
+    # **Tres ventanas por hora, 72 al día.** No para ser puntual —no se pide— sino para que la probabilidad
+    # de un silencio largo baje. Medido con una ventana por hora: 4-9 ejecuciones diarias y huecos de hasta
+    # 8,6 h. El mínimo de GitHub son 5 minutos, así que 20 está muy por encima.
+    #
+    # **Las ventanas y el latido se complementan, y el sistema se adapta solo.** Cuando el planificador va
+    # bien, cada ventana cancela el latido en curso y sincroniza: la cadencia la dan las ventanas y el bucle
+    # nunca pasa de su primera vuelta. Cuando el planificador calla, el latido que quedó vivo sigue
+    # sincronizando cada 55 minutos durante 5,5 h y cubre el silencio. Ninguna de las dos piezas sobra:
+    # las ventanas dan frecuencia y el latido da continuidad.
+    - cron: '0,20,40 * * * *'
   workflow_dispatch:
     inputs:
       vueltas:
