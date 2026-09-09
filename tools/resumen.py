@@ -87,13 +87,16 @@ def bloque_obra_del_dia(resultados: list[dict], temporada: str, jornada: int) ->
     se decidió había dos geométricos, uno simétrico resuelto en 3 y otro escaso resuelto en 4, y el premio se
     lo llevaba el segundo.
     """
-    elegida = _obra_del_dia(resultados, temporada, jornada)
-    if not elegida:
+    ganadoras = _obra_del_dia(resultados, temporada, jornada)
+    if not ganadoras:
         return "🖼️ *Obra del día:* desierta — hoy no ha salido ninguna figura reconocible."
-    fila, categoria = elegida
     from figures import emoji
 
-    return f"🖼️ *Obra del día:* {emoji(categoria)} de {_nombre(fila)} ({fila['score']} intentos)."
+    categoria = ganadoras[0][1]
+    intentos = ganadoras[0][0]["score"]
+    # Todas las empatadas tienen la misma categoría y los mismos intentos: es lo que las empata.
+    quienes = _y([_nombre(fila) for fila, _ in ganadoras])
+    return f"🖼️ *Obra del día:* {emoji(categoria)} de {quienes} ({intentos} intentos)."
 
 
 def _obra_del_dia(resultados: list[dict], temporada: str, jornada: int):
@@ -113,14 +116,25 @@ def _obra_del_dia(resultados: list[dict], temporada: str, jornada: int):
         return None
 
     frecuencia = rareza(resultados, temporada)
-    return min(
-        reconocibles,
-        key=lambda par: (
+
+    def merito(par):
+        """Lo que hace mejor a un dibujo, de más importante a menos. **Sin el nombre.**"""
+        return (
             frecuencia.get(par[1], 0),
             not rasgos(par[0]["pattern"]).espejo,  # el espejo primero
             -par[0]["score"],
-            _nombre(par[0]).lower(),
-        ),
+        )
+
+    # **El premio se comparte, decisión del dueño.** Antes el nombre entraba en el desempate y elegía un
+    # ganador arbitrario: el día que se decidió, Claire y Raquel tenían el mismo culo en los mismos intentos y
+    # ganaba Claire por la «C». Medido sobre 204 jornadas con obra, **el 25% tiene empate** —36 de dos, 10 de
+    # tres y hasta una de seis—, así que era un cuarto de los premios repartido por orden alfabético.
+    #
+    # El nombre sigue ordenando la lista, pero ya no decide: es lo que mantiene el cálculo determinista.
+    mejor = min(merito(par) for par in reconocibles)
+    return sorted(
+        (par for par in reconocibles if merito(par) == mejor),
+        key=lambda par: _nombre(par[0]).lower(),
     )
 
 
@@ -403,6 +417,8 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
     from refranero import (
         DIBUJO_DEL_DIA,
         DIBUJO_DEL_DIA_CULO,
+        DIBUJO_DEL_DIA_CULO_VARIOS,
+        DIBUJO_DEL_DIA_VARIOS,
         MEJORES_DEL_DIA,
         MEJORES_DEL_DIA_VARIOS,
     )
@@ -460,7 +476,9 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
 
     obra = _obra_del_dia(resultados, temporada, jornada)
     if obra:
-        fila, categoria = obra
+        categoria = obra[0][1]
+        fila = obra[0][0]
+        nombres_de_la_obra = [_nombre(f) for f, _ in obra]
         from figures import emoji
 
         piezas.append((
@@ -468,10 +486,16 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
             # El melocotón tiene su propio registro: con el genérico salía «un 🍑 que le costó 5 intentos»,
             # que desperdicia la broma. Los comentarios de dibujo llevan nombre desde siempre, así que este
             # también.
-            _del_ciclo(
-                DIBUJO_DEL_DIA_CULO if categoria == CULO else DIBUJO_DEL_DIA, jornada
-            ).format(jugador=_nombre(fila), emoji=emoji(categoria), intentos=fila["score"]),
-            {_nombre(fila)},
+            # Y concuerda con cuántos lo comparten: una jornada de cada cuatro tiene empate en la obra.
+            _concordado(
+                DIBUJO_DEL_DIA_CULO if categoria == CULO else DIBUJO_DEL_DIA,
+                DIBUJO_DEL_DIA_CULO_VARIOS if categoria == CULO else DIBUJO_DEL_DIA_VARIOS,
+                jornada,
+                len(nombres_de_la_obra),
+            ).format(
+                jugador=_y(nombres_de_la_obra), emoji=emoji(categoria), intentos=fila["score"]
+            ),
+            set(nombres_de_la_obra),
             "dibujo",
         ))
 

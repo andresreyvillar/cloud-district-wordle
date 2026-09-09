@@ -106,6 +106,11 @@ firmó: el chiste va pegado al dibujo, que es donde el grupo lo espera.
 **WHEN** dos dibujos de la misma categoría compiten por el premio y uno es simétrico
 **THEN** gana el simétrico, por delante de quien tardó más intentos.
 
+### la-obra-del-dia-se-comparte-en-caso-de-empate
+**WHEN** varios dibujos empatan en categoría, simetría e intentos
+**THEN** el premio es de todos y se nombran todos, en lugar de elegir uno por el orden alfabético; el nombre
+sigue ordenando la lista pero ya no decide quién gana.
+
 ### el-relevo-en-cabeza-se-anuncia
 **WHEN** la jornada de hoy cambia quién manda en el marcador
 **THEN** el mensaje lo anuncia nombrando a quien sube y a quien cae; y no lo anuncia cuando el cambio es solo
