@@ -78,6 +78,11 @@ título.
 **WHEN** quien abrió la jornada ha abierto además la mayoría de las jornadas recientes
 **THEN** se dice que es su costumbre, con el recuento; y si no, solo que hoy abrió.
 
+### las-frases-concuerdan-en-numero
+**WHEN** una frase nombra a más de una persona
+**THEN** el verbo y los sustantivos van en plural, y en singular cuando es una sola; el registro está partido
+en dos y se elige por cuántos son, en lugar de mezclar las dos concordancias y acertar la mitad de las veces.
+
 ### los-ausentes-se-nombran-por-orden-de-clasificacion
 **WHEN** faltan más personas de las que se pueden nombrar
 **THEN** los que se nombran son los **mejor clasificados** de entre los ausentes, porque la ausencia de quien

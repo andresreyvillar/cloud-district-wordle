@@ -161,6 +161,18 @@ MAS_APLAUDIDO: tuple[str, ...] = (
     "{dato} para {jugador}. El grupo ha votado con el dedo.",
 )
 
+#: Lo mismo cuando el aplauso se lo reparten varios.
+MAS_APLAUDIDO_VARIOS: tuple[str, ...] = (
+    "Lo más aplaudido del día es de {jugador}: {dato}.",
+    "Nadie ha recibido más reacciones que {jugador}: {dato}.",
+    "Lluvia de reacciones sobre {jugador}: {dato}.",
+    "El canal se ha puesto en pie por {jugador}: {dato}.",
+    "Ovación para {jugador}, con {dato}.",
+    "{jugador} se llevan los aplausos del día: {dato}.",
+    "Lo de {jugador} ha gustado, y se ha notado: {dato}.",
+    "{dato} para {jugador}. El grupo ha votado con el dedo.",
+)
+
 MAS_COMENTADO: tuple[str, ...] = (
     "El hilo del día lo ha montado {jugador}: {dato}.",
     "Lo de {jugador} ha dado conversación: {dato} en su hilo.",
@@ -168,6 +180,17 @@ MAS_COMENTADO: tuple[str, ...] = (
     "El tema del día lo ha puesto {jugador}, con {dato}.",
     "Hoy se ha hablado sobre todo de lo de {jugador}: {dato}.",
     "{jugador} lanzó la piedra y el hilo hizo el resto: {dato}.",
+    "Hilo del día, cortesía de {jugador}: {dato}.",
+)
+
+#: Lo mismo cuando el hilo lo comparten varios.
+MAS_COMENTADO_VARIOS: tuple[str, ...] = (
+    "El hilo del día lo han montado {jugador}: {dato}.",
+    "Lo de {jugador} ha dado conversación: {dato} en sus hilos.",
+    "{jugador} han abierto debate y ha durado: {dato}.",
+    "El tema del día lo han puesto {jugador}, con {dato}.",
+    "Hoy se ha hablado sobre todo de lo de {jugador}: {dato}.",
+    "{jugador} lanzaron la piedra y el hilo hizo el resto: {dato}.",
     "Hilo del día, cortesía de {jugador}: {dato}.",
 )
 
@@ -180,6 +203,19 @@ AUSENTE: tuple[str, ...] = (
     "🫥 Ni rastro de {jugador} en el canal.",
     "🫥 {jugador} ha decidido que hoy no era su día. Ni lo ha intentado.",
     "🫥 Falta {jugador}, y el marcador lo nota.",
+)
+
+#: Lo mismo cuando faltan varios. `AUSENTES_DEL_DIA` es otra cosa: la línea del bloque de la jornada, con
+#: coleta para cuando falta más gente de la que se puede nombrar.
+AUSENTE_VARIOS: tuple[str, ...] = (
+    "🫥 De {jugador} no se sabe nada desde hace un rato.",
+    "🫥 {jugador} hoy no se han presentado.",
+    "🫥 Donde no me llaman, para nada me querrán: hoy {jugador} no han venido.",
+    "🫥 Se echa de menos a {jugador}, o eso decimos.",
+    "🫥 {jugador} se han tomado el día libre sin avisar.",
+    "🫥 Ni rastro de {jugador} en el canal.",
+    "🫥 {jugador} han decidido que hoy no era su día. Ni lo han intentado.",
+    "🫥 Faltan {jugador}, y el marcador lo nota.",
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -663,12 +699,26 @@ DIFICULTAD_MUCHO_MAS_FACIL: tuple[str, ...] = (
     "Hoy no ha habido partido: {cifra} de media contra {media}.",
 )
 
-#: Los mejores del día. `{jugador}` puede ser más de un nombre y `{intentos}` su nota.
+#: Los mejores del día, **cuando es una sola persona**. `{intentos}` su nota.
+#:
+#: El registro estaba sin partir y mezclaba las dos concordancias: «Los mejores del día» y «Lo han bordado»
+#: son plurales, «se lleva la jornada» es singular, y `_del_ciclo` elegía a ciegas. El 62% de las jornadas
+#: tiene empate en la mejor nota, así que la mitad de los mensajes salían mal concordados. Lo vio el dueño en
+#: «Joel y Sandra se lleva la jornada».
 MEJORES_DEL_DIA: tuple[str, ...] = (
+    "El mejor del día: {jugador}, en {intentos}.",
+    "Lo ha bordado {jugador}: {intentos} intentos.",
+    "Arriba del todo hoy, {jugador}, con {intentos}.",
+    "{jugador} se lleva la jornada con {intentos} intentos.",
+)
+
+#: Los mejores del día **cuando son varios**, que es el caso normal: el 62% de las jornadas tiene empate.
+MEJORES_DEL_DIA_VARIOS: tuple[str, ...] = (
     "Los mejores del día: {jugador}, en {intentos}.",
     "Lo han bordado {jugador}: {intentos} intentos.",
     "Arriba del todo hoy, {jugador}, con {intentos}.",
-    "{jugador} se lleva la jornada con {intentos} intentos.",
+    "{jugador} se llevan la jornada con {intentos} intentos.",
+    "Empate arriba: {jugador}, todos en {intentos}.",
 )
 
 #: El dibujo del día. `{emoji}` la figura y `{intentos}` lo que costó.

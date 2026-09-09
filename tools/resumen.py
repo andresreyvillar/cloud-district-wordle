@@ -400,8 +400,8 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
     Es lo que convierte una lista de datos en alguien con una idea en la cabeza.
     """
     from comentarios import dificultad, frase as frase_de_hecho, hechos_elegidos
-    from refranero import DIBUJO_DEL_DIA, MEJORES_DEL_DIA
-    from voz import _del_ciclo, conector, estado_de_animo
+    from refranero import DIBUJO_DEL_DIA, MEJORES_DEL_DIA, MEJORES_DEL_DIA_VARIOS
+    from voz import _concordado, _del_ciclo, conector, estado_de_animo
 
     del_dia = _del_dia(resultados, jornada)
     if not del_dia:
@@ -444,7 +444,11 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
 
     piezas.append((
         1,
-        _del_ciclo(MEJORES_DEL_DIA, jornada).format(jugador=quienes_texto, intentos=mejor),
+        # Concuerda con cuántos son: el 62% de las jornadas tiene empate en la mejor nota, así que el plural
+        # es el caso normal y no la excepción.
+        _concordado(MEJORES_DEL_DIA, MEJORES_DEL_DIA_VARIOS, jornada, len(quienes)).format(
+            jugador=quienes_texto, intentos=mejor
+        ),
         protagonistas,
         "mejores",
     ))
