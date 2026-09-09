@@ -757,20 +757,18 @@ DIBUJO_DEL_DIA_VARIOS: tuple[str, ...] = (
 #: dibujo y la suerte**, no sobre el cuerpo de nadie, que es donde está la línea en un canal del trabajo con
 #: compañeros identificables.
 DIBUJO_DEL_DIA_CULO: tuple[str, ...] = (
-    # **«Culazo» es la dominante, por decisión del dueño.** El ciclo elige por número de jornada, así que
-    # todas las frases salen igual de a menudo: priorizar una expresión es tener más frases con ella. Con 8 de
-    # 20 sale una jornada de cada dos y media, contra una de cada ocho que salía antes.
+    # **«Menudo culazo el de X» es la forma dominante**, por decisión del dueño. Siete de veinte, que con el
+    # ciclo por jornada es una de cada tres veces que el melocotón gana el cuadro.
     #
     # No se le da el monopolio a propósito: un registro que gira sobre una sola broma suena a una sola broma,
     # que es el defecto que ya tuvieron el de la sospecha con su molde y el del meme con su plantilla única.
     "Menudo culazo el de {jugador}: 🍑 en {intentos} intentos.",
-    "Menudo culazo se ha marcado {jugador} en {intentos} intentos. 🍑 de exposición.",
-    "Vaya culazo ha dibujado {jugador} en {intentos} intentos. 🍑 y a otra cosa.",
-    "El culazo del día es de {jugador}: 🍑 en {intentos}.",
-    "{jugador} ha firmado un culazo de {intentos} intentos. 🍑 con marco y todo.",
-    "Culazo de campeonato el de {jugador}: 🍑 en {intentos} intentos.",
-    "Premio al culazo del día para {jugador}, con {intentos} intentos. 🍑",
-    "{jugador} y su culazo de {intentos} intentos. 🍑 que no se olvida.",
+    "Menudo culazo el de {jugador}, y en {intentos} intentos. 🍑 de exposición.",
+    "Menudo culazo el de {jugador}: 🍑 en {intentos}, con marco y todo.",
+    "Menudo culazo el de {jugador}. {intentos} intentos bien invertidos. 🍑",
+    "Menudo culazo el de {jugador}: 🍑 de campeonato en {intentos} intentos.",
+    "Menudo culazo el de {jugador}, que además no lo buscaba: 🍑 en {intentos}.",
+    "Menudo culazo el de {jugador}. Premio al 🍑 del día, {intentos} intentos.",
     "La obra del día es el 🍑 de {jugador}, en {intentos}. Tiene una flor en el culo y encima lo dibuja.",
     "Premio de belleza para {jugador} y su 🍑 de {intentos} intentos. Culo veo, culo quiero.",
     "{jugador} ha firmado el 🍑 del día en {intentos}. A esto se le llama salir del paso como el culo.",
@@ -783,26 +781,33 @@ DIBUJO_DEL_DIA_CULO: tuple[str, ...] = (
     "{jugador} y su 🍑 de {intentos} intentos. Aquí nadie lame culos, pero eso es un cuadro.",
     "El cuadro de hoy lo pone {jugador}: 🍑 en {intentos}. Y sin perder el culo por conseguirlo.",
     "Hoy {jugador} ha ido de culo, y ha acabado dibujando uno: 🍑 en {intentos}.",
+    "Vaya culazo ha dibujado {jugador} en {intentos} intentos. 🍑 y a otra cosa.",
 )
+
 
 
 #: El 🍑 del día **cuando lo comparten varios**. Con siete melocotones en una jornada, como pasó el #1707, el
 #: empate en el premio es lo normal y no la excepción.
 DIBUJO_DEL_DIA_CULO_VARIOS: tuple[str, ...] = (
-    # Misma proporción que el singular: «culazo» dominante sin monopolio.
-    "Menudos culazos los de {jugador}: 🍑 a {intentos} intentos cada uno.",
-    "Menudo culazo el de {jugador}: 🍑 en {intentos} intentos, y a partes iguales.",
-    "Vaya par de culazos: {jugador}, 🍑 en {intentos} intentos.",
-    "Los culazos del día son de {jugador}: 🍑 en {intentos}.",
-    "{jugador} han firmado culazo, y el mismo: 🍑 en {intentos} intentos.",
+    # **«Menudo culazo el de X y Y» es la forma dominante**, por decisión del dueño. Y es la correcta: las
+    # empatadas dibujaron **el mismo** esqueleto, así que es un culazo compartido y no dos — de ahí el
+    # singular «el de» con varios nombres detrás.
+    #
+    # Siete de doce, que con el ciclo por jornada significa que sale una de cada dos veces que hay empate.
+    "Menudo culazo el de {jugador}: 🍑 en {intentos} intentos.",
+    "Menudo culazo el de {jugador}, y a partes iguales: 🍑 en {intentos}.",
+    "Menudo culazo el de {jugador}: 🍑 en {intentos}, calcado.",
+    "Menudo culazo el de {jugador}. El mismo 🍑 en {intentos} intentos.",
+    "Menudo culazo el de {jugador}: {intentos} intentos para el mismo 🍑.",
+    "Menudo culazo el de {jugador}, y ni se han puesto de acuerdo: 🍑 en {intentos}.",
+    "Menudo culazo el de {jugador}. 🍑 en {intentos} y a repartir el premio.",
     "La obra del día son los 🍑 de {jugador}, en {intentos}. Tienen una flor en el culo, y encima los dibujan.",
     "Premio de belleza compartido para {jugador} y sus 🍑 de {intentos} intentos. Culo veo, culo quiero.",
-    "{jugador} han firmado el 🍑 del día en {intentos}. Salir del paso como el culo, pero en grupo.",
     "El diccionario les ha dejado el culo al aire a {jugador}: 🍑 en {intentos}.",
     "Hoy {jugador} han ido de culo, y han acabado dibujando uno: 🍑 en {intentos}.",
-    "Obra del día compartida: 🍑 de {jugador}, {intentos} intentos. Se han mojado el culo y han pescado.",
     "Empate en el cuadro: {jugador}, todos con un 🍑 en {intentos}. Un grano en el culo para la palabra.",
 )
+
 
 
 #: Quien abrió la jornada **con costumbre demostrada**: ha abierto la mayoría de las que se han leído.

@@ -42,3 +42,22 @@
     misma palabra aumentada. Se pidió además una frase que atribuye un acto sexual explícito a un compañero con
     nombre y **no se escribió**: hay un test que fija que ninguna frase del registro comenta el cuerpo de quien
     juega, y la mutación que lo intenta lo caza.
+
+- run: '2026-09-09T18:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Tercera vuelta: el dueño eligió «menudo culazo el de…» y pidió priorizarla. Se le explicó que el ciclo
+    elige por número de jornada, así que priorizar una forma es tener más frases con ella, y se subió a 7 de
+    20 en singular y 7 de 12 en plural, con un test que fija que domine sin ser la única. En plural la forma
+    va en singular —«el de Claire y Raquel»— porque las empatadas dibujaron el mismo esqueleto: es un culazo
+    compartido y no dos. Una ronda de corrección: la aserción de «forma dominante» troceaba las frases por el
+    primer signo de puntuación y eso metía en cubos distintos variantes de la misma forma; atada al prefijo
+    declarado.

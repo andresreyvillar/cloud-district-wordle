@@ -419,3 +419,26 @@ def test_con_un_solo_ganador_no_cambia_nada():
     texto = bloque_la_jornada(filas, "0", jornada)
     singulares = [f.format(jugador="Ana", intentos=5) for f in DIBUJO_DEL_DIA_CULO]
     assert any(f in texto for f in singulares), f"registro singular: {texto}"
+
+
+# @scenarios el-comentario-del-dibujo-lleva-la-broma-de-su-categoria
+def test_la_forma_preferida_del_culazo_domina_el_registro():
+    """**Decisión del dueño**: «menudo culazo el de X (y Y)» es la que más le gusta, así que es la que más
+    sale. Con el ciclo por jornada, la frecuencia de una forma es su proporción en el registro.
+
+    En plural la forma va en **singular** —«el de Ana y Bea»— y es lo correcto: las empatadas dibujaron el
+    mismo esqueleto, así que es un culazo compartido y no dos.
+    """
+    from refranero import DIBUJO_DEL_DIA_CULO, DIBUJO_DEL_DIA_CULO_VARIOS
+
+    for registro, nombre in ((DIBUJO_DEL_DIA_CULO, "singular"), (DIBUJO_DEL_DIA_CULO_VARIOS, "plural")):
+        forma = [f for f in registro if f.startswith("Menudo culazo el de")]
+        assert len(forma) >= 5, f"{nombre}: la forma preferida sale poco ({len(forma)} de {len(registro)})"
+        # Y es la más frecuente: ninguna otra forma con nombre delante llega a tantas. Se cuenta por
+        # **prefijo declarado** y no troceando por el primer signo de puntuación, que agrupaba mal —«Menudo
+        # culazo el de {jugador}: …» y «Menudo culazo el de {jugador}, …» acababan en cubos distintos.
+        otras = [f for f in registro if not f.startswith("Menudo culazo el de")]
+        assert len(forma) > len(otras) / 2, (
+            f"{nombre}: la preferida no domina, {len(forma)} contra {len(otras)}")
+        # Pero sin monopolio: un registro de una sola broma suena a una sola broma.
+        assert len(forma) < len(registro), f"{nombre}: no puede ser la única"

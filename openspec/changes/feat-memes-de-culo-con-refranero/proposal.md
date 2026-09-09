@@ -70,3 +70,22 @@ un canal del trabajo y publicado por un bot. Las otras dieciséis hacen la misma
 
 Hay un test que fija la línea: ninguna frase del registro puede comentar el cuerpo de quien juega. La broma va
 sobre el dibujo, la suerte y la palabra.
+
+
+## «Menudo culazo el de…», la forma preferida
+
+El dueño eligió esa forma y pidió priorizarla. **El ciclo elige por número de jornada, así que todas las
+frases salen igual de a menudo: priorizar una forma es tener más frases con ella.**
+
+```
+             «Menudo culazo el de»    con «culazo»
+singular          7 de 20                8 de 20
+plural            7 de 12                7 de 12
+```
+
+En plural la forma va en **singular** —«el de Claire y Raquel»— y es lo correcto: las empatadas dibujaron el
+mismo esqueleto, así que es un culazo compartido y no dos.
+
+No se le da el monopolio, y hay un test que lo fija por los dos lados: tiene que dominar y no puede ser la
+única. Un registro que gira sobre una sola broma suena a una sola broma, que es el defecto que ya tuvieron el
+de la sospecha con su molde repetido y el del meme con su plantilla única.
