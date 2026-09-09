@@ -1,0 +1,21 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-09T15:15:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño pidió que las frases del día de culos fueran referencias a expresiones hechas y que se buscaran en
+    lugar de inventarlas. Se documentaron dieciséis con su significado y se reescribieron las 25 frases sobre
+    ellas, cada una con su sentido real —«tener una flor en el culo» para la suerte es la que mejor encaja,
+    porque además cruza las dos categorías del álbum, 🌷 y 🍑—. 22 de 25 se apoyan en una expresión y ninguna
+    se repite más de dos veces, lo cual está fijado por test: un registro que gira sobre una sola broma es el
+    defecto que ya tuvo el de la sospecha con su molde repetido. El registro es coloquial y vulgar, que es lo
+    que se pidió, y habla del recuento de la jornada y nunca de un nombre.

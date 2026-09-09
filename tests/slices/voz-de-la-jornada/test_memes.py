@@ -237,21 +237,32 @@ MARCAS = (
     "sala de máquinas",
     "aldeano",
     "pedales",
-    # Expresiones hechas con «culo», del registro del día de los melocotones. Son reconocibles por sí mismas:
-    # el chiste lo pone el refranero que el grupo ya tiene en la cabeza, no la frase.
+    # **Expresiones hechas reales** con «culo», buscadas y no inventadas, del registro del día de los
+    # melocotones. Son reconocibles por sí mismas: el chiste lo pone el refranero que el grupo ya tiene.
     "culo veo",
-    "Photoshop",
-    "de culo y cuesta arriba",
-    "frutería",
-    "partido el culo",
+    "ido de culo",
+    "flor en el culo",
     "culo al aire",
-    "tomar por culo",
     "caído de culo",
-    "culo de mal asiento",
+    "como el culo",
     "culo del mundo",
+    "cara de culo",
+    "moje el culo",
+    "mojado",
+    "hasta el culo",
+    "grano en el culo",
+    "patada en el culo",
+    "culos de mal asiento",
     "lame culos",
+    "mover el culo",
+    "partido el culo",
+    "tomar por culo",
+    "culo de vaso",
+    "perdiendo el culo",
+    "Culos inquietos",
+    "culos inquietos",
+    "frutería",
     "desfile",
-    "pleno de",
 )
 
 
@@ -310,3 +321,25 @@ def test_un_culo_solo_no_es_un_dia_de_culos():
     de_culos = {p.format(cuantos=n, total=len(filas)) for p in MEMES["dia-de-culos"] for n in range(0, 9)}
     assert meme_del_dia(filas, 1, culos=MINIMO_PARA_DIA_DE_CULOS - 1) not in de_culos
     assert meme_del_dia(filas, 1, culos=MINIMO_PARA_DIA_DE_CULOS) in de_culos
+
+
+# @scenarios el-dia-de-varios-culos-tiene-meme-propio
+def test_el_registro_de_culos_va_sobre_expresiones_hechas():
+    """**Decisión del dueño: expresiones hechas, no frases inventadas.** El chiste ya está en el refranero que
+    el grupo tiene en la cabeza, así que la frase solo tiene que traerlo al marcador.
+
+    Las expresiones se buscaron y cada una se usa con su significado real: «culo veo, culo quiero» para la
+    envidia, «ir de culo» para el caos, «tener una flor en el culo» para la suerte —que además cruza las dos
+    categorías del álbum—, «dejar con el culo al aire» para quedar expuesto, «caerse de culo» para el asombro.
+    """
+    registro = MEMES["dia-de-culos"]
+    con = [f for f in registro if _cita(f)]
+    assert len(con) * 4 >= len(registro) * 3, (
+        f"la mayoría tiene que apoyarse en una expresión hecha: {len(con)} de {len(registro)}")
+
+    # Y ninguna repite la misma expresión más de dos veces: si no, el registro suena a una sola broma.
+    from collections import Counter
+
+    veces = Counter(m for f in registro for m in MARCAS if m.lower() in f.lower())
+    repetidas = {m: v for m, v in veces.items() if v > 2}
+    assert not repetidas, f"expresiones demasiado repetidas: {repetidas}"

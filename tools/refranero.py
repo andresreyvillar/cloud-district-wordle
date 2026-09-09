@@ -485,28 +485,37 @@ MEMES: dict[str, tuple[str, ...]] = {
     # de la palabra, así que cuando sale, sale para media tabla. En la jornada que originó la categoría fueron
     # siete de diez. Llevan `{cuantos}` y `{total}`.
     "dia-de-culos": (
-        # Expresiones hechas con la palabra, que es lo que las hace reconocibles: el chiste no lo pone la
-        # frase, lo pone el refranero que el grupo ya tiene en la cabeza.
-        "🎯 *Meme del día:* culo veo, culo quiero. {cuantos} de {total} y todos iguales.",
-        "🎯 *Meme del día:* {cuantos} de {total} han dibujado el mismo 🍑. Esto no lo arregla ni Photoshop.",
-        "🎯 *Meme del día:* hoy la jornada ha ido de culo y cuesta arriba. {cuantos} melocotones lo certifican.",
-        "🎯 *Meme del día:* {cuantos} melocotones en una jornada. El álbum parece una frutería.",
-        "🎯 *Meme del día:* nos hemos partido el culo, literalmente: {cuantos} de {total}.",
-        "🎯 *Meme del día:* {cuantos} de {total} con el mismo dibujo. Se aceptan interpretaciones.",
-        "🎯 *Meme del día:* hoy hemos quedado todos con el culo al aire. {cuantos} de {total}.",
-        "🎯 *Meme del día:* {cuantos} culos idénticos. Ni queriendo sale esto.",
-        "🎯 *Meme del día:* esta palabra nos ha mandado a tomar por culo a {cuantos} de {total}.",
-        "🎯 *Meme del día:* la palabra ha dicho «hoy 🍑 para todos» y {cuantos} de {total} han obedecido.",
-        "🎯 *Meme del día:* nos hemos caído de culo {cuantos} de {total}. Con la misma cuadrícula.",
-        "🎯 *Meme del día:* {cuantos} melocotones. La cuadrícula ha hablado y ha dicho lo que ha dicho.",
-        "🎯 *Meme del día:* culo de mal asiento el de esta palabra: {cuantos} de {total} no han encontrado el sitio.",
-        "🎯 *Meme del día:* pleno de 🍑 ({cuantos} de {total}). Nadie lo ha buscado y a todos les ha salido.",
+        # **Todas son expresiones hechas reales**, buscadas y no inventadas: el chiste ya está en el refranero
+        # que el grupo tiene en la cabeza, así que la frase solo tiene que traerlo al marcador. Cada una se
+        # usa con su significado de verdad, que es lo que hace que encaje en vez de sonar a relleno.
+        #
+        # «tener una flor en el culo» —tener suerte— es la que mejor cae aquí, porque además cruza las dos
+        # categorías del álbum: 🌷 y 🍑.
+        "🎯 *Meme del día:* culo veo, culo quiero. {cuantos} de {total} y todos con el mismo.",
+        "🎯 *Meme del día:* hoy la jornada ha ido de culo. {cuantos} melocotones de {total} lo certifican.",
+        "🎯 *Meme del día:* {cuantos} de {total} tienen una flor en el culo. 🌷 y 🍑 en la misma cuadrícula.",
+        "🎯 *Meme del día:* esta palabra nos ha dejado a {cuantos} de {total} con el culo al aire.",
+        "🎯 *Meme del día:* nos hemos caído de culo {cuantos} de {total}. Con el mismo dibujo, además.",
+        "🎯 *Meme del día:* a {cuantos} de {total} les ha salido como el culo. Literalmente.",
         "🎯 *Meme del día:* esta palabra vive en el culo del mundo y {cuantos} de {total} hemos ido a buscarla.",
-        "🎯 *Meme del día:* {cuantos} culos en fila. Esto es un desfile, no un ranking.",
+        "🎯 *Meme del día:* {cuantos} de {total} con cara de culo y cuadrícula a juego.",
+        "🎯 *Meme del día:* el que quiera peces que se moje el culo. {cuantos} de {total} nos hemos mojado.",
+        "🎯 *Meme del día:* {cuantos} de {total} hemos ido hasta el culo de amarillos antes de acertar.",
+        "🎯 *Meme del día:* esta palabra ha sido un grano en el culo para {cuantos} de {total}.",
+        "🎯 *Meme del día:* patada en el culo del diccionario a {cuantos} de {total}. Y con la misma forma.",
+        "🎯 *Meme del día:* {cuantos} culos de mal asiento: nadie encontraba las letras del medio.",
         "🎯 *Meme del día:* aquí nadie lame culos, pero hoy {cuantos} de {total} han dibujado uno.",
-        "🎯 *Meme del día:* la palabra de hoy tenía forma de 🍑 y {cuantos} de {total} lo han certificado.",
-        "🎯 *Meme del día:* {cuantos} de {total} con melocotón. El que no lo tiene es el raro.",
-        "🎯 *Meme del día:* hoy el álbum va de 🍑 y van {cuantos}. Que cada uno saque sus conclusiones.",
+        "🎯 *Meme del día:* {cuantos} de {total} sin mover el culo de la misma fila. G punto G punto G.",
+        "🎯 *Meme del día:* nos hemos partido el culo, y {cuantos} de {total} lo hemos dibujado.",
+        "🎯 *Meme del día:* esta palabra nos ha mandado a tomar por culo a {cuantos} de {total}.",
+        "🎯 *Meme del día:* {cuantos} melocotones. Con gafas de culo de vaso se ven todavía mejor.",
+        "🎯 *Meme del día:* {cuantos} de {total} perdiendo el culo por las mismas dos letras.",
+        "🎯 *Meme del día:* culos inquietos: {cuantos} de {total} probando y probando en el mismo hueco.",
+        "🎯 *Meme del día:* {cuantos} de {total} con el mismo 🍑. El diccionario tiene su humor.",
+        "🎯 *Meme del día:* {cuantos} melocotones en una jornada. El álbum parece una frutería.",
+        "🎯 *Meme del día:* {cuantos} de {total} y todos iguales. Ni queriendo sale esto.",
+        "🎯 *Meme del día:* {cuantos} culos en fila. Esto es un desfile, no un ranking.",
+        "🎯 *Meme del día:* la palabra ha dicho «hoy 🍑 para todos» y {cuantos} de {total} han obedecido.",
     ),
     # El catch-all: mucha distancia entre el mejor y el peor. **El que más variantes
     # necesita**: dispara en el 19% de las jornadas y era el 83% de los memes publicados.
