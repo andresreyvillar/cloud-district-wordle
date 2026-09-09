@@ -152,3 +152,81 @@ def test_el_umbral_nuevo_no_reclasifica_el_historico():
     assert rasgos(flor_simetrica_antigua).alto == 2
     assert figura(flor_simetrica_antigua, ANTES) == FLORES, "antes del corte sigue siendo flor"
     assert figura(flor_simetrica_antigua, DESPUES) == GEOMETRICO, "desde el corte, geométrico"
+
+
+#: Los dos culos de la jornada #1707, que es donde nació la categoría: el grupo entero convergió en `G.G.G`
+#: —8 de 10 jugadores— y de ahí salió la forma.
+CULO_DE_CLAIRE = "Y...G/G.G.G/G.G.G/G.G.G/GGGGG"
+CULO_DE_PAULA = ".Y..G/..G.G/G.G.G/GGGGG"
+#: El culo más puro, y **no** es culo: es espejo, y el espejo se comprueba antes.
+ESPEJO_QUE_NO_ES_CULO = "G.G.G/G.G.G/GGGGG"
+
+
+# @scenarios el-culo-es-su-propia-categoria
+def test_la_forma_se_reconoce_por_las_tres_ultimas_filas():
+    from figures import CULO, es_culo
+
+    assert es_culo(CULO_DE_CLAIRE) and es_culo(CULO_DE_PAULA)
+    assert figura(CULO_DE_CLAIRE, DESPUES) == CULO
+    assert figura(CULO_DE_PAULA, DESPUES) == CULO
+
+
+# @scenarios el-culo-es-su-propia-categoria
+def test_lo_que_haya_en_los_extremos_de_la_fila_de_arriba_da_igual():
+    """`X` e `Y` son libres: lo que da la silueta es el verde central entre dos huecos."""
+    from figures import es_culo
+
+    for x in ("G", "Y", "."):
+        for y in ("G", "Y", "."):
+            assert es_culo(f"{x}.G.{y}/G.G.G/GGGGG"), f"{x}.G.{y}"
+    # Y lo que no es libre, no lo es: el centro tiene que ser verde y los flancos huecos.
+    assert not es_culo("G.Y.G/G.G.G/GGGGG"), "el centro amarillo no vale"
+    assert not es_culo("GGG.G/G.G.G/GGGGG"), "un flanco verde tapa el hueco"
+
+
+# @scenarios el-culo-es-su-propia-categoria
+def test_el_espejo_gana_al_culo():
+    """**Decisión del dueño**, y deja al culo en minoría: de las cinco cuadrículas del histórico que dibujan
+    la forma, dos son espejos y se van a geométrico. Es lo que anticipó con «la mayoría de culos deben ser a
+    la vez geométricos».
+    """
+    from figures import CULO, GEOMETRICO, es_culo, es_espejo_reconocible, rasgos
+
+    assert es_culo(ESPEJO_QUE_NO_ES_CULO), "encaja en la forma"
+    assert es_espejo_reconocible(rasgos(ESPEJO_QUE_NO_ES_CULO)), "y además es espejo"
+    assert figura(ESPEJO_QUE_NO_ES_CULO, DESPUES) == GEOMETRICO, "gana el espejo"
+    assert figura(CULO_DE_CLAIRE, DESPUES) == CULO, "y el que no es espejo sí es culo"
+
+
+# @scenarios el-culo-es-su-propia-categoria
+def test_el_culo_puntua_como_el_geometrico_y_cuenta_como_figura():
+    from album import PUNTOS
+    from figures import CULO, FIGURAS, GEOMETRICO, emoji
+
+    assert PUNTOS[CULO] == PUNTOS[GEOMETRICO], "decisión del dueño: vale lo mismo"
+    assert CULO in FIGURAS, "es una figura reconocible, así que puntúa y sale en el álbum"
+    assert emoji(CULO) == "🍑"
+
+
+# @scenarios el-cambio-de-orden-no-es-retroactivo
+def test_la_categoria_nueva_no_reclasifica_el_historico():
+    """El reorden mueve el espejo por delante del loro, y eso cambiaría 57 cuadrículas del histórico. El corte
+    lo evita: medido, cambia **una**.
+    """
+    from figures import LORO
+
+    assert figura(CULO_DE_CLAIRE, ANTES) == LORO, "antes del corte era loro"
+    assert figura(CULO_DE_CLAIRE, DESPUES) != LORO, "y desde el corte, culo"
+
+
+# @scenarios el-culo-es-su-propia-categoria
+def test_la_fila_del_medio_tambien_se_exige():
+    """**La forma son las tres filas, no dos.** Sin exigir la de en medio, cualquier cosa sobre el suelo con
+    un verde central sería culo. Lo destapó la prueba de mutación: ningún fixture la distinguía.
+    """
+    from figures import es_culo
+
+    assert es_culo("..G../G.G.G/GGGGG"), "con la fila del medio correcta, sí"
+    assert not es_culo("..G../GGGGG"), "sin fila del medio, no hay tres filas"
+    for medio in ("GGGGG", "G.GGG", ".....", "G.G.."):
+        assert not es_culo(f"..G../{medio}/GGGGG"), f"la fila del medio ha de ser G.G.G, no {medio}"

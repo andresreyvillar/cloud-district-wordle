@@ -50,7 +50,10 @@ CATEGORIAS: tuple[str, ...] = FIGURAS + (ABSTRACTO,)
 #: puntuación, que es la razón por la que existe este segundo eje. Ponderando, Andrés R. —segundo en
 #: puntuación— entra en el podio de belleza. Se acepta porque lo decide el dueño, no porque la medida lo
 #: recomiende.
-PUNTOS: dict[str, int] = {"geometrico": 3, "loro": 2, "flores": 1, ABSTRACTO: 0}
+#: El culo vale lo mismo que el geométrico, por decisión del dueño. Es más raro —5 de 1.806 cuadrículas
+#: frente a las 138 geométricas— pero la mayoría de culos son además espejos y se clasifican como geométricos,
+#: así que el que llega a culo no es «más difícil», es otra forma de la misma dificultad.
+PUNTOS: dict[str, int] = {"geometrico": 3, "culo": 3, "loro": 2, "flores": 1, ABSTRACTO: 0}
 
 
 def categorias() -> list[dict]:

@@ -40,18 +40,20 @@ from dataclasses import dataclass
 LORO = "loro"
 FLORES = "flores"
 GEOMETRICO = "geometrico"
+CULO = "culo"
 ABSTRACTO = "abstracto"
 
 VOCABULARIO: dict[str, str] = {
     LORO: "🦜",
     FLORES: "🌷",
     GEOMETRICO: "📐",
+    CULO: "🍑",
     ABSTRACTO: "🌀",
 }
 
 #: Las que cuentan como figura reconocible. **`abstracto` no es una figura**: es su ausencia, y no existe
 #: la categoría «ambiguo» (decisión del brief: o se reconoce algo, o es abstracto).
-FIGURAS: tuple[str, ...] = (LORO, FLORES, GEOMETRICO)
+FIGURAS: tuple[str, ...] = (LORO, FLORES, GEOMETRICO, CULO)
 
 VERDE, AMARILLO, VACIO = "G", "Y", "."
 
@@ -276,6 +278,29 @@ def es_loro(r: Rasgos) -> bool:
     return r.amarillos == 1 or r.petalos_libres == 0
 
 
+def es_culo(patron: str) -> bool:
+    """Las tres últimas filas dibujan `X.G.Y` sobre `G.G.G` sobre el suelo.
+
+    Se mira **el patrón y no los rasgos**, porque no es una propiedad agregada —cuántos verdes, cuánta
+    densidad— sino una forma concreta en un sitio concreto: las tres filas de abajo. Los rasgos no la pueden
+    expresar sin inventar uno a medida.
+
+    `X` e `Y` son libres, así que la fila de arriba solo exige el verde central y los dos huecos que lo
+    flanquean. Es lo que da la silueta; lo que haya en los extremos no la cambia.
+
+    Nace de una jornada en que el grupo entero convergió en ese esqueleto: 8 de 10 jugadores del #1707
+    terminaron con `G.G.G` justo antes de resolver. Medido sobre 1.806 cuadrículas encaja en 5 (0,28%), así
+    que es la categoría más rara del álbum — sale una cada cuatro meses.
+    """
+    filas = patron.split("/")
+    if len(filas) < 3:
+        return False
+    arriba, medio, suelo = filas[-3], filas[-2], filas[-1]
+    if suelo != "GGGGG" or medio != "G.G.G" or len(arriba) != ANCHO:
+        return False
+    return arriba[2] == "G" and arriba[1] == "." and arriba[3] == "."
+
+
 def es_geometrico(r: Rasgos) -> bool:
     """Poca tinta y a lo sumo un amarillo: un tallo, una pirámide.
 
@@ -335,16 +360,26 @@ def figura(patron: str, jornada: int | None = None) -> str:
     # decide primero y ya no se avanza: una pirámide con un amarillo suelto es un geométrico, no un loro.
     # Medido, mueve 42 de 1.706 cuadrículas, todas de loro a geométrico, y ninguna flor.
     if orden_nuevo(jornada):
+        # **Orden decidido por el dueño: espejo, culo, geométrico, loro, flor.**
+        #
+        # El espejo primero porque un palíndromo perfecto es lo más difícil de conseguir, y por delante de la
+        # flor desde el corte: la invariante «el espejo solo asciende abstractos» existía para no robarle la
+        # categoría a flores del histórico, y el corte lo protege mejor de lo que lo protegía el orden.
+        #
+        # El culo va **después** del espejo a propósito, y eso lo deja en una minoría: de las cinco
+        # cuadrículas del histórico que dibujan la forma, dos son espejos y se van a geométrico. Es lo que el
+        # dueño anticipó —«la mayoría de culos deben ser a la vez geométricos»— y se acepta.
+        #
+        # Medido con el corte: mover el espejo por delante del loro cambiaría 57 cuadrículas del histórico y
+        # el corte deja **una**, la del #1707 que pasa de loro a culo.
+        if es_espejo_reconocible(r):
+            return GEOMETRICO
+        if es_culo(patron):
+            return CULO
         if es_geometrico(r):
             return GEOMETRICO
         if es_loro(r):
             return LORO
-        # **El espejo por delante de la flor**, y solo desde el corte. La invariante «el espejo solo asciende
-        # abstractos» existía para no robarle la categoría a flores del histórico; con el corte, el histórico
-        # queda intocado y la invariante deja de hacer falta. Medido: cambia **una** cuadrícula de 1.706 —la
-        # simétrica de cuatro filas de la jornada #1694, que se etiquetaba «flores»—; retroactivo movería 47.
-        if es_espejo_reconocible(r):
-            return GEOMETRICO
     else:
         if es_loro(r):
             return LORO

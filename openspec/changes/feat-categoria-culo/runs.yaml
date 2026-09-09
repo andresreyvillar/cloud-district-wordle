@@ -1,0 +1,23 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-09T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Categoría nueva a petición del dueño, nacida de analizar la jornada #1707: 8 de 10 jugadores terminaron con
+    la misma penúltima fila, así que la forma es una propiedad de la palabra y no de nadie. Se midió antes de
+    implementar y se avisó de dos cosas: que la forma sale en 5 de 1.806 cuadrículas (0,28%) y que el orden
+    pedido —el culo detrás del espejo— deja solo 3 de esas 5 como culo, incluido el caso más puro que se queda
+    en geométrico. El dueño lo confirmó: «la mayoría de culos deben ser a la vez geométricos». Dos rondas de
+    corrección, las dos por tests que enumeraban categorías a mano: cuatro aserciones del álbum comparaban
+    contra diccionarios literales y se pusieron en rojo al aparecer una clave con valor cero, sin que el
+    comportamiento cambiara — atadas a `VOCABULARIO` y `FIGURAS`. Y la mutación que quitaba la exigencia de la
+    fila del medio no mataba ningún test: ningún fixture la distinguía, así que se añadió uno.

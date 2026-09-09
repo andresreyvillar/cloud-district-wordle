@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import pytest
 
+from tools.figures import VOCABULARIO
+
 MOTIVO = "TDD rojo — tools/album.py no existe todavía"
 
 #: Cuadrículas de cada categoría, en el formato en que la ingesta las guarda (`G/Y/.` separado por barras).
@@ -82,9 +84,14 @@ def test_cada_partida_aporta_su_categoria_al_recuento_del_jugador():
     carga = album(filas, "0")
     ana = fila_de(carga, "U1")
 
-    assert ana["recuento"] == {"loro": 1, "flores": 2, "geometrico": 1, "abstracto": 1}
+    # **El recuento se compara categoría a categoría, no contra un diccionario escrito a mano.** Con el
+    # literal, añadir una categoría al vocabulario ponía el test en rojo sin que el comportamiento cambiara:
+    # `culo: 0` es correcto, solo es una clave más.
+    assert {k: v for k, v in ana["recuento"].items() if v} == {"loro": 1, "flores": 2, "geometrico": 1, "abstracto": 1}
+    assert set(ana["recuento"]) == set(VOCABULARIO), "y están todas las del vocabulario, con cero si no salió"
     assert ana["nombre"] == "Ana"
-    assert carga["reparto"] == {"loro": 1, "flores": 2, "geometrico": 1, "abstracto": 1}
+    assert {k: v for k, v in carga["reparto"].items() if v} == {
+        "loro": 1, "flores": 2, "geometrico": 1, "abstracto": 1}
 
 
 # @scenarios figura-de-cada-partida
@@ -321,12 +328,17 @@ def test_el_catalogo_viaja_como_lista_porque_jsonb_no_conserva_el_orden_de_las_c
     catalogo = categorias()
 
     assert isinstance(catalogo, list)
-    assert [c["clave"] for c in catalogo] == ["loro", "flores", "geometrico", "abstracto"]
-    assert [c["puntua"] for c in catalogo] == [True, True, True, False]
+    # Las claves salen del vocabulario, que es la fuente: escribirlas a mano hacía que añadir una categoría
+    # rompiera un test que solo comprueba que el catálogo viaja como lista y en orden estable.
+    assert [c["clave"] for c in catalogo] == list(VOCABULARIO)
+    # Qué categorías puntúan sale de `FIGURAS`, no de una lista escrita a mano: `abstracto` es la única que
+    # no es una figura, y eso es lo que el escenario dice.
+    from tools.figures import FIGURAS
+
+    assert [c["puntua"] for c in catalogo] == [c["clave"] in FIGURAS for c in catalogo]
+    assert sum(1 for c in catalogo if not c["puntua"]) == 1, "solo `abstracto` no puntúa"
     # El orden por longitud de clave, que es el que aplicaría JSONB, es OTRO:
-    assert sorted(["loro", "flores", "geometrico", "abstracto"], key=lambda c: (len(c), c)) != [
-        c["clave"] for c in catalogo
-    ]
+    assert sorted(VOCABULARIO, key=lambda c: (len(c), c)) != [c["clave"] for c in catalogo]
 
 
 # @scenarios orden-determinista-del-album
