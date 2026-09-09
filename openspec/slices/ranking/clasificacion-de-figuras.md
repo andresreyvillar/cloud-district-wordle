@@ -80,10 +80,15 @@ geométrica por su densidad
 reconoce nada, y así ninguna partida ya jugada pierde su figura.
 
 ### el-culo-es-su-propia-categoria
-**WHEN** las tres últimas filas de una cuadrícula dibujan un verde central entre dos huecos sobre `G.G.G` y el
-suelo
-**THEN** se clasifica en su propia categoría, que puntúa como el geométrico; y se comprueba **después** del
-espejo, así que una cuadrícula que sea las dos cosas se queda en geométrico.
+**WHEN** las **dos** últimas filas de una cuadrícula son `G.G.G` y el suelo completo
+**THEN** se clasifica en su propia categoría, que puntúa como el geométrico; lo que haya por encima de esas dos
+filas **no cuenta**, y se comprueba después del espejo, así que una cuadrícula que sea las dos cosas se queda
+en geométrico.
+
+### la-forma-del-culo-es-de-la-jornada
+**WHEN** la palabra del día lleva a casi todo el grupo al mismo esqueleto
+**THEN** casi todos reciben la categoría el mismo día, y eso es deliberado: con dos filas la forma es una
+propiedad de la palabra más que del jugador.
 
 ### desde-el-corte-el-espejo-gana-a-la-flor
 **WHEN** una cuadrícula a partir del corte es un espejo reconocible y además cumple la regla de la flor

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from album import album
 from comentarios import seccion_de_comentarios
-from figures import FIGURAS, figura, rasgos
+from figures import CULO, FIGURAS, figura, rasgos
 from seasons import resultados_de_temporada
 from standings import clasificacion
 
@@ -898,6 +898,12 @@ def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[
                     1 for f in con_puesto if f["posicion"] == con_puesto[0]["posicion"]
                 ),
                 plantilla=len(con_puesto),
+                # Cuántos melocotones hay hoy. Se cuenta aquí porque `voz.py` no conoce el clasificador.
+                culos=sum(
+                    1
+                    for fila in del_dia
+                    if fila.get("pattern") and figura(fila["pattern"], jornada) == CULO
+                ),
             ),
             menciones={},
             # **Del estado de ánimo**, no del registro de dificultad: es la última pieza con tono del mensaje

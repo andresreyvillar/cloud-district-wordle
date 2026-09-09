@@ -54,6 +54,12 @@ materializa el álbum, así que la vista tiene que funcionar sin él.
 **THEN** cada categoría aparece una sola vez con su recuento, en el orden en que puntúan, y las categorías
 sin partidas no aparecen.
 
+### el-glosario-explica-cada-dibujo
+**WHEN** se pinta la pestaña de temporada
+**THEN** debajo de los logros aparece un glosario con cada categoría, su emoji, cuántos puntos vale y cuántos
+han salido en el mes; y **sale del catálogo publicado**, no de una lista escrita en la vista, así que una
+categoría nueva en el pipeline aparece sola.
+
 ### emoji-del-payload
 **WHEN** se pinta una categoría
 **THEN** el emoji y el orden son los que publica la instantánea, de modo que renombrar o añadir una
