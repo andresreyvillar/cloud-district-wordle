@@ -230,3 +230,55 @@ def test_los_ausentes_se_nombran_por_orden_de_clasificacion():
     assert nombrados == por_puesto[:AUSENTES_NOMBRADOS], (
         f"deben salir los {AUSENTES_NOMBRADOS} mejor clasificados y en su orden: {linea!r}")
     assert "Ana" not in linea, f"el último clasificado no se nombra: {linea!r}"
+
+
+# @scenarios las-frases-concuerdan-en-numero
+def test_los_mejores_del_dia_concuerdan_en_numero():
+    """**El fallo que el dueño leyó: «Joel y Sandra se lleva la jornada».**
+
+    El registro mezclaba las dos concordancias —«Los mejores del día» en plural, «se lleva» en singular— y
+    `_del_ciclo` elegía a ciegas. Con empate en la mejor nota el 62% de las jornadas, la mitad de los
+    mensajes salían mal.
+    """
+    from refranero import MEJORES_DEL_DIA, MEJORES_DEL_DIA_VARIOS
+    from voz import _concordado
+
+    for jornada in range(1, 40):
+        uno = _concordado(MEJORES_DEL_DIA, MEJORES_DEL_DIA_VARIOS, jornada, 1)
+        assert uno in MEJORES_DEL_DIA, f"con una persona, registro singular: {uno!r}"
+        for cuantos in (2, 3, 7):
+            varios = _concordado(MEJORES_DEL_DIA, MEJORES_DEL_DIA_VARIOS, jornada, cuantos)
+            assert varios in MEJORES_DEL_DIA_VARIOS, f"con {cuantos}, registro plural: {varios!r}"
+
+
+# @scenarios las-frases-concuerdan-en-numero
+def test_ningun_registro_plural_lleva_verbos_en_singular():
+    """Se comprueba **sobre el texto**, que es donde estaba el fallo: un registro plural con «se lleva»
+    dentro vuelve a producir la frase mal concordada aunque el selector funcione.
+    """
+    import refranero
+
+    # Formas verbales en singular que delatan una frase mal concordada en un registro de plurales.
+    delatoras = (
+        " se lleva ", " ha montado ", " ha abierto debate", " lanzó la piedra",
+        " no se ha presentado", " se ha tomado ", " ha decidido ", "Falta {jugador}",
+        "El mejor del día", "Lo ha bordado",
+    )
+    for nombre in dir(refranero):
+        if not nombre.endswith("_VARIOS"):
+            continue
+        for frase in getattr(refranero, nombre):
+            for delatora in delatoras:
+                assert delatora not in frase, f"{nombre} lleva una forma en singular: {frase!r}"
+
+
+# @scenarios las-frases-concuerdan-en-numero
+def test_cada_registro_plural_tiene_su_singular():
+    """Un `_VARIOS` sin pareja es un registro que nunca se elige, o un singular que nunca concuerda."""
+    import refranero
+
+    for nombre in dir(refranero):
+        if nombre.endswith("_VARIOS"):
+            base = nombre[: -len("_VARIOS")]
+            assert hasattr(refranero, base), f"{nombre} no tiene su registro en singular"
+            assert len(getattr(refranero, base)) >= 3, f"{base} se ha quedado sin frases"

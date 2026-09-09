@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from refranero import (
     AUSENTE,
+    AUSENTE_VARIOS,
     DIA_DURO,
     DIA_FACIL,
     DIA_NORMAL,
@@ -19,7 +20,9 @@ from refranero import (
     LIDER_DEL_MARCADOR,
     MADRUGADOR,
     MAS_APLAUDIDO,
+    MAS_APLAUDIDO_VARIOS,
     MAS_COMENTADO,
+    MAS_COMENTADO_VARIOS,
     MEMES,
     REZAGADO,
 )
@@ -89,6 +92,18 @@ def _del_ciclo(frases: tuple[str, ...], jornada: int) -> str:
     se ponga a mirar. Se acepta porque la alternativa —azar— rompe los golden tests del mensaje.
     """
     return frases[jornada % len(frases)]
+
+
+def _concordado(uno: tuple[str, ...], varios: tuple[str, ...], jornada: int, cuantos: int) -> str:
+    """La frase que le toca a una jornada, del registro que concuerda con cuántos son.
+
+    Existe porque un registro sin partir mezcla las dos concordancias y `_del_ciclo` elige a ciegas: el 62%
+    de las jornadas tiene empate en la mejor nota, así que la mitad de los mensajes salían mal. El dueño lo
+    vio en «Joel y Sandra se lleva la jornada».
+
+    Es el mismo patrón que ya usaban las pullas del sospechoso, generalizado en lugar de repetido.
+    """
+    return _del_ciclo(varios if cuantos > 1 else uno, jornada)
 
 
 def frase_del_dia(dificultad: float, jornada: int) -> str:
@@ -247,7 +262,7 @@ def menciones(
     aplaudidos = _los_de(reacciones)
     if aplaudidos:
         salida["aplaudido"] = con_nombre(
-            _del_ciclo(MAS_APLAUDIDO, jornada).replace(
+            _concordado(MAS_APLAUDIDO, MAS_APLAUDIDO_VARIOS, jornada, len(aplaudidos)).replace(
                 "{dato}", _cuantas(max(reacciones.values()), "reacción", "reacciones")
             ),
             _nombres_de(aplaudidos, nombres),
@@ -256,7 +271,7 @@ def menciones(
     comentados = _los_de(respuestas)
     if comentados:
         salida["comentado"] = con_nombre(
-            _del_ciclo(MAS_COMENTADO, jornada).replace(
+            _concordado(MAS_COMENTADO, MAS_COMENTADO_VARIOS, jornada, len(comentados)).replace(
                 "{dato}", _cuantas(max(respuestas.values()), "respuesta", "respuestas")
             ),
             _nombres_de(comentados, nombres),
@@ -279,7 +294,9 @@ def menciones(
     # del día — y nombrarlos a todos hace crecer el mensaje con el grupo.
     faltan = sorted(set(habituales or []) - set(publicacion))
     if faltan and len(faltan) <= MAXIMO_NOMBRADOS:
-        salida["ausente"] = con_nombre(_del_ciclo(AUSENTE, jornada), _nombres_de(faltan, nombres))
+        salida["ausente"] = con_nombre(
+            _concordado(AUSENTE, AUSENTE_VARIOS, jornada, len(faltan)), _nombres_de(faltan, nombres)
+        )
 
     return salida
 
