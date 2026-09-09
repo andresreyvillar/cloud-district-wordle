@@ -47,3 +47,26 @@ que la línea esté ahí. La gracia está en el refranero, no en el desnudo.
 - [275. Expresiones divertidas en español con la palabra CULO](https://handyspanish.com/podcast/expresiones-en-espanol-culo/) — la lista con significados
 - [Lista de Expresiones Españolas](https://expresionesyrefranes.com/lista-de-expresiones-espanolas/)
 - [Refranes y frases hechas del español](https://www.leonhunter.com/refranes-espanoles/)
+
+
+## El comentario del dibujo también, y ahí va con nombre
+
+Lo señaló el dueño: **los comentarios de dibujo llevan nombre desde siempre** —«Lo más presentable de hoy lo
+firma {jugador}»— así que es ahí donde el chiste tiene sentido, no solo en el meme colectivo. Con el registro
+genérico un melocotón salía como «un 🍑 que le costó 5 intentos», desperdiciando el material.
+
+`DIBUJO_DEL_DIA_CULO`: 16 frases, todas con la palabra —eso está fijado por test, porque tres de las doce
+primeras salían sin ella y una fue justo la que se publicó— y todas con el nombre y lo que costó.
+
+Incluye las que el dueño pidió literalmente: «menudo culazo el de {jugador}» y «hoy {jugador} ha ido de culo».
+La primera va anclada al dibujo por el resto de la frase —el emoji y los intentos vienen detrás—, que es lo que
+la mantiene siendo un comentario sobre la cuadrícula.
+
+## La línea, y por qué está donde está
+
+Se pidió también «{jugador} ha comido culo hoy», y **eso no se ha escrito**. No es una expresión sobre suerte
+o resultado como las demás: atribuye un acto sexual explícito a un compañero identificable, con su nombre, en
+un canal del trabajo y publicado por un bot. Las otras dieciséis hacen la misma broma sin ese coste.
+
+Hay un test que fija la línea: ninguna frase del registro puede comentar el cuerpo de quien juega. La broma va
+sobre el dibujo, la suerte y la palabra.

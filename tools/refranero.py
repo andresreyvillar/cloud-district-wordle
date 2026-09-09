@@ -738,6 +738,36 @@ DIBUJO_DEL_DIA: tuple[str, ...] = (
     "Lo más presentable de hoy lo firma {jugador}: {emoji} ({intentos} intentos).",
 )
 
+#: La obra del día **cuando es un 🍑**, con nombre y apellidos.
+#:
+#: Los comentarios de dibujo llevan nombre desde siempre —«Lo más presentable de hoy lo firma {jugador}»— así
+#: que el melocotón no tiene por qué ser la excepción: con el registro genérico salía «un 🍑 que le costó 5
+#: intentos», que desperdicia la broma. Lo señaló el dueño.
+#:
+#: Mismo material que el meme colectivo: expresiones hechas usadas con su significado. La broma es sobre **el
+#: dibujo y la suerte**, no sobre el cuerpo de nadie, que es donde está la línea en un canal del trabajo con
+#: compañeros identificables.
+DIBUJO_DEL_DIA_CULO: tuple[str, ...] = (
+    "La obra del día es el 🍑 de {jugador}, en {intentos}. Tiene una flor en el culo y encima lo dibuja.",
+    "Premio de belleza para {jugador} y su 🍑 de {intentos} intentos. Culo veo, culo quiero.",
+    "{jugador} ha firmado el 🍑 del día en {intentos}. A esto se le llama salir del paso como el culo.",
+    "Lo más presentable de hoy es el 🍑 de {jugador} ({intentos} intentos). Con dos… melocotones.",
+    "{jugador} se lleva el cuadro con un 🍑 en {intentos}. El diccionario le ha dejado el culo al aire.",
+    "El 🍑 de {jugador}, en {intentos} intentos. Ni mover el culo hacía falta: le ha salido solo.",
+    "Obra del día: 🍑 de {jugador}, {intentos} intentos. Se ha mojado el culo y ha pescado.",
+    "{jugador} presenta su 🍑 de {intentos} intentos. Enmarcarlo sería un grano en el culo, pero ahí está.",
+    "Mejor dibujo para {jugador}: un 🍑 en {intentos}. Le ha costado, pero de culo y cuesta arriba.",
+    "{jugador} y su 🍑 de {intentos} intentos. Aquí nadie lame culos, pero eso es un cuadro.",
+    "El cuadro de hoy lo pone {jugador}: 🍑 en {intentos}. Y sin perder el culo por conseguirlo.",
+    "🍑 de {jugador} en {intentos} intentos. Un grano en el culo para la palabra, un premio para el álbum.",
+    # Las dos que pidió el dueño literalmente. La primera va anclada al dibujo por el resto de la frase —el
+    # emoji y los intentos vienen detrás—, que es lo que la mantiene siendo un comentario sobre la cuadrícula.
+    "Menudo culazo el de {jugador}: 🍑 en {intentos} intentos.",
+    "Hoy {jugador} ha ido de culo, y ha acabado dibujando uno: 🍑 en {intentos}.",
+    "{jugador} ha ido de culo toda la partida. El 🍑 de {intentos} intentos es la prueba.",
+    "Menudo culazo se ha marcado {jugador} en {intentos} intentos. 🍑 de exposición.",
+)
+
 #: Quien abrió la jornada **con costumbre demostrada**: ha abierto la mayoría de las que se han leído.
 APERTURA_HABITUAL: tuple[str, ...] = (
     "Como de costumbre, {jugador} ha madrugado: ha abierto {veces} de las últimas {total} jornadas.",

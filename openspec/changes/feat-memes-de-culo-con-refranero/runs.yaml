@@ -19,3 +19,26 @@
     se repite más de dos veces, lo cual está fijado por test: un registro que gira sobre una sola broma es el
     defecto que ya tuvo el de la sospecha con su molde repetido. El registro es coloquial y vulgar, que es lo
     que se pidió, y habla del recuento de la jornada y nunca de un nombre.
+
+- run: '2026-09-09T16:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    Segunda vuelta sobre el mismo registro. El dueño corrigió un argumento del agente: se había justificado no
+    personalizar diciendo que «el meme habla de la jornada y nunca de nadie», y eso era cierto de ese registro
+    pero se usó como si fuera un principio del canal — los comentarios de dibujo llevan nombre desde siempre.
+    De ahí `DIBUJO_DEL_DIA_CULO`, con nombre y con la broma pegada al dibujo. Tres rondas de corrección: (1) el
+    fixture del test usaba la jornada 1, anterior al corte de reglas, así que el culo no existía y el test no
+    ejercitaba nada; (2) tres de las doce frases salían sin la palabra —y una fue justo la que se publicó, lo
+    vio el dueño—, sustituidas y fijado por test; (3) ese test buscaba «culo» literal y rechazaba «culazo», la
+    misma palabra aumentada. Se pidió además una frase que atribuye un acto sexual explícito a un compañero con
+    nombre y **no se escribió**: hay un test que fija que ninguna frase del registro comenta el cuerpo de quien
+    juega, y la mutación que lo intenta lo caza.

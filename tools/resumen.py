@@ -400,7 +400,12 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
     Es lo que convierte una lista de datos en alguien con una idea en la cabeza.
     """
     from comentarios import dificultad, frase as frase_de_hecho, hechos_elegidos
-    from refranero import DIBUJO_DEL_DIA, MEJORES_DEL_DIA, MEJORES_DEL_DIA_VARIOS
+    from refranero import (
+        DIBUJO_DEL_DIA,
+        DIBUJO_DEL_DIA_CULO,
+        MEJORES_DEL_DIA,
+        MEJORES_DEL_DIA_VARIOS,
+    )
     from voz import _concordado, _del_ciclo, conector, estado_de_animo
 
     del_dia = _del_dia(resultados, jornada)
@@ -460,9 +465,12 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
 
         piezas.append((
             2,
-            _del_ciclo(DIBUJO_DEL_DIA, jornada).format(
-                jugador=_nombre(fila), emoji=emoji(categoria), intentos=fila["score"]
-            ),
+            # El melocotón tiene su propio registro: con el genérico salía «un 🍑 que le costó 5 intentos»,
+            # que desperdicia la broma. Los comentarios de dibujo llevan nombre desde siempre, así que este
+            # también.
+            _del_ciclo(
+                DIBUJO_DEL_DIA_CULO if categoria == CULO else DIBUJO_DEL_DIA, jornada
+            ).format(jugador=_nombre(fila), emoji=emoji(categoria), intentos=fila["score"]),
             {_nombre(fila)},
             "dibujo",
         ))

@@ -282,3 +282,75 @@ def test_cada_registro_plural_tiene_su_singular():
             base = nombre[: -len("_VARIOS")]
             assert hasattr(refranero, base), f"{nombre} no tiene su registro en singular"
             assert len(getattr(refranero, base)) >= 3, f"{base} se ha quedado sin frases"
+
+
+# @scenarios el-comentario-del-dibujo-lleva-la-broma-de-su-categoria
+def test_la_obra_del_dia_usa_el_registro_de_su_categoria():
+    """**Lo señaló el dueño**: los comentarios de dibujo llevan nombre desde siempre, así que ahí es donde va
+    la broma. Con el registro genérico el melocotón salía como «un 🍑 que le costó 5 intentos», que
+    desperdicia el material.
+    """
+    from refranero import DIBUJO_DEL_DIA, DIBUJO_DEL_DIA_CULO
+    from resumen import bloque_la_jornada
+
+    relleno = {f"r{i}": 4 for i in range(1, 6)}
+    # **La jornada tiene que estar pasado el corte de reglas**: antes de él el culo no existe como categoría,
+    # así que con la jornada 1 el fixture no ejercitaba nada. Lo cazó su propio test.
+    from figures import PRIMERA_JORNADA_DEL_ORDEN_NUEVO
+
+    jornada = PRIMERA_JORNADA_DEL_ORDEN_NUEVO + 10
+    # `G.G.G/GGGGG` es un culo; el relleno no dibuja nada para no competir por la obra del día.
+    filas = [
+        _fila(jornada, quien, score, DIAS[0])
+        | {"pattern": "G.G.G/GGGGG" if quien == "Ana" else None}
+        for quien, score in {**relleno, "Ana": 5}.items()
+    ]
+    texto = bloque_la_jornada(filas, "0", jornada)
+
+    del_culo = [f.format(jugador="Ana", intentos=5) for f in DIBUJO_DEL_DIA_CULO]
+    from figures import CULO, figura
+
+    assert figura("G.G.G/GGGGG", jornada) == CULO, "el fixture debe ser un culo de verdad"
+    generico = [f.format(jugador="Ana", emoji="🍑", intentos=5) for f in DIBUJO_DEL_DIA]
+    assert any(f in texto for f in del_culo), f"debe usar el registro del culo: {texto}"
+    assert not any(f in texto for f in generico), "y no el genérico"
+
+
+# @scenarios el-comentario-del-dibujo-lleva-la-broma-de-su-categoria
+def test_las_frases_del_culo_nombran_a_quien_lo_firmo():
+    """Sin nombre la broma se queda a medias: el registro colectivo ya cuenta la jornada, este cuenta a quien
+    la dibujó.
+    """
+    from refranero import DIBUJO_DEL_DIA_CULO
+
+    for plantilla in DIBUJO_DEL_DIA_CULO:
+        assert "{jugador}" in plantilla, f"sin nombre: {plantilla}"
+        assert "{intentos}" in plantilla, f"sin lo que costó: {plantilla}"
+        assert "🍑" in plantilla, f"sin el emoji de la categoría: {plantilla}"
+
+
+# @scenarios el-comentario-del-dibujo-lleva-la-broma-de-su-categoria
+def test_las_frases_del_culo_bromean_sobre_el_dibujo_y_no_sobre_la_persona():
+    """La línea, y está escrita a propósito: son compañeros identificables y el mensaje se publica en un canal
+    del trabajo, así que la broma va sobre el dibujo, la suerte y la palabra. Cualquier frase que comente el
+    cuerpo de quien juega no pertenece a este registro.
+    """
+    from refranero import DIBUJO_DEL_DIA_CULO
+
+    sobre_la_persona = ("tu culo", "su culo", "el culo de {jugador}", "buen culo", "vaya culo", "menudo culo")
+    for plantilla in DIBUJO_DEL_DIA_CULO:
+        for prohibido in sobre_la_persona:
+            assert prohibido not in plantilla.lower(), f"{plantilla!r} habla de la persona, no del dibujo"
+
+
+# @scenarios el-comentario-del-dibujo-lleva-la-broma-de-su-categoria
+def test_todas_las_frases_del_culo_llevan_la_palabra():
+    """**Lo preguntó el dueño** al ver salir una sin ella: si el registro es el del melocotón, la broma tiene
+    que estar en la frase y no solo en el emoji. Tres de las doce eran genéricas y se sustituyeron.
+    """
+    from refranero import DIBUJO_DEL_DIA_CULO
+
+    # `culaz` cubre «culazo», que es la misma palabra aumentada y no la caza buscar «culo» literal.
+    familia = ("culo", "culaz", "melocoton", "melocotón")
+    sin = [f for f in DIBUJO_DEL_DIA_CULO if not any(p in f.lower() for p in familia)]
+    assert not sin, f"frases sin la palabra: {sin}"

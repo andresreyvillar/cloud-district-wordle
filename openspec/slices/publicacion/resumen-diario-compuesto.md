@@ -97,6 +97,11 @@ va primero es más noticia que la de quien va último; y no se nombran por orden
 **THEN** se premia la **más rara de la temporada**, con su emoji y su autor; y si nadie dibujó nada
 reconocible, el premio se declara desierto en lugar de dárselo a un abstracto.
 
+### el-comentario-del-dibujo-lleva-la-broma-de-su-categoria
+**WHEN** la obra del día es de una categoría con material propio
+**THEN** el comentario usa el registro de esa categoría en lugar del genérico, con el nombre de quien la
+firmó: el chiste va pegado al dibujo, que es donde el grupo lo espera.
+
 ### la-simetria-gana-la-obra-del-dia
 **WHEN** dos dibujos de la misma categoría compiten por el premio y uno es simétrico
 **THEN** gana el simétrico, por delante de quien tardó más intentos.
