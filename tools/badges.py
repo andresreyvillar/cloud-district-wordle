@@ -165,17 +165,50 @@ def _recuentos_de_figuras(resultados: list[dict], temporada: str) -> dict[str, d
     """
     from album import album
 
-    return {fila["nombre"]: fila["recuento"] for fila in album(resultados, temporada)["jugadores"]}
+    carga = album(resultados, temporada)
+    return {fila["nombre"]: fila["recuento"] for fila in carga["jugadores"]}
 
 
-def _de_figura(recuento: dict[str, int]) -> list[str]:
-    """Las medallas de figura que da un recuento por categoría."""
+def categorias_vistas(resultados: list[dict], temporada: str) -> set[str]:
+    """Las categorías que han salido al menos una vez en la temporada, **según el álbum**.
+
+    Del mismo sitio que los recuentos, por lo mismo: un segundo recuento de lo mismo es la forma en que este
+    repositorio ya se ha equivocado tres veces.
+    """
+    from album import album
+
+    return {categoria for categoria, veces in album(resultados, temporada)["reparto"].items() if veces}
+
+
+def _de_figura(recuento: dict[str, int], vistas: set[str] | None = None) -> list[str]:
+    """Las medallas de figura que da un recuento por categoría.
+
+    `vistas` son las categorías que **han salido en la temporada**, y es lo que decide qué colecciona el
+    Coleccionista. Sin ellas se cae a las cuatro de `UMBRAL_DE_FIGURA`, que es lo que había.
+    """
     ganadas = [
         clave for clave, categoria, umbral in UMBRAL_DE_FIGURA if recuento.get(categoria, 0) >= umbral
     ]
-    if all(recuento.get(categoria, 0) >= 1 for _, categoria, _ in UMBRAL_DE_FIGURA):
+    if _es_coleccionista(recuento, vistas):
         ganadas.append("coleccionista")
     return ganadas
+
+
+def _es_coleccionista(recuento: dict[str, int], vistas: set[str] | None) -> bool:
+    """Si alguien tiene **una de cada categoría que se haya visto en la temporada**.
+
+    Antes pedía las cuatro de `UMBRAL_DE_FIGURA`, una lista fija. Al añadir el melocotón, exigir las cinco
+    habría **quitado la medalla a 25 personas** que ya la tienen publicada —8 de agosto y 17 de la temporada
+    0— porque el culo no existe antes del corte de reglas y en agosto no le salió a nadie.
+    Lo destapó medirlo antes de aplicarlo.
+    
+    Derivarlo de lo que ha salido lo arregla sin un corte más: en una temporada donde el melocotón no
+    apareció no se pide, y en una donde sí, se pide. Y de paso la medalla dice lo que su nombre promete —
+    «has coleccionado todo lo que se ha dibujado este mes»— en lugar de una lista escrita a mano que se
+    queda desfasada cada vez que se añade una categoría.
+    """
+    categorias = vistas if vistas else {categoria for _, categoria, _ in UMBRAL_DE_FIGURA}
+    return all(recuento.get(categoria, 0) >= 1 for categoria in categorias)
 
 
 def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, list[str]]:
@@ -197,6 +230,7 @@ def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, l
     # Sobre `resultados` sin filtrar: el álbum aplica su propia definición de qué jornada cuenta, que es la
     # de la temporada. Pasarle `del_mes` le daría los días ya filtrados dos veces por criterios distintos.
     recuentos = _recuentos_de_figuras(resultados, temporada)
+    vistas = categorias_vistas(resultados, temporada)
 
     por_jugador: dict[str, list[dict]] = defaultdict(list)
     for fila in del_mes:
@@ -228,7 +262,7 @@ def medallas_de_temporada(resultados: list[dict], temporada: str) -> dict[str, l
         if len(filas) >= MINIMO_FONDISTA:
             ganadas.append("fondista")
 
-        ganadas.extend(_de_figura(recuentos.get(jugador, {})))
+        ganadas.extend(_de_figura(recuentos.get(jugador, {}), vistas))
 
         if ganadas:
             palmares[jugador] = sorted(ganadas, key=lambda c: (ORDEN_NIVEL[POR_CLAVE[c].nivel], c))

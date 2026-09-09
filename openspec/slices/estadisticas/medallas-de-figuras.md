@@ -49,7 +49,12 @@ Los recuentos por categoría salen del **álbum**, no de un segundo recuento pro
 ### cinco-medallas-de-figura
 **WHEN** se calculan las medallas de una temporada
 **THEN** un jugador gana Ornitólog@, Arquitect@, Florista o Abstract@ si alcanza el umbral de esa categoría,
-y Coleccionista si tiene al menos una partida de cada una de las cuatro.
+y Coleccionista si tiene al menos una partida de **cada categoría que haya salido en esa temporada**.
+
+### el-coleccionista-se-ajusta-a-lo-que-ha-salido
+**WHEN** se añade una categoría nueva al álbum
+**THEN** el Coleccionista la exige solo en las temporadas donde esa categoría ha aparecido, así que nadie
+pierde una medalla ya concedida por una regla que no existía cuando jugó.
 
 ### el-umbral-sale-de-lo-que-alguien-ha-logrado
 **WHEN** se fija el umbral de una medalla de figura

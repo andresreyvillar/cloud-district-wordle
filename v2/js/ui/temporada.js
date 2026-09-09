@@ -40,7 +40,7 @@ export const LOGROS = [
   { id: 'verdugo', nombre: 'Verdugo', regla: 'Ser el mejor del día cinco veces' },
   { id: 'impecable', nombre: 'Impecable', regla: 'Un mes sin fallos, con 10 partidas mínimo' },
   { id: 'fondista', nombre: 'Fondista', regla: 'Quince partidas o más en el mes' },
-  { id: 'coleccionista', nombre: 'Coleccionista', regla: 'Las cuatro figuras en la misma temporada' },
+  { id: 'coleccionista', nombre: 'Coleccionista', regla: 'Una de cada figura que haya salido en la temporada' },
   { id: 'abstracto', nombre: 'Abstract@', regla: 'Siete abstractos 🌀 en la temporada' },
 ];
 
