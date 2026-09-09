@@ -354,3 +354,68 @@ def test_todas_las_frases_del_culo_llevan_la_palabra():
     familia = ("culo", "culaz", "melocoton", "melocotón")
     sin = [f for f in DIBUJO_DEL_DIA_CULO if not any(p in f.lower() for p in familia)]
     assert not sin, f"frases sin la palabra: {sin}"
+
+
+# @scenarios la-obra-del-dia-se-comparte-en-caso-de-empate
+def test_la_obra_del_dia_se_comparte_cuando_hay_empate():
+    """**Decisión del dueño**, tomada sobre un caso real: Claire y Raquel tenían el mismo culo en los mismos
+    intentos y ganaba Claire por la «C». Medido sobre 204 jornadas con obra, **el 25% tiene empate** —36 de
+    dos, 10 de tres y una de seis—, así que era un cuarto de los premios repartido por orden alfabético.
+    """
+    from figures import PRIMERA_JORNADA_DEL_ORDEN_NUEVO
+    from resumen import _obra_del_dia
+
+    jornada = PRIMERA_JORNADA_DEL_ORDEN_NUEVO + 10
+    relleno = {f"r{i}": 4 for i in range(1, 5)}
+    # Zoe y Ana con el mismo culo y los mismos intentos: empate perfecto. Zoe primero en la lista de entrada
+    # para que se vea que el orden de las filas no decide.
+    filas = [
+        _fila(jornada, quien, 5 if quien in ("Zoe", "Ana") else 4, DIAS[0])
+        | {"pattern": "G.G.G/GGGGG" if quien in ("Zoe", "Ana") else None}
+        for quien in ["Zoe", "Ana", *relleno]
+    ]
+    ganadoras = _obra_del_dia(filas, "0", jornada)
+    assert [f["player_name"] for f, _ in ganadoras] == ["Ana", "Zoe"], (
+        f"las dos ganan, y la lista va alfabética: {ganadoras}")
+
+
+# @scenarios la-obra-del-dia-se-comparte-en-caso-de-empate
+def test_el_texto_de_la_obra_compartida_nombra_a_todos_y_concuerda():
+    from figures import PRIMERA_JORNADA_DEL_ORDEN_NUEVO
+    from resumen import bloque_la_jornada, bloque_obra_del_dia
+
+    jornada = PRIMERA_JORNADA_DEL_ORDEN_NUEVO + 10
+    relleno = {f"r{i}": 4 for i in range(1, 5)}
+    filas = [
+        _fila(jornada, quien, 5 if quien in ("Zoe", "Ana") else 4, DIAS[0])
+        | {"pattern": "G.G.G/GGGGG" if quien in ("Zoe", "Ana") else None}
+        for quien in ["Zoe", "Ana", *relleno]
+    ]
+    suelto = bloque_obra_del_dia(filas, "0", jornada)
+    assert "Ana" in suelto and "Zoe" in suelto, suelto
+
+    from refranero import DIBUJO_DEL_DIA_CULO_VARIOS
+
+    texto = bloque_la_jornada(filas, "0", jornada)
+    plurales = [f.format(jugador="Ana y Zoe", intentos=5) for f in DIBUJO_DEL_DIA_CULO_VARIOS]
+    assert any(f in texto for f in plurales), f"debe usar el registro plural: {texto}"
+
+
+# @scenarios la-obra-del-dia-se-comparte-en-caso-de-empate
+def test_con_un_solo_ganador_no_cambia_nada():
+    """El caso mayoritario —el 75% de las jornadas— sigue igual: un nombre y el registro singular."""
+    from figures import PRIMERA_JORNADA_DEL_ORDEN_NUEVO
+    from refranero import DIBUJO_DEL_DIA_CULO
+    from resumen import _obra_del_dia, bloque_la_jornada
+
+    jornada = PRIMERA_JORNADA_DEL_ORDEN_NUEVO + 10
+    relleno = {f"r{i}": 4 for i in range(1, 6)}
+    filas = [
+        _fila(jornada, quien, 5 if quien == "Ana" else 4, DIAS[0])
+        | {"pattern": "G.G.G/GGGGG" if quien == "Ana" else None}
+        for quien in ["Ana", *relleno]
+    ]
+    assert len(_obra_del_dia(filas, "0", jornada)) == 1
+    texto = bloque_la_jornada(filas, "0", jornada)
+    singulares = [f.format(jugador="Ana", intentos=5) for f in DIBUJO_DEL_DIA_CULO]
+    assert any(f in texto for f in singulares), f"registro singular: {texto}"

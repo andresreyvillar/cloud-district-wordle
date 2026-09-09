@@ -1,0 +1,21 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-09T16:45:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño preguntó cómo se decide la obra del día en un empate, se le explicó la cascada de cuatro
+    criterios, y al ver que el último era el nombre alfabético decidió compartir el premio. Se midió antes de
+    implementar: 52 de las 204 jornadas con obra tienen empate (25%), casi todas de dos y una de seis, así que
+    un cuarto de los premios se repartía por la inicial. El mérito no se toca —rareza, simetría, intentos—;
+    solo se quita el nombre como criterio, que pasa a ordenar la lista para mantener el determinismo. Los dos
+    registros en plural usan el mecanismo de concordancia montado el mismo día para los mejores del día, que
+    era exactamente el mismo problema.

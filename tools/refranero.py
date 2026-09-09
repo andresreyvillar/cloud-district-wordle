@@ -738,6 +738,15 @@ DIBUJO_DEL_DIA: tuple[str, ...] = (
     "Lo más presentable de hoy lo firma {jugador}: {emoji} ({intentos} intentos).",
 )
 
+#: El dibujo del día **cuando lo comparten varios**, que pasa una jornada de cada cuatro.
+DIBUJO_DEL_DIA_VARIOS: tuple[str, ...] = (
+    "El dibujo más bonito es de {jugador}: un {emoji} que les costó {intentos} intentos.",
+    "Premio de belleza compartido: {jugador}, con un {emoji} de {intentos} intentos.",
+    "{jugador} han dejado el mejor dibujo del día: {emoji}, en {intentos}.",
+    "Lo más presentable de hoy lo firman {jugador}: {emoji} ({intentos} intentos).",
+    "Empate en el cuadro: {jugador}, todos con un {emoji} en {intentos}.",
+)
+
 #: La obra del día **cuando es un 🍑**, con nombre y apellidos.
 #:
 #: Los comentarios de dibujo llevan nombre desde siempre —«Lo más presentable de hoy lo firma {jugador}»— así
@@ -766,6 +775,21 @@ DIBUJO_DEL_DIA_CULO: tuple[str, ...] = (
     "Hoy {jugador} ha ido de culo, y ha acabado dibujando uno: 🍑 en {intentos}.",
     "{jugador} ha ido de culo toda la partida. El 🍑 de {intentos} intentos es la prueba.",
     "Menudo culazo se ha marcado {jugador} en {intentos} intentos. 🍑 de exposición.",
+)
+
+#: El 🍑 del día **cuando lo comparten varios**. Con siete melocotones en una jornada, como pasó el #1707, el
+#: empate en el premio es lo normal y no la excepción.
+DIBUJO_DEL_DIA_CULO_VARIOS: tuple[str, ...] = (
+    "La obra del día son los 🍑 de {jugador}, en {intentos}. Tienen una flor en el culo, y encima los dibujan.",
+    "Premio de belleza compartido para {jugador} y sus 🍑 de {intentos} intentos. Culo veo, culo quiero.",
+    "{jugador} han firmado el 🍑 del día en {intentos}. Salir del paso como el culo, pero en grupo.",
+    "Menudo culazo el de {jugador}: 🍑 en {intentos} intentos, y a partes iguales.",
+    "El diccionario les ha dejado el culo al aire a {jugador}: 🍑 en {intentos}.",
+    "Hoy {jugador} han ido de culo, y han acabado dibujando uno: 🍑 en {intentos}.",
+    "Obra del día compartida: 🍑 de {jugador}, {intentos} intentos. Se han mojado el culo y han pescado.",
+    "{jugador} y sus 🍑 de {intentos} intentos. Aquí nadie lame culos, pero eso es una exposición.",
+    "Empate en el cuadro: {jugador}, todos con un 🍑 en {intentos}. Un grano en el culo para la palabra.",
+    "Menudos culazos los de {jugador}: 🍑 a {intentos} intentos cada uno.",
 )
 
 #: Quien abrió la jornada **con costumbre demostrada**: ha abierto la mayoría de las que se han leído.
