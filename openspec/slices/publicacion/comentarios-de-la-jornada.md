@@ -83,6 +83,12 @@ clavarla lo lleva [[voz-de-la-jornada]], que es donde está la hora de verdad.
 **WHEN** la jornada no dispara ningún detector
 **THEN** no hay sección de comentarios, en lugar de una frase de relleno.
 
+### la-frase-concuerda-en-genero
+**WHEN** una frase lleva un adjetivo o participio que cambia con el género
+**THEN** concuerda con la forma **declarada** de esa persona; con varias personas usa la femenina solo si
+todas lo son; y con alguien sin declarar usa la forma neutra, porque el sistema no supone nada de quien no
+consta.
+
 ### la-frase-concuerda-en-numero
 **WHEN** un comentario habla de más de una persona
 **THEN** la frase concuerda en número: «no han aparecido» y no «no ha aparecido».

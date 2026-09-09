@@ -1,0 +1,22 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-09T14:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Concordancia de género en las tres frases que llevaban `@`. El dueño pidió deducirla del nombre; se le
+    planteó que hacerlo en tiempo de ejecución significa adivinar sobre compañeros identificables en un canal
+    del trabajo, y se acordó una tabla declarada: 20 formas las dio él y las 3 que no estaban claras —Cata,
+    Gabi y Dani Sanchez— se preguntaron antes de escribirlas. Quien no aparece sale en neutro, que es lo que
+    evita que un jugador nuevo herede una suposición, y la mutación que le pone masculino por defecto lo caza.
+    Una ronda de corrección: `test_ninguna_frase_deja_huecos_sin_rellenar` formateaba las plantillas a mano y
+    se puso en rojo con el código correcto, porque el hueco de género se resuelve antes del formateo; atado al
+    camino real, que además recorre las cuatro combinaciones de forma sobre todas las plantillas.
