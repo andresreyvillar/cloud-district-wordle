@@ -1,0 +1,23 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-09T17:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Añadir el melocotón al Coleccionista, que el agente ya había reportado como desfasado. Medirlo antes de
+    aplicarlo evitó un destrozo: exigir las cinco categorías a secas le quitaba la medalla a 25 personas que
+    ya la tienen publicada —8 de agosto y 17 de la temporada 0— porque el culo no existe antes del corte de
+    reglas. La regla autoajustable —una de cada categoría que haya salido en esa temporada— lo evita sin un
+    corte más y hace que la medalla signifique lo que su nombre dice. Dos rondas de corrección: el fixture del
+    test usaba fechas de 2099 creyéndolas de la temporada 0, cuando caen en una numerada que exige cinco
+    jugadores por jornada, así que el álbum salía vacío; y la mutación que no pasa las categorías vistas al
+    cálculo no mataba nada porque la condición estaba probada suelta y su uso no. Detalle registrado: `all()`
+    de un conjunto vacío es `True`, así que unas vistas vacías habrían concedido la medalla a cualquiera.
