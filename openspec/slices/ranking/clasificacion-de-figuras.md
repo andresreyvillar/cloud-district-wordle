@@ -79,6 +79,12 @@ geométrica por su densidad
 **THEN** conserva esa categoría: en el orden histórico el espejo solo se consulta cuando ninguna otra regla
 reconoce nada, y así ninguna partida ya jugada pierde su figura.
 
+### el-culo-es-su-propia-categoria
+**WHEN** las tres últimas filas de una cuadrícula dibujan un verde central entre dos huecos sobre `G.G.G` y el
+suelo
+**THEN** se clasifica en su propia categoría, que puntúa como el geométrico; y se comprueba **después** del
+espejo, así que una cuadrícula que sea las dos cosas se queda en geométrico.
+
 ### desde-el-corte-el-espejo-gana-a-la-flor
 **WHEN** una cuadrícula a partir del corte es un espejo reconocible y además cumple la regla de la flor
 **THEN** se clasifica como geométrica: un palíndromo perfecto es más difícil que unos pétalos, y la invariante

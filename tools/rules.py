@@ -339,9 +339,10 @@ def catalogo() -> tuple[Regla, ...]:
             eje="figuras",
             titulo="La cuadrícula de emojis dibuja una figura, y se colecciona",
             que_hace=(
-                "Tu cuadrícula se clasifica en cuatro categorías: 📐 geométrico, 🦜 loro, 🌷 flores y "
-                "🌀 abstracto, que es cuando no se reconoce nada. La categoría se deduce del dibujo, no la "
-                "elige nadie: un dibujo simétrico cuenta como geométrico aunque tenga mucha tinta."
+                "Tu cuadrícula se clasifica en cinco categorías: 📐 geométrico, 🍑 culo, 🦜 loro, "
+                "🌷 flores y 🌀 abstracto, que es cuando no se reconoce nada. La categoría se deduce del "
+                "dibujo, no la elige nadie: un dibujo simétrico cuenta como geométrico aunque tenga mucha "
+                "tinta, y el 🍑 son las tres filas de abajo formando un verde central entre dos huecos."
             ),
             por_que=(
                 "Es un segundo eje que premia a quien sufre: la figura sale de las partidas que salen mal, "
@@ -360,14 +361,17 @@ def catalogo() -> tuple[Regla, ...]:
             eje="figuras",
             titulo="No todas las figuras valen lo mismo",
             que_hace=(
-                "Un 📐 geométrico vale 3 puntos, un 🦜 loro 2 y una 🌷 flor 1. Un 🌀 abstracto no suma, pero "
-                "cuenta: tu puntuación del álbum son los puntos entre las jornadas de la temporada, no entre "
-                "las partidas que jugaste."
+                "Un 📐 geométrico y un 🍑 culo valen 3 puntos, un 🦜 loro 2 y una 🌷 flor 1. Un 🌀 abstracto "
+                "no suma, pero cuenta: tu puntuación del álbum son los puntos entre las jornadas de la "
+                "temporada, no entre las partidas que jugaste."
             ),
             por_que=(
                 "El orden sale de lo raras que son, medido: el geométrico aparece en el 7% de las partidas, "
-                "el loro en el 14% y las flores en el 47%. Y el denominador son las jornadas para que faltar "
-                "no mejore la media: quien juega solo los días que le sale algo bonito tenía media perfecta."
+                "el loro en el 14% y las flores en el 47%. El 🍑 es la más rara de todas —5 de 1.806 "
+                "cuadrículas— y aun así vale lo mismo que el geométrico, porque la mayoría de culos son "
+                "además simétricos y se clasifican como geométricos: el que llega a culo no es más difícil, "
+                "es otra forma de la misma dificultad. Y el denominador son las jornadas para que faltar no "
+                "mejore la media: quien juega solo los días que le sale algo bonito tenía media perfecta."
             ),
             estado=APLICADA,
             votada=False,
