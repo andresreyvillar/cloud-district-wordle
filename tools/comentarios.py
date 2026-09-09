@@ -88,6 +88,7 @@ class Hecho:
 #: El berrinche vive en `refranero.py`, con el resto del diccionario del resumen, y se suma a las dos claves
 #: del sospechoso. Sus frases no concuerdan en número a propósito, así que valen para una persona y para
 #: varias sin necesitar variante propia.
+from personas import concuerda  # noqa: E402
 from refranero import BERRINCHE  # noqa: E402
 
 FRASES: dict[str, tuple[str, ...]] = {
@@ -99,7 +100,7 @@ FRASES: dict[str, tuple[str, ...]] = {
         "Un {dato:.0f} de {jugador}… ¿alguien le ha visto el diccionario? 🤨",
         "{jugador} en {dato:.0f} intentos. Muy fuerte 🤨",
         "{dato:.0f} intentos, {jugador}. Explícate 🤨",
-        "{jugador} ha resuelto en {dato:.0f} y se ha quedado tan anch@ 🤨",
+        "{jugador} ha resuelto en {dato:.0f} y se ha quedado tan anch{g} 🤨",
         "Nadie resuelve en {dato:.0f} por casualidad, {jugador} 🤨",
         "{jugador} y su {dato:.0f}. Aquí hay gato encerrado 🤨",
         "Un {dato:.0f} limpio de {jugador}. Demasiado limpio 🤨",
@@ -149,12 +150,12 @@ FRASES: dict[str, tuple[str, ...]] = {
         *BERRINCHE,
     ),
     "sembrado": (
-        "{jugador} está sembrad@ hoy 🌟",
+        "{jugador} está sembrad{g} hoy 🌟",
         "Día fino de {jugador}, muy por encima de la media 🌟",
         "{jugador} ha ido a lo suyo y le ha salido bien 🌟",
     ),
     "no-inspirado": (
-        "{jugador} hoy no estaba inspirad@ 😅",
+        "{jugador} hoy no estaba inspirad{g} 😅",
         "A {jugador} se le ha atragantado la palabra 😅",
         "Día para olvidar de {jugador} 😅",
     ),
@@ -297,7 +298,9 @@ def frase(
     """
     opciones = FRASES.get(f"{clave}-varios" if varios else clave) or FRASES[clave]
     plantilla = opciones[jornada % len(opciones)]
-    return plantilla.format(jugador=jugador, dato=dato if dato is not None else 0)
+    # El género se resuelve **antes** del formateo: la tabla de formas se indexa por nombre, y después de
+    # formatear el nombre ya está dentro del texto y no se puede consultar.
+    return concuerda(plantilla, jugador).format(jugador=jugador, dato=dato if dato is not None else 0)
 
 
 def nombres_unidos(nombres: list[str]) -> str:

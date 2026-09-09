@@ -367,19 +367,30 @@ def test_el_berrinche_sirve_para_uno_y_para_varios():
     for plantilla in BERRINCHE:
         # Un verbo conjugado delataría que la frase asume cuántos son.
         assert " ha " not in plantilla and " han " not in plantilla, plantilla
-        # Y tiene que quedar bien con un sujeto plural.
-        texto = plantilla.format(jugador="Ana y Bea", dato=2.0)
+        # Y tiene que quedar bien con un sujeto plural. Por el camino real: el hueco de género se resuelve
+        # antes del formateo, así que la plantilla cruda no se puede formatear sola.
+        from personas import concuerda
+
+        texto = concuerda(plantilla, "Ana y Bea").format(jugador="Ana y Bea", dato=2.0)
         assert "{" not in texto and "}" not in texto, texto
 
 
 def test_ninguna_frase_deja_huecos_sin_rellenar():
-    """Un `{jugador}` mal escrito saldría literal en el canal, delante de todo el grupo."""
-    from comentarios import FRASES
+    """Un `{jugador}` mal escrito saldría literal en el canal, delante de todo el grupo.
+
+    **Se comprueba por el camino real** (`frase`) y no formateando la plantilla a mano: el hueco de género
+    `{g}` lo resuelve `personas.concuerda` antes del formateo, así que una plantilla cruda parece incompleta
+    cuando no lo está. Formatear a mano dejó este test en rojo con el código correcto.
+    """
+    from comentarios import FRASES, frase
 
     for clave, plantillas in FRASES.items():
-        for plantilla in plantillas:
-            texto = plantilla.format(jugador="Ana", dato=2.0)
-            assert "{" not in texto and "}" not in texto, f"{clave}: {plantilla}"
+        varios = clave.endswith("-varios")
+        base = clave[: -len("-varios")] if varios else clave
+        for jornada in range(len(plantillas)):
+            for quien in ("Cata", "Gabi", "Ana la Nueva", "Claire y Sandra"):
+                texto = frase(base, jornada, quien, dato=2.0, varios=varios)
+                assert "{" not in texto and "}" not in texto, f"{clave} con {quien}: {texto}"
 
 
 # @scenarios la-sospecha-no-repite-el-molde
@@ -409,3 +420,51 @@ def test_la_sospecha_en_plural_tampoco_repite_el_molde():
     salidas = {frase("sospechoso", j, "Ana y Bea", dato=2, varios=True) for j in range(1, 60)}
     sin_emoji = [s for s in salidas if "🤨" not in s]
     assert len(sin_emoji) >= 8, f"el plural sigue con el mismo molde: {len(sin_emoji)} de {len(salidas)}"
+
+
+# @scenarios la-frase-concuerda-en-genero
+def test_la_frase_concuerda_con_la_forma_declarada():
+    """Las tres frases con participio usaban `@` —«sembrad@»— porque el sistema no tiene el dato. Ahora sale
+    de una tabla que el dueño declaró persona a persona.
+    """
+    from comentarios import frase
+    from personas import FEMENINO, MASCULINO, FORMAS
+
+    assert FORMAS["Cata"] == FEMENINO and FORMAS["Gabi"] == MASCULINO
+    textos = {q: [frase("sembrado", j, q) for j in range(3)] for q in ("Cata", "Gabi")}
+    assert any("sembrada" in t for t in textos["Cata"]), textos["Cata"]
+    assert any("sembrado" in t for t in textos["Gabi"]), textos["Gabi"]
+    assert not any("sembrad@" in t for ts in textos.values() for t in ts)
+
+
+# @scenarios la-frase-concuerda-en-genero
+def test_quien_no_esta_declarado_sale_en_neutro():
+    """**Lo que hace segura la tabla**: un jugador nuevo no hereda una suposición. Se declara o sale neutro."""
+    from comentarios import frase
+    from personas import FORMAS, NEUTRO
+
+    assert "Ana la Nueva" not in FORMAS
+    textos = [frase("sembrado", j, "Ana la Nueva") for j in range(3)]
+    assert any(f"sembrad{NEUTRO}" in t for t in textos), textos
+
+
+# @scenarios la-frase-concuerda-en-genero
+def test_un_grupo_mixto_va_en_masculino_y_uno_femenino_en_femenino():
+    """Lo que hace el castellano con un grupo: masculino salvo que todas sean femeninas."""
+    from personas import FEMENINO, MASCULINO, NEUTRO, forma_de_varios
+
+    assert forma_de_varios(["Claire", "Sandra"]) == FEMENINO
+    assert forma_de_varios(["Claire", "Joel"]) == MASCULINO
+    assert forma_de_varios(["Joel", "Luis"]) == MASCULINO
+    # Y sin ninguna declarada tampoco se supone.
+    assert forma_de_varios(["Ana la Nueva", "Otra Nueva"]) == NEUTRO
+
+
+# @scenarios la-frase-concuerda-en-genero
+def test_la_tabla_cubre_a_todos_los_del_historico():
+    """Una forma sin declarar es una `@` en el canal. Si alguien juega y no está, se ve aquí y no en Slack."""
+    from personas import FORMAS
+
+    # Los 23 del histórico, declarados por el dueño el 2026-09-09.
+    assert len(FORMAS) >= 23, f"faltan formas por declarar: {len(FORMAS)}"
+    assert all(f in ("o", "a") for f in FORMAS.values()), "solo hay dos formas declarables"
