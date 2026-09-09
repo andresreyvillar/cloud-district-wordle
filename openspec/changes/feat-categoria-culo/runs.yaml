@@ -21,3 +21,25 @@
     contra diccionarios literales y se pusieron en rojo al aparecer una clave con valor cero, sin que el
     comportamiento cambiara — atadas a `VOCABULARIO` y `FIGURAS`. Y la mutación que quitaba la exigencia de la
     fila del medio no mataba ningún test: ningún fixture la distinguía, así que se añadió uno.
+
+- run: '2026-09-09T13:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    La definición de la forma se rehízo tres veces con el dueño, y cada versión se midió antes de aplicarla:
+    verde central (6 casos), tres huecos literales (1), solo los extremos verdes (9) y finalmente **solo las
+    dos últimas filas** (25). Cada cambio puso en rojo los tests de la versión anterior, que es lo correcto —
+    codificaban una definición que ya no era la vigente— y se reescribieron en lugar de debilitarse. La última
+    hace que la forma sea de la jornada más que del jugador: siete de diez en el #1707. De ahí el meme propio
+    para los días de varios melocotones, con veinte frases construidas sobre expresiones hechas —«culo veo,
+    culo quiero», «de culo y cuesta arriba», «con el culo al aire»— porque el chiste lo pone el refranero que
+    el grupo ya tiene, no la frase. El glosario de la web sale del catálogo publicado y no de una lista en la
+    vista: la mutación que la escribía a mano rompe tres tests.

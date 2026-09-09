@@ -212,3 +212,51 @@ test('una instantánea sin álbum se pinta igual, sin bloque y sin error', () =>
   assert.equal(bloqueDeAlbum(vieja), '');
   assert.equal(tarjetaDeAlbum(null), '');
 });
+
+/**
+ * @scenarios el-glosario-explica-cada-dibujo
+ *
+ * El glosario se comprueba sobre el **catálogo publicado**, que es de donde saca las categorías: escribirlas
+ * en la vista es cómo se llegó a tener ocho plantillas de meme que nunca se ejecutaban.
+ */
+test('el glosario lista cada categoría del catálogo con sus puntos y su recuento', async () => {
+  const { glosario } = await import('../../../v2/js/ui/temporada.js');
+
+  const carga = {
+    album: {
+      categorias: [
+        { clave: 'geometrico', emoji: '📐', puntos: 3, puntua: true },
+        { clave: 'culo', emoji: '🍑', puntos: 3, puntua: true },
+        { clave: 'flores', emoji: '🌷', puntos: 1, puntua: true },
+        { clave: 'abstracto', emoji: '🌀', puntos: 0, puntua: false },
+      ],
+      reparto: { geometrico: 12, culo: 2, flores: 33, abstracto: 18 },
+    },
+  };
+
+  const html = glosario(carga);
+  for (const categoria of carga.album.categorias) {
+    assert.ok(html.includes(categoria.emoji), `falta el emoji de ${categoria.clave}`);
+    assert.ok(html.includes(categoria.clave), `falta ${categoria.clave}`);
+    assert.ok(html.includes(String(carga.album.reparto[categoria.clave])), `falta el recuento de ${categoria.clave}`);
+  }
+  assert.ok(html.includes('3 pts'), 'los puntos se dicen');
+  assert.ok(html.includes('no puntúa'), 'y de la que no puntúa se dice que no puntúa');
+});
+
+/** @scenarios el-glosario-explica-cada-dibujo */
+test('sin catálogo el glosario no se pinta en lugar de pintarse vacío', async () => {
+  const { glosario } = await import('../../../v2/js/ui/temporada.js');
+  assert.equal(glosario({}), '');
+  assert.equal(glosario({ album: { categorias: [] } }), '');
+});
+
+/** @scenarios el-glosario-explica-cada-dibujo */
+test('una categoría sin descripción sale con lo que se sepa de ella', async () => {
+  const { glosario } = await import('../../../v2/js/ui/temporada.js');
+  const html = glosario({
+    album: { categorias: [{ clave: 'inventada', emoji: '❓', puntos: 5, puntua: true }], reparto: { inventada: 1 } },
+  });
+  assert.ok(html.includes('inventada'), 'no desaparece por no tener descripción');
+  assert.ok(html.includes('5 pts'));
+});

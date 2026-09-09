@@ -134,6 +134,11 @@ todos.
 el líder se hunde, el último clava—
 **THEN** el mensaje lleva el meme del día correspondiente, rellenado con los datos de esa jornada.
 
+### el-dia-de-varios-culos-tiene-meme-propio
+**WHEN** varios dibujos de la jornada se etiquetan como culo
+**THEN** el meme lo comenta con el recuento, y **por delante de las demás formas**: no es la gracia de un
+jugador sino de la palabra, que ese día lleva a media tabla al mismo dibujo. Con uno solo no hay día de culos.
+
 ### sin-forma-reconocida-no-hay-meme
 **WHEN** la jornada no encaja en ninguna forma
 **THEN** no sale meme, en lugar de forzar uno que no describe lo que pasó.

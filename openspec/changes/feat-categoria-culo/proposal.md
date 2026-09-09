@@ -14,20 +14,23 @@ G . G . G     🟩⬛🟩⬛🟩
 G G G G G     🟩🟩🟩🟩🟩
 ```
 
-## Cuánto sale, medido
+## Cuánto sale: cuatro definiciones medidas
 
-**5 de 1.806 cuadrículas (0,28%)** dibujan la forma. Es la categoría más rara del álbum — sale una cada cuatro
-meses, más raro incluso que el espejo (1,1%).
+La forma se definió cuatro veces, y cada una se midió sobre 1.809 cuadrículas antes de decidir:
 
-Y de esas cinco, con el orden elegido solo **tres** llegan a ser culo:
+| Definición de la fila de arriba | Encajan | Por qué se descartó |
+|---|---|---|
+| verde central (`X.G.Y`) | 6 | dejaba fuera a quien tiene ahí un amarillo — tres de los diez de la jornada que la originó |
+| tres huecos (`G...G`) | 1 | un solo caso en toda la historia |
+| solo los extremos verdes | 9 | dejaba fuera a quien abre la silueta por un lado |
+| **solo las dos últimas filas** | **25** | la elegida |
 
-```
-#1434 Carlos          flores      → CULO
-#1664 Andrés R.       geometrico  → geometrico   (geométrico por densidad, antes de todo)
-#1678 Dani Sanchez    abstracto   → CULO
-#1707 Claire          loro        → CULO
-#1707 Joel            geometrico  → geometrico   (espejo, y el espejo va antes)
-```
+Con la definición final, **la forma es de la jornada más que de quien juega**, y eso es deliberado: en el
+#1707 se la llevan siete de los diez jugadores, porque la palabra tenía las letras impares fáciles y las pares
+difíciles.
+
+De las 25, con el orden elegido las que son espejo se van a geométrico — incluido el caso más puro,
+`G.G.G/G.G.G/GGGGG`. Es lo que el dueño anticipó con «la mayoría de culos deben ser a la vez geométricos».
 
 ## El orden, y su consecuencia declarada
 

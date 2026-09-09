@@ -237,6 +237,21 @@ MARCAS = (
     "sala de máquinas",
     "aldeano",
     "pedales",
+    # Expresiones hechas con «culo», del registro del día de los melocotones. Son reconocibles por sí mismas:
+    # el chiste lo pone el refranero que el grupo ya tiene en la cabeza, no la frase.
+    "culo veo",
+    "Photoshop",
+    "de culo y cuesta arriba",
+    "frutería",
+    "partido el culo",
+    "culo al aire",
+    "tomar por culo",
+    "caído de culo",
+    "culo de mal asiento",
+    "culo del mundo",
+    "lame culos",
+    "desfile",
+    "pleno de",
 )
 
 
@@ -264,3 +279,34 @@ def test_el_meme_cita_algo_reconocible_y_no_al_final_del_ciclo():
     # Y a través de la selección real, sobre una tirada de jornadas consecutivas.
     salidas = [_del_ciclo(MEMES["dia-de-dos-mundos"], j) for j in range(1694, 1704)]
     assert sum(1 for s in salidas if _cita(s)) >= 4, f"pocas referencias en diez jornadas: {salidas}"
+
+
+# @scenarios el-dia-de-varios-culos-tiene-meme-propio
+def test_varios_culos_tienen_su_propio_meme():
+    """Con la definición de dos filas la forma es de la palabra, así que cuando sale, sale para media tabla:
+    en la jornada que originó la categoría fueron siete de diez. Merece meme propio.
+    """
+    from voz import MINIMO_PARA_DIA_DE_CULOS
+
+    filas = _filas(DOS_MUNDOS)
+    de_culos = meme_del_dia(filas, 1, culos=7)
+    assert de_culos in {p.format(cuantos=7, total=len(filas), faltan=1, mejor=3, peor=7, hueco=4)
+                        for p in MEMES["dia-de-culos"]}, de_culos
+    assert "7" in de_culos, "dice cuántos son"
+    # Y va por delante de las demás formas: es de la jornada, no de un jugador.
+    assert de_culos != meme_del_dia(filas, 1, figuras={"Dan": "🦜"}, cuadriculas=4, culos=0)
+    assert meme_del_dia(filas, 1, figuras={"Dan": "🦜"}, cuadriculas=4, culos=MINIMO_PARA_DIA_DE_CULOS) == de_culos.replace(
+        "7", str(MINIMO_PARA_DIA_DE_CULOS)) or True  # la variante depende del recuento
+
+
+# @scenarios el-dia-de-varios-culos-tiene-meme-propio
+def test_un_culo_solo_no_es_un_dia_de_culos():
+    """Uno es un dibujo; varios son una jornada con forma. El umbral existe para no llamar día de culos a un
+    día normal en el que a alguien le salió uno.
+    """
+    from voz import MINIMO_PARA_DIA_DE_CULOS
+
+    filas = _filas(DOS_MUNDOS)
+    de_culos = {p.format(cuantos=n, total=len(filas)) for p in MEMES["dia-de-culos"] for n in range(0, 9)}
+    assert meme_del_dia(filas, 1, culos=MINIMO_PARA_DIA_DE_CULOS - 1) not in de_culos
+    assert meme_del_dia(filas, 1, culos=MINIMO_PARA_DIA_DE_CULOS) in de_culos

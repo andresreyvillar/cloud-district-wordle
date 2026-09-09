@@ -243,6 +243,52 @@ function marcador(tabla, imputada, temporada) {
     </section>`;
 }
 
+/**
+ * Qué significa cada dibujo, con su emoji, sus puntos y cuántos han salido este mes.
+ *
+ * **Sale del catálogo publicado**, no de una lista escrita aquí: `album.categorias` viaja en la instantánea
+ * con la clave, el emoji y los puntos de cada categoría, así que añadir una en el pipeline la hace aparecer
+ * sola. Escribirla a mano es cómo se llegó a tener ocho plantillas de meme que nunca se ejecutaban.
+ *
+ * Las descripciones sí viven aquí, porque son texto de interfaz y no dato del cálculo. Una categoría nueva
+ * sin descripción sale con su nombre y su recuento en lugar de desaparecer: es la información que hay.
+ */
+const DIBUJOS = {
+  geometrico: 'Formas regulares y simétricas: pirámides, arcos, espejos. Lo más difícil de conseguir.',
+  culo: 'Las dos últimas filas dibujan 🟩⬛🟩⬛🟩 sobre la solución. Suele salirle a media tabla el mismo día.',
+  loro: 'Columnas verdes con un amarillo haciendo de pico, y el pico tiene que tocar el cuerpo.',
+  flores: 'Suelo verde con pétalos amarillos encima. La más común con diferencia.',
+  abstracto: 'No se reconoce ninguna forma. No puntúa, pero cuenta como partida.',
+};
+
+export function glosario(carga) {
+  const categorias = carga.album?.categorias ?? [];
+  if (!categorias.length) return '';
+  const reparto = carga.album?.reparto ?? {};
+
+  const filas = categorias
+    .map((categoria) => {
+      const salidos = reparto[categoria.clave] ?? 0;
+      const puntos = categoria.puntua ? `${categoria.puntos} pt${categoria.puntos === 1 ? '' : 's'}` : 'no puntúa';
+      return `
+      <article class="dibujo">
+        <span class="emoji" aria-hidden="true">${escapar(categoria.emoji)}</span>
+        <div class="dibujo-texto">
+          <h3>${escapar(categoria.clave)} <span class="puntos mono">${escapar(puntos)}</span></h3>
+          <p>${escapar(DIBUJOS[categoria.clave] ?? 'Sin descripción todavía.')}</p>
+        </div>
+        <span class="cuantos mono">${salidos}</span>
+      </article>`;
+    })
+    .join('');
+
+  return `
+    <section class="bloque glosario-bloque">
+      <header class="bloque-cab amarillo"><h2>LOS DIBUJOS</h2><span>Cuántos han salido este mes</span></header>
+      <div class="dibujos">${filas}</div>
+    </section>`;
+}
+
 function logros(carga) {
   const ganadores = carga.logros ?? {};
   const tarjetas = LOGROS.map((logro) => {
@@ -440,6 +486,7 @@ export function pintarTemporada(contenedor, carga, temporada) {
 
       ${marcador(tabla, carga.imputada !== false, temporada)}
       ${logros(carga)}
+      ${glosario(carga)}
       ${bloqueDeAlbum(carga)}
       ${estadisticas(carga)}
     </div>`;

@@ -305,6 +305,10 @@ def protagonistas_de_menciones(
     return salida
 
 
+#: Cuántos melocotones hacen un «día de culos». Dos: uno solo no es una jornada con forma, es un dibujo.
+MINIMO_PARA_DIA_DE_CULOS = 2
+
+
 def meme_del_dia(
     del_dia: list[dict],
     jornada: int,
@@ -314,6 +318,7 @@ def meme_del_dia(
     empatados_arriba: int = 0,
     plantilla: int | None = None,
     cuadriculas: int = 0,
+    culos: int = 0,
 ) -> str | None:
     """El meme que describe la jornada, o `None` si la jornada no tiene forma.
 
@@ -366,6 +371,12 @@ def meme_del_dia(
 
     if total >= 4 and mejor == peor:
         return elige("todos-el-mismo-numero", intentos=mejor)
+
+    # **El día de los melocotones va primero**, porque no es una gracia de un jugador sino de la palabra: con
+    # la definición de dos filas la forma es propiedad de la jornada, así que cuando sale, sale para media
+    # tabla. Dos es el mínimo: uno solo no es un día de culos, es un culo.
+    if culos >= MINIMO_PARA_DIA_DE_CULOS:
+        return elige("dia-de-culos", cuantos=culos)
 
     # Falló la palabra y aun así le salió un dibujo: la forma más golosa de las que faltaban por implementar.
     if figuras:

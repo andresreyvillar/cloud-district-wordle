@@ -279,26 +279,28 @@ def es_loro(r: Rasgos) -> bool:
 
 
 def es_culo(patron: str) -> bool:
-    """Las tres últimas filas dibujan `X.G.Y` sobre `G.G.G` sobre el suelo.
+    """Las **dos** últimas filas: `G.G.G` sobre el suelo completo.
 
-    Se mira **el patrón y no los rasgos**, porque no es una propiedad agregada —cuántos verdes, cuánta
-    densidad— sino una forma concreta en un sitio concreto: las tres filas de abajo. Los rasgos no la pueden
-    expresar sin inventar uno a medida.
+    Se mira el patrón y no los rasgos, porque no es una propiedad agregada —cuántos verdes, cuánta densidad—
+    sino una forma concreta en un sitio concreto: el final de la cuadrícula.
 
-    `X` e `Y` son libres, así que la fila de arriba solo exige el verde central y los dos huecos que lo
-    flanquean. Es lo que da la silueta; lo que haya en los extremos no la cambia.
+    **Dos filas y no tres, decidido por el dueño** después de descartar tres definiciones más estrechas sobre
+    la fila de arriba. Cada una se midió sobre 1.809 cuadrículas:
 
-    Nace de una jornada en que el grupo entero convergió en ese esqueleto: 8 de 10 jugadores del #1707
-    terminaron con `G.G.G` justo antes de resolver. Medido sobre 1.806 cuadrículas encaja en 5 (0,28%), así
-    que es la categoría más rara del álbum — sale una cada cuatro meses.
+        exigir verde central (`X.G.Y`)      6   dejaba fuera a quien tiene ahí un amarillo
+        exigir tres huecos (`G...G`)        1   un solo caso en toda la historia
+        exigir solo los extremos verdes     9   dejaba fuera a quien abre por un lado
+        **solo las dos últimas filas**     25   la elegida
+
+    Nace de la jornada #1707, donde el grupo entero convergió en ese esqueleto: 8 de 10 jugadores terminaron
+    con `G.G.G` justo antes de resolver, porque la palabra tenía las letras impares fáciles y las pares
+    difíciles. Con esta definición **la forma es de la jornada más que de quien juega**, y eso es deliberado:
+    los días así reparten melocotón a casi todos.
     """
     filas = patron.split("/")
-    if len(filas) < 3:
+    if len(filas) < 2:
         return False
-    arriba, medio, suelo = filas[-3], filas[-2], filas[-1]
-    if suelo != "GGGGG" or medio != "G.G.G" or len(arriba) != ANCHO:
-        return False
-    return arriba[2] == "G" and arriba[1] == "." and arriba[3] == "."
+    return filas[-1] == "GGGGG" and filas[-2] == "G.G.G"
 
 
 def es_geometrico(r: Rasgos) -> bool:
