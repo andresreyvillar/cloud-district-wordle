@@ -1,0 +1,35 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-11T14:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño leyó el mensaje de la jornada 1709 y cazó la incoherencia: «no puede ser que se queje del 2
+    cuando hay notas mejores; cuando hay más de un 2 se entiende que la palabra es fácil; la reacción de
+    incredulidad es para el que ha sacado 1». La pulla saltaba con `score <= 2` sin mirar al resto. Medido
+    sobre 194 jornadas, la queja injusta había ocurrido **una sola vez** —la de ese día— porque un 1 aparece
+    en 3 de 194: el fallo llevaba ahí desde el principio esperando al día en que se notara.
+
+    Al implementarlo aparecieron dos consecuencias que no estaban en la propuesta.
+
+    La primera, que el dedup por persona se queda con el hecho más raro y `clavada` (0,01) gana a
+    `sospechoso` (0,06), así que el 1 no recibía la pulla sino el trébol — y `clavada` tenía **tres** frases,
+    una de ellas «Sin comentarios», que fue justo la que salió. La incredulidad que pedía el dueño vive
+    ahora ahí: doce frases en el registro de `clavada`, que es donde tiene sentido, porque acertar a la
+    primera es lo más raro del juego y merece la reacción más fuerte, no la más tibia.
+
+    La segunda, declarada y **sin tocar**: exigir que la mejor nota no se comparta deja las 30 frases de
+    `sospechoso-varios` sin poder salir nunca. Es el patrón de plantillas muertas que este repositorio ya
+    conoce, pero retirarlas es una decisión del dueño y no un efecto colateral de este arreglo.
+
+    Una ronda de corrección: el test de fusión en plural usaba dos sospechosos el mismo día, imposible con la
+    regla nueva. La fusión no era propiedad de la sospecha, así que se comprueba con `sembrado` sobre el
+    mismo fixture, que sí se comparte.

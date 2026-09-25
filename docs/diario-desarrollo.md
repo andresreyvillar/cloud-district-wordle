@@ -357,3 +357,44 @@ usaba las ausencias, que van agrupadas en un solo hecho, así que la línea sal�
 sin ella. La regla general que deja: **un test que verifica una regla tiene que usar un caso donde la regla
 sea lo único que decide**; si otra parte del código ya produce el resultado esperado, el test mide esa otra
 parte.
+
+## 2026-09-25 — El juego tiene ranking, y la primera escritura pública del proyecto
+
+**Qué.** Bajo SuperWordleBros hay un «¿Quién eres?» con los jugadores del grupo y un ranking por nivel. Cada
+llegada a la meta manda la marca; se reintenta sin límite y solo se guarda si mejora la anterior.
+
+**Por qué importa.** Hasta hoy la clave pública solo leía. Esto es **la primera vía de escritura desde la web**,
+y un repositorio público con datos de compañeros no puede permitirse una tabla abierta.
+
+**Decisiones.**
+- **La tabla no se escribe: se escribe una función.** `game_times` solo se lee con la clave pública;
+  `registrar_tiempo` (`security definer`, `search_path` vacío) decide si la marca mejora y rechaza lo
+  imposible. Así el «solo si mejora» no depende de que la página se porte bien.
+- **Sin login, declarado.** Cualquiera puede elegir cualquier nombre, como cualquiera puede pegar un Wordle
+  ajeno. Lo que se impide es lo que rompe el ranking para todos.
+- **El mínimo de tiempo sale de la física del motor**, con margen, y el contrato con Joel lo dice: si él sube
+  la velocidad, la base de datos tiene que enterarse.
+
+**Aprendizaje.** **Probar la base de datos de verdad costó menos de lo que parecía.** Un Postgres local
+desechable, con los privilegios por defecto que da Supabase, cazó en la mutación algo que un repaso no habría
+visto: sin el `revoke`, `update` y `delete` no fallan —la RLS los deja en cero filas en silencio— y `truncate`
+ni siquiera pasa por la RLS. El `revoke` parecía redundante y era lo único que paraba un `truncate`.
+
+## 2026-09-25 — El nivel se congela: todos juegan el mismo escenario
+
+**Qué.** El nivel de cada jornada ya no se calcula al abrir la pestaña: el cron lo congela una vez, a partir
+de las 04:00 de Madrid, en `game_levels`, y la web juega el último congelado. El ranking se mide contra él.
+
+**Por qué importa.** Con el ranking, un nivel que cambia de madrugada deja de ser un detalle: pone en la
+misma tabla tiempos de dos escenarios distintos.
+
+**Decisiones.**
+- **Las 04:00, medidas.** La cuadrícula más tardía de 60 días llegó a las 02:57.
+- **Node en el pipeline, con el mismo `nivelDe`.** Una sola implementación del generador vale más que un
+  pipeline de un solo lenguaje.
+- **Inmutable de verdad.** Un trigger rechaza cambios incluso con la clave de servicio: un nivel con marcas no
+  se toca sin querer.
+
+**Aprendizaje.** Un mutante que deja pasar un `delete` borra el estado compartido de los tests y el rojo
+cae en cascada. Parecía una cazada amplia y no decía nada: los intentos destructivos van en transacciones que
+se deshacen.

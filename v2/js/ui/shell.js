@@ -12,6 +12,8 @@ const SECCIONES = [
   { vista: VISTAS.TEMPORADAS, etiqueta: 'Temporadas' },
   { vista: VISTAS.HOY, etiqueta: 'Hoy' },
   { vista: VISTAS.DATOS, etiqueta: 'Datos' },
+  // Pestaña nueva: lleva sticker hasta esta fecha incluida. Pasada, desaparece sola sin tocar código.
+  { vista: VISTAS.JUEGO, etiqueta: 'SuperWordleBros', nuevaHasta: '2026-10-09' },
   { vista: VISTAS.REGLAS, etiqueta: 'Reglas' },
 ];
 
@@ -23,13 +25,33 @@ export function escapar(valor) {
 }
 
 /** Pinta la navegación y marca la sección que contiene la vista actual. */
-export function pintarNavegacion(contenedor, destino) {
+/**
+ * Si una sección lleva todavía su sticker de «nueva». `hoy` es `AAAA-MM-DD`.
+ *
+ * **La fecha entra por parámetro** (§10): la navegación no lee el reloj, se lo pasa la carga de la página.
+ * Así el sticker se prueba con cualquier día sin esperar a que llegue, y caduca solo sin que nadie tenga que
+ * acordarse de quitarlo.
+ */
+export function esNueva(seccion, hoy) {
+  return Boolean(seccion?.nuevaHasta && hoy && hoy <= seccion.nuevaHasta);
+}
+
+/** El sticker. Texto y no icono, para que lo lea también un lector de pantalla. */
+const PEGATINA = '<span class="pegatina-nueva">¡NUEVO!</span>';
+
+export function pintarNavegacion(contenedor, destino, hoy = null) {
+  contenedor.innerHTML = navegacion(destino, hoy);
+}
+
+/** La navegación en HTML. Exportada para poder verificar el sticker sin navegador. */
+export function navegacion(destino, hoy = null) {
   const activa_ = seccionDe(destino.vista);
-  contenedor.innerHTML = SECCIONES.map((seccion) => {
+  return SECCIONES.map((seccion) => {
     const activa = seccion.vista === activa_ ? ' aria-current="page"' : '';
     // `destino.temporada` es la efectiva, así que los enlaces conservan la temporada que se está mirando.
     const ruta = rutaDe({ vista: seccion.vista, temporada: destino.temporada });
-    return `<a href="${ruta}"${activa}>${seccion.etiqueta}</a>`;
+    const pegatina = esNueva(seccion, hoy) ? PEGATINA : '';
+    return `<a href="${ruta}"${activa}>${seccion.etiqueta}${pegatina}</a>`;
   }).join('');
 }
 

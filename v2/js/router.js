@@ -65,6 +65,7 @@ export const VISTAS = Object.freeze({
   TEMPORADAS: 'temporadas',
   HOY: 'hoy',
   DATOS: 'datos',
+  JUEGO: 'juego',
   REGLAS: 'reglas',
   JUGADOR: 'jugador',
   DESCONOCIDA: 'desconocida',
@@ -100,6 +101,10 @@ export function resolver(ruta) {
   }
   if (primero === 'datos' && resto.length === 0) {
     return { vista: VISTAS.DATOS };
+  }
+  if (segmentos[0] === 'juego') {
+    // El juego no depende de la temporada que se esté mirando: su nivel es el de la última jornada cerrada.
+    return { vista: VISTAS.JUEGO };
   }
   if (primero === 'reglas' && resto.length === 0) {
     return { vista: VISTAS.REGLAS, temporada: null };

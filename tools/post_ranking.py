@@ -7,7 +7,9 @@ la imagen y a dónde lleva el enlace).
 """
 
 import asyncio
+import json
 import os
+import urllib.request
 import re
 import sys
 from dataclasses import dataclass
@@ -174,6 +176,163 @@ def leer_resultados():
 VENTANA_EN_DIAS = 30
 
 
+#: Dónde se clasifica el hilo. **Sin proveedor cableado**: entra por entorno, en formato OpenAI-compatible,
+#: que es el que hablan Groq, Cerebras, Mistral, OpenRouter y el endpoint compatible de Gemini.
+#:
+#: Se eligió así después de tropezar: el plan era GitHub Models con el `GITHUB_TOKEN` del propio workflow y
+#: sin secreto nuevo, y al comprobarlo contra la API resultó estar **retirado desde el 30 de julio de 2026**
+#: —devuelve 410—. Atar el repositorio a otro proveedor concreto repetiría el error dentro de un año.
+#:
+#: **Sin `IA_API_KEY` esto no se llama.** El resumen sale entonces exactamente como hoy, así que la función
+#: vive apagada hasta que alguien decida el proveedor y añada el secreto: mandar la conversación del canal a
+#: un tercero es una decisión, no un efecto secundario de mergear.
+IA_API_URL = os.environ.get("IA_API_URL")
+IA_API_KEY = os.environ.get("IA_API_KEY")
+IA_MODELO = os.environ.get("IA_MODELO")
+
+#: Lo que se espera a un servicio de fuera antes de publicar sin él. El marcador no puede depender de que
+#: alguien conteste.
+ESPERA_DE_LA_IA = 20
+
+#: Cuánto se lee de la respuesta como mucho. Lo que se espera es un objeto JSON de seis claves.
+TOPE_DE_RESPUESTA = 64 * 1024
+
+#: Plazo **total** de la clasificación, en segundos. Es una cifra distinta de `ESPERA_DE_LA_IA` porque miden
+#: cosas distintas, y confundirlas costó un comentario falso en este mismo fichero: el `timeout` de `urlopen`
+#: es por operación de socket, así que un servidor que gotee un byte cada 19 segundos no lo dispara nunca.
+#: Medido: con `timeout=2` y un byte por segundo, la lectura bloqueó **40 segundos**, veinte veces el plazo
+#: declarado. A escala real serían horas, y el marcador del día se publica DESPUÉS de esto.
+#:
+#: Por eso la petición va en un hilo demonio y se la espera con plazo: si no llega, se abandona y se publica
+#: sin ella. Un hilo demonio no retiene el proceso al salir.
+PLAZO_TOTAL_DE_LA_IA = 25
+
+
+def clasifica_el_hilo(jornada: int, mensajes=None, cliente=None, nombres=()):
+    """De qué iba el hilo del día, o `None`. **Best-effort: nunca lanza.**
+
+    Slice: `voz-de-la-jornada`. Es el **borde** (§10): aquí se hace la red y de aquí sale un objeto que viaja
+    por parámetro a funciones puras.
+
+    Lo que sale hacia fuera es la transcripción **anonimizada** —participantes numerados, ningún nombre ni
+    identificador— y lo que vuelve se valida contra el esquema antes de tocar nada. Cualquier fallo devuelve
+    `None` y el resumen se publica sin la frase del hilo.
+    """
+    import urllib.request
+
+    from tono import (INSTRUCCION, INTENSIDAD_MAXIMA, TONOS, con_autor, hilo_a_clasificar,
+                      interpreta, transcripcion)
+
+    if not (IA_API_URL and IA_API_KEY and IA_MODELO and SLACK_TOKEN and CHANNEL_ID):
+        return None
+    # **TLS obligatorio.** La clave viaja en una cabecera `Authorization`; con `http://` iría en claro por la
+    # red de un runner de GitHub. Es una variable de configuración, no una entrada hostil, pero el coste de
+    # equivocarse al escribirla es una credencial expuesta.
+    if not IA_API_URL.startswith("https://"):
+        print("clasificación del hilo: IA_API_URL tiene que ser https", file=sys.stderr)
+        return None
+    try:
+        from extract_slack import contexto_tls
+
+        cli = cliente or WebClient(token=SLACK_TOKEN, ssl=contexto_tls())
+        if mensajes is None:
+            mensajes = cli.conversations_history(channel=CHANNEL_ID, limit=200).get("messages", [])
+        cabecera = hilo_a_clasificar(mensajes, jornada)
+        if cabecera is None:
+            return None
+        hilo = cli.conversations_replies(channel=CHANNEL_ID, ts=cabecera["ts"], limit=100)
+        # Los nombres del grupo se le pasan **para taparlos**, no para usarlos: la gente se llama por su
+        # nombre en los hilos, y sin esto salían en claro hacia la API.
+        texto = transcripcion(
+            hilo.get("messages", [])[1:], autor=cabecera.get("user"), nombres=nombres or ()
+        )
+        if not texto:
+            return None
+
+        cuerpo = json.dumps({
+            "model": IA_MODELO,
+            "temperature": 0,
+            "messages": [
+                {"role": "system",
+                 "content": INSTRUCCION.format(tonos=", ".join(TONOS), maxima=INTENSIDAD_MAXIMA)},
+                {"role": "user", "content": texto},
+            ],
+        }).encode()
+        peticion = urllib.request.Request(
+            IA_API_URL,
+            data=cuerpo,
+            headers={"Authorization": f"Bearer {IA_API_KEY}", "Content-Type": "application/json"},
+        )
+        devuelto = _con_plazo(peticion)
+        if devuelto is None:
+            return None
+        return con_autor(interpreta(_json_del_modelo(devuelto)), cabecera.get("user"))
+    except Exception as error:  # noqa: BLE001 — el resumen se publica igual, sea cual sea el fallo
+        # **Solo el tipo de excepción.** Los logs de Actions de este repositorio son públicos y por aquí
+        # viajan dos credenciales. Misma regla que en `leer_el_canal`.
+        print(f"clasificación del hilo: {type(error).__name__}", file=sys.stderr)
+        return None
+
+
+class _SinRedirecciones(urllib.request.HTTPRedirectHandler):
+    """Un `301` no se sigue. **Seguirlo se lleva la clave a otro host.**
+
+    `urllib` reenvía la cabecera `Authorization` cuando el redirect cambia de dominio —`requests` la corta,
+    `urllib` no—. Comprobado con dos servidores locales: el segundo recibió el `Bearer` entero. Un endpoint
+    caducado, comprometido, o una URL mal escrita bastan para regalar la credencial, y el `except` de arriba
+    se lo tragaría en silencio.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _con_plazo(peticion):
+    """La respuesta del modelo, o `None` si no llega a tiempo. **Plazo total, no por socket.**"""
+    import threading
+    import urllib.request
+
+    caja: dict = {}
+
+    def pedir():
+        try:
+            abridor = urllib.request.build_opener(_SinRedirecciones)
+            with abridor.open(peticion, timeout=ESPERA_DE_LA_IA) as respuesta:
+                caja["json"] = json.loads(respuesta.read(TOPE_DE_RESPUESTA))
+        except Exception as error:  # noqa: BLE001 — el hilo no puede tumbar la publicación
+            caja["error"] = type(error).__name__
+
+    hilo = threading.Thread(target=pedir, daemon=True)
+    hilo.start()
+    hilo.join(PLAZO_TOTAL_DE_LA_IA)
+    if hilo.is_alive():
+        print("clasificación del hilo: no llegó a tiempo", file=sys.stderr)
+        return None
+    if "error" in caja:
+        print(f"clasificación del hilo: {caja['error']}", file=sys.stderr)
+        return None
+    return caja.get("json")
+
+
+def _json_del_modelo(devuelto: dict) -> str | None:
+    """El contenido de la respuesta, tal cual. Validarlo es cosa de `interpreta`.
+
+    Se recorta lo que envuelva el JSON en un bloque de código, que es la desviación que más repiten los
+    modelos pequeños y la única que se le perdona: todo lo demás lo rechaza el esquema.
+    """
+    try:
+        crudo = devuelto["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        return None
+    if not isinstance(crudo, str):
+        return None
+    crudo = crudo.strip()
+    if crudo.startswith("```"):
+        crudo = crudo.split("```")[1] if "```" in crudo[3:] else crudo[3:]
+        crudo = crudo[4:] if crudo.startswith("json") else crudo
+    return crudo.strip()
+
+
 def leer_el_canal(jornada: int | None = None, cliente=None):
     """Los mensajes del día en el canal, para derivar las señales. **Best-effort: nunca lanza.**
 
@@ -254,7 +413,7 @@ def seccion_de_medallas(resultados):
 
 
 def comentario(
-    seccion_medallas: str, objetivo: Objetivo, resultados=None, senales=None, palabra=None
+    seccion_medallas: str, objetivo: Objetivo, resultados=None, senales=None, palabra=None, tono=None
 ) -> str:
     """El texto que acompaña a la captura.
 
@@ -268,7 +427,8 @@ def comentario(
     if resultados and resumen_activo():
         jornada = max(fila["wordle_id"] for fila in resultados)
         cuerpo = resumen_del_dia(
-            resultados, temporada_del_resumen(resultados), jornada, senales=senales, palabra=palabra
+            resultados, temporada_del_resumen(resultados), jornada,
+            senales=senales, palabra=palabra, tono=tono,
         )
         if cuerpo:
             partes.append(cuerpo)
@@ -482,9 +642,23 @@ async def publicar(
     # La palabra se busca aquí, en el borde, y **nunca por delante de la jornada jugada**: el guardarraíl de
     # `palabra_de` recibe la última jornada de la tabla, así que no se puede leer por delante.
     palabra = leer_la_palabra(jornada, filas)
+    # **Solo si el resumen está encendido.** Era un argumento y se evaluaba siempre, así que con el resumen
+    # apagado la conversación del canal habría salido igualmente hacia un tercero para tirar el resultado.
+    tono = (
+        clasifica_el_hilo(jornada, nombres={fila["player_name"] for fila in filas})
+        if resumen_activo()
+        else None
+    )
     publicado = subir(
         ruta,
-        comentario(medallas, objetivo, filas, senales=leer_el_canal(jornada), palabra=palabra),
+        comentario(
+            medallas,
+            objetivo,
+            filas,
+            senales=leer_el_canal(jornada),
+            palabra=palabra,
+            tono=tono,
+        ),
         titulo_de(jornada),
     )
     if os.path.exists(ruta):

@@ -40,9 +40,21 @@ quién no apareció. Con eso el resumen puede nombrar al que madrugó, al que lo
 aplaudido y al que armó el hilo — y cerrar con una frase de un diccionario cuando no haya nada mejor que
 decir.
 
-**Solo salen del canal señales, nunca texto.** Ni el mensaje de nadie, ni el contenido de un hilo, ni una
-cita: números y horas. El repositorio es público y la restricción de no volcar conversaciones no se cumple a
-medias.
+**Del canal solo salen señales, nunca texto.** Ni el mensaje de nadie, ni el contenido de un hilo, ni una
+cita: números, horas y —desde que el hilo se clasifica— un puñado de casillas cerradas. El repositorio es
+público y la restricción de no volcar conversaciones no se cumple a medias.
+
+**El hilo del día sí se lee, pero no lo lee este repositorio.** Contar respuestas no distingue una ovación de
+un juicio, y el grupo lo notó antes que el código: el día que alguien resolvió en uno publicando el último, su
+hilo se llenó de acusaciones y el mensaje lo celebró como «el hilo del día» —hubo quien escribió en el canal
+«el bot hoy: ovación para X» justo para señalarlo—. Así que el hilo se manda **anonimizado** a un modelo, que
+devuelve **una clasificación cerrada** —de qué iba, si hubo acusación, defensa o propuesta de norma, y cuánta
+temperatura— y con eso el repositorio elige una frase **de su propio registro**.
+
+**El modelo clasifica; el repositorio habla.** Ninguna palabra redactada por el modelo llega al canal, y
+ninguna palabra escrita por una persona sale del borde. No es pudor: en este canal la gente **ya le habla al
+bot**, así que si la prosa del modelo se publicara tal cual, cualquiera podría dictarle al bot lo que dice
+sobre un compañero delante de todo el grupo.
 
 ## Trigger técnico
 
@@ -155,6 +167,47 @@ jugador sino de la palabra, que ese día lleva a media tabla al mismo dibujo. Co
 **WHEN** se derivan las señales de la jornada
 **THEN** lo que viaja al resto del sistema son horas y recuentos, y en ningún caso el texto de un mensaje.
 
+### el-hilo-del-dia-se-clasifica
+**WHEN** el hilo más comentado del día tiene respuestas de otras personas
+**THEN** el resumen dice de qué iba esa conversación, y no solo cuántas respuestas tuvo.
+
+### la-frase-del-hilo-sale-del-repositorio
+**WHEN** se publica la frase que comenta el hilo
+**THEN** esa frase es una de las del registro del repositorio, y ninguna palabra redactada por el modelo
+aparece en el mensaje.
+
+### al-modelo-no-se-le-mandan-nombres
+**WHEN** se prepara la conversación del hilo para clasificarla
+**THEN** cada persona aparece con un rol anónimo y ningún nombre de jugador viaja fuera del borde.
+
+### solo-se-clasifica-el-hilo-del-dia
+**WHEN** la ventana leída del canal contiene hilos de días anteriores
+**THEN** solo se clasifica el hilo de la jornada que se está publicando.
+
+### una-clasificacion-invalida-no-se-usa
+**WHEN** lo que devuelve el modelo no encaja en el esquema esperado
+**THEN** el resumen se publica sin la frase del hilo, en lugar de publicar algo sin comprobar.
+
+### lo-que-se-escribe-en-el-canal-no-da-ordenes
+**WHEN** una respuesta del hilo contiene instrucciones dirigidas al bot
+**THEN** el mensaje publicado no las obedece: de la clasificación solo se leen las casillas del esquema.
+
+### un-hilo-tranquilo-no-se-llama-juicio
+**WHEN** la clasificación del hilo no llega a la temperatura mínima
+**THEN** no se publica frase de tono, en lugar de dramatizar una conversación que no lo fue.
+
+### la-misma-jornada-da-la-misma-frase-de-tono
+**WHEN** se compone dos veces el resumen de la misma jornada con la misma clasificación
+**THEN** la frase del hilo es la misma.
+
+### el-modelo-caido-no-tumba-el-resumen
+**WHEN** la clasificación falla, tarda demasiado o no está disponible
+**THEN** el resumen se publica con el resto de sus menciones, sin la frase del hilo.
+
+### el-recuento-de-respuestas-deja-de-ser-aplauso
+**WHEN** el hilo más comentado del día está clasificado como acusación
+**THEN** a quien lo abrió no se le nombra como si el recuento de respuestas fuera un reconocimiento.
+
 ## Estado después
 
 El mensaje que se publica gana las menciones que haya y una frase de cierre. Ninguna cifra del marcador
@@ -188,8 +241,13 @@ orden de seis a nueve reacciones, y hay hilos de decenas de respuestas.
 
 - **Persistir las señales.** Ni columna nueva ni backfill. Si algún día la web quiere pintar horas de
   publicación, es otro slice y toca el esquema.
-- **Leer hilos completos.** Se cuenta cuántas respuestas tiene un hilo, no lo que dicen. Bajar a leer el
-  contenido de las respuestas sería traer conversación al sistema.
+- **Traer al sistema lo que dicen los hilos.** Esta línea decía antes que no se bajaría a leer el contenido de
+  las respuestas. Se revierte a propósito y solo hasta donde hace falta: el contenido se lee **en el borde**,
+  se manda anonimizado y de vuelta entra una clasificación cerrada. Al sistema sigue sin llegar conversación,
+  que era lo que la decisión protegía.
+- **Publicar prosa escrita por un modelo.** La frase sale del registro del repositorio. Que el modelo redacte
+  el comentario sobre un compañero identificable es otra decisión, y no está tomada.
+- **Citar a nadie.** Ni literal ni parafraseado: lo que se publica son recuentos y una frase propia.
 - **Elegir la frase al azar.** El proyecto es determinista por contrato (§10), y es lo que hace posible
   comprobar el mensaje entero en un test.
 

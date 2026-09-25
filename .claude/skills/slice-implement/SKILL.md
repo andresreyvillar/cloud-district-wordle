@@ -47,10 +47,41 @@ python3 -m tools.wslice verify gates --slice <slug> --change-id <change-id>     
    a. `git add -A` — fija la implementación en el index (la restauración será desde ahí).
    b. Elegir 1-3 mutaciones sobre el código NUEVO del slice (invertir una condición, alterar un
       operador/constante, eliminar una llamada). Solo código de producción — NUNCA los tests.
+
+      **Las mutaciones se derivan de lo que el delta PROHÍBE, no de lo que se te ocurra.** Quien
+      implementa muta lo que ya tenía en la cabeza, así que la elección propia confirma en vez de
+      refutar: en `feat-tono-del-hilo` las cinco mutaciones elegidas así cayeron y aun así los
+      verificadores del Gate 4d sostuvieron siete refutaciones con la suite verde. Recorre los
+      Requirements y, por cada frase de la forma «nunca X» / «solo Y» / «no puede Z», escribe la
+      mutación que **hace ocurrir X**. Esa lista es obligatoria; las de intuición van después.
+
+      Tres moldes de guardián vacuo, los tres vistos en verde:
+      - **Guardián por subcadena literal**: comprobar que no aparece `"es un tramposo"` no impide
+        `"hizo trampas"`. Fijar la raíz, la propiedad o la **forma del objeto** — nunca el ejemplo.
+      - **Determinismo probado llamando dos veces en el mismo proceso**: eso es idempotencia. La
+        reproducibilidad se fija comprobando **la regla** (índice cíclico por jornada), porque una
+        elección con `hash()` pasa el test y cambia el texto en cada ejecución del cron.
+      - **El borde que falla, probado desde el compositor**: pasar `None` a la función pura no ejerce
+        ninguna caída. Si el Requirement dice «si el borde falla, se publica igual», el test tiene que
+        **hacer fallar al borde**.
    c. Ejecutar la suite **con `-B`** → DEBE fallar, y el test caído debe ser el que cubre el escenario
       mutado (comprobar contra sus `@scenarios`). Si sigue verde → los tests no protegen ese punto:
       reforzar el test (volver a Fase 3.3) antes de continuar.
    d. Restaurar: `git restore <archivo-mutado>`. La mutación NUNCA se stagea ni committea.
+
+   **Tres formas de que este gate mienta, vistas las tres en una misma sesión:**
+   - **Verde falso: la mutación no se aplicó.** El mutador no existía y falló a stderr mientras la suite
+     seguía verde. Comprobar que el fichero cambió antes de leer el resultado.
+   - **Rojo falso: la mutación rompió la compilación.** Un error de sintaxis tumba todos los tests que
+     importan el módulo y se lee como «cazada». Tras mutar, `node --check` / `python3 -m py_compile` en
+     verde **antes** de ejecutar la suite; y el rojo tiene que caer en **un** escenario, no en todos.
+   - **Mutación equivocada: el separador del bucle partió el código.** Un `IFS='|'` sobre código con `||`
+     sustituye un trozo que no era el pensado. No pasar código por bucles con separadores; llamar al
+     mutador directamente, una vez por mutación.
+   - **Rojo en cascada: el mutante destruye estado compartido.** Con un fixture de módulo (una base de
+     datos local, un servidor), la escritura que el mutante deja pasar borra los datos de los demás tests y
+     el rojo cae en escenarios ajenos. Los intentos destructivos van **dentro de una transacción que se
+     deshace** (o con estado propio por test), para que una regresión ponga en rojo solo su escenario.
    e. Suite en verde de nuevo. Registrar en el reporte: mutación → test que la cazó.
    f. Si un mutante sobrevive por ser **equivalente** (no cambia comportamiento observable),
       demostrarlo con un experimento antes de tocar el test, y decirlo.
@@ -62,6 +93,11 @@ python3 -m tools.wslice verify gates --slice <slug> --change-id <change-id>     
    - **Re-stagear tras cada arreglo real.** Si durante el gate se refuerza un test o se corrige el
      código, `git add` inmediatamente: el `git restore` de la siguiente mutación restaura el index,
      y un index desactualizado se lleva el arreglo por delante.
+   **La prueba de un arreglo mide también la función que arregla, no solo el síntoma.** Arreglar «la
+   página hace scroll al jugar» se verificó midiendo el scroll —quieto, verde— mientras el arreglo le había
+   quitado las teclas al juego: la página no se movía porque ya no se movía nada. Si la prueba del arreglo
+   no puede fallar cuando la función muere, no prueba el arreglo.
+
 6. **Gate 4d (auditoría adversarial):** lanzar 2-3 verificadores independientes (sin el contexto de
    esta implementación) con el prompt: *"Intenta REFUTAR que el escenario <WHEN/THEN> se cumple en
    este código"*. ≥1 refutación sostenida = volver a Fase 3.3.

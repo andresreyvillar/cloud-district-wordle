@@ -11,6 +11,7 @@ import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarReglas } from './ui/reglas.js';
 import { pintarDatos } from './ui/datos.js';
 import { pintarHoy } from './ui/hoy.js';
+import { desmontarJuego, pintarJuego } from './ui/juego.js';
 import { pintarJugador } from './ui/jugador.js';
 import { pintarTemporada } from './ui/temporada.js';
 import { pintarTemporadas } from './ui/temporadas.js';
@@ -74,7 +75,13 @@ function despachar(destino, resultados, instantaneas) {
   const temporadas = temporadasDe(instantaneas);
   const actual = temporadaEfectiva(destino, temporadas);
 
-  pintarNavegacion(navegacion, { ...destino, temporada: actual });
+  // El reloj se lee aquí, en la carga de la página, y baja por parámetro (§10). Fecha LOCAL: el sticker caduca
+  // al acabar el día en Madrid, no a las dos de la mañana porque UTC vaya por delante.
+  const ahora = new Date();
+  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+  pintarNavegacion(navegacion, { ...destino, temporada: actual }, hoy);
+  // Antes de pintar cualquier vista: si venimos del juego, que deje de correr y de capturar el teclado.
+  desmontarJuego();
   pintarSelector(selector, temporadas, destino.temporada);
 
   if (destino.vista === VISTAS.DESCONOCIDA) {
@@ -96,6 +103,11 @@ function despachar(destino, resultados, instantaneas) {
   if (destino.vista === VISTAS.HOY) {
     // La jornada abierta no está materializada: esta vista lee las filas crudas (excepción del ADR 0008).
     pintarHoy(vista, resultados, instantaneas, actual);
+    return;
+  }
+  if (destino.vista === VISTAS.JUEGO) {
+    // Como la vista de hoy, lee las filas crudas: el nivel se dibuja de las cuadrículas, no del cálculo.
+    pintarJuego(vista, resultados, hoy);
     return;
   }
   if (destino.vista === VISTAS.JUGADOR) {

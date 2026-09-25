@@ -1189,3 +1189,64 @@ NUEVA_TEMPORADA: tuple[str, ...] = (
     "🔄 De cero otra vez. Que empiece el baile.",
     "🔄 Página nueva. Suerte a los que arrancan hoy, que son todos.",
 )
+
+
+#: De qué iba el hilo del día, cuando se sabe. Una entrada por situación publicable.
+#:
+#: **Estas frases las escribe el repositorio, no el modelo.** El modelo devuelve seis casillas y aquí se elige
+#: qué decir, que es lo que impide que alguien le dicte al bot lo que publica sobre un compañero escribiéndolo
+#: en el hilo. La consecuencia de diseño es esta: el registro tiene que estar surtido, porque el índice es
+#: cíclico por jornada y con pocas frases la repetición llega en dos semanas.
+#:
+#: **Ninguna afirma que nadie haya hecho trampas.** Lo que se publica es que el canal lo discutió, no un
+#: veredicto: el bot cuenta lo que pasó en el hilo y no dictamina sobre la partida de nadie. Hay un test que
+#: lo fija.
+TONO_DEL_HILO: dict[str, tuple[str, ...]] = {
+    # El grupo no se lo cree. **Cachondeo, no sentencia.**
+    "acusacion": (
+        "{dudan} personas no se lo han creído a la vez. Eso ya no es casualidad, {jugador}.",
+        "El hilo de {jugador} es la reunión de vecinos más animada del mes.",
+        "{jugador} ha resuelto, y el canal ha resuelto no creérselo. {dudan} votos a favor.",
+        "A {jugador} le han montado el hilo más largo del día y ni un «enhorabuena» dentro. Amigos así.",
+        "{dudan} personas han entrado a preguntarle cosas a {jugador}. Ninguna era «¿qué tal?».",
+        "El hilo de {jugador}: mucho cariño, todo entre comillas.",
+        "{jugador} ha abierto debate sin querer y {dudan} personas se han apuntado encantadas.",
+        "Hoy nadie ha aplaudido a {jugador}, pero le han escrito {dudan}. Que también es cariño.",
+        "El canal le ha pedido explicaciones a {jugador} con la delicadeza de siempre: ninguna.",
+        "{dudan} personas, cero felicitaciones y un hilo kilométrico. Enhorabuena igual, {jugador}.",
+    ),
+    # No se lo creen y encima alguien se pone a legislar.
+    "acusacion-con-propuesta": (
+        "Lo de {jugador} ha durado lo que tarda el grupo en inventarse una norma nueva.",
+        "{dudan} personas dudando y alguien ya escribiendo el reglamento. Se nos va de las manos, {jugador}.",
+        "El hilo de {jugador} ha pasado de «¿cómo?» a «habría que prohibirlo» en dos mensajes.",
+        "Después de lo de {jugador}, el canal se ha puesto legislativo. Mala señal.",
+        "{jugador} ha conseguido que el grupo quiera cambiar las reglas un martes cualquiera.",
+        "Hilo de {jugador}: {dudan} escépticos y una propuesta de norma. Esto ya es comunidad de vecinos.",
+        "El grupo ha decidido que hacen falta normas. Gracias por tu aportación, {jugador}.",
+        "De la jugada de {jugador} ha salido más legislación que de un pleno.",
+        "{dudan} personas y un borrador de reglamento. {jugador}, mira lo que has hecho.",
+    ),
+    # Asombro, sin mala leche.
+    "incredulidad": (
+        "{dudan} personas han escrito «¿cómo?» casi a la vez. Has roto el canal, {jugador}.",
+        "El hilo de {jugador} es gente releyendo la cuadrícula por si se les había ido la vista.",
+        "{jugador} ha dejado a {dudan} personas mirando la pantalla como quien busca el truco de magia.",
+        "Nadie discute lo de {jugador}, solo lo miran mucho. {dudan} veces, para ser exactos.",
+        "El canal no sabe si aplaudir a {jugador} o pedirle el truco.",
+        "{dudan} personas han entrado al hilo de {jugador} para asegurarse de que lo habían leído bien.",
+        "Lo de {jugador} ha caído en el canal como una piedra en un estanque: {dudan} ondas.",
+        "{jugador} ha hecho algo raro y el grupo todavía lo está procesando.",
+    ),
+    # Roce del bueno.
+    "pique": (
+        "El hilo de {jugador} ha tenido más roce que la propia palabra.",
+        "Lo de {jugador} ha caldeado el ambiente: {dudan} personas entrando al trapo.",
+        "El hilo de {jugador} empezó por la palabra y acabó por todo lo demás.",
+        "{dudan} personas se han picado con {jugador}. Y eso que hoy no tocaba.",
+        "A {jugador} le han montado tertulia encima de la cuadrícula.",
+        "El canal se ha puesto a discutir en el hilo de {jugador}, como Dios manda.",
+        "Hilo de {jugador}: chispa, mucha chispa, y algo de humo.",
+        "{jugador} ha dicho algo y {dudan} personas han tenido opinión inmediata.",
+    ),
+}

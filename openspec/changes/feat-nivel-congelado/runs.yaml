@@ -1,0 +1,29 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-25T02:00:00Z'
+  fase: propose+implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El nivel se calculaba al abrir la pestaña y podía cambiar de madrugada con una cuadrícula tardía, lo que
+    mezclaba en el ranking tiempos de dos escenarios. El dueño decidió congelarlo, a las 04:00 de Madrid, con
+    Node ejecutando el mismo nivelDe de la web. La hora se midió: en 60 días, 2 de 490 cuadrículas llegaron
+    después de medianoche, la más tardía a las 02:57 (un lote de 8 del 8 de agosto a las 17:11 es una
+    recarga, no un retraso).
+
+    La base de datos se prueba en un Postgres local desechable con todas las migraciones en orden
+    (tests/postgres_local.py, ahora compartido con ranking-del-juego). El trigger de inmutabilidad se
+    comprueba con la clave de servicio y como superusuario.
+
+    Mutación (Gate 4c): antes de las 04:00 congelar también la de ayer → rojo solo en
+    antes-de-las-cuatro-no-se-congela; quitar el try de nivelParaJugar → rojo solo en
+    sin-nivel-congelado-lo-dice; quitar delete del trigger → primero nueve rojos en cascada (el delete borraba
+    el nivel del fixture compartido), y tras meter los intentos en transacciones que se deshacen, rojo solo
+    en un-nivel-congelado-no-cambia. Lección registrada.

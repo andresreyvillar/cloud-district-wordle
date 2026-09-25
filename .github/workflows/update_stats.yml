@@ -61,6 +61,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Para congelar el nivel del juego con el mismo `nivelDe` de la web (slice `nivel-congelado`). La versión
+      # va fijada porque `v2/js/` son módulos ES sin `package.json`, y Node solo los detecta solo desde la 22.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Install dependencies
         run: pip install slack_sdk python-dotenv supabase
 
@@ -96,8 +102,12 @@ jobs:
               sleep "$ESPERA"
             fi
             echo "── vuelta $vuelta/$VUELTAS · $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            # El nivel del juego se congela **después** de sincronizar: así entra la última cuadrícula que haya
+            # llegado. Solo escribe una vez por jornada, a partir de las 04:00 de Madrid; el resto de vueltas
+            # dicen que ya está y no tocan nada.
             if python3 tools/extract_slack.py | python3 tools/add_results.py \
-               && python3 tools/materialize_seasons.py; then
+               && python3 tools/materialize_seasons.py \
+               && node tools/congelar_nivel.mjs; then
               echo "   sincronizado"
             else
               fallos=$((fallos + 1))

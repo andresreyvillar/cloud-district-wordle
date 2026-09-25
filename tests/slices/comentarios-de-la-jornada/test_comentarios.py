@@ -50,12 +50,15 @@ def test_resolver_en_dos_es_sospechoso_aunque_el_dia_sea_facil():
     """
     from comentarios import hechos_de_la_jornada, frase
 
-    facil = jornada(1600, {"Ana": 2, "B": 2, "C": 3, "D": 2, "E": 3})
+    # El fixture cambió al exigirse que la mejor nota no se comparta: antes eran tres jugadores con 2 y los
+    # tres sospechosos. Lo que este test protege —que no haga falta un día duro— se conserva intacto: la
+    # media aquí es 2,8, un día facilísimo, y la pulla sale igual.
+    facil = jornada(1600, {"Ana": 2, "B": 3, "C": 3, "D": 3, "E": 3})
     hechos = hechos_de_la_jornada(facil, "0", 1600)
     sospechosos = [h for h in hechos if h.clave == "sospechoso"]
 
     assert sospechosos, "un 2 recibe pulla aunque el día fuera fácil"
-    assert {h.jugador for h in sospechosos} == {"Ana", "B", "D"}
+    assert {h.jugador for h in sospechosos} == {"Ana"}
 
     # Y la pulla **no puede afirmar que el día fuera duro**, porque ya no se comprueba.
     for indice in range(20):
@@ -329,13 +332,17 @@ def test_los_que_comparten_hecho_se_fusionan_en_una_linea():
     """
     from comentarios import hechos_elegidos
 
+    # El mismo fixture de siempre, con otro hecho: desde que la sospecha exige **no compartir** la mejor
+    # nota, dos personas no pueden ser sospechosas el mismo día y este escenario se quedaría sin caso. La
+    # fusión en plural no era propiedad de la sospecha, así que se comprueba con `sembrado`, que sí se
+    # comparte: media del día 3,6 y los dos does quedan 1,6 por debajo.
     filas = jornada(1600, {"Ana": 2, "Bea": 2, "C": 4, "D": 5, "E": 5})
 
-    sospechosos = [h for h in hechos_elegidos(filas, "0", 1600) if h.clave == "sospechoso"]
+    sembrados = [h for h in hechos_elegidos(filas, "0", 1600) if h.clave == "sembrado"]
 
-    assert len(sospechosos) == 1, "una sola línea"
-    assert sospechosos[0].varios is True, "y en plural"
-    assert sospechosos[0].jugador == "Ana y Bea", sospechosos[0].jugador
+    assert len(sembrados) == 1, "una sola línea"
+    assert sembrados[0].varios is True, "y en plural"
+    assert sembrados[0].jugador == "Ana y Bea", sembrados[0].jugador
 
 
 # @scenarios un-hecho-no-se-repite-en-dos-comentarios
@@ -468,3 +475,56 @@ def test_la_tabla_cubre_a_todos_los_del_historico():
     # Los 23 del histórico, declarados por el dueño el 2026-09-09.
     assert len(FORMAS) >= 23, f"faltan formas por declarar: {len(FORMAS)}"
     assert all(f in ("o", "a") for f in FORMAS.values()), "solo hay dos formas declarables"
+
+
+# @scenarios la-sospecha-va-a-la-mejor-nota-del-dia
+def test_con_un_uno_en_la_mesa_no_se_duda_del_dos():
+    from comentarios import hechos_de_la_jornada
+
+    # **El caso real de la jornada 1709.** El mensaje salía quejándose del 2 de dos jugadoras teniendo un 1
+    # delante: eso pone en duda a quien lo hizo peor y deja pasar a quien lo hizo mejor.
+    filas = jornada(1709, {"Dani": 1, "Paula": 2, "Raquel": 2, "Cata": 3, "Joel": 4})
+
+    hechos = hechos_de_la_jornada(filas, "0", 1709)
+
+    # De las que hicieron 2 no se duda: hay una nota mejor en la mesa.
+    assert not [h for h in hechos if h.jugador in ("Paula", "Raquel")]
+    # Y la reacción va a quien hizo el 1. Le toca `clavada`, que es el hecho más raro del juego y gana al
+    # dedup por persona: su registro es el que lleva la incredulidad.
+    assert [h.clave for h in hechos if h.jugador == "Dani"] == ["clavada"]
+
+
+# @scenarios una-nota-baja-compartida-habla-de-la-palabra-y-no-de-quien-juega
+def test_una_mejor_nota_compartida_no_levanta_sospecha():
+    from comentarios import hechos_de_la_jornada
+
+    # Que varios coincidan abajo dice que la palabra era fácil, no que nadie hiciera nada raro.
+    filas = jornada(1601, {"Ana": 2, "B": 2, "C": 3, "D": 3, "E": 4})
+
+    sospechosos = [h for h in hechos_de_la_jornada(filas, "0", 1601) if h.clave == "sospechoso"]
+
+    assert sospechosos == []
+
+
+# @scenarios una-nota-baja-compartida-habla-de-la-palabra-y-no-de-quien-juega
+def test_un_uno_compartido_tampoco_levanta_sospecha():
+    from comentarios import hechos_de_la_jornada
+
+    # La regla es la misma sea cual sea la nota: compartir la mejor habla de la palabra.
+    filas = jornada(1602, {"Ana": 1, "B": 1, "C": 3, "D": 3, "E": 4})
+
+    sospechosos = [h for h in hechos_de_la_jornada(filas, "0", 1602) if h.clave == "sospechoso"]
+
+    assert sospechosos == []
+
+
+# @scenarios la-sospecha-va-a-la-mejor-nota-del-dia
+def test_resolver_en_uno_sigue_teniendo_su_hecho_propio():
+    from comentarios import hechos_de_la_jornada
+
+    # `clavada` no depende de la sospecha: quien acierta a la primera se comenta igual.
+    filas = jornada(1603, {"Ana": 1, "B": 1, "C": 3, "D": 3, "E": 4})
+
+    clavadas = [h for h in hechos_de_la_jornada(filas, "0", 1603) if h.clave == "clavada"]
+
+    assert {h.jugador for h in clavadas} == {"Ana", "B"}

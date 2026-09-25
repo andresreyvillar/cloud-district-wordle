@@ -44,8 +44,17 @@ dificultad de la jornada, que ya calcula `standings`.
 ## Comportamiento observable
 
 ### sospechoso-es-el-chiste-raro
-**WHEN** alguien resuelve en dos intentos o menos, **sea el día que sea**
+**WHEN** alguien firma **la mejor nota del día**, de dos intentos o menos y sin compartirla, sea el día que sea
 **THEN** el resumen le lanza la pulla, sin exigir además que la jornada fuera dura.
+
+### la-sospecha-va-a-la-mejor-nota-del-dia
+**WHEN** en la misma jornada hay una nota mejor que la de quien resolvió en dos
+**THEN** la pulla va a la mejor, y de la otra no se duda: quejarse de un 2 el día que alguien ha hecho 1 es
+poner en duda al que lo hizo peor.
+
+### una-nota-baja-compartida-habla-de-la-palabra-y-no-de-quien-juega
+**WHEN** la mejor nota del día la firman dos o más personas
+**THEN** no se lanza la pulla de la sospecha: que varios coincidan abajo dice que la palabra era fácil.
 
 Antes hacía falta que la media del grupo fuera alta y el aviso salía en el 6% de las jornadas: casi nunca.
 Sin esa condición sale en el **29%** —una de cada tres— y reparte: quien más acumula en todo el histórico

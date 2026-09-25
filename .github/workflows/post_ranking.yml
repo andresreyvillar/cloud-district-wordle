@@ -27,6 +27,10 @@ on:
 jobs:
   update-and-post:
     runs-on: ubuntu-latest
+    # El techo de GitHub sin declarar nada son 6 horas. Publicar el marcador del día no debería pasar de
+    # unos minutos, así que un cuelgue —una captura que no termina, un endpoint que gotea— tiene que morir
+    # pronto y dejar sitio a la siguiente ventana del cron, no comerse la tarde entera.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -57,6 +61,16 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          # **De qué iba el hilo del día.** Las tres a la vez o ninguna: sin ellas `clasifica_el_hilo`
+          # devuelve `None` sin llamar a nadie y el mensaje sale como salía. No hay proveedor cableado
+          # —el formato es OpenAI-compatible— porque el plan original era GitHub Models con el token del
+          # propio workflow y resultó estar retirado desde el 2026-07-30.
+          #
+          # Añadirlas es la decisión de mandar la conversación del canal a un tercero, anonimizada. Mientras
+          # no estén, este slice está apagado.
+          IA_API_URL: ${{ secrets.IA_API_URL }}
+          IA_API_KEY: ${{ secrets.IA_API_KEY }}
+          IA_MODELO: ${{ vars.IA_MODELO }}
           # Sin estas dos, `leer_resultados()` devuelve vacío y el mensaje sale SIN MEDALLAS. Faltaban:
           # las medallas están implementadas desde el 2026-08-05 y no han salido ni un solo día.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
