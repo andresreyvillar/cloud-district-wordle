@@ -1,0 +1,22 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-25T01:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño adelanta la congelación de las 04:00 a las 02:00. Coste medido: en 60 días, 1 de 490
+    cuadrículas llegó después de las 02:00 (a las 02:57). Los escenarios se renombran para no depender de la
+    hora.
+
+    La primera mutación (hora a las 03:00) puso en rojo tres escenarios: los tests de «ya congelado» y de «dice
+    lo que hace» usaban las 02:10, justo al lado del umbral, así que dependían de la hora sin tratar de ella.
+    Pasaron a las 10:00 y la mutación quedó en rojo solo en se-congela-a-la-hora; la de congelar también la de
+    ayer antes de la hora, solo en antes-de-la-hora-no-se-congela.

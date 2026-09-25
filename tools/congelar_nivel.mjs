@@ -5,7 +5,7 @@
  * Slice: `nivel-congelado` (openspec/slices/dashboard/nivel-congelado.md).
  *
  *     node tools/congelar_nivel.mjs                              # fecha y hora de Madrid, ahora
- *     node tools/congelar_nivel.mjs --hoy 2026-09-25 --hora 04:10 --seco
+ *     node tools/congelar_nivel.mjs --hoy 2026-09-25 --hora 02:10 --seco
  *
  * El nivel sale del **mismo** `nivelDe` que usa la web (`v2/js/domain/superbros.js`): una sola
  * implementación. Lo ejecuta el cron de sincronización tras cada vuelta, con `SUPABASE_URL` y

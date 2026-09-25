@@ -103,7 +103,7 @@ jobs:
             fi
             echo "── vuelta $vuelta/$VUELTAS · $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             # El nivel del juego se congela **después** de sincronizar: así entra la última cuadrícula que haya
-            # llegado. Solo escribe una vez por jornada, a partir de las 04:00 de Madrid; el resto de vueltas
+            # llegado. Solo escribe una vez por jornada, a partir de las 02:00 de Madrid; el resto de vueltas
             # dicen que ya está y no tocan nada.
             if python3 tools/extract_slack.py | python3 tools/add_results.py \
                && python3 tools/materialize_seasons.py \

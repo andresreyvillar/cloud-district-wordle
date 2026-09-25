@@ -17,7 +17,7 @@ de septiembre, Andrés R. y Claire el 23— y arrastra identificadores de displa
 ## Dónde se engancha
 
 La vista pinta un contenedor y le cuelga el nivel ya calculado. **Es el nivel congelado de la jornada**
-(slice `nivel-congelado`): el cron lo genera una vez con `nivelDe`, a partir de las 04:00 del día siguiente,
+(slice `nivel-congelado`): el cron lo genera una vez con `nivelDe`, a partir de las 02:00 del día siguiente,
 lo guarda en `game_levels` y no vuelve a cambiar. Todos juegan el mismo escenario y el ranking compara lo
 mismo.
 

@@ -69,33 +69,33 @@ function ejecutar(servidor, opciones) {
 
 const escrituras = (servidor) => servidor.peticiones.filter((p) => p.metodo !== 'GET');
 
-/** @scenarios se-congela-a-las-cuatro */
-test('a las 04:00 toca la jornada de ayer', () => {
-  assert.equal(HORA_DE_CONGELAR, '04:00');
-  assert.equal(jornadaACongelar(RESULTADOS, '2026-09-25', '04:00'), 1722);
+/** @scenarios se-congela-a-la-hora */
+test('a las 02:00 toca la jornada de ayer', () => {
+  assert.equal(HORA_DE_CONGELAR, '02:00');
+  assert.equal(jornadaACongelar(RESULTADOS, '2026-09-25', '02:00'), 1722);
   assert.equal(jornadaACongelar(RESULTADOS, '2026-09-25', '17:30'), 1722);
 });
 
-/** @scenarios se-congela-a-las-cuatro */
+/** @scenarios se-congela-a-la-hora */
 test('la de hoy no se congela nunca, aunque ya tenga cuadrículas', () => {
   assert.equal(jornadaACongelar(RESULTADOS, '2026-09-25', '23:59'), 1722);
 });
 
-/** @scenarios se-congela-a-las-cuatro */
+/** @scenarios se-congela-a-la-hora */
 test('el cron guarda el nivel que da nivelDe, con su jornada y su fecha', async () => {
   const servidor = postgrest();
 
-  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '04:10' });
+  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '02:10' });
 
   assert.equal(resultado.accion, 'congelado');
   assert.deepEqual(servidor.niveles[1722], { jornada: 1722, fecha: '2026-09-24', nivel: nivelDe(RESULTADOS, 1722) });
 });
 
-/** @scenarios se-congela-a-las-cuatro */
+/** @scenarios se-congela-a-la-hora */
 test('escribe con la clave de servicio y sin pisar un duplicado', async () => {
   const servidor = postgrest();
 
-  await ejecutar(servidor, { hoy: '2026-09-25', hora: '04:10' });
+  await ejecutar(servidor, { hoy: '2026-09-25', hora: '02:10' });
 
   const [post] = escrituras(servidor);
   assert.equal(post.url.searchParams.get('on_conflict'), 'jornada');
@@ -103,28 +103,28 @@ test('escribe con la clave de servicio y sin pisar un duplicado', async () => {
   assert.equal(post.cabeceras.Authorization, 'Bearer clave-de-prueba');
 });
 
-/** @scenarios antes-de-las-cuatro-no-se-congela */
-test('antes de las 04:00 la de ayer todavía no toca', () => {
-  assert.equal(jornadaACongelar(RESULTADOS, '2026-09-25', '03:59'), 1721);
+/** @scenarios antes-de-la-hora-no-se-congela */
+test('antes de las 02:00 la de ayer todavía no toca', () => {
+  assert.equal(jornadaACongelar(RESULTADOS, '2026-09-25', '01:59'), 1721);
   assert.equal(jornadaACongelar(RESULTADOS, '2026-09-25', '00:00'), 1721);
 });
 
-/** @scenarios antes-de-las-cuatro-no-se-congela */
-test('antes de las 04:00 se congela la de anteayer si el cron estuvo caído', async () => {
+/** @scenarios antes-de-la-hora-no-se-congela */
+test('antes de las 02:00 se congela la de anteayer si el cron estuvo caído', async () => {
   const servidor = postgrest();
 
-  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '02:00' });
+  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '01:30' });
 
   assert.equal(resultado.accion, 'congelado');
   assert.equal(resultado.jornada, 1721);
   assert.equal(servidor.niveles[1722], undefined, 'la de ayer sigue sin congelar');
 });
 
-/** @scenarios antes-de-las-cuatro-no-se-congela */
-test('antes de las 04:00, con anteayer ya congelado, no se escribe nada', async () => {
+/** @scenarios antes-de-la-hora-no-se-congela */
+test('antes de las 02:00, con anteayer ya congelado, no se escribe nada', async () => {
   const servidor = postgrest({ congelados: { 1721: { jornada: 1721 } } });
 
-  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '02:00' });
+  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '01:30' });
 
   assert.equal(resultado.accion, 'ya-congelado');
   assert.equal(escrituras(servidor).length, 0);
@@ -147,8 +147,8 @@ test('una jornada ya congelada no se vuelve a escribir, aunque haya cuadrículas
 test('dos vueltas seguidas dejan un solo nivel', async () => {
   const servidor = postgrest();
 
-  await ejecutar(servidor, { hoy: '2026-09-25', hora: '04:10' });
-  const segunda = await ejecutar(servidor, { hoy: '2026-09-25', hora: '05:05' });
+  await ejecutar(servidor, { hoy: '2026-09-25', hora: '10:00' });
+  const segunda = await ejecutar(servidor, { hoy: '2026-09-25', hora: '11:00' });
 
   assert.equal(segunda.accion, 'ya-congelado');
   assert.equal(escrituras(servidor).length, 1);
@@ -164,7 +164,7 @@ test('dice qué congela antes de escribir', async () => {
     return servidor.fetch(direccion, opciones);
   };
 
-  await congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '04:10', seco: false, log: (l) => lineas.push(l) });
+  await congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '10:00', seco: false, log: (l) => lineas.push(l) });
 
   assert.equal(escritoAlDecirlo, true, 'la línea con la jornada sale antes del POST');
   assert.match(lineas.join('\n'), /#1722 · 2026-09-24 · 2 tramos/);
@@ -174,7 +174,7 @@ test('dice qué congela antes de escribir', async () => {
 test('con --seco calcula y no escribe', async () => {
   const servidor = postgrest();
 
-  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '04:10', seco: true });
+  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '10:00', seco: true });
 
   assert.equal(resultado.accion, 'seco');
   assert.equal(escrituras(servidor).length, 0);
@@ -186,7 +186,7 @@ test('si nadie tiene cuadrícula lo dice y no escribe', async () => {
   const sinPatron = FILAS.map((f) => ({ ...f, pattern: null }));
   const servidor = postgrest({ filas: sinPatron });
 
-  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '04:10' });
+  const resultado = await ejecutar(servidor, { hoy: '2026-09-25', hora: '10:00' });
 
   assert.equal(resultado.accion, 'sin-cuadriculas');
   assert.equal(escrituras(servidor).length, 0);
@@ -198,7 +198,7 @@ test('el error que llega al log público no copia los detalles de la fila', asyn
   const fetch = async () => ({ ok: false, status: 400, json: async () => JSON.parse(cuerpo), text: async () => cuerpo });
 
   await assert.rejects(
-    congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '04:10', seco: false, log: () => {} }),
+    congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '10:00', seco: false, log: () => {} }),
     (error) => /400: viola nivel_con_forma/.test(error.message) && !/Ana/.test(error.message),
   );
 });
@@ -208,7 +208,7 @@ test('si PostgREST falla, el script falla y lo dice', async () => {
   const fetch = async () => ({ ok: false, status: 500, json: async () => ({}), text: async () => 'caído' });
 
   await assert.rejects(
-    congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '04:10', seco: false, log: () => {} }),
+    congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '10:00', seco: false, log: () => {} }),
     /500/,
   );
 });
