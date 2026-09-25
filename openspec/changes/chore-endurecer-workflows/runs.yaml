@@ -1,0 +1,12 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-25T01:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    tests: pass
+  rondas_correccion: 0
+  notas: >-
+    Cierra L-1 y L-2 de la revisión de seguridad de feat-nivel-congelado. La guarda de vueltas se probó con el
+    mismo bash: vacío da 7, un número pasa, y texto con `;` o letras se rechaza.
