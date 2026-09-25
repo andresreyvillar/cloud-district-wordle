@@ -1121,11 +1121,15 @@ nav[data-navegacion] a {
   opacity: 0.75;
 }
 
-/* Compartir la puntuación: el texto a la vista, para que se vea qué se va a pegar antes de pegarlo. */
+/* Compartir la puntuación: el texto a la vista, para que se vea qué se va a pegar antes de pegarlo.
+   Fondo y tinta de la liga, que se redefinen juntos en modo oscuro: con un fondo fijo casi negro y la tinta
+   heredada, en modo claro el texto era oscuro sobre oscuro y no se leía. */
 .compartir-texto {
   padding: 10px 12px;
+  border: 2px solid var(--borde);
   border-radius: 6px;
-  background: var(--fondo-hundido, #1b1f2a);
+  background: var(--liga-tablero);
+  color: var(--liga-tinta);
   white-space: pre-wrap;
   font-size: 0.95em;
 }
