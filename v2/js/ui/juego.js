@@ -421,17 +421,19 @@ export async function pintarJuego(contenedor, resultados, hoy, ranking = RANKING
       ${cabecera(null)}
       <p class="etiqueta">cargando el nivel…</p>
     </section>`;
-  const partida = await nivelParaJugar(niveles);
+  // `congelado` y no `partida`: ese nombre es el de la partida de Phaser, a nivel de módulo, y taparlo aquí
+  // convertía `partida = montar(...)` en una asignación a una constante —el juego no arrancaba—.
+  const congelado = await nivelParaJugar(niveles);
   // Si mientras se leía se cambió de pestaña, no se pinta: sería escribir sobre otra vista.
   if (miTurno !== turno) return null;
-  const jornada = partida?.jornada ?? null;
-  const nivel = partida?.nivel ?? null;
+  const jornada = congelado?.jornada ?? null;
+  const nivel = congelado?.nivel ?? null;
 
   const documento = contenedor.ownerDocument;
   const almacen = almacenDe(documento);
   const jugadores = jugadoresDelGrupo(resultados);
   let elegido = jugadorRecordado(almacen, jugadores);
-  contenedor.innerHTML = vista(nivel, jornada, cuandoFue(partida?.fecha ?? null, hoy), jugadores, elegido);
+  contenedor.innerHTML = vista(nivel, jornada, cuandoFue(congelado?.fecha ?? null, hoy), jugadores, elegido);
 
   const lienzo = contenedor.querySelector(`#${ID_DEL_CONTENEDOR}`);
   if (!lienzo || !nivel) return nivel;

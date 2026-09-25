@@ -25,7 +25,7 @@ Si no hay ningún nivel congelado, o no se puede leer, la pestaña lo dice en lu
 checks:
   - type: regex
     file: v2/js/ui/juego.js
-    pattern: 'const partida = await nivelParaJugar\(niveles\);'
+    pattern: 'const congelado = await nivelParaJugar\(niveles\);'
     describe: la pestaña juega el nivel que lee de la fuente de niveles congelados
   - type: regex
     file: v2/js/data/results.js
