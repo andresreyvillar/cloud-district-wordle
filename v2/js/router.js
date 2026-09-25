@@ -166,6 +166,10 @@ function _rutaInterna(destino) {
       return '/hoy';
     case VISTAS.DATOS:
       return '/datos';
+    // Sin este caso, el enlace de la pestaña caía al `default` y llevaba a la portada: la URL escrita a mano
+    // funcionaba (`resolver` sí conoce `/juego`) y pulsar la pestaña no.
+    case VISTAS.JUEGO:
+      return '/juego';
     case VISTAS.REGLAS:
       return destino.temporada ? `/t/${destino.temporada}/reglas` : '/reglas';
     default:

@@ -54,6 +54,11 @@ congelado.
 **WHEN** se abre la pestaña SuperWordleBros
 **THEN** la vista atribuye el juego a Joel de forma visible.
 
+### la-pestana-lleva-al-juego
+**WHEN** se pulsa la pestaña SuperWordleBros desde cualquier otra sección
+**THEN** la web navega a `/juego`; y cada pestaña de la navegación lleva a su propia vista, ninguna a la portada
+por defecto
+
 ### la-pestana-nueva-lleva-sticker-los-primeros-dias
 **WHEN** se pinta la navegación antes de que caduque la novedad
 **THEN** la pestaña SuperWordleBros lleva un sticker «¡NUEVO!», y a partir del día siguiente a la fecha fijada deja de
