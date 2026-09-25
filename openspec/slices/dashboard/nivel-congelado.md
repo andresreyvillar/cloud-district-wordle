@@ -6,7 +6,7 @@ actor: sistema
 trigger:
   type: cron
   surface: pipeline
-  detail: "update_stats.yml — tras cada sincronización, `node tools/congelar_nivel.mjs` congela el nivel de la jornada de ayer a partir de las 04:00 (Madrid)"
+  detail: "update_stats.yml — tras cada sincronización, `node tools/congelar_nivel.mjs` congela el nivel de la jornada de ayer a partir de las 02:00 (Madrid)"
 events:
   emits: []
   consumes: []
@@ -20,7 +20,7 @@ blocked: null
 # El nivel de cada jornada se congela una vez, y todos juegan el mismo
 
 **Actor:** el sistema (cron de sincronización)
-**Trigger:** la primera sincronización a partir de las 04:00 de Madrid
+**Trigger:** la primera sincronización a partir de las 02:00 de Madrid
 
 ## Contexto
 
@@ -29,9 +29,11 @@ nivel de ayer **pudiera cambiar durante la madrugada**: una cuadrícula publicad
 no había recogido —GitHub retrasa los cron entre 100 y 110 minutos—, añadía un tramo. Y con el ranking por
 nivel ([[ranking-del-juego]]), eso mezclaba en la misma tabla tiempos de dos escenarios distintos.
 
-Ahora el nivel **se congela una vez** en `public.game_levels` y no vuelve a cambiar. La hora la decidió el
-dueño con datos: en 60 días, 2 de 490 cuadrículas llegaron a la tabla después de medianoche, la más tardía a
-las 02:57. **A las 04:00** están todas. Hasta entonces la pestaña sigue ofreciendo el nivel anterior.
+Ahora el nivel **se congela una vez** en `public.game_levels` y no vuelve a cambiar. La hora la decide el
+dueño: **las 02:00**. Primero se fijó a las 04:00, que recogía todas las llegadas tardías medidas (en 60 días,
+2 de 490 cuadrículas después de medianoche, la más tardía a las 02:57); luego se adelantó para que el nivel
+nuevo llegue antes, sabiendo que deja fuera esa rara cuadrícula de después de las 02:00. Hasta la hora, la
+pestaña sigue ofreciendo el nivel anterior.
 
 El nivel lo genera el **mismo módulo JavaScript** que ya lo generaba (`nivelDe` en
 `v2/js/domain/superbros.js`), ejecutado con Node desde el cron. Una sola implementación: el escenario de un
@@ -47,12 +49,12 @@ día no depende de quién lo calcule.
 
 ## Comportamiento observable
 
-### se-congela-a-las-cuatro
-**WHEN** el cron corre el día D a las 04:00 de Madrid o después, y la jornada de D-1 no tiene nivel congelado
+### se-congela-a-la-hora
+**WHEN** el cron corre el día D a las 02:00 de Madrid o después, y la jornada de D-1 no tiene nivel congelado
 **THEN** genera su nivel con `nivelDe` y lo guarda en `game_levels` con su jornada y su fecha
 
-### antes-de-las-cuatro-no-se-congela
-**WHEN** el cron corre el día D antes de las 04:00
+### antes-de-la-hora-no-se-congela
+**WHEN** el cron corre el día D antes de las 02:00
 **THEN** la jornada de D-1 no se congela todavía; si la de D-2 no lo estaba —el cron estuvo caído—, se congela
 esa
 

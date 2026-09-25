@@ -299,7 +299,7 @@ export function vista(nivel, jornada, cuando = '', jugadores = [], elegido = nul
     return `
       <section class="bloque">
         ${cabecera(null)}
-        <p class="etiqueta">todavía no hay ningún nivel listo: el de cada jornada se congela a las 04:00 del día siguiente</p>
+        <p class="etiqueta">todavía no hay ningún nivel listo: el de cada jornada se congela a las 02:00 del día siguiente</p>
       </section>`;
   }
   return `

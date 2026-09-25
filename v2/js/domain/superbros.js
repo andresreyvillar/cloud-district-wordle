@@ -60,10 +60,11 @@ export function jornadaDelNivel(resultados, hoy) {
 }
 
 /**
- * Desde qué hora de Madrid se congela el nivel de la jornada de ayer. Medido en 60 días: 2 de 490 cuadrículas
- * llegaron a la tabla después de medianoche, la más tardía a las 02:57.
+ * Desde qué hora de Madrid se congela el nivel de la jornada de ayer. **Las 02:00, decisión del dueño**: el
+ * nivel nuevo llega antes, a cambio de dejar fuera la rara cuadrícula que entra más tarde. Medido en 60 días:
+ * 2 de 490 llegaron después de medianoche, y solo una —a las 02:57— después de las 02:00.
  */
-export const HORA_DE_CONGELAR = '04:00';
+export const HORA_DE_CONGELAR = '02:00';
 
 /** El día anterior a `AAAA-MM-DD`. En UTC a propósito: así el cambio de hora no descuadra un día. */
 function diaAnterior(fecha) {
@@ -75,7 +76,7 @@ function diaAnterior(fecha) {
  * La jornada que el cron congela: la última **asentada**. `hoy` es `AAAA-MM-DD` y `hora` `HH:MM`, las dos de
  * Madrid, y entran por parámetro (§10).
  *
- * Desde las 04:00, la de ayer; antes, la de anteayer —que el cron ya habrá congelado, salvo que estuviera
+ * Desde las 02:00, la de ayer; antes, la de anteayer —que el cron ya habrá congelado, salvo que estuviera
  * caído—. La de hoy, nunca: sigue abierta.
  */
 export function jornadaACongelar(resultados, hoy, hora) {
