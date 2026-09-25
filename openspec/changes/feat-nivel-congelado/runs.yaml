@@ -27,3 +27,21 @@
     sin-nivel-congelado-lo-dice; quitar delete del trigger → primero nueve rojos en cascada (el delete borraba
     el nivel del fixture compartido), y tras meter los intentos en transacciones que se deshacen, rojo solo
     en un-nivel-congelado-no-cambia. Lección registrada.
+
+- run: '2026-09-25T00:50:00Z'
+  fase: fix-post-merge
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Tras el merge, la pestaña publicada decía «No se ha podido cargar el juego». Causa: `const partida` en
+    pintarJuego tapaba la `let partida` de módulo (la partida de Phaser), y `partida = montar(...)` lanzaba
+    «Assignment to constant variable», que el catch convertía en ese aviso. La suite de Node no lo podía ver
+    —no monta el motor— y **no se repitió la prueba de navegador tras el cambio**, que es justo lo que pide
+    la lección del 2026-09-25 sobre arreglos que matan la función. Se renombró a `congelado` y se probó en el
+    navegador antes de volver a subir: el lienzo monta y el cronómetro arranca con la primera tecla.
