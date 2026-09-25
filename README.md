@@ -40,6 +40,10 @@ qué archivos se suben (nada de `tools/`, `openspec/`, `docs/`, `tests/` ni `.en
 # 1 · Credenciales
 cp .env.example .env        # SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, SUPABASE_URL,
                             # SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+                            #
+                            # Opcionales, las tres o ninguna: IA_API_URL, IA_API_KEY e
+                            # IA_MODELO. Con ellas el resumen dice de qué iba el hilo del
+                            # día; sin ellas no se llama a nadie y el mensaje es el mismo.
 
 # 2 · Entorno de desarrollo
 python3 -m venv .venv

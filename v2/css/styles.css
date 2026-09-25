@@ -1104,3 +1104,277 @@ nav[data-navegacion] a {
 }
 .regla .parametros .pnombre { color: var(--liga-suave); }
 .regla .parametros .pvalor { font-family: var(--mono); font-weight: 600; color: var(--liga-tinta); }
+
+/* El lienzo del juego (slice `juego-de-la-jornada`). Reserva sitio y centra lo que monte el motor de Joel;
+   el aspecto del juego en sí llega con su PR, que es quien sabe a qué resolución dibuja. */
+.juego-lienzo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  margin: 12px 0;
+  border-radius: 8px;
+  background: var(--fondo-hundido, #1b1f2a);
+}
+
+.nota-juego {
+  opacity: 0.75;
+}
+
+/* Compartir la puntuación: el texto a la vista, para que se vea qué se va a pegar antes de pegarlo. */
+.compartir-texto {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--fondo-hundido, #1b1f2a);
+  white-space: pre-wrap;
+  font-size: 0.95em;
+}
+
+.compartir-boton {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* El sticker de pestaña nueva. Pegatina de verdad: torcida, en color de aviso y más pequeña que el texto
+   para que acompañe a la etiqueta sin comérsela. */
+.pegatina-nueva {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ff3b6b;
+  color: #fff;
+  font-size: 0.62em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  vertical-align: super;
+  transform: rotate(-6deg);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Un meneo discreto para que se vea, y quieto para quien pidió menos movimiento. */
+@media (prefers-reduced-motion: no-preference) {
+  .pegatina-nueva {
+    animation: pegatina-meneo 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pegatina-meneo {
+  0%, 80%, 100% { transform: rotate(-6deg); }
+  88% { transform: rotate(4deg) scale(1.08); }
+}
+
+/* El lienzo ya tiene motor: el canvas de Phaser encaja en su ancho y se ve en píxeles nítidos. */
+.juego-lienzo canvas {
+  image-rendering: pixelated;
+  max-width: 100%;
+  outline: none;
+}
+
+.juego-lienzo:focus-visible {
+  outline: 2px solid #ffd23f;
+  outline-offset: 3px;
+}
+
+/* La guía de controles: teclas dibujadas como teclas. */
+.guia-controles {
+  margin-top: 14px;
+}
+
+.guia-controles h3 {
+  margin: 0 0 8px;
+  font-size: 0.95em;
+}
+
+.guia-controles ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 6px 18px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.guia-controles li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.guia-controles kbd,
+.tutorial-caja kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-bottom-width: 3px;
+  border-radius: 5px;
+  background: #fff;
+  color: #2b2733;
+  font: 600 0.85em/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}
+
+.guia-controles .o {
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
+.guia-controles .que {
+  opacity: 0.85;
+}
+
+/* El tutorial del pisotón: un aviso a pantalla completa sobre el juego pausado. */
+.tutorial-pisoton {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 17, 24, 0.72);
+}
+
+.tutorial-caja {
+  max-width: 420px;
+  width: 100%;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: #fff;
+  color: #2b2733;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.tutorial-caja h3 {
+  margin: 0 0 10px;
+}
+
+.tutorial-caja img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 8px;
+  image-rendering: pixelated;
+}
+
+.tutorial-caja ol {
+  margin: 12px 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.tutorial-vale {
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #3de07a;
+  color: #10301c;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ver-tutorial {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* Con el foco fuera del juego, el teclado vuelve a mover la página y el juego no responde: se avisa, sin
+   tapar el juego y dejando pasar el clic que lo vuelve a enfocar. */
+.juego-lienzo {
+  position: relative;
+}
+
+.juego-lienzo:not(:focus-within)::after {
+  content: 'Haz clic en el juego para jugar';
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(27, 31, 42, 0.85);
+  color: #fff;
+  font-size: 0.9em;
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* El ranking del juego (slice `ranking-del-juego`): quién eres, cómo ha ido tu marca y la tabla del nivel. */
+.ranking-juego {
+  margin-top: 14px;
+}
+
+.ranking-juego h3 {
+  margin: 0 0 8px;
+  font-size: 0.95em;
+}
+
+.quien-eres {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.quien-eres select {
+  padding: 6px 8px;
+  border: 2px solid var(--borde);
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 400;
+}
+
+/* Terminaste sin decir quién eres: el desplegable se marca para que se vea dónde elegirlo. */
+.quien-eres.pide-nombre select {
+  border-color: var(--amarillo);
+  box-shadow: 0 0 0 3px rgb(232 185 35 / 35%);
+}
+
+.estado-marca:empty {
+  display: none;
+}
+
+.tabla-ranking-juego {
+  width: 100%;
+  max-width: 32rem;
+  border-collapse: collapse;
+}
+
+.tabla-ranking-juego th {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 2px solid var(--liga-tinta);
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--liga-suave);
+}
+
+.tabla-ranking-juego td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--borde);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-ranking-juego tr.es-tuya td {
+  background: rgb(232 185 35 / 16%);
+  font-weight: 700;
+}

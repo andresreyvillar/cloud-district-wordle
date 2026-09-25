@@ -396,7 +396,9 @@ def _linea_de_ausentes(senales, habituales: list[str], nombres: dict[str, str], 
     return _del_ciclo(AUSENTES_DEL_DIA, jornada).format(jugador=listado, resto=resto)
 
 
-def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, senales=None) -> str:
+def bloque_la_jornada(
+    resultados: list[dict], temporada: str, jornada: int, senales=None, tono=None
+) -> str:
     """La jornada contada, en formato de lista y **con una sola voz**.
 
     Tres reglas la sostienen, y las tres salieron de leer el mensaje en conjunto:
@@ -514,8 +516,16 @@ def bloque_la_jornada(resultados: list[dict], temporada: str, jornada: int, sena
     if ausentes:
         piezas.append((6, ausentes, set(), ""))
 
-    for clave, texto, quien in menciones_del_canal(senales, nombres, jornada):
+    for clave, texto, quien in menciones_del_canal(senales, nombres, jornada, tono):
         piezas.append((7, texto, quien, clave))
+
+    # De qué iba el hilo, pegado a la mención que lo nombra. Va sin reconocimiento —el último campo vacío—
+    # porque no es un premio: fusionarlo con los elogios de esa misma persona sería volver a celebrarlo.
+    autor_del_hilo = _autor_del_hilo(tono, nombres)
+    if autor_del_hilo:
+        del_hilo = frase_del_hilo(tono, autor_del_hilo, jornada)
+        if del_hilo:
+            piezas.append((8, f"🤨 {del_hilo}", {autor_del_hilo}, ""))
 
     piezas.sort(key=lambda pieza: pieza[0])
     piezas = _fusiona_reconocimientos(piezas, jornada, {"mejores": mejor})
@@ -545,7 +555,7 @@ def _en_minuscula(frase: str, nombres) -> str:
 
 
 def menciones_del_canal(
-    senales, nombres: dict[str, str], jornada: int
+    senales, nombres: dict[str, str], jornada: int, tono=None
 ) -> list[tuple[str, str, set[str]]]:
     """Las menciones del canal como `(clave, texto, protagonistas)`.
 
@@ -565,11 +575,66 @@ def menciones_del_canal(
         jornada=jornada,
     )
     quienes = protagonistas_de_menciones(reacciones, respuestas, nombres)
+    # **Un recuento alto de respuestas deja de valer por sí mismo.** Medido en la jornada que motivó esto: el
+    # resultado más comentado tenía 26 respuestas y cero reacciones mientras el resto del día repartía 46, y
+    # el mensaje coronó como triunfador a quien el grupo estaba acusando. Si el hilo fue una acusación, la
+    # mención no sale: lo que se dice de esa persona lo dice la frase del hilo, que sí sabe de qué iba.
+    publicables = ["aplaudido", "comentado"]
+    if tono is not None and getattr(tono, "acusacion", False):
+        publicables.remove("comentado")
     return [
         (clave, dichas[clave], quienes.get(clave, set()))
-        for clave in ("aplaudido", "comentado")
+        for clave in publicables
         if clave in dichas
     ]
+
+
+#: Qué situación del registro le toca a cada clasificación. El orden importa: una acusación con propuesta de
+#: norma encima es su propia situación, y no una acusación cualquiera.
+def _situacion_del_hilo(tono) -> str | None:
+    if tono.acusacion:
+        return "acusacion-con-propuesta" if tono.propuesta else "acusacion"
+    if tono.tono in ("incredulidad", "pique"):
+        return tono.tono
+    return None
+
+
+def _autor_del_hilo(tono, nombres: dict[str, str]) -> str | None:
+    """De quién era el hilo que se clasificó, con su nombre. **Lo dice el propio tono.**
+
+    Antes se deducía del recuento de respuestas, y estaba mal de dos maneras seguidas. La primera versión
+    elegía al más respondido de cualquier mensaje; la segunda lo acotó a quienes habían jugado ese día, y
+    seguía mal: el recuento cuenta también la charla, así que respondiendo cincuenta veces a un mensaje
+    intrascendente de otra persona se conseguía que el bot **la señalara a ella** por una conversación que
+    no era la suya y que nadie había clasificado.
+
+    Deducirlo no vale: el único que sabe de qué hilo se habla es quien lo mandó a clasificar.
+    """
+    autor = getattr(tono, "autor", None)
+    return nombres.get(autor) if autor else None
+
+
+def frase_del_hilo(tono, jugador: str, jornada: int) -> str | None:
+    """La frase que comenta el hilo, o `None` si no hay nada que comentar.
+
+    Devuelve `None` en los tres casos en que hablar sería peor que callar: sin clasificación —la llamada
+    falló, o lo que volvió no encajaba en el esquema—, por debajo de la temperatura mínima, y cuando el tono
+    no tiene registro propio. Llamar juicio a tres respuestas de cachondeo quema la credibilidad del mensaje
+    tan rápido como celebrar una acusación, que es el fallo que este slice viene a arreglar.
+
+    **La frase sale del registro del repositorio.** Del objeto solo se leen sus casillas: ni se concatena
+    nada que venga de fuera, ni se usa ningún campo que no esté declarado en `Tono`.
+    """
+    from refranero import TONO_DEL_HILO
+    from tono import INTENSIDAD_MINIMA
+    from voz import _del_ciclo
+
+    if tono is None or tono.intensidad < INTENSIDAD_MINIMA:
+        return None
+    situacion = _situacion_del_hilo(tono)
+    if situacion is None:
+        return None
+    return _del_ciclo(TONO_DEL_HILO[situacion], jornada).format(jugador=jugador, dudan=tono.dudan)
 
 
 def _fusiona_reconocimientos(
@@ -991,7 +1056,7 @@ def _pulla_del_album(resultados: list[dict], temporada: str, jornada: int) -> st
 
 
 def resumen_del_dia(
-    resultados: list[dict], temporada: str, jornada: int, senales=None, palabra=None
+    resultados: list[dict], temporada: str, jornada: int, senales=None, palabra=None, tono=None
 ) -> str:
     """El resumen completo. **Una sección sin datos no se imprime**, no se imprime vacía.
 
@@ -1003,7 +1068,7 @@ def resumen_del_dia(
         # **Abre el mensaje.** Es lo único que el grupo no sabe ya: cada uno tiene su resultado, pero la
         # palabra escrita y su significado no los ha visto nadie.
         bloque_palabra(palabra),
-        bloque_la_jornada(resultados, temporada, jornada, senales),
+        bloque_la_jornada(resultados, temporada, jornada, senales, tono),
         # **Una** línea de cierre —el meme si la jornada tiene forma, y si no el proverbio— entre la jornada y
         # los rankings. Tres frases seguidas era un tercer bloque de comentarios y el mensaje ya tiene dos.
         *_voz(resultados, temporada, jornada, senales),

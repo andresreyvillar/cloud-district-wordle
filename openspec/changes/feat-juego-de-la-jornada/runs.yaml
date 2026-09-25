@@ -1,0 +1,282 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-24T12:00:00Z'
+  fase: propose+implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Joel construyó un plataformas donde las cuadrículas del grupo son el escenario. El dueño pidió meterlo en
+    la web con pestaña propia, que el juego lo siguiera desarrollando Joel por PR, y que la autoría quedara
+    clara. Este paquete es todo menos el juego: el generador del nivel, la pestaña y el contrato.
+
+    **Las reglas del nivel no se inventaron: se dedujeron y se verificaron.** De los dos prototipos (22 y 23
+    de septiembre) salen el ancho `N*8+5`, el alto `max(intentos)+3`, el tramo de ocho columnas con la
+    cuadrícula en las cinco centrales, las filas de abajo arriba y la etiqueta en `intentos+2`. La prueba es
+    que reconstruyendo el `pattern` desde los bloques de Joel sale exactamente el guardado en la tabla, y que
+    el generador nuevo reproduce sus escenarios: **20 de 20 jugadores comunes idénticos**.
+
+    Dos reglas se cambian a propósito. La fuente pasa a ser la tabla: el prototipo lee Slack, así que arrastra
+    nombres de display —`carlos.h` frente a `Carlos H.`— y pierde a quien no había publicado en el momento de
+    generar (Cata y Luis el 22, Andrés R. y Claire el 23; distintos cada día, que es lo que delata la causa).
+    Y el coleccionable deja de ser aleatorio —en 23 tramos no encaja ninguna regla deducible— y pasa a
+    apoyarse sobre la plataforma más alta del tramo: determinista, como exige §10, y siempre alcanzable.
+
+    Una ronda de corrección, y de la peor clase: **el gate de mutación dio cuatro verdes falsos**. El script
+    mutador vivía en el scratchpad de una sesión anterior y había desaparecido, así que las cuatro
+    invocaciones fallaron por `No such file or directory` —a stderr— mientras la suite seguía en verde. El
+    veredicto «mutación superada» era en realidad «no se mutó nada». Recreado el mutador, las cuatro
+    mutaciones caen donde deben: filas al revés → `la-cuadricula-es-el-escenario`; suelo sin cubrir la cola →
+    `el-suelo-no-tiene-agujeros`; coleccionable flotando → `el-coleccionable-se-puede-alcanzar`; jornada de
+    hoy en vez de la anterior → `el-nivel-sale-de-la-jornada-anterior`.
+
+    Es el mismo patrón que la lección del bytecode cacheado del 2026-08-04: el gate de mutación puede dar un
+    veredicto falso **en verde**, y el verde no se distingue de un gate bien pasado si no se comprueba que la
+    mutación llegó a aplicarse.
+
+- run: '2026-09-25T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño pidió que quien juegue pueda compartir su puntuación en el canal «igual que se comparten los
+    resultados de Wordle». Se hace exactamente así: la página escribe el texto y lo copia al portapapeles, y lo
+    pega la persona. La web no puede publicar en Slack —es estática y el token del bot vive solo en el
+    workflow— y no debe: ese token lleva `channels:history`, y un mensaje pegado por su dueño lleva autor de
+    verdad, que es lo que un ranking necesita y un desplegable no da. El formato va con su lector al lado
+    (`leerPuntuacion`) y se prueba de ida y vuelta, por si algún día el ranking se saca del canal.
+
+    El dueño preguntó por el camino si el token podía vivir en el código o en Supabase. En el código no: el
+    repo es público y Slack revoca los tokens que GitHub encuentra, lo que tiraría también los cron. En una
+    tabla tampoco: o la lee la clave pública y es público, o no la lee y la web no puede usarlo. Como secret de
+    una Edge Function sí sería seguro, pero resuelve dónde vive el token y no quién firma ni quién puede
+    llamar. Si algún día se quiere, con una app de Slack aparte y solo `chat:write`.
+
+    Una ronda de corrección, por un veredicto falso del gate de mutación: un bucle con `IFS='|'` partió el
+    código a mutar por su `||`, dejó un error de sintaxis y se leyó como cazada. La mutación real —quitar el
+    tope de estrellas— sobrevivía. Añadido el test del `11/10` y repetida la mutación comprobando que el
+    módulo compila tras mutar. Siete mutaciones en total, todas cazadas por su escenario.
+
+- run: '2026-09-25T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    render: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño pidió levantarlo en local y un sticker «¡NUEVO!» en la pestaña para los primeros días. El sticker
+    lleva fecha de caducidad (`nuevaHasta: 2026-10-09`) y la fecha entra por parámetro desde la carga de la
+    página, así que se prueba antes, el último día y después sin esperar a que llegue ninguno.
+
+    **Abrir la página destapó un fallo que la suite entera en verde no veía.** La vista caía en «todavía no hay
+    una jornada cerrada» con datos reales. Causa: la web normaliza las filas (`jornada`, `nombre`, `intentos`,
+    `patron`) antes de dárselas a las vistas, y el generador leía los nombres crudos de la tabla
+    (`wordle_id`, `player_name`), así que todo le llegaba `undefined`. Los tests no lo vieron porque sus
+    fixtures tenían la forma de la tabla y no la de la web: el test comprobaba el generador contra una entrada
+    que la web nunca le da. Corregido, y el fixture pasa ahora por el `normalizar()` real; revirtiendo un solo
+    campo al nombre crudo se ponen 9 tests en rojo.
+
+    Verificación final de extremo a extremo: el motor de Joel, sin modificar, con su nivel sustituido por el
+    que genera esta pestaña a partir de la tabla. Renderiza sin errores, 15 tramos con los nombres canónicos y
+    `⭐ 0 / 15`. Es la prueba del contrato: una pieza se escribió leyendo la otra y encajan sin tocarse.
+
+- run: '2026-09-25T14:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    render: pass
+  rondas_correccion: 2
+  notas: >-
+    El dueño revisó la pestaña y pidió cuatro cosas: quitar la frase de «llega por pull request», que el juego
+    se viera («no se está renderizando»), una guía de controles, la fecha junto al número de jornada y que la
+    pestaña se llamara SuperWordleBros.
+
+    **El juego se ve porque ahora hay motor.** Se copió el de Joel (`juego/motor.js`) sin tocar física,
+    texturas ni controles, con tres adaptaciones marcadas: recibe el nivel por parámetro, se monta en el lienzo
+    encajando en su ancho, y avisa al terminar con `superbros:fin`. Phaser se carga solo en esta pestaña. Y al
+    cambiar de pestaña el juego se destruye: sin eso seguía corriendo y capturando flechas y espacio en toda
+    la web.
+
+    **La fecha destapó un fallo.** La jornada era «la penúltima de la tabla», y eso falla cada madrugada: a las
+    00:18 del 25 la tabla acababa en la 1722 —la de ayer— y la pestaña enseñaba la 1721. Ahora es la última
+    fechada antes de hoy, con `hoy` entrando desde la carga de la página.
+
+    Dos rondas de corrección, las dos por afirmar algo sin comprobarlo. La guía decía que ↑ y W saltan; el
+    motor solo lee `cursors.space`. Y el lienzo dejaba franjas negras porque el hueco era más ancho que la
+    resolución del juego; ahora toma la proporción leyéndola del propio motor.
+
+    **Hallazgo abierto, no arreglado a propósito:** jugándolo en el navegador el jugador no pasa del primer
+    tramo. Con la física de Joel el salto máximo es 3,52 bloques y una cuadrícula puede levantar hasta 6, así
+    que un escalón de 4 es una pared. Al menos 5 de las últimas 30 jornadas tienen un tramo imposible,
+    incluida la 1722. Es una decisión de diseño del juego —doble salto, salto más alto o cuadrículas
+    atravesables— y es del motor, así que queda documentada en el contrato para Joel y no se toca aquí.
+
+- run: '2026-09-25T16:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    render: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño decidió un pisotón que saltara una casilla más, «para salvar el reto de hoy», y dejar el resto a
+    Joel. Antes de montarlo se comprobó la premisa y **no se cumple del todo**: +1 casilla pasa el muro de 4 de
+    Andrés R., pero en la misma jornada Luis levanta uno de 6 y Paula Granado uno de 5. Se pueden pasar solo
+    haciendo el pisotón encima del último bloque del tramo anterior y cruzando cuatro columnas en el aire. Se
+    montó igual —la decisión sigue teniendo sentido: el nivel queda difícil pero terminable— y se le dijo.
+
+    La velocidad del rebote se deriva de la física (`velocidadDeRebote`) en vez de escribirse, para que siga
+    siendo una casilla aunque Joel cambie gravedad o salto. Comprobado en su motor contra un muro de 4: salto
+    normal a −520 que sube 3,5 y no pasa; pisotón a −589 que sube 4,7 y pasa.
+
+    Una ronda de corrección, de la prueba y no del código: el primer intento del laboratorio dio «el pisotón
+    tampoco pasa». La traza mostró que el pisotón nunca se activaba, porque la prueba pulsaba y soltaba ↓ en el
+    mismo instante y el motor detecta con `JustDown`, que Phaser borra al soltar. Manteniendo la tecla 80 ms
+    —lo que hace una mano— funciona. Se instrumentó antes de tocar el motor, que no tenía nada que arreglar.
+
+    Hueco de cobertura cerrado con el mecanismo del protocolo: los tests unitarios fijan la fórmula pero no que
+    el motor la use, y la mutación «calcula el rebote pero salta normal» los dejaba en verde. Un `checks:` en el
+    delta la caza. No hay tests de navegador en el repositorio, y montar el primero —servidor, Chromium y
+    Phaser por red en CI— es infraestructura aparte.
+
+- run: '2026-09-25T18:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    render: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño no conseguía pasar la parte de Luis y pidió subir el pisotón, primero +0,25 y luego «5 casillas,
+    por redondear». El rebote pasa a definirse por altura total (`PISOTON_CASILLAS = 5`) y no por «una más»,
+    con la velocidad derivada de la gravedad. Pidió además un efecto cuando sale bien: destello del personaje,
+    un estirón y un abanico de chispas en el suelo, con los mismos tweens que ya usa el confeti del motor.
+
+    Comprobado en el motor con la geometría real de la zona (los bloques de Juan, el hueco y los de Luis, con
+    sus huecos): rebotando en la columna 6 o 7 de Juan se pasa; desde la 3 no, por distancia.
+
+    Una ronda de corrección, del análisis: la captura del laboratorio enseñó que la «torre de 6» de Luis era un
+    verde en el suelo y un naranja flotando a altura 6, con cuatro casillas vacías en medio. El análisis contaba
+    la altura máxima de cada columna y trataba como muro los bloques que flotan sobre un hueco, así que
+    **exageraba**: con paredes sólidas, el salto normal deja 138 de 221 niveles sin pasarse desde el suelo, no
+    192. Se le corrigió al dueño, porque ese número le había hecho decidir. Y otra, menor, sobre una
+    predicción: por la fórmula, 5 casillas justas no pasaban un muro de 5; el motor sube 5,16 y sí lo pasa,
+    con 5 px de margen que dependen de la duración del fotograma. Queda documentado para Joel.
+
+- run: '2026-09-25T20:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    render: pass
+  rondas_correccion: 0
+  notas: >-
+    Con el rebote a 5 casillas el dueño seguía sin pasar la parte de Luis: «sube más, pero no planea lo
+    suficiente». El problema era horizontal y no vertical. El pisotón deja caer en vertical, así que se salía del
+    rebote a velocidad horizontal cero y el personaje tardaba 0,27 s en coger carrera. Medido en el motor desde
+    la columna de Juan: solo pasaba pulsando →, Shift y Espacio en la misma décima de segundo; con Shift 0,15 s
+    tarde ya caía antes.
+
+    Se le enseñó con Playwright —vídeo del nivel real, el intento desde el suelo del hueco y el bueno desde lo
+    alto de Juan— y la captura destapó por qué el camino natural falla: el naranja flotante de la columna 83
+    hace de techo justo delante de la muralla. Se propuso el impulso, se probó en el laboratorio y se deshizo
+    antes de preguntar, porque se había acordado que los problemas nuevos irían como propuesta. El dueño lo
+    pidió. Resultado: pasa con Shift aunque la dirección llegue 0,3 s tarde; sin Shift no, que es el reto que
+    queda. Si alguien quita el impulso del motor, un `checks:` lo caza.
+
+- run: '2026-09-25T22:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    render: pass
+  rondas_correccion: 3
+  notas: >-
+    El dueño pidió un GIF tutorial del pisotón «la primera vez que debes usarlo». Se interpretó literal: sale
+    justo antes del primer muro que el salto normal no sube, una vez por navegador, con la partida en pausa
+    —leer cómo se salta no puede costar tiempo en el ranking— y con un enlace en la guía para repetirlo. El
+    sitio lo calcula el motor con su propia física, y cuenta como muro solo lo apilado sin huecos, que es la
+    corrección que ya hubo que hacerle al análisis.
+
+    El GIF se graba del motor real con Playwright, capturando fotogramas desde dentro del juego para que cada
+    rótulo caiga en su paso. Tres rondas de corrección, las tres de ese GIF y ninguna del código: salía
+    «¡Nivel completado!» porque el escenario de prueba tenía la bandera al alcance; dos pasos duraban 200 ms y
+    no se podían leer, y se congelan medio segundo; y las teclas del panel no tenían estilo.
+
+    Una prueba falló por sí sola: la de la pausa comparaba capturas de la zona del lienzo y el panel quedaba
+    encima con el GIF animándose. Repetida ocultando el panel un instante, la partida está parada; y un control
+    con el tutorial cerrado demuestra que el mismo método sí ve correr el cronómetro.
+
+    Una defensa añadida al releer: pedir `localStorage` puede lanzar en navegación privada, y como estaba
+    dentro de la carga del motor habría acabado en «no se ha podido cargar el juego».
+
+- run: '2026-09-25T23:59:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    render: pass
+  rondas_correccion: 2
+  notas: >-
+    El dueño: «no es jugable porque las flechas desplazan el scroll y no permite hacer el pisotón; el scroll
+    debería poder hacerse igualmente, pero no con espacio ni las flechas». Reproducido: sin modificadores nada
+    movía la página; con Shift, Shift + Espacio la subía de golpe. Causa en el código de Phaser: deja de
+    bloquear el scroll de sus teclas cuando va un modificador, y el pisotón se hace corriendo con Shift.
+
+    Arreglo en tres piezas: el motor escucha el teclado en el lienzo (sin foco, las flechas vuelven a la
+    página), suelta la rueda, y la página bloquea el scroll de las teclas del juego con cualquier modificador.
+    La prueba destapó dos cosas más: la rueda no hacía scroll encima del juego, y un clic no devolvía el foco
+    porque Phaser anula la pulsación del ratón.
+
+    Dos rondas de corrección, y la segunda es la importante: el bloqueo iba en el lienzo y se ejecutaba antes
+    que Phaser, que descarta las teclas ya bloqueadas, así que **el juego se quedó sin teclas**. La prueba del
+    scroll daba verde porque solo miraba la página. Lo cazó repetir las pruebas de juego anteriores. Ahora la
+    prueba empieza por «¿el personaje responde?», un `checks:` fija el sitio del bloqueo, y la mutación que lo
+    devuelve al lienzo la cazan el gate y el navegador —los tests unitarios no pueden—. Lección registrada.

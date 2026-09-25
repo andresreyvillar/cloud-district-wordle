@@ -88,3 +88,74 @@ export async function cargarInstantaneas() {
   );
   return leerInstantaneas(createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY));
 }
+
+/**
+ * Las marcas del ranking de un nivel. Caben en una página: hay una por jugador y jornada, y el grupo no llega
+ * ni de lejos a las 1000 filas de PostgREST.
+ */
+export async function leerMarcas(cliente, jornada) {
+  const { data, error } = await cliente
+    .from('game_times')
+    .select('jugador,segundos,estrellas')
+    .eq('jornada', jornada);
+
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return data ?? [];
+}
+
+/**
+ * Registra una marca. **La única escritura de la web**, y no va a la tabla sino a la función
+ * `registrar_tiempo`: es ella la que decide si la marca mejora la anterior o si es imposible. Con la clave
+ * pública, la tabla solo se lee.
+ */
+export async function escribirMarca(cliente, { jornada, jugador, segundos, estrellas }) {
+  const { data, error } = await cliente.rpc('registrar_tiempo', {
+    p_jornada: jornada,
+    p_jugador: jugador,
+    p_segundos: segundos,
+    p_estrellas: estrellas,
+  });
+
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return { mejora: Boolean(data?.mejora), segundos: Number(data?.segundos) };
+}
+
+let clienteDelRanking = null;
+
+/** El cliente real, creado una vez: el ranking lee y escribe varias veces por partida. */
+async function cliente() {
+  if (!clienteDelRanking) {
+    const { createClient } = await import(
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+    );
+    clienteDelRanking = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  }
+  return clienteDelRanking;
+}
+
+/** La API del ranking que usa la pestaña del juego. Los tests le pasan otra. */
+export const RANKING_DEL_JUEGO = {
+  leer: async (jornada) => leerMarcas(await cliente(), jornada),
+  registrar: async (marca) => escribirMarca(await cliente(), marca),
+};
+
+/**
+ * El último nivel congelado del juego, o `null` si todavía no hay ninguno. Lo congela el cron
+ * (`tools/congelar_nivel.mjs`); la web **ya no lo calcula**, así que todos juegan el mismo escenario.
+ */
+export async function leerNivelCongelado(cliente) {
+  const { data, error } = await cliente
+    .from('game_levels')
+    .select('jornada,fecha,nivel')
+    .order('jornada', { ascending: false })
+    .limit(1);
+
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  const [fila] = data ?? [];
+  return fila ? { jornada: Number(fila.jornada), fecha: String(fila.fecha).slice(0, 10), nivel: fila.nivel } : null;
+}
+
+/** La fuente de niveles que usa la pestaña del juego. Los tests le pasan otra. */
+export const NIVEL_CONGELADO = {
+  ultimo: async () => leerNivelCongelado(await cliente()),
+};

@@ -1,0 +1,127 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-11T09:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    coverage: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño pidió que el resumen leyera e interpretara los comentarios del hilo. Se detectó colisión de
+    trigger con `voz-de-la-jornada` —mismo cron y su detalle es literalmente «lee el canal del día y le pone
+    voz al resumen»—, así que esto es una modificación significativa de ese slice y no uno nuevo. El cambio
+    revierte a propósito un «fuera de alcance» declarado en él («leer hilos completos… sería traer
+    conversación al sistema») y solo hasta donde hace falta: el contenido se lee en el borde y de vuelta entra
+    una clasificación cerrada, así que al sistema sigue sin llegar conversación. La decisión que sostiene el
+    diseño es que el modelo clasifica y el repositorio habla, y su motivo es medido y no teórico: en este
+    canal la gente ya le escribe al bot, así que publicar prosa de un modelo que acaba de leer el canal
+    dejaría que cualquiera le dictase lo que dice sobre un compañero identificable.
+
+- run: '2026-09-11T11:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    El proveedor cayó a mitad de implementación. El plan era GitHub Models con el `GITHUB_TOKEN` del propio
+    workflow y sin secreto nuevo, y al comprobarlo contra la API —como mandaba `tasks.md`— devolvió
+    `410 github_models_retirement_brownout`: retirado del todo el 2026-07-30. De ahí que el borde quede sin
+    proveedor cableado, con URL, clave y modelo por entorno en formato OpenAI-compatible; atar el repositorio
+    a otro concreto repetiría el error. Coste declarado: hace falta un secreto nuevo y hasta que exista el
+    slice está apagado, que además es el orden correcto para mandar conversación del canal a un tercero.
+
+    Dos rondas de corrección, las dos por tests que no medían lo que decían medir. (1) `_autor_del_hilo`
+    elegía al más respondido de cualquier mensaje mientras que `hilo_a_clasificar` solo mira mensajes de
+    resultado de la jornada: el día que la charla levantara más respuestas que ninguna partida, la frase
+    habría nombrado a una persona y la clasificación habría sido de la conversación de otra. (2) El test que
+    lo fijaba era vacuo —el charlatán no tenía fila en la tabla, así que su nombre no se resolvía y la
+    aserción pasaba por accidente—; reescrito dándole fila de otra jornada, y entonces la mutación sí lo mató.
+
+    Cinco mutaciones, las cinco cazadas por el escenario correcto: aceptar un tono fuera del catálogo →
+    `una-clasificacion-invalida-no-se-usa`; ignorar la temperatura mínima → `un-hilo-tranquilo-no-se-llama-juicio`;
+    no callar la mención de comentado en una acusación → `el-recuento-de-respuestas-deja-de-ser-aplauso`;
+    ignorar quién jugó al elegir autor → `el-hilo-del-dia-se-clasifica`; quitar el recorte del bloque de
+    código → `una-clasificacion-invalida-no-se-usa`.
+
+    Hallazgos previos NO tocados, cada uno con su evidencia: `verify slice --strict` ya fallaba en `main`
+    por una anotación `@scenarios` huérfana en `test_senales.py`, y la frase «Lo ha bordado {jugador}:
+    {intentos} intentos» publica «1 intentos» cuando alguien resuelve en uno.
+
+- run: '2026-09-11T12:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 3
+  notas: >-
+    Gate 4d. Dos verificadores independientes sostuvieron **siete** refutaciones, todas ciertas, y la suite
+    estaba verde con las siete vivas. Vale la pena separarlas en dos grupos, porque enseñan cosas distintas.
+
+    Fallos de diseño (tres). La anonimización no anonimizaba: tapaba la etiqueta de quien habla y dejaba el
+    contenido intacto, así que una mención normal en un hilo mandaba el identificador de Slack de un
+    compañero al tercero. La frase podía señalar a quien no era: deducir el autor del recuento de respuestas
+    permitía que respondiendo cincuenta veces a un mensaje intrascendente de otra persona el bot la acusara
+    a ella; ahora el autor lo pone el borde y el modelo no puede ponerlo. Y `dudan` no tenía tope, siendo
+    una cifra que se publica.
+
+    Fallos de seguridad (dos). `urllib` reenvía la cabecera `Authorization` en una redirección a otro host
+    —`requests` la corta, `urllib` no—, comprobado con dos servidores locales: un endpoint caducado se
+    llevaba la clave. Y el comentario que escribí afirmando que el tope de lectura acotaba el tiempo era
+    **falso**: `timeout` es por operación de socket, y medido con un byte por segundo la lectura bloqueó 40 s
+    con un plazo declarado de 2. Ahora la petición va en un hilo demonio con plazo total, el destino se
+    exige https, no se siguen redirecciones y el workflow declara `timeout-minutes`.
+
+    Tests vacuos (dos, más uno). Añadir a `Tono` un campo de texto poblado por el modelo y concatenarlo en
+    la frase dejaba la suite verde: el guardián miraba claves concretas en vez de la forma del objeto. Meter
+    al registro «{jugador} hizo trampas y el canal lo sabe» también: el guardián comprobaba dos subcadenas
+    literales. Y el test de determinismo llamaba dos veces en el mismo proceso, así que probaba idempotencia
+    y no reproducibilidad — una elección por `hash()` lo pasaba y daba frases distintas en cada cron.
+
+    Doce mutaciones en total, las doce cazadas por el escenario correcto tras reforzar.
+
+    Hallazgo fuera de este cambio, verificado a mano y **más grave que todo lo anterior**: el lote de la
+    ingesta une los mensajes con saltos de línea sin escaparlos, así que un mensaje de Slack multilínea
+    inyecta un `USER_START` falso y crea un jugador con el nombre que elija quien lo escribe, que acaba
+    publicado en el canal y en la web pública. Está en `main` y pide su propio arreglo con prioridad.
+
+- run: '2026-09-11T13:15:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5[1m]
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño leyó el registro y lo cortó: «el mensaje es demasiado serio, tómalas en plan jocoso como una
+    burla en plan de broma; los mensajes de reacción suelen ser amistosos y burlones». Y una segunda cosa,
+    que es la que de verdad manda: «solo se tomarán decisiones cuando te lo pida yo».
+
+    Las 35 frases estaban escritas en registro judicial —vistas orales, fiscales, expedientes, comisiones de
+    investigación— y sonaban a que el marcador estaba juzgando a un compañero, que es justo lo contrario de
+    cómo habla ese canal. Reescritas enteras en cachondeo de grupo: «5 personas y un borrador de reglamento.
+    {jugador}, mira lo que has hecho».
+
+    Queda fijado por test, porque es una deriva fácil de repetir: ninguna frase del registro puede llevar
+    vocabulario de juzgado. La mutación que devuelve «ha sido una vista oral» al registro lo pone en rojo.

@@ -1,0 +1,34 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-25T00:30:00Z'
+  fase: propose+implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño pidió que cada uno elija su nombre de la lista de jugadores, que su tiempo quede en un ranking
+    debajo del juego, reintentos sin límite y que solo se sobrescriba la marca si mejora. Eligió un ranking
+    por nivel (jornada) y verificar en producción dentro de transacciones que se deshacen.
+
+    **La base de datos se prueba de verdad dos veces.** En local, `test_registrar_tiempo.py` levanta un
+    Postgres 14 desechable, reproduce los privilegios por defecto que Supabase da a `anon` y `authenticated`,
+    aplica la migración tal cual y la ataca con esos roles. En producción, la migración se aplicó
+    (`create_game_times`, aditiva) y cada regla se ejecutó con `set local role anon` dentro de un bloque `do`
+    que termina en excepción: primera marca, peor, igual, mejor, otro jugador, insert/update/delete directos
+    (42501 los tres), jugador desconocido, jornada sin nivel, tiempo por debajo del mínimo (14 tramos → 7,96 s)
+    y estrellas de más. Después, `game_times` con 0 filas.
+
+    Mutación (Gate 4c): `<` → `<=` en el `do update` pone en rojo solo el empate; quitar el `revoke` pone en
+    rojo solo la-web-no-escribe-en-la-tabla (update/delete sin política no fallan: devuelven 0 filas, y
+    truncate ni siquiera pasa por RLS — por eso el revoke no es redundante); no consumir la partida pendiente
+    pone en rojo solo sin-nombre-el-tiempo-espera. Restaurado desde el index, verde.
+
+    La pestaña se probó con Playwright contra el servidor local **interceptando** `rpc/registrar_tiempo` y
+    `game_times`: nada llegó a Supabase. El linter de Supabase avisa (0028/0029) de que anon ejecuta una
+    función security definer: es el diseño, acotado por search_path vacío y sus validaciones.

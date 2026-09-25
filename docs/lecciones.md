@@ -292,3 +292,75 @@
   agregado a la vista es un detector de fallos silenciosos que ningún unitario sustituye, y es un argumento
   para que las vistas publiquen totales aunque nadie los haya pedido.
 
+
+### 2026-09-11 — Las mutaciones que elige quien implementa confirman; no refutan
+- **Qué pasó:** en `feat-tono-del-hilo` el Gate 4c pasó limpio —cinco mutaciones, las cinco cazadas por el
+  escenario correcto— y a continuación el Gate 4d sostuvo **siete refutaciones**, todas con la suite entera en
+  verde. Entre ellas: añadir a la clase de la clasificación un campo de texto poblado por el modelo y
+  concatenarlo en la frase publicada, y meter al registro «{jugador} hizo trampas y el canal lo sabe».
+- **Causa raíz:** la regla de mutación ya existía y se aplicó. Lo que falla es **de dónde salen las
+  mutaciones**: quien implementa muta lo que ya tenía en la cabeza, así que prueba las defensas que recuerda
+  haber puesto. Las siete refutaciones atacaban justo lo que no se le había ocurrido defender. Un gate cuya
+  entrada la elige el propio implementador confirma su modelo mental en lugar de romperlo.
+- **Regla:** las mutaciones del Gate 4c **se derivan del delta, no de la intuición**. Por cada frase de un
+  Requirement con forma «nunca X» / «solo Y» / «no puede Z», la mutación obligatoria es la que **hace ocurrir
+  X**. Y tres moldes de guardián quedan prohibidos por vacuos: comprobar **subcadenas literales** en vez de la
+  raíz o la forma del objeto; probar determinismo **llamando dos veces en el mismo proceso** —eso es
+  idempotencia, no reproducibilidad: una elección por `hash()` lo pasa y cambia el texto en cada cron—; y
+  cubrir «si el borde falla, se publica igual» **desde el compositor**, pasándole `None`, sin hacer fallar al
+  borde.
+- **Codificada en:** `.claude/skills/slice-implement/SKILL.md` Gate 4c paso (b), con los tres moldes nombrados ·
+  **estado:** codificada · **destino mecánico pendiente:** un gate de `tools/wslice` que extraiga las
+  prohibiciones de los deltas y exija una mutación por cada una.
+- **Y una segunda, más barata de recordar:** un comentario que afirma una garantía es tan comprobable como el
+  código. En este mismo cambio escribí que un tope de lectura acotaba el tiempo de espera; medido, con plazo
+  declarado de 2 s la lectura bloqueó **40 s**, porque el `timeout` de un socket no es un plazo total. La
+  afirmación falsa en un comentario sobrevive a las revisiones mejor que un error en el código, porque nadie
+  la ejecuta.
+
+### 2026-09-25 — El gate de mutación miente en las dos direcciones
+- **Qué pasó:** en `feat-juego-de-la-jornada` el Gate 4c dio veredictos falsos **dos veces seguidas y en
+  sentidos opuestos**. Primero cuatro verdes falsos: el mutador vivía en el scratchpad de una sesión anterior,
+  había desaparecido, y las cuatro llamadas fallaron a stderr mientras la suite seguía verde. Después un rojo
+  falso: un bucle con `IFS='|'` partió el código a mutar por su `||`, el mutador sustituyó otro trozo, dejó un
+  error de sintaxis y los tres ficheros de test reventaron al importar el módulo. Se leyó como «mutación
+  cazada» y **la mutación real sobrevivía**: la promesa de acotar las estrellas al total no tenía test.
+- **Causa raíz:** el veredicto del gate se leía del estado de la suite y nunca de si la mutación pensada era
+  la que había corrido. Un gate que no verifica su propia entrada puede afirmar cualquier cosa, en cualquier
+  color.
+- **Regla:** antes de leer el resultado de una mutación se comprueban tres cosas: que el fichero **cambió**,
+  que **sigue compilando** (`node --check` / `py_compile`), y que el rojo cae en **un** escenario y no en
+  todos. Un rojo en ficheros que no usan el código mutado es un error de sintaxis, no una cazada. Y el
+  código no se pasa por bucles con separadores: una llamada al mutador por mutación.
+- **Codificada en:** `.claude/skills/slice-implement/SKILL.md` Gate 4c, con las tres formas nombradas ·
+  **estado:** codificada · **destino mecánico pendiente:** que `mutar.py` viva en el repositorio y no en el
+  scratchpad, y que compile el fichero tras mutar y aborte si no compila.
+
+### 2026-09-25 — Un arreglo que mide el síntoma puede estar rompiendo la función
+- **Qué pasó:** en `feat-juego-de-la-jornada` la página hacía scroll al hacer el pisotón. Se arregló bloqueando
+  el scroll de las teclas del juego y se verificó midiendo el scroll: quieto con todas las teclas, en verde.
+  Pero el bloqueo iba en el mismo elemento que escucha Phaser y se ejecutaba antes que él, y Phaser descarta
+  las teclas que le llegan ya bloqueadas: **el juego se había quedado sin teclas**. La página no se movía
+  porque no se movía nada. Lo cazó repetir las pruebas de juego de antes, no la prueba del arreglo.
+- **Causa raíz:** la prueba del arreglo solo podía fallar si volvía el síntoma, y nunca si moría la función.
+  Un arreglo que apaga la función hace desaparecer el síntoma, así que esa prueba lo daba por bueno.
+- **Regla:** la prueba de un arreglo incluye una aserción de que **la función sigue viva**, y va primero:
+  antes de medir que el scroll no se mueve, medir que el personaje se mueve. Y tras cualquier arreglo que toque
+  la entrada, el render o el orden de los eventos, se repiten las pruebas de juego anteriores, no solo la
+  nueva.
+- **Codificada en:** `.claude/skills/slice-implement/SKILL.md` Fase 4, y en el propio caso: un `checks:` del
+  delta fija que el bloqueo vaya en el padre del lienzo, y la prueba de navegador empieza por «¿el personaje
+  responde?» · **estado:** codificada · **destino mecánico pendiente:** pruebas de navegador en el
+  repositorio; hoy viven en el scratchpad porque no hay infraestructura de e2e.
+
+### 2026-09-25 — Un mutante que borra datos compartidos pone en rojo a todo el mundo
+- **Qué pasó:** en `feat-nivel-congelado`, la mutación que quitaba `delete` del trigger de inmutabilidad
+  puso en rojo nueve tests de tres escenarios. El `delete` mutado **borraba el único nivel del fixture**, que
+  es de módulo, y los tests siguientes fallaban por no encontrarlo: parecía una cazada amplia y era una
+  cascada.
+- **Causa raíz:** los tests que intentan escribir lo prohibido compartían el estado que esa escritura
+  destruye. Un rojo en cascada no dice qué escenario protege el mutado.
+- **Regla:** un test que intenta una escritura prohibida contra estado compartido la hace **dentro de una
+  transacción que se deshace**. Si una regresión la deja pasar, cae ese test y el estado sigue intacto.
+- **Codificada en:** `.claude/skills/slice-implement/SKILL.md` Gate 4c (cuarta forma de que el gate mienta)
+  y `tests/slices/nivel-congelado/test_game_levels.py::intentar` · **estado:** codificada.

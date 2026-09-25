@@ -159,10 +159,23 @@ FRASES: dict[str, tuple[str, ...]] = {
         "A {jugador} se le ha atragantado la palabra 😅",
         "Día para olvidar de {jugador} 😅",
     ),
+    # **Acertar a la primera es lo más raro del juego** —0,01 de frecuencia— y por eso `clavada` gana a la
+    # sospecha en la tabla de notabilidad. Tenía tres frases y una era sosa («Sin comentarios»), así que el
+    # día que salió de verdad el mensaje se quedó tibio justo donde tenía que reaccionar más fuerte. La
+    # incredulidad vive aquí: quien hace un 1 se lleva el asombro del canal, no un encogimiento de hombros.
     "clavada": (
         "{jugador} lo ha sacado a la PRIMERA. Que alguien revise el diccionario 🍀",
         "A la primera, {jugador}. Esto o es brujería o es que ya la sabía 🍀",
-        "{jugador} ha resuelto en 1. Sin comentarios 🍀",
+        "{jugador} ha acertado a la primera. Aquí nadie va a fingir que se lo cree 🤨",
+        "Un 1 de {jugador}. Explícanos el método, que hay interés 🤨",
+        "{jugador} ha resuelto antes de empezar. El canal exige una rueda de prensa 🤨",
+        "A la primera. {jugador}, esto ya no es suerte, es una carrera 🤨",
+        "{jugador} ha hecho un 1 y el grupo se ha quedado sin palabras. Nunca mejor dicho 🍀",
+        "Un 1. {jugador}, o eres adivin{g} o alguien te ha soplado la palabra 🤨",
+        "{jugador} ha abierto y cerrado la partida en el mismo movimiento 🍀",
+        "Acertar a la primera, {jugador}. Cinco letras y ni un intento de más 🍀",
+        "{jugador} ha hecho un 1 y ahora tiene que convivir con las miradas 🤨",
+        "Un 1 de {jugador}. Vamos a necesitar ver la repetición 🤨",
     ),
     "rezagado": (
         "{jugador} ha subido el resultado con el día ya vencido ⏰",
@@ -223,16 +236,28 @@ def hechos_de_la_jornada(resultados: list[dict], temporada: str, jornada: int) -
         return []
 
     encontrados: list[Hecho] = []
+    # La mejor nota del día y cuántos la firman: la sospecha se decide contra la jornada, no contra un umbral.
+    mejor = min(fila["score"] for fila in del_dia)
+    unicos = sum(1 for fila in del_dia if fila["score"] == mejor)
     for fila in del_dia:
         jugador, score = _nombre(fila), fila["score"]
         if score == 1:
             encontrados.append(Hecho("clavada", jugador, score))
         # **Sin condición sobre lo dura que fuera la jornada.** Antes hacía falta además un día exigente
         # (media ≥ 4,0) y el aviso salía en el 6% de las jornadas: prácticamente nunca. Decisión del dueño:
-        # resolver en uno o dos es sospechoso de base. Medido sobre 167 jornadas, ahora sale en el 29% —una de
-        # cada tres— y bien repartido: el más «sospechoso» del histórico acumula 9 apariciones y el siguiente
-        # 8, así que la pulla no se ceba con nadie.
-        if score <= RESOLVER_SOSPECHOSO:
+        # resolver en uno o dos es sospechoso de base.
+        #
+        # **Pero la nota se lee contra las del mismo día, no en solitario.** Dos condiciones más, cada una
+        # por un mensaje que no se sostiene leído por el grupo:
+        #
+        # - `score == mejor`: quejarse de un 2 con un 1 en la mesa pone en duda a quien lo hizo peor y deja
+        #   pasar a quien lo hizo mejor. Medido sobre 194 jornadas había ocurrido **una sola vez** —una nota
+        #   de 1 sale en 3 de 194— y ocurrió justo el día en que se notaba.
+        # - `unicos == 1`: si varios firman la mejor nota, lo que dice el dato es que la palabra era fácil.
+        #   Son 16 jornadas de 194.
+        #
+        # El chiste pasa del 32% de las jornadas al 24%: sigue saliendo una de cada cuatro.
+        if score <= RESOLVER_SOSPECHOSO and score == mejor and unicos == 1:
             encontrados.append(Hecho("sospechoso", jugador, score))
         if score <= media - MARGEN_SEMBRADO:
             encontrados.append(Hecho("sembrado", jugador, score))
