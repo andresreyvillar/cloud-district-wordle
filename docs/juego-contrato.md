@@ -215,7 +215,8 @@ costó un rato descubrirlo.
   es copiar; lo pega la persona.
 - **Escrituras a la base de datos.** El motor no habla con Supabase: el ranking lo escribe la página, y solo a
   través de `registrar_tiempo`. La tabla, con la clave pública, solo se lee.
-- **Dependencias por CDN sin justificarlas.** Phaser es razonable y va en tu PR, con la versión fijada.
+- **Dependencias por CDN sin justificarlas.** Phaser 3.70.0 ya lo carga la página (`PHASER` en
+  `v2/js/ui/juego.js`), con la versión fijada; subirla es un cambio de la página, no solo del motor.
 
 ## Cómo entra
 
