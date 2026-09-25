@@ -1,0 +1,17 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-25T01:45:00Z'
+  fase: fix-post-merge
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    Lo cazó el dueño: pulsar la pestaña llevaba a la portada. `rutaDe` no tenía el caso del juego. Ninguna
+    prueba pulsaba la pestaña: todas entraban por URL, que es el camino que sí funcionaba. El test nuevo
+    recorre todas las pestañas, y la prueba de navegador ahora entra pulsando.
