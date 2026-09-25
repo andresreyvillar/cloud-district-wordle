@@ -55,15 +55,15 @@ jobs:
     # termina en lugar de morir cancelado a media sincronización.
     timeout-minutes: 350
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
         with:
           python-version: '3.12'
 
       # Para congelar el nivel del juego con el mismo `nivelDe` de la web (slice `nivel-congelado`). La versión
       # va fijada porque `v2/js/` son módulos ES sin `package.json`, y Node solo los detecta solo desde la 22.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
 
@@ -92,8 +92,12 @@ jobs:
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Por `env:` y no interpolado en el script: lo que llega de `workflow_dispatch` es texto de quien lo
+          # dispara, y metido tal cual en `run:` se ejecutaría como shell. Además se exige que sea un número.
+          VUELTAS_PEDIDAS: ${{ inputs.vueltas }}
         run: |
-          VUELTAS="${{ inputs.vueltas || '7' }}"
+          VUELTAS="${VUELTAS_PEDIDAS:-7}"
+          case "$VUELTAS" in ''|*[!0-9]*) echo "::error::vueltas tiene que ser un número: $VUELTAS"; exit 1;; esac
           ESPERA=3300
           fallos=0
           for vuelta in $(seq 1 "$VUELTAS"); do
