@@ -69,7 +69,8 @@ podio, que va justo debajo.
 
 ### con-empate-en-el-primer-puesto-se-felicita-a-todos
 **WHEN** el primer puesto está empatado
-**THEN** se felicita a todos los empatados y no se eligen medallas de uno solo.
+**THEN** se felicita a todos los empatados **con una frase en plural que dice que comparten el primer puesto**
+—nunca una frase escrita para un campeón solo—, y no se eligen medallas de uno solo.
 
 ### la-comprobacion-alcanza-los-dias-que-el-cron-corre
 **WHEN** se comprueba si el mes ya se celebró

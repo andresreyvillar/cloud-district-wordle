@@ -364,3 +364,17 @@
   transacción que se deshace**. Si una regresión la deja pasar, cae ese test y el estado sigue intacto.
 - **Codificada en:** `.claude/skills/slice-implement/SKILL.md` Gate 4c (cuarta forma de que el gate mienta)
   y `tests/slices/nivel-congelado/test_game_levels.py::intentar` · **estado:** codificada.
+
+### 2026-09-30 — Arreglar una regla en un sitio no la arregla en todos los que la usan
+- **Qué pasó:** `empates-comparten-puesto` hizo que a igual media publicada dos jugadores compartan puesto, y
+  arregló el titular de la temporada, que decía «le sigue a 0,00». Pero la tarjeta de `/temporadas` y el
+  medallero seguían coronando a **la primera fila** de la clasificación, y el podio de cierre felicitaba a dos
+  campeones con frases de uno. Lo cazó el dueño la víspera de cerrar un mes empatado.
+- **Causa raíz:** la regla nueva se aplicó donde se vio el síntoma, no en todos los consumidores de «el
+  primero». `find(...)` sobre una clasificación con puestos compartidos es un desempate escondido.
+- **Regla:** cuando una regla cambia qué significa un puesto, se buscan **todos** los sitios que eligen «el
+  primero» o «el ganador» (`find(`, `[0]`, `campeon`, `lider`) y cada uno se decide explícitamente: o usa
+  todos los del puesto, o dice por qué uno basta.
+- **Codificada en:** el caso, con tests que construyen un empate en cabeza en el archivo, la tarjeta, el
+  medallero y el podio de cierre · **estado:** codificada · **destino mecánico pendiente:** una comprobación
+  del harness que marque `clasificacion[0]` / `.find(` sobre clasificaciones fuera de `standings`.

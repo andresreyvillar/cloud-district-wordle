@@ -25,6 +25,12 @@ export function archivo(instantaneas) {
     .map(([temporada, carga]) => {
       const tabla = carga.clasificacion ?? [];
       const primero = tabla.find((fila) => fila.clasificado !== false) ?? null;
+      // **Todos los del primer puesto**, no el primero de la lista. Con la misma media publicada comparten
+      // puesto, y coronar solo al que la lista pone delante —por días jugados o por orden alfabético— era
+      // decidir un desempate que la clasificación no hace.
+      const cabeza = primero
+        ? tabla.filter((fila) => fila.clasificado !== false && fila.posicion === primero.posicion)
+        : [];
       const cerrada = carga.estado !== EN_CURSO;
 
       return {
@@ -43,6 +49,10 @@ export function archivo(instantaneas) {
         resultados: carga.resultados ?? 0,
         media_grupo: carga.media_grupo ?? null,
         // Una temporada abierta no ha coronado a nadie: tiene quien va ganando, que no es lo mismo.
+        campeones: cerrada ? cabeza : [],
+        lideres: cabeza,
+        // El primero de cada lista, para quien solo necesite uno. Con empate NO es «el campeón»: es el que la
+        // lista pone delante, y para nombrar al campeón se usan las listas.
         campeon: cerrada ? primero : null,
         lider: primero,
         medallas: Object.values(carga.logros ?? {}).reduce((suma, quienes) => suma + quienes.length, 0),
@@ -100,13 +110,14 @@ export function medallero(instantaneas) {
   }
 
   // Ganar una temporada solo cuenta cuando está cerrada: en una abierta se va ganando, no se ha ganado.
+  // Un título compartido cuenta para cada uno de los campeones.
   for (const entrada of archivo(instantaneas)) {
-    if (!entrada.campeon) continue;
-    const nombre = entrada.campeon.nombre;
-    if (!cuenta.has(nombre)) {
-      cuenta.set(nombre, { nombre, medallas: 0, temporadas_ganadas: 0, por_clave: {} });
+    for (const { nombre } of entrada.campeones) {
+      if (!cuenta.has(nombre)) {
+        cuenta.set(nombre, { nombre, medallas: 0, temporadas_ganadas: 0, por_clave: {} });
+      }
+      cuenta.get(nombre).temporadas_ganadas += 1;
     }
-    cuenta.get(nombre).temporadas_ganadas += 1;
   }
 
   // El destino de la ficha viaja con cada fila. Cuando no se puede resolver —un nombre que sale en los

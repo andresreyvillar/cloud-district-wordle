@@ -77,7 +77,7 @@ def texto(resultados: list[dict], temporada: str, jornada: int) -> str:
 
     `jornada` solo elige la variante de las frases (§10: sin azar), no entra en el cálculo.
     """
-    from refranero import NUEVA_TEMPORADA, PODIO_CAMPEON
+    from refranero import NUEVA_TEMPORADA, PODIO_CAMPEON, PODIO_CAMPEONES
     from resumen import _cifra
     from voz import _del_ciclo, con_nombre
 
@@ -107,8 +107,11 @@ def texto(resultados: list[dict], temporada: str, jornada: int) -> str:
 
     quienes = campeones(tabla)
     if quienes:
-        nombres = quienes[0] if len(quienes) == 1 else " y ".join(quienes)
-        lineas += ["", con_nombre(_del_ciclo(PODIO_CAMPEON, jornada), nombres)]
+        nombres = quienes[0] if len(quienes) == 1 else ", ".join(quienes[:-1]) + " y " + quienes[-1]
+        # Con el primer puesto compartido, frases escritas para varios: «Cata y Joel se lleva el mes» era la
+        # frase de un campeón solo con dos nombres dentro.
+        frases = PODIO_CAMPEON if len(quienes) == 1 else PODIO_CAMPEONES
+        lineas += ["", con_nombre(_del_ciclo(frases, jornada), nombres)]
         insignias = medallas_del_campeon(resultados, temporada, quienes[0]) if len(quienes) == 1 else []
         if insignias:
             lucidas = " ".join(POR_CLAVE[clave].emoji for clave in insignias)
