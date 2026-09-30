@@ -166,6 +166,24 @@ def leer_resultados():
         desplazamiento += PAGINA
 
 
+def leer_juego():
+    """Los niveles y las marcas del SuperWordleBros, para su podio en el resumen.
+
+    **Si falla, el resumen sale igual sin el juego**: es un podio entre tres, y perder el mensaje entero por él
+    sería peor que publicarlo sin él. Lee con la misma función que la materialización, así que el podio del
+    canal y el bloque de la web salen de los mismos datos.
+    """
+    if not (SUPABASE_URL and SUPABASE_KEY):
+        return [], []
+    try:
+        from materialize_seasons import leer_juego as leer
+
+        return leer(create_client(SUPABASE_URL, SUPABASE_KEY))
+    except Exception as error:  # noqa: BLE001 — cualquier fallo de lectura deja el resumen sin el juego
+        print(f"SuperWordleBros: el resumen va sin su podio ({error})", file=sys.stderr)
+        return [], []
+
+
 #: Días que se leen del canal. **Treinta y no uno**, y no es por capricho: con la ventana del día solo se
 #: puede decir «hoy ha abierto X», nunca «como de costumbre», porque una apertura suelta no dice nada de la
 #: costumbre de nadie. Treinta días son unas dos páginas de `conversations.history` — barato para lo que
@@ -413,7 +431,14 @@ def seccion_de_medallas(resultados):
 
 
 def comentario(
-    seccion_medallas: str, objetivo: Objetivo, resultados=None, senales=None, palabra=None, tono=None
+    seccion_medallas: str,
+    objetivo: Objetivo,
+    resultados=None,
+    senales=None,
+    palabra=None,
+    tono=None,
+    niveles=None,
+    marcas=None,
 ) -> str:
     """El texto que acompaña a la captura.
 
@@ -428,7 +453,7 @@ def comentario(
         jornada = max(fila["wordle_id"] for fila in resultados)
         cuerpo = resumen_del_dia(
             resultados, temporada_del_resumen(resultados), jornada,
-            senales=senales, palabra=palabra, tono=tono,
+            senales=senales, palabra=palabra, tono=tono, niveles=niveles, marcas=marcas,
         )
         if cuerpo:
             partes.append(cuerpo)
@@ -649,6 +674,7 @@ async def publicar(
         if resumen_activo()
         else None
     )
+    niveles, marcas = leer_juego() if resumen_activo() else ([], [])
     publicado = subir(
         ruta,
         comentario(
@@ -658,6 +684,8 @@ async def publicar(
             senales=leer_el_canal(jornada),
             palabra=palabra,
             tono=tono,
+            niveles=niveles,
+            marcas=marcas,
         ),
         titulo_de(jornada),
     )

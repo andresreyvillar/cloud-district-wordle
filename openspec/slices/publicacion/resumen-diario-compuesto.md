@@ -137,14 +137,66 @@ jornadas seguidas, porque un empate casi nunca dura dos jornadas.
 **WHEN** el primer puesto está empatado o la ventaja del líder se remonta en una jornada
 **THEN** el mensaje lo dice nombrando a quienes se lo juegan; y con ventaja amplia no se inventa rivalidad.
 
-### top-cinco-con-su-dibujo
-**WHEN** se compone el resumen
-**THEN** aparecen los cinco primeros del marcador con su media, y junto a cada uno el emoji de lo que
-dibujó **ese día**; quien no jugó no lleva emoji.
+### podio-del-marcador
+**WHEN** se compone el resumen y hay clasificados en el marcador general
+**THEN** el marcador sale como un **podio ASCII de bloques macizos** dentro de un bloque de código, con su
+título encima: el 1º en el centro y más alto, el 2º a la izquierda y el 3º a la derecha, y encima de cada
+escalón su puesto, su nombre y su media.
 
-### cabeza-del-album
+### podio-del-juego
+**WHEN** el nivel que se jugó ese día tiene marcas, o la clasificación del juego del mes tiene jugadores
+**THEN** después del podio del marcador va una línea con quién ganó ese nivel, su tiempo con centésimas y
+cuántos lo terminaron, y debajo el podio del SuperWordleBros del mes con los puntos de cada uno.
+
+### podio-de-figuras
 **WHEN** hay jugadores clasificados en el álbum
-**THEN** el mensaje muestra los tres primeros con su tasa y su tira agrupada.
+**THEN** después del podio del juego va el podio de figuras, con la puntuación media de cada uno.
+
+### los-podios-van-en-orden
+**WHEN** hay datos para los tres rankings
+**THEN** salen en este orden: el marcador general, el SuperWordleBros y las figuras.
+
+### el-empate-comparte-escalon
+**WHEN** varios jugadores comparten un puesto del podio
+**THEN** sus nombres van juntos en el mismo escalón; si son más de tres, se nombran tres y se dice cuántos más
+hay.
+
+### el-podio-cabe-en-el-movil
+**WHEN** se pinta un podio
+**THEN** ninguna de sus líneas pasa de 32 caracteres, y un nombre de más de 10 se acorta para que quepa en su
+escalón.
+
+### un-ranking-sin-datos-no-pinta-podio
+**WHEN** uno de los tres rankings no tiene a nadie
+**THEN** su podio no sale, y los demás salen igual y en su orden.
+
+### el-mes-arranca
+**WHEN** la jornada del resumen es una de las tres primeras que cuentan en la temporada
+**THEN** justo antes de los podios va una línea de arranque de mes, y no se habla de ventajas ni de recta
+final.
+
+### la-recta-final-cuenta-lo-que-queda
+**WHEN** quedan cuatro días laborables o menos en el mes después de la jornada del resumen
+**THEN** justo antes de los podios va el bloque de recta final: cuántas jornadas quedan, quién manda y a qué
+distancia está el segundo, y que un empate a final de mes **comparte el primer puesto**.
+
+### la-recta-final-dice-si-el-juego-sigue-abierto
+**WHEN** el bloque de recta final sale y hay clasificación del juego
+**THEN** dice cuántos puntos quedan en juego en el SuperWordleBros —10 por cada nivel del mes que queda por
+cerrar— y si el segundo todavía puede alcanzar al primero.
+
+### la-ultima-jornada-se-anuncia
+**WHEN** la jornada del resumen es el último día laborable del mes
+**THEN** el bloque de recta final lo dice como la última jornada, no como «quedan 0».
+
+### a-mitad-de-mes-no-hay-bloque-de-tension
+**WHEN** la jornada no está entre las tres primeras de la temporada ni en la recta final
+**THEN** no sale ni la línea de arranque ni el bloque de recta final.
+
+### el-momento-del-mes-sale-de-la-jornada
+**WHEN** se decide en qué momento del mes está el resumen
+**THEN** se decide con la fecha de la jornada y el calendario, no con el reloj de quien lo ejecuta: el mismo
+resumen sale igual lo ejecute quien lo ejecute y cuando lo ejecute.
 
 ### sin-jornada-no-hay-resumen
 **WHEN** no hay resultados
@@ -157,8 +209,9 @@ reglas dentro del publicador.
 
 ### el-mensaje-no-crece-con-el-grupo
 **WHEN** la temporada tiene muchos jugadores
-**THEN** el mensaje no crece con ellos: está acotado por construcción —dos líneas, cinco del top y tres del
-álbum— y por eso cabe siempre en el comentario de Slack.
+**THEN** el mensaje no crece con ellos: está acotado por construcción —dos líneas, tres podios de tres
+puestos con como mucho tres nombres por escalón, y el bloque del momento del mes— y por eso cabe siempre en el
+comentario de Slack.
 
 ### el-resumen-se-enciende-con-una-variable
 **WHEN** se despliega el código nuevo sin encender nada

@@ -1,0 +1,25 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-30T08:30:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tdd-rojo: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño pide los tres rankings del resumen como podio ASCII (bloques macizos) en orden general, juego y
+    figuras, y un resumen consciente del momento del mes (arranque, mitad, recta final de cinco laborables,
+    última jornada). Modificación de resumen-diario-compuesto: top-cinco-con-su-dibujo y cabeza-del-album se
+    sustituyen por podios; se añaden trece escenarios.
+
+    Una corrección antes de escribir: la vista previa que se enseñó al dueño decía que un empate a final de
+    mes lo gana quien más días ha jugado. Es falso: `standings.clasificacion` comparte puesto a igual media
+    publicada, y los días jugados solo ordenan la lista. El slice dice «comparte el primer puesto».
+
+    Fuera de alcance declarado: la alcanzabilidad del marcador general (no es exacta con la media imputada) y
+    el emoji del dibujo del día en el marcador (descuadra el bloque de código). Los fixtures se comprobaron
+    contra el código real antes de dar los tests por buenos.

@@ -152,40 +152,41 @@ def test_sin_figuras_el_premio_queda_desierto():
     assert "desiert" in linea.lower()
 
 
-# @scenarios top-cinco-con-su-dibujo
-def test_el_top_cinco_lleva_el_emoji_de_lo_que_cada_uno_dibujo_hoy():
+# @scenarios podio-del-marcador
+def test_el_podio_del_marcador_lleva_la_media_y_ningun_emoji():
+    """El podio va en un bloque de ancho fijo: un emoji ocupa dos columnas y descuadra el escalón. El dibujo
+    del día sigue en la obra del día, no aquí."""
     from resumen import bloque_top
 
     temporada = historia("Ana", 10, score=3) + historia("Bea", 10, score=5)
-    hoy = [resultado("Ana", HOY, 3, LORO)]  # Bea no jugó hoy
+    hoy = [resultado("Ana", HOY, 3, LORO)]
 
     bloque = bloque_top(temporada + hoy, "0", HOY)
+    podio = bloque.split("```")[1]
 
-    lineas = {linea.split()[1].rstrip(".") if linea.split() else "": linea for linea in bloque.splitlines()}
-    ana = next(l for l in bloque.splitlines() if "Ana" in l)
-    bea = next(l for l in bloque.splitlines() if "Bea" in l)
-    assert "🦜" in ana
-    assert "🦜" not in bea and "🌷" not in bea, "quien no jugó hoy no lleva dibujo del día"
+    assert "Ana" in podio and "Bea" in podio
+    assert "3,00" in podio
+    assert "🦜" not in bloque, "sin emojis dentro ni fuera del podio"
 
 
-# @scenarios top-cinco-con-su-dibujo
-def test_el_top_no_pasa_de_cinco():
+# @scenarios podio-del-marcador
+def test_el_podio_no_pasa_del_tercer_puesto():
     from resumen import bloque_top
 
     muchos = []
     for indice in range(9):
-        muchos += historia(f"J{indice}", 6, score=1 + indice % 6)
+        muchos += historia(f"J{indice}", 6, score=1 + indice)
 
-    bloque = bloque_top(muchos, "0", 1505)
+    podio = bloque_top(muchos, "0", 1505).split("```")[1]
 
-    # Se corta por PUESTO, no por número de filas: con empates puede haber más de cinco líneas, y lo que
-    # no puede pasar es que aparezca un sexto puesto.
-    puestos = [int(l.split("º")[0]) for l in bloque.splitlines()[1:] if "º" in l.split(" ")[0]]
-    assert puestos and max(puestos) <= 5
+    # Se corta por PUESTO: J0, J1 y J2 son los tres primeros, sin empates. Nadie más sube.
+    assert all(f"J{i}" in podio for i in range(3))
+    assert not any(f"J{i}" in podio for i in range(3, 9))
+    assert "4º" not in podio
 
 
-# @scenarios cabeza-del-album
-def test_la_cabeza_del_album_sale_con_su_tasa_y_su_tira():
+# @scenarios podio-de-figuras
+def test_el_podio_de_figuras_sale_con_su_puntuacion():
     from resumen import bloque_album
 
     limpia = historia("Ana", 8, patron=LORO)
@@ -193,11 +194,12 @@ def test_la_cabeza_del_album_sale_con_su_tasa_y_su_tira():
 
     bloque = bloque_album(limpia + sucia, "0")
 
-    assert "Ana" in bloque
-    # Ocho loros a 2 puntos entre ocho partidas: 2,00 puntos por partida. Antes esto era «100 %», y cambió
-    # con la ponderación del 2026-08-09 (geométrico 3 · loro 2 · flor 1).
-    assert "2,00 pts" in bloque, f"la puntuación ponderada no sale: {bloque}"
-    assert "🦜8" in bloque, "su tira agrupada"
+    assert bloque.startswith("🎨 *Ranking de figuras*")
+    podio = bloque.split("```")[1]
+    assert "Ana" in podio
+    # Ocho loros a 2 puntos entre ocho partidas: 2,00 puntos por partida (ponderación del 2026-08-09:
+    # geométrico 3 · loro 2 · flor 1).
+    assert "2,00 pts" in podio, f"la puntuación ponderada no sale: {bloque}"
 
 
 # @scenarios sin-jornada-no-hay-resumen
@@ -235,8 +237,10 @@ def test_el_marcador_del_resumen_es_el_mismo_que_publica_la_web():
     lider = clasificacion(filas, "0")[0]
     bloque = bloque_top(filas, "0", 1509)
 
-    primera = next(l for l in bloque.splitlines() if l.strip().startswith("1º"))
-    assert lider["nombre"] in primera
+    # En el podio, el nombre va en la línea justo debajo de su puesto.
+    lineas = bloque.splitlines()
+    puesto = next(i for i, l in enumerate(lineas) if l.strip() == "1º")
+    assert lider["nombre"] in lineas[puesto + 1]
 
 
 # @scenarios el-mensaje-no-crece-con-el-grupo
@@ -247,7 +251,8 @@ def test_el_mensaje_no_crece_con_el_numero_de_jugadores():
     Aquí se compara **el mensaje de un grupo pequeño con el de uno seis veces mayor**, que es lo que de
     verdad podría desbordarlo.
     """
-    from resumen import LIMITE_DE_SLACK, TOP, resumen_del_dia
+    from podios import LINEAS_MAXIMAS
+    from resumen import LIMITE_DE_SLACK, resumen_del_dia
 
     def grupo(cuantos):
         filas = []
@@ -263,15 +268,17 @@ def test_el_mensaje_no_crece_con_el_numero_de_jugadores():
     # Se cuentan las LÍNEAS del bloque del top, no los prefijos "1.": con puestos compartidos varios
     # jugadores llevan el mismo número y ese proxy dejó de medir lo que decía medir.
     def filas_del_top(texto):
-        bloque = texto.split("📊 *Marcador")[1].split("\n\n")[0]
-        return len(bloque.splitlines())
+        # El podio es lo que va dentro de su bloque de código, no hasta la primera línea en blanco: entre el
+        # título y el podio hay una a propósito, para dar aire.
+        podio = texto.split("📊 *Marcador")[1].split("```")[1]
+        return len(podio.strip("\n").splitlines())
 
     assert "Marcador" in grande
-    # La propiedad: el bloque del marcador NO crece con el grupo. Se comparan los dos entre sí en lugar de
-    # contra un número fijo, porque con empates el recuento depende de cuántos comparten puesto y lo que
-    # importa es que seis veces más gente no produzca un bloque mayor.
-    assert filas_del_top(grande) == filas_del_top(pequeno)
-    assert filas_del_top(grande) <= TOP + 1, "el encabezado más como mucho cinco puestos"
+    # La propiedad: el podio del marcador NO crece con el grupo. Con empates los nombres se apilan en su
+    # escalón, así que su alto varía; lo que no puede pasar es que supere el tope, que no depende de cuánta
+    # gente juegue: tres nombres por escalón y «y N más».
+    assert filas_del_top(pequeno) <= LINEAS_MAXIMAS
+    assert filas_del_top(grande) <= LINEAS_MAXIMAS, "seis veces más gente no puede dar un podio más alto"
 
 
 # @scenarios el-resumen-se-enciende-con-una-variable
