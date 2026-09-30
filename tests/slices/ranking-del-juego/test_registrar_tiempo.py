@@ -89,21 +89,42 @@ def test_un_tiempo_peor_no_pisa_la_marca(db):
 
 
 # @scenarios solo-se-sobrescribe-si-mejora
-def test_un_tiempo_igual_tampoco_la_pisa(db):
-    registrar(db, 40, estrellas=1)
-    resultado = registrar(db, 40, estrellas=5)
+def test_la_misma_marca_no_la_pisa(db):
+    registrar(db, 40, estrellas=3)
+    resultado = registrar(db, 40, estrellas=3)
 
     assert '"mejora": false' in resultado.stdout
-    assert marca(db) == "40.00|1"
+    assert marca(db) == "40.00|3"
 
 
 # @scenarios solo-se-sobrescribe-si-mejora
-def test_un_tiempo_mejor_si_la_pisa(db):
+def test_con_las_mismas_estrellas_un_tiempo_mejor_si_la_pisa(db):
     registrar(db, 40, estrellas=5)
-    resultado = registrar(db, 31.5, estrellas=2)
+    resultado = registrar(db, 31.5, estrellas=5)
 
     assert '"mejora": true' in resultado.stdout
-    assert marca(db) == "31.50|2"
+    assert marca(db) == "31.50|5"
+
+
+# @scenarios solo-se-sobrescribe-si-mejora
+def test_mas_estrellas_mejoran_aunque_sea_mas_lento(db):
+    """Las estrellas pesan más que el tiempo: 13 estrellas en 15 s es mejor que 9 en 12 s."""
+    registrar(db, 12, estrellas=9)
+    resultado = registrar(db, 15, estrellas=13)
+
+    assert '"mejora": true' in resultado.stdout
+    assert '"estrellas": 13' in resultado.stdout
+    assert marca(db) == "15.00|13"
+
+
+# @scenarios solo-se-sobrescribe-si-mejora
+def test_menos_estrellas_no_mejoran_aunque_sea_mas_rapido(db):
+    registrar(db, 15, estrellas=13)
+    resultado = registrar(db, 12, estrellas=9)
+
+    assert '"mejora": false' in resultado.stdout
+    assert '"estrellas": 13' in resultado.stdout, "devuelve la marca que se queda, con sus estrellas"
+    assert marca(db) == "15.00|13"
 
 
 # @scenarios solo-se-sobrescribe-si-mejora
@@ -181,3 +202,32 @@ def test_justo_por_encima_del_minimo_entra(db):
 # @scenarios rechaza-lo-imposible
 def test_quien_jugo_otro_dia_tambien_puede_jugar_este_nivel(db):
     assert registrar(db, 40, jugador=SOLO_OTRO_DIA).returncode == 0
+
+
+def con_el_nivel_siguiente(db, llamada):
+    """Congela la jornada siguiente y hace `llamada` como `anon`, **dentro de una transacción que se deshace**:
+    el nivel del fixture es compartido, y congelar el siguiente de verdad lo cerraría para los demás tests."""
+    return db(
+        "begin;\n"
+        f"insert into public.game_levels (jornada, fecha, nivel) values ({JORNADA + 1}, '2026-09-25', '{json.dumps(NIVEL)}');\n"
+        "set local role anon;\n"
+        f"{llamada};\n"
+        "rollback;"
+    )
+
+
+# @scenarios un-nivel-se-cierra-al-congelar-el-siguiente
+def test_el_nivel_anterior_ya_no_admite_marcas(db):
+    resultado = con_el_nivel_siguiente(db, f"select public.registrar_tiempo({JORNADA}, '{JUGADOR}', 40, 1)")
+
+    assert resultado.returncode != 0
+    assert "ese nivel ya está cerrado" in resultado.stderr
+    assert db("select count(*) from public.game_times").stdout.strip() == "0"
+
+
+# @scenarios un-nivel-se-cierra-al-congelar-el-siguiente
+def test_el_ultimo_nivel_sigue_abierto(db):
+    resultado = con_el_nivel_siguiente(db, f"select public.registrar_tiempo({JORNADA + 1}, '{JUGADOR}', 40, 1)")
+
+    assert resultado.returncode == 0, resultado.stderr
+    assert '"mejora": true' in resultado.stdout

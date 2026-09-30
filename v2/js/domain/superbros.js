@@ -73,15 +73,47 @@ function diaAnterior(fecha) {
 }
 
 /**
+ * Jugadores que hacen falta para que un día cuente. **Es el de `tools/seasons.py::MUESTRA_MINIMA_DEL_DIA`**, y un
+ * test comprueba que las dos cifras coinciden: si divergieran, el cron congelaría niveles que no puntúan.
+ */
+export const MUESTRA_MINIMA_DEL_DIA = 5;
+
+/** Si una fecha `AAAA-MM-DD` es de lunes a viernes. En UTC, para que la zona horaria no cambie el día. */
+function esLaborable(fecha) {
+  const [a, m, d] = fecha.split('-').map(Number);
+  const dia = new Date(Date.UTC(a, m - 1, d)).getUTCDay();
+  return dia >= 1 && dia <= 5;
+}
+
+/**
+ * Las filas de las jornadas que **cuentan para la temporada**: laborables con al menos cinco jugadores. Las mismas
+ * dos reglas que `seasons.dias_de_temporada`.
+ */
+function deDiasQueCuentan(resultados) {
+  const porJornada = new Map();
+  for (const fila of resultados ?? []) {
+    if (!Number.isInteger(fila?.jornada) || typeof fila.fecha !== 'string') continue;
+    if (!porJornada.has(fila.jornada)) porJornada.set(fila.jornada, []);
+    porJornada.get(fila.jornada).push(fila);
+  }
+  return [...porJornada.values()]
+    .filter((filas) => esLaborable(filas[0].fecha) && filas.length >= MUESTRA_MINIMA_DEL_DIA)
+    .flat();
+}
+
+/**
  * La jornada que el cron congela: la última **asentada**. `hoy` es `AAAA-MM-DD` y `hora` `HH:MM`, las dos de
  * Madrid, y entran por parámetro (§10).
  *
  * Desde las 02:00, la de ayer; antes, la de anteayer —que el cron ya habrá congelado, salvo que estuviera
- * caído—. La de hoy, nunca: sigue abierta.
+ * caído—. La de hoy, nunca: sigue abierta. Y solo jornadas que cuentan para la temporada: un fin de semana no
+ * crea nivel, así que el lunes aún se juega el del viernes.
  */
 export function jornadaACongelar(resultados, hoy, hora) {
   if (!hoy || !hora) return null;
-  return jornadaDelNivel(resultados, hora >= HORA_DE_CONGELAR ? hoy : diaAnterior(hoy));
+  // **Solo días que cuentan.** Un sábado con partidas sueltas crearía un nivel que cerraría el del viernes a
+  // mitad de fin de semana: el del viernes se juega de sábado a lunes, y lo cierra el del lunes.
+  return jornadaDelNivel(deDiasQueCuentan(resultados), hora >= HORA_DE_CONGELAR ? hoy : diaAnterior(hoy));
 }
 
 /** La fecha de una jornada, `AAAA-MM-DD`, o `null` si no hay filas suyas. */
@@ -273,9 +305,10 @@ export function tiempoPreciso(segundos) {
 }
 
 /**
- * El ranking de un nivel: de menor a mayor tiempo, y **dos tiempos iguales comparten puesto** (1, 1, 3), como
- * en el resto de clasificaciones de la web. Una marca de alguien que ya no está en la lista sale con su
- * identificador en lugar de desaparecer.
+ * El ranking de un nivel: **más estrellas primero** y, con las mismas estrellas, de menor a mayor tiempo. Las
+ * estrellas pesan más que el tiempo (decisión del dueño): 13 estrellas en 0:13 van por delante de 9 en 0:12.
+ * Comparten puesto (1, 1, 3) solo las mismas estrellas en el mismo tiempo, en centésimas. Una marca de alguien
+ * que ya no está en la lista sale con su identificador en lugar de desaparecer.
  */
 export function clasificacionDelNivel(marcas, jugadores) {
   const nombres = new Map((jugadores ?? []).map((j) => [j.jugador, j.nombre]));
@@ -286,10 +319,11 @@ export function clasificacionDelNivel(marcas, jugadores) {
       segundos: Number(m.segundos),
       estrellas: Number(m.estrellas),
     }))
-    .sort((a, b) => a.segundos - b.segundos || a.nombre.localeCompare(b.nombre, 'es'));
+    .sort((a, b) => b.estrellas - a.estrellas || a.segundos - b.segundos || a.nombre.localeCompare(b.nombre, 'es'));
+  const iguales = (x, y) => x.estrellas === y.estrellas && Math.round(x.segundos * 100) === Math.round(y.segundos * 100);
   return filas.map((fila, indice) => {
     let puesto = indice + 1;
-    while (puesto > 1 && filas[puesto - 2].segundos === fila.segundos) puesto -= 1;
+    while (puesto > 1 && iguales(filas[puesto - 2], fila)) puesto -= 1;
     return { puesto, ...fila };
   });
 }

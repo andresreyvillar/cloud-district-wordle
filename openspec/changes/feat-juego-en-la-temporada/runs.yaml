@@ -1,0 +1,24 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-30T08:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tdd-rojo: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño pide una clasificación del SuperWordleBros en la temporada, debajo del álbum de figuras, con las
+    marcas diarias. Decide puntos por puesto en cada nivel (10-8-6-5-4-3-2, luego 1) y que el nivel se cierre
+    al congelarse el siguiente. Supuesto declarado en el slice: solo puntúan los niveles de días de temporada
+    (laborables con cinco jugadores), como en la clasificación general.
+
+    Tres slices: clasificacion-del-juego (nuevo, cron), marcador-del-juego (nuevo, web) y ranking-del-juego
+    (modificación: cierre del nivel). Tests con aserciones reales y marcados pendientes; activados, fallan 12
+    de 12 en la clasificación, 5 de 6 en la web y el del cierre. Los dos verdes son vigilancias que ya se
+    cumplen hoy (sin marcas no hay bloque; el último nivel sigue abierto). Una ronda de corrección: un fixture
+    de desempate dejaba a un tercer jugador con los mismos puntos; se comprobó la aritmética de todos los
+    fixtures con una implementación de referencia de usar y tirar.

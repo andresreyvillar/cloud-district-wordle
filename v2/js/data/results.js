@@ -117,7 +117,7 @@ export async function escribirMarca(cliente, { jornada, jugador, segundos, estre
   });
 
   if (error) throw new Error(`Supabase: ${error.message}`);
-  return { mejora: Boolean(data?.mejora), segundos: Number(data?.segundos) };
+  return { mejora: Boolean(data?.mejora), segundos: Number(data?.segundos), estrellas: data?.estrellas ?? null };
 }
 
 let clienteDelRanking = null;

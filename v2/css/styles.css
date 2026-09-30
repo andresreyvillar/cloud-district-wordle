@@ -471,6 +471,11 @@ main { padding-block: 2rem; }
 /* «83 %» lleva espacio por tipografía, y en la columna estrecha de móvil se partía en dos líneas. Se
    resuelve aquí y no con un espacio duro en el fuente: un carácter invisible en el código es una trampa. */
 .fila.album-fila .num, .album-cifra b { white-space: nowrap; }
+/* SuperWordleBros (slice `marcador-del-juego`): puesto, jugador, puntos, niveles y victorias. En móvil se
+   quedan los puntos, como en el marcador: niveles y victorias son las `.num.suave` que ya se ocultan. */
+.cabeza.juego-cabeza, .fila.juego-fila {
+  grid-template-columns: 6px 34px minmax(7rem, 1fr) 5rem 5rem 5.5rem;
+}
 .album-ficha { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; padding: 0.4rem 0; }
 .album-cifra { display: flex; flex-direction: column; gap: 2px; }
 .album-cifra b { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; line-height: 1; }

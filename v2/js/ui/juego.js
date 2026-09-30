@@ -266,11 +266,19 @@ export function controlDelRanking({ api, jornada, total }) {
       estrellas: conseguidas,
     };
     try {
-      const { mejora, segundos } = await api.registrar(marca);
+      const { mejora, segundos, estrellas } = await api.registrar(marca);
+      // La marca es estrellas **y** tiempo: las estrellas pesan más, así que decir solo el tiempo engañaría a
+      // quien acaba de hacer uno mejor con menos estrellas.
+      const cual = Number.isInteger(estrellas) ? `⭐ ${estrellas} en ${tiempoPreciso(segundos)}` : tiempoPreciso(segundos);
       return mejora
-        ? { estado: 'mejora', texto: `¡Nueva marca! ${tiempoPreciso(segundos)} guardado en el ranking.` }
-        : { estado: 'sin-mejora', texto: `Tu mejor marca sigue siendo ${tiempoPreciso(segundos)}. ¡Otra vez!` };
-    } catch {
+        ? { estado: 'mejora', texto: `¡Nueva marca! ${cual} guardado en el ranking.` }
+        : { estado: 'sin-mejora', texto: `Tu mejor marca sigue siendo ${cual}. ¡Otra vez!` };
+    } catch (error) {
+      // El nivel se cerró mientras se jugaba: la pestaña se abrió antes de que se congelara el siguiente. No es
+      // un fallo, así que no se dice como tal: se dice qué hacer.
+      if (/nivel ya está cerrado/.test(String(error?.message))) {
+        return { estado: 'cerrado', texto: 'Este nivel ya está cerrado: ya hay uno nuevo. Recarga la página para jugarlo.' };
+      }
       return { estado: 'error', texto: 'El tiempo no se ha podido guardar. Puedes seguir jugando y compartirlo igual.' };
     }
   }

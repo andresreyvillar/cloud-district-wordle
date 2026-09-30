@@ -69,8 +69,9 @@ vuelve a leer y lo muestra
 
 ### solo-se-sobrescribe-si-mejora
 **WHEN** un jugador registra un tiempo para un nivel en el que ya tiene marca
-**THEN** la marca solo cambia si el tiempo nuevo es **menor**; si es igual o peor se queda la anterior, y la
-página dice cuál de las dos cosas ha pasado
+**THEN** la marca solo cambia si **mejora**: más estrellas, o las mismas estrellas en menos tiempo —las
+estrellas pesan más que el tiempo—; si no, se queda la anterior, y la página dice cuál de las dos cosas ha
+pasado
 
 ### se-puede-reintentar-sin-limite
 **WHEN** alguien termina el nivel, pulsa `R` y lo vuelve a terminar
@@ -78,9 +79,9 @@ página dice cuál de las dos cosas ha pasado
 
 ### un-ranking-por-nivel
 **WHEN** se pinta el ranking
-**THEN** solo aparecen las marcas de la jornada del nivel, ordenadas de menor a mayor tiempo, con puesto,
-nombre, tiempo con centésimas y estrellas; dos tiempos iguales comparten puesto, y la fila de quien juega se
-distingue
+**THEN** solo aparecen las marcas de la jornada del nivel, ordenadas de más a menos estrellas y, con las
+mismas estrellas, de menor a mayor tiempo, con puesto, nombre, tiempo con centésimas y estrellas; dos marcas
+con las mismas estrellas y el mismo tiempo comparten puesto, y la fila de quien juega se distingue
 
 ### sin-marcas-lo-dice
 **WHEN** nadie ha terminado todavía el nivel
@@ -99,6 +100,16 @@ estrellas que tramos, o un tiempo por debajo del que permite recorrer el nivel a
 **WHEN** la llamada a `registrar_tiempo` falla —red, o una marca rechazada—
 **THEN** la página dice que el tiempo no se ha podido guardar, el texto para compartir sigue ahí, y se puede
 seguir jugando
+
+### un-nivel-se-cierra-al-congelar-el-siguiente
+**WHEN** se llama a `registrar_tiempo` con una jornada congelada que no es la última congelada
+**THEN** la llamada falla con «ese nivel ya está cerrado» y no se escribe nada: el ranking de un nivel deja de
+cambiar en cuanto se congela el siguiente, y la clasificación del mes no se reescribe hacia atrás
+
+### terminar-un-nivel-cerrado-lo-dice
+**WHEN** alguien termina el nivel en una pestaña que abrió antes de que se congelara el siguiente
+**THEN** la página dice que ese nivel ya está cerrado y que recargue para jugar el nuevo, en lugar del aviso
+genérico de que el tiempo no se pudo guardar
 
 ## Estado después
 
@@ -119,4 +130,5 @@ seguir jugando
 - **Suplantación.** Se acepta como parte del modelo de confianza; no hay forma de impedirla sin login.
 
 ## Slices compañeros
+- [[clasificacion-del-juego]] — puntúa estas marcas en la clasificación del mes.
 - [[juego-de-la-jornada]] — el nivel, el motor y el evento `superbros:fin` que este slice consume.
