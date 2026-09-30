@@ -1,0 +1,21 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-30T14:00:00Z'
+  fase: propose+implement+gate-4d
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass-tras-correccion
+  rondas_correccion: 1
+  notas: >-
+    El dueño pide los tres campeones en el archivo —marcador, SuperWordleBros y figuras—, desde octubre de
+    2026, y el medallero por competición. Mutación: tres competiciones desde septiembre → rojo en
+    antes-de-octubre (y en los tests del empate, que usan septiembre como temporada de una competición);
+    medallero contando solo el marcador → rojo en el-medallero-cuenta-los-titulos. El verificador no refuta
+    los escenarios (las tarjetas anteriores a octubre salen idénticas byte a byte a las de main) y señala un
+    detalle corregido: una competición vacía en un mes cerrado decía «va ganando · sin campeón».

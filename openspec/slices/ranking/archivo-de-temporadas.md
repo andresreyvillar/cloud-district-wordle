@@ -60,6 +60,26 @@ campeón.
 **THEN** la tarjeta presenta como campeones a todos los empatados y dice que comparten el primer puesto, y el
 medallero les suma la temporada ganada a cada uno
 
+### tres-campeones-desde-octubre
+**WHEN** se pinta una temporada de octubre de 2026 en adelante
+**THEN** la tarjeta presenta las tres competiciones —el marcador, el SuperWordleBros y las figuras—, cada una
+con su campeón o quien va ganando, con su cifra (la media, los puntos del juego, los puntos por partida de las
+figuras), y un empate en cualquiera de ellas se presenta como empate
+
+### antes-de-octubre-solo-el-marcador
+**WHEN** se pinta una temporada anterior a octubre de 2026
+**THEN** la tarjeta presenta solo al campeón del marcador, como siempre: el juego empezó a mitad de septiembre y
+el dueño decidió contar las tres competiciones desde octubre
+
+### una-competicion-sin-datos-no-corona-a-nadie
+**WHEN** una de las tres competiciones no tiene a nadie clasificado en la temporada
+**THEN** su hueco en la tarjeta dice que no tiene campeón, en lugar de inventarlo o de desaparecer
+
+### el-medallero-cuenta-los-titulos-por-competicion
+**WHEN** se construye el medallero
+**THEN** cada jugador suma sus títulos de temporadas cerradas **por competición** —marcador, SuperWordleBros y
+figuras por separado—, y el juego y las figuras solo cuentan desde octubre de 2026
+
 ### el-medallero-acumula-todas-las-temporadas
 **WHEN** se mira el medallero
 **THEN** cuenta las medallas de cada jugador sumando todas las temporadas, ordenado de más a menos, y dice
