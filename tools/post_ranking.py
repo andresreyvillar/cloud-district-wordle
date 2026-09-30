@@ -180,7 +180,8 @@ def leer_juego():
 
         return leer(create_client(SUPABASE_URL, SUPABASE_KEY))
     except Exception as error:  # noqa: BLE001 — cualquier fallo de lectura deja el resumen sin el juego
-        print(f"SuperWordleBros: el resumen va sin su podio ({error})", file=sys.stderr)
+        # El tipo y no el error entero: el log del workflow es público, como el repositorio.
+        print(f"SuperWordleBros: el resumen va sin su podio ({type(error).__name__})", file=sys.stderr)
         return [], []
 
 
@@ -590,6 +591,17 @@ def mensajes_recientes(
         return []
 
 
+def para_slack(texto: str) -> str:
+    """El texto escapado como pide la API de Slack para mensajes: `&`, `<` y `>`.
+
+    **Los nombres son nombres de perfil de Slack**, que cualquiera puede cambiar: sin esto, alguien llamado
+    `<!channel>` haría que el resumen avisara a todo el canal, y `<https://…|texto>` colaría un enlace firmado por
+    el bot. Ningún texto del bot usa esos caracteres a propósito, así que escapar el mensaje entero no cambia
+    nada más.
+    """
+    return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def upload_to_slack(file_path: str, texto: str, titulo: str, canal: str | None = None) -> bool:
     """Sube la captura. Devuelve si se ha publicado: el que llama decide qué hacer con el fallo.
 
@@ -605,7 +617,7 @@ def upload_to_slack(file_path: str, texto: str, titulo: str, canal: str | None =
             channel=destino,
             file=file_path,
             title=titulo,
-            initial_comment=texto,
+            initial_comment=para_slack(texto),
         )
         print("Imagen publicada correctamente.")
         return True

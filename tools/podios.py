@@ -48,7 +48,8 @@ def acortar(nombre: str, ancho: int = COLUMNA) -> str:
     Se acorta por palabras: «Flavia Venturi» → «Flavia V.», que se sigue reconociendo en el canal. Solo si ni
     así cabe se corta con puntos suspensivos.
     """
-    nombre = " ".join(str(nombre).split())
+    # Sin acentos graves: tres seguidos en un nombre cerrarían el bloque de código de Slack en mitad del podio.
+    nombre = " ".join(str(nombre).replace("`", "'").split())
     if len(nombre) <= ancho:
         return nombre
     palabras = nombre.split(" ")

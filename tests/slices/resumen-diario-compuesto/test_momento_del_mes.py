@@ -93,3 +93,48 @@ def test_el_momento_del_mes_no_lee_el_reloj():
     for reloj in ("now(", "today(", "time.time", "utcnow("):
         assert reloj not in fuente, f"el momento del mes no puede leer el reloj ({reloj})"
     assert momento("2026-09-25") == momento("2026-09-25")
+
+
+# @scenarios la-recta-final-dice-si-el-juego-sigue-abierto
+def test_el_nivel_abierto_puede_dar_la_vuelta_aunque_ya_tenga_marcas():
+    """Lo cazó el Gate 4d. El nivel abierto ya tiene marcas contadas y sigue admitiéndolas: el 2º puede pasar de
+    0 a 10 y el líder caer de 10 a 1. Ana saca 28 con 20 «en juego», pero el vuelco posible es 19 + 10 = 29."""
+    cerrados = ["2026-09-22", "2026-09-23", "2026-09-24", "2026-09-25", "2026-09-28"]
+    niveles = [nivel(f) for f in cerrados + ["2026-09-29"]]
+    marcas = [marca(f, "Ana", 30) for f in cerrados] + [marca(f, "Bea", 35) for f in cerrados[:4]]
+    marcas += [marca("2026-09-29", "Ana", 30)]  # el abierto: solo Ana, de momento
+
+    texto = momento("2026-09-30", niveles=niveles, marcas=marcas)
+
+    assert "todavía puede" in texto.lower(), texto
+    assert "ya no puede" not in texto.lower()
+
+
+# @scenarios la-recta-final-dice-si-el-juego-sigue-abierto
+def test_con_la_cabeza_del_juego_empatada_se_nombra_a_los_dos():
+    niveles = [nivel("2026-09-28"), nivel("2026-09-29")]
+    marcas = [marca("2026-09-28", "Ana", 30), marca("2026-09-28", "Bea", 35),
+              marca("2026-09-29", "Bea", 30), marca("2026-09-29", "Ana", 35)]
+
+    linea = next(l for l in momento("2026-09-30", niveles=niveles, marcas=marcas).splitlines() if "SuperWordleBros" in l)
+
+    assert "Ana" in linea and "Bea" in linea
+    assert "empat" in linea.lower()
+
+
+# @scenarios la-recta-final-cuenta-lo-que-queda
+def test_con_el_segundo_puesto_compartido_se_nombra_a_todos_los_segundos():
+    # Ana 3, Bea y Cris 4: Bea y Cris comparten el 2º.
+    texto = momento("2026-09-25", filas=mes("2026-09-25", notas={"Bea": 4}))
+
+    linea = next(l for l in texto.splitlines() if "manda" in l)
+    assert "Bea" in linea and "Cris" in linea, linea
+
+
+# @scenarios la-recta-final-cuenta-lo-que-queda
+def test_un_empate_en_cabeza_de_muchos_no_alarga_la_linea():
+    todos = {n: 3 for n in ("Ana", "Bea", "Cris", "Dani", "Eva")}
+
+    linea = next(l for l in momento("2026-09-25", filas=mes("2026-09-25", notas=todos)).splitlines() if "empatad" in l)
+
+    assert "y 2 más" in linea, linea

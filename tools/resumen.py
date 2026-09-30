@@ -23,7 +23,7 @@ import datetime
 from album import album
 from comentarios import seccion_de_comentarios
 from figures import CULO, FIGURAS, figura, rasgos
-from juego import ESCALA, clasificacion_del_juego, niveles_que_puntuan
+from juego import ESCALA, PUNTOS_DESDE_EL_OCTAVO, clasificacion_del_juego, niveles_que_puntuan, puestos_de_nivel
 from podios import podio_de_texto
 from seasons import TEMPORADA_CERO, dias_de_temporada, resultados_de_temporada
 from standings import clasificacion
@@ -257,7 +257,11 @@ def bloque_juego(resultados: list[dict], temporada: str, jornada: int, niveles=(
     if del_nivel:
         nombres = _nombres_por_jugador(resultados)
         clave = lambda m: (int(m.get("estrellas") or 0), round(float(m["segundos"]) * 100))  # noqa: E731
-        ganadores = [nombres.get(m["jugador"], m["jugador"]) for m in del_nivel if clave(m) == clave(del_nivel[0])]
+        # Por nombre entre los empatados: el orden de las filas de la base de datos no puede cambiar el mensaje.
+        ganadores = sorted(
+            (nombres.get(m["jugador"], m["jugador"]) for m in del_nivel if clave(m) == clave(del_nivel[0])),
+            key=str.lower,
+        )
         estrellas = int(del_nivel[0].get("estrellas") or 0)
         verbo = "lo ganan" if len(ganadores) > 1 else "lo gana"
         cuantos = len(del_nivel)
@@ -1041,34 +1045,76 @@ def _laborables_del_mes(desde: datetime.date, incluido: bool) -> int:
     return sum(1 for dia in range(primero, ultimo + 1) if desde.replace(day=dia).weekday() < 5)
 
 
+#: Nombres que se escriben en una línea del momento del mes antes de resumir el resto con «y N más». Un empate
+#: de muchos en cabeza no puede alargar el mensaje con el grupo.
+NOMBRES_EN_UNA_LINEA = 3
+
+
+def _nombres(filas: list[dict]) -> str:
+    nombres = [fila["nombre"] for fila in filas]
+    if len(nombres) > NOMBRES_EN_UNA_LINEA:
+        return ", ".join(nombres[:NOMBRES_EN_UNA_LINEA]) + f" y {len(nombres) - NOMBRES_EN_UNA_LINEA} más"
+    return _y(nombres)
+
+
+def _cabeza_y_siguientes(tabla: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Todos los del primer puesto y **todos** los del siguiente: con un empate en el 2º, nombrar solo al primero
+    de la lista era contar la mitad."""
+    if not tabla:
+        return [], []
+    cabeza = [fila for fila in tabla if fila["posicion"] == tabla[0]["posicion"]]
+    resto = [fila for fila in tabla if fila["posicion"] > tabla[0]["posicion"]]
+    siguientes = [fila for fila in resto if fila["posicion"] == resto[0]["posicion"]] if resto else []
+    return cabeza, siguientes
+
+
 def _tension_del_juego(resultados, temporada, jornada, fecha, niveles, marcas) -> str:
     """La línea del SuperWordleBros en la recta final: cuántos puntos quedan en juego y si el segundo llega.
 
-    **Aquí sí se puede calcular**: cada nivel reparte como mucho 10 puntos, así que quedan 10 por cada nivel del
-    mes por cerrar —el abierto, si puntúa en el mes, y uno por cada laborable desde la jornada incluida—.
+    **Aquí sí se puede calcular**, y se calcula como cota exacta. Cada nivel por jugar da hasta 10 al segundo y
+    nada al líder. El nivel **abierto** es distinto: ya tiene marcas contadas y sigue admitiéndolas, así que el
+    segundo puede subir hasta 10 desde lo que tenga en él y el líder, si ya tiene marca, caer hasta 1. Contarlo
+    como 10 limpios decía «ya no puede» cuando sí podía (lo cazó el Gate 4d).
     """
     tabla = clasificacion_del_juego(resultados, list(niveles), list(marcas), temporada)["clasificacion"]
     if len(tabla) < 2:
         return ""
     abierto = _nivel_del_dia(niveles, jornada)
-    por_cerrar = int(abierto in niveles_que_puntuan(resultados, list(niveles), temporada))
-    por_cerrar += _laborables_del_mes(fecha, incluido=True)
-    en_juego = ESCALA[0] * por_cerrar
+    abierto_cuenta = abierto in niveles_que_puntuan(resultados, list(niveles), temporada)
+    por_jugar = _laborables_del_mes(fecha, incluido=True)
+    en_juego = ESCALA[0] * (int(abierto_cuenta) + por_jugar)
     if not en_juego:
         return ""
-    primero = tabla[0]
-    segundo = next((fila for fila in tabla if fila["posicion"] > primero["posicion"]), None)
-    if segundo is None:
-        return f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego y la cabeza está empatada."
-    ventaja = primero["puntos"] - segundo["puntos"]
-    if ventaja <= en_juego:
+
+    cabeza, siguientes = _cabeza_y_siguientes(tabla)
+    if len(cabeza) > 1:
         return (
-            f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego: {segundo['nombre']} todavía puede "
-            f"alcanzar a {primero['nombre']}, que le saca {ventaja}."
+            f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego y la cabeza está empatada entre "
+            f"{_nombres(cabeza)}, a {cabeza[0]['puntos']}."
+        )
+    primero, segundo = cabeza[0], siguientes[0]
+    ventaja = primero["puntos"] - segundo["puntos"]
+
+    vuelco = ESCALA[0] * por_jugar
+    if abierto_cuenta:
+        del_abierto = puestos_de_nivel([m for m in marcas if m["jornada"] == abierto])
+        del_lider = del_abierto.get(primero["jugador"], (None, 0))[1]
+        del_segundo = del_abierto.get(segundo["jugador"], (None, 0))[1]
+        suelo_del_lider = PUNTOS_DESDE_EL_OCTAVO if primero["jugador"] in del_abierto else 0
+        vuelco += (ESCALA[0] - del_segundo) + (del_lider - suelo_del_lider)
+
+    quienes = _nombres(siguientes)
+    varios = len(siguientes) > 1
+    if ventaja <= vuelco:
+        return (
+            f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego: {quienes} todavía "
+            f"{'pueden' if varios else 'puede'} alcanzar a {primero['nombre']}, que "
+            f"{'les' if varios else 'le'} saca {ventaja}."
         )
     return (
-        f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego y {segundo['nombre']} ya no puede alcanzar "
-        f"a {primero['nombre']}, que le saca {ventaja}."
+        f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego y {quienes} ya no "
+        f"{'pueden' if varios else 'puede'} alcanzar a {primero['nombre']}, que {'les' if varios else 'le'} saca "
+        f"{ventaja}."
     )
 
 
@@ -1100,18 +1146,15 @@ def bloque_momento_del_mes(resultados: list[dict], temporada: str, jornada: int,
 
     clasificados = [fila for fila in clasificacion(resultados, temporada) if fila["clasificado"]]
     if clasificados:
-        cabeza = [fila for fila in clasificados if fila["posicion"] == clasificados[0]["posicion"]]
+        cabeza, siguientes = _cabeza_y_siguientes(clasificados)
         media = _cifra(cabeza[0]["media_temporada"])
         if len(cabeza) > 1:
-            lineas.append(f"{_y([f['nombre'] for f in cabeza])} van empatados en cabeza con {media}.")
-        else:
-            siguiente = next((fila for fila in clasificados if fila["posicion"] > cabeza[0]["posicion"]), None)
-            if siguiente:
-                # Sobre la media **publicada**: si a la vista van 3,00 y 3,05, la distancia es 0,05 y no 0,0526.
-                distancia = _cifra(round(siguiente["media_temporada"], 2) - round(cabeza[0]["media_temporada"], 2))
-                lineas.append(
-                    f"{cabeza[0]['nombre']} manda con {media}; {siguiente['nombre']} está a {distancia}."
-                )
+            lineas.append(f"{_nombres(cabeza)} van empatados en cabeza con {media}.")
+        elif siguientes:
+            # Sobre la media **publicada**: si a la vista van 3,00 y 3,05, la distancia es 0,05 y no 0,0526.
+            distancia = _cifra(round(siguientes[0]["media_temporada"], 2) - round(cabeza[0]["media_temporada"], 2))
+            verbo = "están" if len(siguientes) > 1 else "está"
+            lineas.append(f"{cabeza[0]['nombre']} manda con {media}; {_nombres(siguientes)} {verbo} a {distancia}.")
         lineas.append("Si acaban igualados, comparten el primer puesto.")
 
     juego = _tension_del_juego(resultados, temporada, jornada, fecha, niveles or (), marcas or ())

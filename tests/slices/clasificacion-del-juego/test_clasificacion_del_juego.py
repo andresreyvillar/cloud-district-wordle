@@ -84,7 +84,7 @@ def test_mas_estrellas_van_delante_aunque_sean_mas_lentas():
     assert puntos(calcular(marcas)) == {"J1": 10, "J0": 8}
 
 
-# @scenarios los-empates-en-un-nivel-comparten-puntos
+# @scenarios las-estrellas-pesan-mas-que-el-tiempo
 def test_mismo_tiempo_con_distintas_estrellas_no_es_empate():
     marcas = [marca(LUNES, "J0", 30, estrellas=2), marca(LUNES, "J1", 30, estrellas=3)]
 

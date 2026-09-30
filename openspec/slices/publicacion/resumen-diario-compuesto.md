@@ -198,6 +198,12 @@ cerrar— y si el segundo todavía puede alcanzar al primero.
 **THEN** se decide con la fecha de la jornada y el calendario, no con el reloj de quien lo ejecuta: el mismo
 resumen sale igual lo ejecute quien lo ejecute y cuando lo ejecute.
 
+### un-nombre-no-puede-avisar-a-todo-el-canal
+**WHEN** un jugador tiene en su nombre de Slack caracteres con significado para Slack —`<!channel>`, `<@U…>`,
+`<https://…|texto>`, `&`—
+**THEN** el mensaje que publica el bot los enseña como texto: no avisa a nadie, no crea enlaces y no cambia el
+resto del mensaje
+
 ### sin-jornada-no-hay-resumen
 **WHEN** no hay resultados
 **THEN** el mensaje no inventa premios: se publica sin las secciones que no tienen datos.

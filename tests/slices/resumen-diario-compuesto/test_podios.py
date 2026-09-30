@@ -32,6 +32,16 @@ def bloques_de_codigo(texto: str) -> list[str]:
     return texto.split("```")[1::2]
 
 
+#: Los títulos de los tres podios. Se buscan por título y no por posición: así un cambio de orden solo tumba
+#: el test del orden, y una línea del bloque de recta final que nombre al juego no se confunde con su podio.
+MARCADOR, JUEGO, FIGURAS = "📊 *Marcador", "🎮 *SuperWordleBros*", "🎨 *Ranking de figuras*"
+
+
+def podio_tras(texto: str, titulo: str) -> str:
+    """El bloque de código que sigue al título de un podio."""
+    return texto.split(titulo, 1)[1].split("```")[1]
+
+
 def podio(puestos, titulo="📊 *Marcador*"):
     from podios import podio_de_texto
 
@@ -41,7 +51,7 @@ def podio(puestos, titulo="📊 *Marcador*"):
 # @scenarios podio-del-marcador
 def test_el_marcador_sale_como_podio_de_bloques_con_el_primero_en_el_centro():
     texto = resumen()
-    marcador = bloques_de_codigo(texto)[0]
+    marcador = podio_tras(texto, MARCADOR)
 
     assert "█" in marcador
     lineas = marcador.strip("\n").splitlines()
@@ -58,16 +68,16 @@ def test_el_marcador_sale_como_podio_de_bloques_con_el_primero_en_el_centro():
 def test_el_juego_lleva_el_ganador_del_nivel_del_dia_y_su_podio():
     texto = resumen()
 
-    linea = next(l for l in texto.splitlines() if "SuperWordleBros" in l)
+    linea = next(l for l in texto.splitlines() if l.startswith(JUEGO))
     assert f"#{jornada_de(AYER)}" in linea
     assert "Cris" in linea and "0:31.20" in linea and "3 jugadores" in linea
-    juego = bloques_de_codigo(texto)[1]
+    juego = podio_tras(texto, JUEGO)
     assert "Cris" in juego and "10" in juego, "el podio del mes con los puntos"
 
 
 # @scenarios podio-de-figuras
 def test_las_figuras_salen_como_podio_con_su_puntuacion_media():
-    figuras = bloques_de_codigo(resumen())[2]
+    figuras = podio_tras(resumen(), FIGURAS)
 
     assert "Bea" in figuras and "Ana" in figuras, "geométrico y loro puntúan"
     assert "█" in figuras
@@ -77,10 +87,7 @@ def test_las_figuras_salen_como_podio_con_su_puntuacion_media():
 def test_los_podios_van_marcador_juego_figuras():
     texto = resumen()
 
-    marcador = texto.index("Marcador")
-    juego = texto.index("SuperWordleBros")
-    figuras = texto.index("figuras")
-    assert marcador < juego < figuras
+    assert texto.index(MARCADOR) < texto.index(JUEGO) < texto.index(FIGURAS)
 
 
 # @scenarios el-empate-comparte-escalon
@@ -116,9 +123,9 @@ def test_ninguna_linea_pasa_de_32_caracteres_aunque_los_nombres_sean_largos():
 def test_sin_marcas_no_hay_podio_del_juego_y_los_demas_siguen_en_orden():
     texto = resumen(niveles=[], marcas=[])
 
-    assert "SuperWordleBros" not in texto
+    assert JUEGO not in texto
     assert len(bloques_de_codigo(texto)) == 2
-    assert texto.index("Marcador") < texto.index("figuras")
+    assert texto.index(MARCADOR) < texto.index(FIGURAS)
 
 
 # @scenarios un-ranking-sin-datos-no-pinta-podio
@@ -142,3 +149,57 @@ def test_entre_el_titulo_y_el_podio_hay_una_linea_en_blanco():
     lineas = podio([{"posicion": 1, "nombre": "Ana", "cifra": "3,00"}], titulo="📊 *Marcador*").splitlines()
 
     assert lineas[:3] == ["📊 *Marcador*", "", "```"]
+
+
+# @scenarios podio-del-juego
+def test_con_dos_ganadores_del_nivel_el_orden_no_depende_de_las_filas():
+    empate = [marca(AYER, "Eva", 31.2), marca(AYER, "Cris", 31.2)]
+
+    lineas = {next(l for l in resumen(marcas=m).splitlines() if l.startswith(JUEGO)) for m in (empate, empate[::-1])}
+
+    assert len(lineas) == 1, lineas
+    assert "Cris y Eva" in lineas.pop()
+
+
+# @scenarios el-podio-cabe-en-el-movil
+def test_un_nombre_con_acentos_graves_no_cierra_el_bloque_de_codigo():
+    texto = podio([{"posicion": 1, "nombre": "Ana```x", "cifra": "3,00"}])
+
+    assert texto.count("```") == 2, texto
+
+
+# @scenarios un-nombre-no-puede-avisar-a-todo-el-canal
+def test_lo_que_sube_el_bot_se_escapa_para_slack(monkeypatch):
+    """El borde de verdad: se dobla el cliente de Slack y se mira qué recibe `initial_comment`."""
+    import post_ranking
+
+    enviado = {}
+
+    class Cliente:
+        def __init__(self, token):
+            pass
+
+        def files_upload_v2(self, **argumentos):
+            enviado.update(argumentos)
+
+    monkeypatch.setattr(post_ranking, "WebClient", Cliente)
+    filas = mes(HOY)
+    for fila in filas:
+        if fila["player_name"] == "Ana":
+            fila["player_name"] = "<!channel> & <https://malo.example|pincha>"
+    texto = resumen(filas=filas)
+
+    assert post_ranking.upload_to_slack("captura.png", texto, "título")
+    assert "<!channel>" not in enviado["initial_comment"]
+    assert "<https://" not in enviado["initial_comment"]
+    assert "&lt;!channel&gt;" in enviado["initial_comment"]
+
+
+# @scenarios un-nombre-no-puede-avisar-a-todo-el-canal
+def test_un_mensaje_sin_caracteres_especiales_sale_igual():
+    from post_ranking import para_slack
+
+    texto = resumen()
+
+    assert "<" not in texto and "&" not in texto
+    assert para_slack(texto) == texto

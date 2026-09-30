@@ -143,3 +143,36 @@ checks:
 
 verified-by:
   - tests/slices/resumen-diario-compuesto/test_momento_del_mes.py
+
+
+### Requirement: Lo que publica el bot se escapa para Slack
+
+Los nombres de jugador son los nombres de perfil de Slack, que cualquier miembro puede cambiar. Antes de
+publicar, **todo el texto** que sube el bot —el resumen diario y el podio de cierre de mes— se escapa como pide
+la API de Slack: `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`. Así `<!channel>`, `<@U…>` o `<https://…|texto>` en un
+nombre salen como texto y no avisan a nadie ni crean enlaces. Ningún texto del bot usa esos caracteres a
+propósito, así que el escapado no cambia nada más del mensaje.
+
+Si falla la lectura del juego, el log del workflow —público, como el repositorio— dice el tipo de error y no el
+error completo.
+
+#### Scenario: un nombre con una mención especial no avisa a nadie
+- GIVEN un jugador llamado `<!channel>` en el podio del marcador
+- WHEN el bot sube el mensaje
+- THEN el texto enviado a Slack lleva `&lt;!channel&gt;` y no `<!channel>`
+
+#### Scenario: el resto del mensaje no cambia
+- GIVEN un mensaje sin caracteres especiales
+- WHEN se escapa
+- THEN sale idéntico
+
+```yaml
+checks:
+  - type: regex
+    file: tools/post_ranking.py
+    pattern: 'initial_comment=para_slack\(texto\)'
+    describe: "todo lo que sube el bot pasa por el escapado"
+```
+
+verified-by:
+  - tests/slices/resumen-diario-compuesto/test_podios.py
