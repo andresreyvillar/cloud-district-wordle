@@ -1,0 +1,45 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-30T10:30:00Z'
+  fase: propose+implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Septiembre acaba con Cata y Joel empatados a 3,64. La tarjeta de /temporadas decía «VA GANANDO Cata»
+    porque archivo.js tomaba la primera fila de la clasificación; cerrado el mes habría dicho «CAMPEÓN Cata»
+    y el medallero le habría sumado a ella sola la temporada. El podio de cierre del día 1 sí nombraba a los
+    dos, pero con frases de campeón único («Cata y Joel se lleva el mes»).
+
+    Mutación: el medallero coronando solo al primero → rojo solo en un-titulo-compartido-corona-a-todos; la
+    tarjeta diciendo «va ganando» con empate → rojo solo en un-empate-en-cabeza-se-ve-como-empate; el podio
+    con la frase de campeón único → rojo solo en con-empate-en-el-primer-puesto-se-felicita-a-todos. El test
+    del podio recorre el ciclo entero de frases, no una jornada suelta.
+
+    Una ronda de corrección, vista en el navegador y no en la suite: «comparten el primer puesto» iba dentro
+    de la fila flexible de los nombres y se salía de la tarjeta. Se movió debajo. Comprobado con los datos
+    reales: la tarjeta en curso dice EMPATE EN CABEZA · Cata y Joel · 3,64, y el podio del día 1 imprime «Ni uno
+    ni otro: Cata y Joel comparten el primer puesto».
+
+- run: '2026-09-30T11:00:00Z'
+  fase: gate-4d
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    adversarial: pass-tras-correccion
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Dos verificadores independientes. El de la web no refuta ninguno de los tres escenarios (probó empate a
+    tres, filas sin clasificar delante y nombres con HTML); señala que filas sin `posicion` harían campeones a
+    todos, pero las tres instantáneas de producción traen `posicion` en todas sus filas. El del podio refuta:
+    con tres campeones, tres de las seis frases decían «los dos», «ni uno ni otro» o «por partida doble». Test
+    nuevo con un empate a tres que recorre el ciclo entero buscando expresiones duales (rojo con las frases
+    viejas, verde con las nuevas). Fuera de alcance y declarado: la tira «Partida de…» del héroe de la
+    temporada enseña a un solo líder con empate.

@@ -1174,6 +1174,20 @@ PODIO_CAMPEON: tuple[str, ...] = (
     "👑 Campeón del mes: {jugador}, por constancia y no por casualidad.",
 )
 
+#: La felicitación cuando **varios comparten el primer puesto** (slice `podio-de-cierre-de-mes`). Frases
+#: escritas para varios: con las de arriba salía «Cata y Joel se lleva el mes», un error de concordancia
+#: delante de todo el grupo. Todas dicen que comparten el primer puesto, porque es lo que ha pasado: la
+#: clasificación no desempata una misma media publicada. Y **valen para cualquier número**: nada de «los
+#: dos» ni «ni uno ni otro», que con tres campeones es otra errata.
+PODIO_CAMPEONES: tuple[str, ...] = (
+    "👑 {jugador} comparten el primer puesto: el mes acaba en empate y el trono se reparte.",
+    "👑 Nadie ha cedido: {jugador} comparten el primer puesto. Todo un mes y ni un intento de diferencia.",
+    "👑 Campeones del mes: {jugador}, que comparten el primer puesto con la misma media.",
+    "👑 {jugador} se reparten el mes: comparten el primer puesto y ninguno se lo ha dejado quitar.",
+    "👑 Empate en lo más alto: {jugador} comparten el primer puesto. Enhorabuena a cada uno.",
+    "👑 {jugador} comparten el primer puesto. Treinta días de pelea para acabar igual: así da gusto.",
+)
+
 #: Ánimo para la temporada que empieza.
 NUEVA_TEMPORADA: tuple[str, ...] = (
     "🔄 Y el marcador vuelve a cero. Suerte a todos en la temporada nueva.",

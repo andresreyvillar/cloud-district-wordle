@@ -169,3 +169,72 @@ test('una temporada vacía aparece sin campeón en lugar de desaparecer', () => 
   assert.equal(lista[0].jornadas, 0);
   assert.equal(lista[0].campeon, null);
 });
+
+// ── Empate en cabeza (fix-empate-en-cabeza) ──────────────────────────────────────────────────────────────
+import { tarjeta } from '../../../v2/js/ui/temporadas.js';
+
+function empatadas(estado) {
+  return new Map([
+    temporada('2026-09', {
+      ordinal: 2, etiqueta: 'Temporada 2 · septiembre 2026', estado,
+      tabla: [fila('U_CATA', 'Cata', 1, 3.64), fila('U_JOEL', 'Joel', 1, 3.64), fila('U_ANDRES', 'Andrés R.', 3, 3.95)],
+    }),
+  ]);
+}
+
+/** @scenarios un-empate-en-cabeza-se-ve-como-empate */
+test('un empate en cabeza en curso da dos líderes y ningún campeón', () => {
+  const [septiembre] = archivo(empatadas('en curso'));
+
+  assert.deepEqual(septiembre.lideres.map((f) => f.nombre), ['Cata', 'Joel']);
+  assert.deepEqual(septiembre.campeones, []);
+});
+
+/** @scenarios un-empate-en-cabeza-se-ve-como-empate */
+test('la tarjeta en curso dice empate en cabeza y nombra a los dos', () => {
+  const html = tarjeta(archivo(empatadas('en curso'))[0]);
+
+  assert.match(html, /EMPATE EN CABEZA/);
+  assert.ok(!html.includes('VA GANANDO'));
+  assert.match(html, /Cata/);
+  assert.match(html, /Joel/);
+  assert.ok(!html.includes('Andrés R.'), 'el tercero no es líder');
+});
+
+/** @scenarios un-titulo-compartido-corona-a-todos */
+test('un título compartido corona a los dos y cada uno suma la temporada ganada', () => {
+  const instantaneasCerradas = empatadas('cerrada');
+  const [septiembre] = archivo(instantaneasCerradas);
+  const tabla = medallero(instantaneasCerradas);
+
+  assert.deepEqual(septiembre.campeones.map((f) => f.nombre), ['Cata', 'Joel']);
+  const ganadas = Object.fromEntries(tabla.map((f) => [f.nombre, f.temporadas_ganadas]));
+  assert.equal(ganadas.Cata, 1);
+  assert.equal(ganadas.Joel, 1);
+});
+
+/** @scenarios un-titulo-compartido-corona-a-todos */
+test('la tarjeta cerrada dice campeones y que comparten el primer puesto', () => {
+  const html = tarjeta(archivo(empatadas('cerrada'))[0]);
+
+  assert.match(html, /CAMPEONES/);
+  assert.match(html, /comparten el primer puesto/);
+  assert.match(html, /Cata/);
+  assert.match(html, /Joel/);
+});
+
+/** @scenarios cada-temporada-cerrada-muestra-su-campeon */
+test('con un solo primero la tarjeta sigue diciendo campeón', () => {
+  const unica = new Map([
+    temporada('2026-08', {
+      ordinal: 1, etiqueta: 'Temporada 1 · agosto 2026', estado: 'cerrada',
+      tabla: [fila('U_ZOE', 'Zoe', 1, 3.5), fila('U_ANA', 'Ana', 2, 3.7)],
+    }),
+  ]);
+
+  const html = tarjeta(archivo(unica)[0]);
+
+  assert.match(html, /CAMPEÓN</);
+  assert.ok(!html.includes('CAMPEONES') && !html.includes('comparten'));
+  assert.ok(!html.includes('Ana'));
+});

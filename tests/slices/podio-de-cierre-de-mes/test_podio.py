@@ -266,3 +266,43 @@ def test_el_lector_del_canal_pagina_de_verdad():
     canal2 = CanalConDosPaginas()
     assert len(mensajes_recientes(cliente=canal2, paginas=1)) == 1
     assert len(canal2.llamadas) == 1
+
+
+# @scenarios con-empate-en-el-primer-puesto-se-felicita-a-todos
+def test_con_empate_arriba_la_felicitacion_va_en_plural_para_cualquier_jornada():
+    """Con dos campeones, ninguna frase puede ser de campeón único: se prueba recorriendo el ciclo entero."""
+    from refranero import PODIO_CAMPEON
+
+    empatados = _mes(AGOSTO, [{"Ana": 2, "Bea": 2, "Cris": 5}] * 5)
+    for jornada in range(len(PODIO_CAMPEON) * 2):
+        mensaje = texto(empatados + SEPTIEMBRE_JUGADO, "2026-08", jornada)
+        felicitacion = next(l for l in mensaje.splitlines() if l.startswith("👑"))
+        assert "Ana" in felicitacion and "Bea" in felicitacion
+        assert "comparten el primer puesto" in felicitacion, felicitacion
+        for singular in PODIO_CAMPEON:
+            assert felicitacion != singular.format(jugador="Ana y Bea"), f"frase de campeón único: {felicitacion}"
+
+
+# @scenarios se-felicita-al-campeon-con-sus-medallas
+def test_con_un_solo_campeon_la_felicitacion_es_la_de_siempre():
+    from refranero import PODIO_CAMPEON
+
+    mensaje = texto(AGOSTO_JUGADO + SEPTIEMBRE_JUGADO, "2026-08", 3)
+    felicitacion = next(l for l in mensaje.splitlines() if l.startswith("👑"))
+
+    assert felicitacion in {f.format(jugador="Ana") for f in PODIO_CAMPEON}
+
+
+# @scenarios con-empate-en-el-primer-puesto-se-felicita-a-todos
+def test_con_tres_empatados_ninguna_frase_da_por_hecho_que_son_dos():
+    """Lo cazó el Gate 4d: «el trono es para los dos» con tres campeones. Se fija la **propiedad** —ninguna
+    frase presupone dos— recorriendo el ciclo entero, no un ejemplo suelto."""
+    from refranero import PODIO_CAMPEONES
+
+    empatados = _mes(AGOSTO, [{"Ana": 2, "Bea": 2, "Cris": 2}] * 5)
+    duales = ("los dos", "las dos", "ambos", "ambas", "uno ni otro", "partida doble", "pareja", "dúo")
+    for jornada in range(len(PODIO_CAMPEONES) * 2):
+        mensaje = texto(empatados + SEPTIEMBRE_JUGADO, "2026-08", jornada)
+        felicitacion = next(l for l in mensaje.splitlines() if l.startswith("👑"))
+        assert "Ana, Bea y Cris" in felicitacion
+        assert not any(dual in felicitacion.lower() for dual in duales), felicitacion

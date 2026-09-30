@@ -27,16 +27,34 @@ function cifra(valor, decimales = 2) {
     : String(valor ?? '—');
 }
 
-function tarjeta(t) {
-  const quien = t.campeon ?? t.lider;
-  const corona = t.campeon
-    ? `<span class="pixel resalte">CAMPEÓN</span>`
-    : '<span class="pixel">VA GANANDO</span>';
+/** «Ana», «Ana y Bea», «Ana, Bea y Cris». */
+function juntos(partes) {
+  return partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes.at(-1)}` : (partes[0] ?? '');
+}
 
-  const nombre = quien
-    ? `<a class="ganador" href="${escapar(rutaDeFicha(t.temporada, quien.jugador))}">${escapar(quien.nombre)}</a>
-       <span class="media">${escapar(cifra(quien.media_temporada))}</span>`
+/**
+ * La tarjeta de una temporada. **Un empate en cabeza se presenta como empate**: todos los del primer puesto,
+ * con «empate en cabeza» en curso y «campeones» cerrada. Exportada para poder verificarla sin navegador.
+ */
+export function tarjeta(t) {
+  const quienes = t.campeones?.length ? t.campeones : (t.lideres ?? []);
+  const varios = quienes.length > 1;
+  let corona = '<span class="pixel">VA GANANDO</span>';
+  if (t.campeones?.length) {
+    corona = `<span class="pixel resalte">${varios ? 'CAMPEONES' : 'CAMPEÓN'}</span>`;
+  } else if (varios) {
+    corona = '<span class="pixel">EMPATE EN CABEZA</span>';
+  }
+
+  const enlaces = quienes.map(
+    (quien) => `<a class="ganador" href="${escapar(rutaDeFicha(t.temporada, quien.jugador))}">${escapar(quien.nombre)}</a>`,
+  );
+  // La media es una: si comparten puesto, es que comparten media publicada.
+  const nombre = quienes.length
+    ? `${juntos(enlaces)} <span class="media">${escapar(cifra(quienes[0].media_temporada))}</span>`
     : '<span class="ganador vacia">sin campeón</span>';
+  // Debajo de los nombres y no a su lado: la fila de nombres es flexible y ahí se quedaba sin sitio.
+  const compartido = t.campeones?.length && varios ? '<p class="nota compartido">comparten el primer puesto</p>' : '';
 
   return `
     <article class="temporada-card${t.cerrada ? '' : ' abierta'}${t.historica ? ' historica' : ''}">
@@ -45,7 +63,7 @@ function tarjeta(t) {
         <span class="estado">${escapar(t.estado ?? '')}</span>
       </header>
       ${t.historica ? '<p class="marca-historica">Bloque histórico · se jugó con otras reglas, sin imputar ausencias</p>' : ''}
-      <div class="campeon">${corona}<div class="quien">${nombre}</div></div>
+      <div class="campeon">${corona}<div class="quien">${nombre}</div>${compartido}</div>
       <dl class="totales">
         <div><dt>Jornadas</dt><dd>${t.jornadas}</dd></div>
         <div><dt>Jugadores</dt><dd>${t.jugadores}</dd></div>

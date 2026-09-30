@@ -51,6 +51,15 @@ temporada 0 al final.
 **THEN** aparece marcada como abierta y quien va primero se presenta como **quien va ganando**, no como
 campeón.
 
+### un-empate-en-cabeza-se-ve-como-empate
+**WHEN** una temporada en curso tiene a varios compartiendo el primer puesto
+**THEN** la tarjeta dice que hay empate en cabeza y nombra a todos los empatados, no solo al primero de la lista
+
+### un-titulo-compartido-corona-a-todos
+**WHEN** una temporada cerrada acabó con el primer puesto compartido
+**THEN** la tarjeta presenta como campeones a todos los empatados y dice que comparten el primer puesto, y el
+medallero les suma la temporada ganada a cada uno
+
 ### el-medallero-acumula-todas-las-temporadas
 **WHEN** se mira el medallero
 **THEN** cuenta las medallas de cada jugador sumando todas las temporadas, ordenado de más a menos, y dice
