@@ -20,8 +20,11 @@ from slack_sdk.errors import SlackApiError
 from supabase import create_client
 
 from badges import texto_de_medallas
-from resumen import resumen_del_dia
-from seasons import temporada_de
+from calendario import es_ultimo_laborable_del_mes
+from podio import DESDE_TRES_COMPETICIONES
+from podio import texto as texto_de_la_victoria
+from resumen import bloque_ultima_jornada, resumen_del_dia
+from seasons import TEMPORADA_CERO, temporada_de
 
 load_dotenv()
 
@@ -164,6 +167,40 @@ def leer_resultados():
         if len(pagina) < PAGINA:
             return filas
         desplazamiento += PAGINA
+
+
+#: El título de la imagen lleva el mes celebrado: es la marca que hace posible no repetir el mensaje.
+TITULO_DEL_PODIO = "Podio del mes 🏆 · {temporada}"
+
+#: Páginas de historial que se leen para saber si el mes ya se celebró. Cada página son 30 mensajes.
+#:
+#: **Cinco, con margen de sobra.** El cron corre del día 1 al 7, así que la marca puede estar a siete días de
+#: distancia; el canal mueve hasta 17 mensajes al día, unos 120 en esa ventana. Con una sola página —la que
+#: le basta al resumen diario, que reconoce un mensaje de minutos antes— el podio de agosto se republicó el
+#: día 4: el original estaba en la posición 44 y la ventana llegaba a la 30.
+#:
+#: Se paginan siempre y no solo hasta encontrarla porque esto corre una vez al mes: cinco llamadas de más al
+#: mes no compensan la complejidad de parar antes.
+PAGINAS_DE_HISTORIA = 5
+
+
+
+
+def ya_celebrado(mensajes: list[dict], temporada: str) -> bool:
+    """Si el canal ya tiene el podio de ese mes.
+
+    Se busca **la marca del mes** dentro del título y no el título entero: Slack devuelve el emoji convertido
+    a su código corto, y comparar el título completo es justo el fallo que publicó el resumen por triplicado
+    los días 28 y 29 de agosto de 2026.
+    """
+    marca = re.compile(re.escape(f"· {temporada}") + r"(?!\d)")
+    for mensaje in mensajes:
+        if not mensaje.get("bot_id"):
+            continue
+        for fichero in mensaje.get("files") or []:
+            if marca.search(fichero.get("title") or ""):
+                return True
+    return False
 
 
 def leer_juego():
@@ -643,6 +680,35 @@ def leer_la_palabra(jornada: int | None, filas: list[dict]):
         return None
 
 
+async def publicar_la_victoria(filas, jornada, temporada, capturar, subir, leer_mensajes, leer_el_juego=None):
+    """La noche del último día laborable del mes: la victoria **en lugar del resumen** (decisión del dueño).
+
+    Lleva el título del podio del mes, así que el cron del día 1 la encuentra y no la repite, y las reintentonas
+    de esta misma noche tampoco. Debajo va lo esencial de la última jornada, que es la que decidió el mes.
+    Devuelve `None` si no hay podio que enseñar: entonces sale el resumen de siempre.
+    """
+    if ya_celebrado(leer_mensajes(paginas=PAGINAS_DE_HISTORIA), temporada):
+        print(f"la victoria de {temporada} ya está publicada: no se repite")
+        return 0
+    # El juego solo hace falta desde que se coronan los tres campeones: antes, ni se lee.
+    leer_el_juego = leer_el_juego or leer_juego
+    niveles, marcas = leer_el_juego() if temporada >= DESDE_TRES_COMPETICIONES else ([], [])
+    jornada_final = bloque_ultima_jornada(filas, temporada, jornada, leer_la_palabra(jornada, filas))
+    cuerpo = texto_de_la_victoria(filas, temporada, jornada, niveles, marcas, ultima_jornada=jornada_final)
+    if not cuerpo:
+        return None
+
+    try:
+        ruta = await capturar(objetivo_del_podio(temporada))
+    except Exception as error:  # noqa: BLE001 — cualquier fallo de navegador es un fallo de publicación
+        print(f"error capturando la victoria de {temporada}: {error}", file=sys.stderr)
+        return 1
+    publicado = subir(ruta, cuerpo, TITULO_DEL_PODIO.format(temporada=temporada))
+    if os.path.exists(ruta):
+        os.remove(ruta)
+    return 0 if publicado else 1
+
+
 async def publicar(
     capturar=capture_ranking, subir=upload_to_slack, resultados=None, leer_mensajes=mensajes_recientes
 ) -> int:
@@ -654,6 +720,16 @@ async def publicar(
     objetivo = objetivo_de_captura()
     filas = leer_resultados() if resultados is None else resultados
     jornada = max(fila["wordle_id"] for fila in filas) if filas else None
+
+    # **El último día laborable del mes sale la victoria, no el resumen.** Con el resumen apagado, el
+    # mensaje sigue siendo el de siempre: la victoria también va tras el interruptor.
+    if jornada is not None and resumen_activo():
+        fecha = next(fila["date"] for fila in filas if fila["wordle_id"] == jornada)
+        temporada = temporada_del_resumen(filas)
+        if temporada != TEMPORADA_CERO and es_ultimo_laborable_del_mes(fecha):
+            codigo = await publicar_la_victoria(filas, jornada, temporada, capturar, subir, leer_mensajes)
+            if codigo is not None:
+                return codigo
 
     # **La comprobación va antes de la captura**, que es el paso caro: abrir un navegador para descubrir
     # después que no hay que publicar sería tirar medio minuto y un runner.

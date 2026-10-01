@@ -84,6 +84,22 @@ podio, que va justo debajo.
 el cron corre durante los primeros días del mes, así que una ventana corta lo republica cuando el original ya
 ha quedado atrás.
 
+### la-victoria-sale-la-noche-del-ultimo-dia
+**WHEN** el resumen diario corre para la jornada del último día laborable del mes
+**THEN** en su lugar se publica el mensaje de la victoria del mes, con el título del podio del mes; el cron del
+día 1 lo encuentra y no lo repite, y si esa noche no se publicó, el cron del día 1 lo publica como hasta ahora
+
+### la-victoria-cuenta-la-ultima-jornada
+**WHEN** el mensaje de la victoria sale la noche del último día
+**THEN** debajo del podio y de la felicitación va, en corto, la última jornada: la palabra, el mejor del día y la
+obra del día
+
+### los-tres-campeones-desde-octubre
+**WHEN** la temporada que cierra es de octubre de 2026 en adelante
+**THEN** además del marcador, el mensaje dibuja el podio del SuperWordleBros y el de figuras —el mismo podio ASCII
+del resumen diario, en ese orden— y corona a sus campeones, con los empates compartidos; una competición sin
+nadie clasificado no dibuja podio ni corona a nadie
+
 ### el-cierre-no-se-publica-dos-veces
 **WHEN** el canal ya tiene el podio de ese mes
 **THEN** no se vuelve a publicar y la ejecución termina bien.

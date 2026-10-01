@@ -1081,7 +1081,9 @@ def _tension_del_juego(resultados, temporada, jornada, fecha, niveles, marcas) -
         return ""
     abierto = _nivel_del_dia(niveles, jornada)
     abierto_cuenta = abierto in niveles_que_puntuan(resultados, list(niveles), temporada)
-    por_jugar = _laborables_del_mes(fecha, incluido=True)
+    # Uno por laborable desde la jornada incluida, **menos el último del mes**: su nivel puntúa en el mes
+    # siguiente, que es cuando se juega.
+    por_jugar = max(0, _laborables_del_mes(fecha, incluido=True) - 1)
     en_juego = ESCALA[0] * (int(abierto_cuenta) + por_jugar)
     if not en_juego:
         return ""
@@ -1261,6 +1263,20 @@ def _pulla_del_album(resultados: list[dict], temporada: str, jornada: int) -> st
 
     quien = _manda_en_solitario(album(resultados, temporada)["jugadores"])
     return pullas_de_lideres(None, quien, jornada).get("album", "") if quien else ""
+
+
+def bloque_ultima_jornada(resultados: list[dict], temporada: str, jornada: int, palabra=None) -> str:
+    """La última jornada del mes en corto, para ir debajo de la victoria: la palabra, el mejor del día y la obra
+    del día. La noche del último día la victoria sustituye al resumen, y la jornada que decidió el mes no se
+    pierde.
+    """
+    partes = [
+        bloque_palabra(palabra),
+        bloque_jugador_del_dia(_del_dia(resultados, jornada)),
+        bloque_obra_del_dia(resultados, temporada, jornada),
+    ]
+    cuerpo = "\n".join(parte for parte in partes if parte)
+    return f"📅 *La última jornada*\n{cuerpo}" if cuerpo else ""
 
 
 def resumen_del_dia(

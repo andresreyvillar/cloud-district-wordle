@@ -48,12 +48,12 @@ def test_la_recta_final_dice_cuantas_quedan_quien_manda_la_distancia_y_que_el_em
 
 # @scenarios la-recta-final-dice-si-el-juego-sigue-abierto
 def test_con_doce_de_ventaja_y_veinte_en_juego_el_segundo_aun_puede():
-    # Ana gana el 28 sola y el 29 por delante de Bea: 20 frente a 8. El 30 queda el nivel del 29 abierto y el
-    # del propio 30 por jugar: dos niveles, 20 puntos.
-    niveles = [nivel("2026-09-28"), nivel("2026-09-29")]
-    marcas = [marca("2026-09-28", "Ana", 30), marca("2026-09-29", "Ana", 30), marca("2026-09-29", "Bea", 35)]
+    # Ana gana el 25 sola y el 28 por delante de Bea: 20 frente a 8. El 29 queda el nivel del 28 abierto y el
+    # del propio 29 por jugar —el del 30, último laborable, puntúa en octubre—: dos niveles, 20 puntos.
+    niveles = [nivel("2026-09-25"), nivel("2026-09-28")]
+    marcas = [marca("2026-09-25", "Ana", 30), marca("2026-09-28", "Ana", 30), marca("2026-09-28", "Bea", 35)]
 
-    texto = momento("2026-09-30", niveles=niveles, marcas=marcas)
+    texto = momento("2026-09-29", niveles=niveles, marcas=marcas)
 
     assert "20 puntos" in texto
     assert "todavía puede" in texto.lower()
@@ -61,12 +61,13 @@ def test_con_doce_de_ventaja_y_veinte_en_juego_el_segundo_aun_puede():
 
 # @scenarios la-recta-final-dice-si-el-juego-sigue-abierto
 def test_con_mas_ventaja_que_puntos_en_juego_se_dice_que_ya_no_puede():
-    # Ana gana los cuatro niveles (40) y Bea es segunda en el último (8): 32 de ventaja con 20 en juego.
-    fechas = ["2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29"]
+    # Ana gana los cinco niveles (50) y Bea es segunda en el abierto (8): 42 de ventaja. Lo más que puede
+    # cambiar: 10 del nivel del 29 por jugar, y en el abierto Bea +2 y Ana -9. 21 no llega.
+    fechas = ["2026-09-22", "2026-09-23", "2026-09-24", "2026-09-25", "2026-09-28"]
     niveles = [nivel(f) for f in fechas]
-    marcas = [marca(f, "Ana", 30) for f in fechas] + [marca("2026-09-29", "Bea", 35)]
+    marcas = [marca(f, "Ana", 30) for f in fechas] + [marca("2026-09-28", "Bea", 35)]
 
-    texto = momento("2026-09-30", niveles=niveles, marcas=marcas)
+    texto = momento("2026-09-29", niveles=niveles, marcas=marcas)
 
     assert "ya no puede" in texto.lower()
 
@@ -98,13 +99,14 @@ def test_el_momento_del_mes_no_lee_el_reloj():
 # @scenarios la-recta-final-dice-si-el-juego-sigue-abierto
 def test_el_nivel_abierto_puede_dar_la_vuelta_aunque_ya_tenga_marcas():
     """Lo cazó el Gate 4d. El nivel abierto ya tiene marcas contadas y sigue admitiéndolas: el 2º puede pasar de
-    0 a 10 y el líder caer de 10 a 1. Ana saca 28 con 20 «en juego», pero el vuelco posible es 19 + 10 = 29."""
-    cerrados = ["2026-09-22", "2026-09-23", "2026-09-24", "2026-09-25", "2026-09-28"]
-    niveles = [nivel(f) for f in cerrados + ["2026-09-29"]]
+    0 a 10 y el líder caer de 10 a 1. Con el abierto contado como 10 limpios, los 28 de ventaja de Ana no se
+    alcanzaban; con su vuelco real (10 + 9) más los dos niveles por jugar (20), sí."""
+    cerrados = ["2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24"]
+    niveles = [nivel(f) for f in cerrados + ["2026-09-25"]]
     marcas = [marca(f, "Ana", 30) for f in cerrados] + [marca(f, "Bea", 35) for f in cerrados[:4]]
-    marcas += [marca("2026-09-29", "Ana", 30)]  # el abierto: solo Ana, de momento
+    marcas += [marca("2026-09-25", "Ana", 30)]  # el abierto: solo Ana, de momento
 
-    texto = momento("2026-09-30", niveles=niveles, marcas=marcas)
+    texto = momento("2026-09-28", niveles=niveles, marcas=marcas)
 
     assert "todavía puede" in texto.lower(), texto
     assert "ya no puede" not in texto.lower()
@@ -112,11 +114,11 @@ def test_el_nivel_abierto_puede_dar_la_vuelta_aunque_ya_tenga_marcas():
 
 # @scenarios la-recta-final-dice-si-el-juego-sigue-abierto
 def test_con_la_cabeza_del_juego_empatada_se_nombra_a_los_dos():
-    niveles = [nivel("2026-09-28"), nivel("2026-09-29")]
-    marcas = [marca("2026-09-28", "Ana", 30), marca("2026-09-28", "Bea", 35),
-              marca("2026-09-29", "Bea", 30), marca("2026-09-29", "Ana", 35)]
+    niveles = [nivel("2026-09-25"), nivel("2026-09-28")]
+    marcas = [marca("2026-09-25", "Ana", 30), marca("2026-09-25", "Bea", 35),
+              marca("2026-09-28", "Bea", 30), marca("2026-09-28", "Ana", 35)]
 
-    linea = next(l for l in momento("2026-09-30", niveles=niveles, marcas=marcas).splitlines() if "SuperWordleBros" in l)
+    linea = next(l for l in momento("2026-09-29", niveles=niveles, marcas=marcas).splitlines() if "SuperWordleBros" in l)
 
     assert "Ana" in linea and "Bea" in linea
     assert "empat" in linea.lower()
