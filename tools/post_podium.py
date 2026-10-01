@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import re
 import sys
 
 from dotenv import load_dotenv
@@ -24,54 +23,25 @@ load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from podio import temporada_que_cierra, texto  # noqa: E402
+from podio import DESDE_TRES_COMPETICIONES, temporada_que_cierra, texto  # noqa: E402
 from post_ranking import (  # noqa: E402
+    PAGINAS_DE_HISTORIA,
+    TITULO_DEL_PODIO,
     capture_ranking,
+    leer_juego,
     leer_resultados,
     mensajes_recientes,
     objetivo_del_podio,
     upload_to_slack,
+    ya_celebrado,
 )
-
-#: El título de la imagen lleva el mes celebrado: es la marca que hace posible no repetir el mensaje.
-TITULO_DEL_PODIO = "Podio del mes 🏆 · {temporada}"
-
-#: Páginas de historial que se leen para saber si el mes ya se celebró. Cada página son 30 mensajes.
-#:
-#: **Cinco, con margen de sobra.** El cron corre del día 1 al 7, así que la marca puede estar a siete días de
-#: distancia; el canal mueve hasta 17 mensajes al día, unos 120 en esa ventana. Con una sola página —la que
-#: le basta al resumen diario, que reconoce un mensaje de minutos antes— el podio de agosto se republicó el
-#: día 4: el original estaba en la posición 44 y la ventana llegaba a la 30.
-#:
-#: Se paginan siempre y no solo hasta encontrarla porque esto corre una vez al mes: cinco llamadas de más al
-#: mes no compensan la complejidad de parar antes.
-PAGINAS_DE_HISTORIA = 5
-
-
-
-
-def ya_celebrado(mensajes: list[dict], temporada: str) -> bool:
-    """Si el canal ya tiene el podio de ese mes.
-
-    Se busca **la marca del mes** dentro del título y no el título entero: Slack devuelve el emoji convertido
-    a su código corto, y comparar el título completo es justo el fallo que publicó el resumen por triplicado
-    los días 28 y 29 de agosto de 2026.
-    """
-    marca = re.compile(re.escape(f"· {temporada}") + r"(?!\d)")
-    for mensaje in mensajes:
-        if not mensaje.get("bot_id"):
-            continue
-        for fichero in mensaje.get("files") or []:
-            if marca.search(fichero.get("title") or ""):
-                return True
-    return False
-
 
 async def celebrar(
     capturar=capture_ranking,
     subir=upload_to_slack,
     resultados=None,
     leer_mensajes=mensajes_recientes,
+    leer_el_juego=leer_juego,
 ) -> int:
     """El flujo del cierre de mes. Devuelve el código de salida.
 
@@ -97,7 +67,9 @@ async def celebrar(
         return 0
 
     jornada = max(fila["wordle_id"] for fila in filas)
-    cuerpo = texto(filas, temporada, jornada)
+    # El juego solo hace falta desde que se coronan los tres campeones: antes, ni se lee.
+    niveles, marcas = leer_el_juego() if temporada >= DESDE_TRES_COMPETICIONES else ([], [])
+    cuerpo = texto(filas, temporada, jornada, niveles, marcas)
     if not cuerpo:
         print(f"{temporada} no tiene podio que enseñar")
         return 0

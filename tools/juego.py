@@ -16,6 +16,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+import datetime
+
+from calendario import es_ultimo_laborable_del_mes
 from seasons import dias_de_temporada, temporada_de
 
 #: Los puntos de los siete primeros puestos de cada nivel.
@@ -67,19 +70,34 @@ def _nombres(resultados: list[dict]) -> dict[str, str]:
     return {jugador: fila.get("player_name") or jugador for jugador, fila in ultima.items()}
 
 
+def mes_en_que_puntua(fecha) -> str:
+    """La temporada en la que puntúa un nivel: la de su jornada, **salvo el del último día laborable del mes**,
+    que puntúa en el siguiente (decisión del dueño). Ese nivel se congela el día 1 y se juega ya en el mes
+    nuevo; contándolo en el viejo, el juego no cerraba con el mes y su campeón no se podía coronar la última
+    noche.
+    """
+    if es_ultimo_laborable_del_mes(fecha):
+        dia = datetime.date.fromisoformat(str(fecha)[:10])
+        return temporada_de((dia.replace(day=28) + datetime.timedelta(days=4)).replace(day=1))
+    return temporada_de(fecha)
+
+
 def niveles_que_puntuan(resultados: list[dict], niveles: list[dict], temporada: str) -> list[int]:
     """Las jornadas congeladas que dan puntos en la temporada, ordenadas.
 
-    **Solo las de días que cuentan**: laborables con cinco jugadores, como en la clasificación general. Si no,
-    un sábado con tres jugadores repartiría 10 puntos con un nivel de tres tramos. Y cada nivel cuenta en el
-    mes de **su jornada**, no en el de la partida: el del día 30 se juega el 1 y es del mes que se cierra.
+    **Solo las de días que cuentan** —laborables con cinco jugadores— en el mes de **su jornada**, como en la
+    clasificación general: si no, un sábado con tres jugadores repartiría 10 puntos con un nivel de tres
+    tramos. Y cada una puntúa en `mes_en_que_puntua`: el nivel del último día laborable, en el mes siguiente.
     """
-    validas = set(dias_de_temporada(resultados, temporada))
-    return sorted(
-        nivel["jornada"]
-        for nivel in niveles
-        if nivel["jornada"] in validas and temporada_de(nivel["fecha"]) == temporada
-    )
+    validas: dict[str, set[int]] = {}
+    cuentan = []
+    for nivel in niveles:
+        propio = temporada_de(nivel["fecha"])
+        if propio not in validas:
+            validas[propio] = set(dias_de_temporada(resultados, propio))
+        if nivel["jornada"] in validas[propio] and mes_en_que_puntua(nivel["fecha"]) == temporada:
+            cuentan.append(nivel["jornada"])
+    return sorted(cuentan)
 
 
 def clasificacion_del_juego(

@@ -74,9 +74,10 @@ jugados y las victorias de cada uno
 de cinco jugadores—
 **THEN** sus marcas no dan puntos, igual que esa jornada no cuenta en la clasificación general
 
-### el-nivel-cuenta-en-el-mes-de-su-jornada
-**WHEN** el nivel de la última jornada de un mes se juega ya en el mes siguiente
-**THEN** sus puntos cuentan en el mes de su jornada, no en el de la partida
+### el-nivel-del-ultimo-dia-cuenta-en-el-mes-siguiente
+**WHEN** un nivel es de la jornada del último día laborable de su mes
+**THEN** sus puntos cuentan en el mes siguiente, que es en el que se juega; los demás niveles cuentan en el mes
+de su jornada. Así el juego cierra con el mes y su campeón se puede coronar la noche del último día
 
 ### sin-marcas-la-clasificacion-esta-vacia
 **WHEN** nadie ha terminado ningún nivel de la temporada

@@ -1,0 +1,28 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-01T08:30:00Z'
+  fase: propose+implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 2
+  notas: >-
+    El resumen del 30 de septiembre salió como si quedara mes porque corrió el código anterior al momento del
+    mes, y la victoria no se anunciaba hasta el día 1 a las 11:00. El dueño pide la victoria la noche del
+    último día en lugar del resumen (con la última jornada debajo y los tres campeones desde octubre) y decide
+    que el nivel del último día laborable puntúe en el mes siguiente, para que el juego cierre con el mes.
+
+    Mutación: el último día sale el resumen → rojo en los escenarios de la victoria; la victoria repetida →
+    rojo solo en no repetir; el nivel del último día en su mes → rojo en la regla nueva (y en cuántos niveles
+    lleva el mes, que es lo que decide); los tres campeones antes de octubre → rojo solo en septiembre.
+    Correcciones: la última jornada iba después de la despedida del mes; y post_podium.celebrar leía el juego
+    de la Supabase real en dos tests (el doble se puso en post_ranking y post_podium importaba el nombre): el
+    juego entra ahora por parámetro y solo se lee desde octubre. El verificador no refuta ninguno de los
+    cuatro puntos; anotados: un dispatch manual durante el último día adelantaría la victoria, y si el mes
+    acaba en fin de semana la despedida «arranca el mes» sale un día antes.

@@ -204,6 +204,11 @@ resumen sale igual lo ejecute quien lo ejecute y cuando lo ejecute.
 **THEN** el mensaje que publica el bot los enseña como texto: no avisa a nadie, no crea enlaces y no cambia el
 resto del mensaje
 
+### el-ultimo-dia-sale-la-victoria
+**WHEN** la jornada del resumen es el último día laborable del mes
+**THEN** no se publica el resumen diario: se publica el mensaje de la victoria del mes
+([[podio-de-cierre-de-mes]]), que lleva debajo lo esencial de esa última jornada
+
 ### sin-jornada-no-hay-resumen
 **WHEN** no hay resultados
 **THEN** el mensaje no inventa premios: se publica sin las secciones que no tienen datos.

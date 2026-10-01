@@ -52,3 +52,25 @@ def es_laborable(fecha) -> bool:
 def solo_laborables(resultados: list[dict]) -> list[dict]:
     """Los resultados de lunes a viernes, en el mismo orden."""
     return [fila for fila in resultados if es_laborable(fila.get("date"))]
+
+
+def ultimo_laborable_del_mes(fecha) -> datetime.date:
+    """El último lunes-a-viernes del mes de `fecha`. Con el calendario, no con el reloj: los festivos no se
+    conocen y cuentan como laborables.
+
+    Es el día que cierra la temporada: la recta final lo anuncia como la última jornada, la victoria se publica
+    esa noche, y su nivel del SuperWordleBros puntúa ya en el mes siguiente, que es cuando se juega.
+    """
+    dia = datetime.date.fromisoformat(str(fecha)[:10])
+    siguiente = (dia.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+    ultimo = siguiente - datetime.timedelta(days=1)
+    while ultimo.isoweekday() > ULTIMO_DIA_LABORABLE:
+        ultimo -= datetime.timedelta(days=1)
+    return ultimo
+
+
+def es_ultimo_laborable_del_mes(fecha) -> bool:
+    try:
+        return datetime.date.fromisoformat(str(fecha)[:10]) == ultimo_laborable_del_mes(fecha)
+    except (TypeError, ValueError):
+        return False

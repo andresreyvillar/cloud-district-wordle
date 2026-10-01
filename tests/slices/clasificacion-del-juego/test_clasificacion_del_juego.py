@@ -20,11 +20,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools"))
 SEPTIEMBRE = "2026-09"
 OCTUBRE = "2026-10"
 
-#: Jornadas sintéticas y sus fechas. Lunes 28 y miércoles 30 de septiembre cuentan (laborables con cinco
-#: jugadores); el sábado 26 no (fin de semana) y el martes 29 tampoco (solo cuatro jugadores); el jueves 1 de
-#: octubre cuenta en octubre.
-LUNES, SABADO, MARTES_CORTO, ULTIMO_DE_MES, PRIMERO_DE_OCTUBRE = 100, 98, 101, 102, 103
+#: Jornadas sintéticas y sus fechas. Viernes 25 y lunes 28 de septiembre cuentan en septiembre (laborables con
+#: cinco jugadores); el sábado 26 no (fin de semana) y el martes 29 tampoco (solo cuatro jugadores). El
+#: miércoles 30 es el último laborable del mes: su nivel cuenta en octubre, que es cuando se juega. El jueves 1
+#: de octubre cuenta en octubre.
+VIERNES, LUNES, SABADO, MARTES_CORTO, ULTIMO_DE_MES, PRIMERO_DE_OCTUBRE = 97, 100, 98, 101, 102, 103
 FECHAS = {
+    VIERNES: "2026-09-25",
     SABADO: "2026-09-26",
     LUNES: "2026-09-28",
     MARTES_CORTO: "2026-09-29",
@@ -47,7 +49,7 @@ def fila(jugador: str, jornada: int, nombre: str | None = None) -> dict:
 
 def resultados() -> list[dict]:
     filas = []
-    for jornada in (LUNES, SABADO, ULTIMO_DE_MES, PRIMERO_DE_OCTUBRE):
+    for jornada in (VIERNES, LUNES, SABADO, ULTIMO_DE_MES, PRIMERO_DE_OCTUBRE):
         filas += [fila(j, jornada) for j in JUGADORES[:5]]
     filas += [fila(j, MARTES_CORTO) for j in JUGADORES[:4]]
     return filas
@@ -102,7 +104,7 @@ def test_un_empate_en_centesimas_comparte_puesto_y_puntos():
 def test_el_mes_suma_los_puntos_y_cuenta_niveles_y_victorias():
     marcas = [
         marca(LUNES, "J0", 30), marca(LUNES, "J1", 31),
-        marca(ULTIMO_DE_MES, "J1", 25), marca(ULTIMO_DE_MES, "J0", 26), marca(ULTIMO_DE_MES, "J2", 40),
+        marca(VIERNES, "J1", 25), marca(VIERNES, "J0", 26), marca(VIERNES, "J2", 40),
     ]
 
     tabla = calcular(marcas)["clasificacion"]
@@ -118,7 +120,7 @@ def test_a_igualdad_de_puntos_se_comparte_puesto_y_ordena_la_victoria():
     # J3 gana los dos niveles (20); J0 hace 8 + 6 y J1 6 + 8: 14 cada uno, sin victorias.
     marcas = [
         marca(LUNES, "J3", 20), marca(LUNES, "J0", 30), marca(LUNES, "J1", 31),
-        marca(ULTIMO_DE_MES, "J3", 20), marca(ULTIMO_DE_MES, "J1", 25), marca(ULTIMO_DE_MES, "J0", 26),
+        marca(VIERNES, "J3", 20), marca(VIERNES, "J1", 25), marca(VIERNES, "J0", 26),
     ]
 
     tabla = calcular(marcas)["clasificacion"]
@@ -134,7 +136,7 @@ def test_el_empate_se_lista_con_el_de_mas_victorias_delante():
     # lo gana J3, que así no empata con nadie (10).
     marcas = [
         marca(LUNES, "J1", 20), marca(LUNES, "J0", 30), marca(LUNES, "J2", 40),
-        marca(ULTIMO_DE_MES, "J3", 20), marca(ULTIMO_DE_MES, "J0", 30), marca(ULTIMO_DE_MES, "J1", 40),
+        marca(VIERNES, "J3", 20), marca(VIERNES, "J0", 30), marca(VIERNES, "J1", 40),
     ]
 
     tabla = calcular(marcas)["clasificacion"]
@@ -155,9 +157,18 @@ def test_ni_el_sabado_ni_un_laborable_con_cuatro_jugadores_dan_puntos():
     assert tabla["niveles"] == 0
 
 
-# @scenarios el-nivel-cuenta-en-el-mes-de-su-jornada
-def test_el_nivel_del_ultimo_dia_cuenta_en_su_mes():
+# @scenarios el-nivel-del-ultimo-dia-cuenta-en-el-mes-siguiente
+def test_el_nivel_del_ultimo_laborable_cuenta_en_el_mes_siguiente():
+    """Se juega ya en el mes nuevo: así el juego cierra con el mes y su campeón se corona la última noche."""
     marcas = [marca(ULTIMO_DE_MES, "J0", 30)]
+
+    assert calcular(marcas, SEPTIEMBRE)["clasificacion"] == []
+    assert puntos(calcular(marcas, OCTUBRE)) == {"J0": 10}
+
+
+# @scenarios el-nivel-del-ultimo-dia-cuenta-en-el-mes-siguiente
+def test_un_nivel_de_otro_laborable_cuenta_en_su_mes():
+    marcas = [marca(VIERNES, "J0", 30)]
 
     assert puntos(calcular(marcas, SEPTIEMBRE)) == {"J0": 10}
     assert calcular(marcas, OCTUBRE)["clasificacion"] == []
@@ -201,7 +212,7 @@ def test_el_nombre_es_el_de_la_fila_mas_reciente_y_si_no_hay_filas_el_identifica
 # @scenarios la-clasificacion-es-determinista
 def test_el_orden_de_entrada_no_cambia_la_clasificacion():
     marcas = [marca(j, jug, 20 + i) for i, (j, jug) in enumerate(
-        [(LUNES, "J0"), (LUNES, "J1"), (ULTIMO_DE_MES, "J2"), (ULTIMO_DE_MES, "J0"), (LUNES, "J2")]
+        [(LUNES, "J0"), (LUNES, "J1"), (VIERNES, "J2"), (VIERNES, "J0"), (LUNES, "J2")]
     )]
     barajadas, filas, niveles = marcas[:], resultados(), NIVELES[:]
     random.Random(7).shuffle(barajadas)
