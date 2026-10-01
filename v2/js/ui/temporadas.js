@@ -32,15 +32,24 @@ function juntos(partes) {
   return partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes.at(-1)}` : (partes[0] ?? '');
 }
 
+/** La cifra de cada competición: la media del marcador, los puntos del juego, los puntos por partida del álbum. */
+const CIFRA = {
+  marcador: (fila) => cifra(fila.media_temporada),
+  juego: (fila) => `${fila.puntos} pts`,
+  figuras: (fila) => `${cifra(fila.media)} pts`,
+};
+
 /**
- * La tarjeta de una temporada. **Un empate en cabeza se presenta como empate**: todos los del primer puesto,
- * con «empate en cabeza» en curso y «campeones» cerrada. Exportada para poder verificarla sin navegador.
+ * El hueco de una competición: corona, nombres y cifra. **Un empate en cabeza se presenta como empate**: todos
+ * los del primer puesto, con «empate en cabeza» en curso y «campeones» cerrada. Con varias competiciones cada
+ * hueco lleva además el nombre de la suya.
  */
-export function tarjeta(t) {
-  const quienes = t.campeones?.length ? t.campeones : (t.lideres ?? []);
+function hueco(t, competicion, conTitulo) {
+  const quienes = competicion.campeones.length ? competicion.campeones : competicion.lideres;
   const varios = quienes.length > 1;
-  let corona = '<span class="pixel">VA GANANDO</span>';
-  if (t.campeones?.length) {
+  // Sin nadie no hay corona: «va ganando · sin campeón» en un mes ya cerrado decía que seguía abierto.
+  let corona = quienes.length ? '<span class="pixel">VA GANANDO</span>' : '';
+  if (competicion.campeones.length) {
     corona = `<span class="pixel resalte">${varios ? 'CAMPEONES' : 'CAMPEÓN'}</span>`;
   } else if (varios) {
     corona = '<span class="pixel">EMPATE EN CABEZA</span>';
@@ -49,12 +58,25 @@ export function tarjeta(t) {
   const enlaces = quienes.map(
     (quien) => `<a class="ganador" href="${escapar(rutaDeFicha(t.temporada, quien.jugador))}">${escapar(quien.nombre)}</a>`,
   );
-  // La media es una: si comparten puesto, es que comparten media publicada.
+  // La cifra es una: si comparten puesto, es que comparten cifra.
   const nombre = quienes.length
-    ? `${juntos(enlaces)} <span class="media">${escapar(cifra(quienes[0].media_temporada))}</span>`
+    ? `${juntos(enlaces)} <span class="media">${escapar(CIFRA[competicion.clave](quienes[0]))}</span>`
     : '<span class="ganador vacia">sin campeón</span>';
   // Debajo de los nombres y no a su lado: la fila de nombres es flexible y ahí se quedaba sin sitio.
-  const compartido = t.campeones?.length && varios ? '<p class="nota compartido">comparten el primer puesto</p>' : '';
+  const compartido = competicion.campeones.length && varios ? '<p class="nota compartido">comparten el primer puesto</p>' : '';
+  const titulo = conTitulo ? `<span class="competicion">${escapar(competicion.titulo)}</span>` : '';
+
+  return `<div class="campeon${conTitulo ? ' de-competicion' : ''}">${titulo}${corona}<div class="quien">${nombre}</div>${compartido}</div>`;
+}
+
+/**
+ * La tarjeta de una temporada: un hueco por competición. Antes de octubre de 2026 solo hay una, el marcador, y
+ * la tarjeta es la de siempre; desde octubre, las tres. Exportada para poder verificarla sin navegador.
+ */
+export function tarjeta(t) {
+  const competiciones = t.competiciones ?? [{ clave: 'marcador', titulo: 'MARCADOR', lideres: t.lideres ?? [], campeones: t.campeones ?? [] }];
+  const varias = competiciones.length > 1;
+  const huecos = competiciones.map((c) => hueco(t, c, varias)).join('');
 
   return `
     <article class="temporada-card${t.cerrada ? '' : ' abierta'}${t.historica ? ' historica' : ''}">
@@ -63,7 +85,7 @@ export function tarjeta(t) {
         <span class="estado">${escapar(t.estado ?? '')}</span>
       </header>
       ${t.historica ? '<p class="marca-historica">Bloque histórico · se jugó con otras reglas, sin imputar ausencias</p>' : ''}
-      <div class="campeon">${corona}<div class="quien">${nombre}</div>${compartido}</div>
+      ${huecos}
       <dl class="totales">
         <div><dt>Jornadas</dt><dd>${t.jornadas}</dd></div>
         <div><dt>Jugadores</dt><dd>${t.jugadores}</dd></div>
@@ -72,6 +94,13 @@ export function tarjeta(t) {
       </dl>
       ${t.jornadas === 0 ? '<p class="nota">Ningún día llegó a la muestra mínima. La temporada existe y está vacía.</p>' : ''}
     </article>`;
+}
+
+/** Los títulos de un jugador por competición, solo los que tiene: «🏆 2 🎮 1». Sin ninguno, «—». */
+function titulos(f) {
+  const t = f.titulos ?? { marcador: f.temporadas_ganadas ?? 0, juego: 0, figuras: 0 };
+  const partes = [['🏆', t.marcador], ['🎮', t.juego], ['🎨', t.figuras]].filter(([, n]) => n > 0);
+  return partes.length ? partes.map(([icono, n]) => `${icono} ${n}`).join(' ') : '—';
 }
 
 function medalleroBloque(tabla) {
@@ -92,7 +121,7 @@ function medalleroBloque(tabla) {
         <span class="detalle">${Object.entries(f.por_clave)
           .map(([clave, n]) => `${escapar(LOGROS[clave] ?? clave)}${n > 1 ? ` ×${n}` : ''}`)
           .join(' · ')}</span>
-        <span class="num suave">${f.temporadas_ganadas || '—'}</span>
+        <span class="num suave">${escapar(titulos(f))}</span>
         <span class="num fuerte">${f.medallas}</span>
       </div>`,
     )
@@ -102,11 +131,12 @@ function medalleroBloque(tabla) {
       <header class="bloque-cab"><h2>MEDALLERO</h2>
         <span>acumulado de todas las temporadas</span></header>
       <div class="cabeza cuatro-med">
-        <span>Jugador</span><span>Medallas</span><span class="der">Temporadas</span><span class="der">Total</span>
+        <span>Jugador</span><span>Medallas</span><span class="der">Títulos</span><span class="der">Total</span>
       </div>
       ${filas}
       <p class="nota">Las medallas se recalculan a partir de los resultados, así que recalibrar un umbral
-        ajusta este medallero solo. «Temporadas» cuenta las que ganó ya cerradas.</p>
+        ajusta este medallero solo. «Títulos» cuenta las temporadas cerradas que ganó, por competición: 🏆 el
+        marcador, 🎮 el SuperWordleBros y 🎨 las figuras, estas dos desde octubre de 2026.</p>
     </section>`;
 }
 

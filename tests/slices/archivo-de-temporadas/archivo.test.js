@@ -238,3 +238,112 @@ test('con un solo primero la tarjeta sigue diciendo campeón', () => {
   assert.ok(!html.includes('CAMPEONES') && !html.includes('comparten'));
   assert.ok(!html.includes('Ana'));
 });
+
+// ── Tres campeones desde octubre (feat-tres-campeones) ─────────────────────────────────────────────────
+function conTresCompeticiones(id, estado, { juego, album } = {}) {
+  const [, carga] = temporada(id, {
+    ordinal: id === '2026-10' ? 3 : 2, etiqueta: `Temporada ${id}`, estado,
+    tabla: [fila('U_ANA', 'Ana', 1, 3.4), fila('U_BEA', 'Bea', 2, 3.6)],
+  });
+  return new Map([[id, {
+    ...carga,
+    juego: juego ?? { escala: [10, 8, 6, 5, 4, 3, 2, 1], niveles: 3, clasificacion: [
+      { posicion: 1, jugador: 'U_BEA', nombre: 'Bea', puntos: 30, niveles: 3, victorias: 3 },
+      { posicion: 2, jugador: 'U_ANA', nombre: 'Ana', puntos: 24, niveles: 3, victorias: 0 },
+    ] },
+    album: album ?? { jugadores: [
+      { posicion: 1, jugador: 'U_BEA', nombre: 'Bea', media: 1.8, clasificado: true },
+      { posicion: 1, jugador: 'U_CRIS', nombre: 'Cris', media: 1.8, clasificado: true },
+      { posicion: null, jugador: 'U_DANI', nombre: 'Dani', media: 3, clasificado: false },
+    ] },
+  }]]);
+}
+
+const nombresDe = (competicion) => competicion.lideres.map((f) => f.nombre);
+
+/** @scenarios tres-campeones-desde-octubre */
+test('una temporada de octubre trae las tres competiciones, con los empates enteros', () => {
+  const [octubre] = archivo(conTresCompeticiones('2026-10', 'en curso'));
+
+  assert.deepEqual(octubre.competiciones.map((c) => c.clave), ['marcador', 'juego', 'figuras']);
+  const [marcador, juego, figuras] = octubre.competiciones;
+  assert.deepEqual(nombresDe(marcador), ['Ana']);
+  assert.deepEqual(nombresDe(juego), ['Bea']);
+  assert.deepEqual(nombresDe(figuras), ['Bea', 'Cris'], 'el empate en figuras trae a los dos; Dani no clasifica');
+  assert.deepEqual(figuras.campeones, [], 'en curso nadie es campeón todavía');
+});
+
+/** @scenarios tres-campeones-desde-octubre */
+test('la tarjeta de octubre enseña las tres con su corona y su cifra', () => {
+  const html = tarjeta(archivo(conTresCompeticiones('2026-10', 'cerrada'))[0]);
+
+  assert.ok(html.indexOf('MARCADOR') < html.indexOf('SUPERWORDLEBROS'));
+  assert.ok(html.indexOf('SUPERWORDLEBROS') < html.indexOf('FIGURAS'));
+  assert.match(html, /MARCADOR[\s\S]*?CAMPEÓN<[\s\S]*?Ana[\s\S]*?3,40/);
+  assert.match(html, /SUPERWORDLEBROS[\s\S]*?CAMPEÓN<[\s\S]*?Bea[\s\S]*?30 pts/);
+  assert.match(html, /FIGURAS[\s\S]*?CAMPEONES[\s\S]*?Bea[\s\S]*?Cris[\s\S]*?1,80 pts/);
+});
+
+/** @scenarios antes-de-octubre-solo-el-marcador */
+test('septiembre trae solo el marcador aunque su instantánea tenga juego y figuras', () => {
+  const [septiembre] = archivo(conTresCompeticiones('2026-09', 'cerrada'));
+  const html = tarjeta(septiembre);
+
+  assert.deepEqual(septiembre.competiciones.map((c) => c.clave), ['marcador']);
+  assert.ok(!html.includes('SUPERWORDLEBROS') && !html.includes('FIGURAS'));
+  assert.match(html, /CAMPEÓN<[\s\S]*?Ana/);
+});
+
+/** @scenarios una-competicion-sin-datos-no-corona-a-nadie */
+test('una competición sin nadie clasificado dice sin campeón y las otras salen igual', () => {
+  const sinJuego = conTresCompeticiones('2026-10', 'cerrada', { juego: { clasificacion: [] } });
+  const [octubre] = archivo(sinJuego);
+  const html = tarjeta(octubre);
+
+  assert.deepEqual(octubre.competiciones[1].campeones, []);
+  assert.match(html, /SUPERWORDLEBROS[\s\S]*?sin campeón/);
+  const hueco = html.slice(html.indexOf('SUPERWORDLEBROS'), html.indexOf('FIGURAS'));
+  assert.ok(!hueco.includes('VA GANANDO'), 'un mes cerrado sin nadie no «va ganando»');
+  assert.match(html, /FIGURAS[\s\S]*?Bea/);
+});
+
+/** @scenarios el-medallero-cuenta-los-titulos-por-competicion */
+test('el medallero separa los títulos por competición', () => {
+  const tabla = medallero(conTresCompeticiones('2026-10', 'cerrada'));
+  const titulos = Object.fromEntries(tabla.map((f) => [f.nombre, f.titulos]));
+
+  assert.deepEqual(titulos.Ana, { marcador: 1, juego: 0, figuras: 0 });
+  assert.deepEqual(titulos.Bea, { marcador: 0, juego: 1, figuras: 1 });
+  assert.deepEqual(titulos.Cris, { marcador: 0, juego: 0, figuras: 1 });
+  assert.equal(tabla.find((f) => f.nombre === 'Ana').temporadas_ganadas, 1, 'temporadas_ganadas sigue siendo el marcador');
+});
+
+/** @scenarios el-medallero-cuenta-los-titulos-por-competicion */
+test('antes de octubre el juego y las figuras no dan títulos, y una temporada en curso tampoco', () => {
+  const septiembre = medallero(conTresCompeticiones('2026-09', 'cerrada'));
+  const octubreEnCurso = medallero(conTresCompeticiones('2026-10', 'en curso'));
+
+  assert.deepEqual(septiembre.find((f) => f.nombre === 'Bea')?.titulos ?? { marcador: 0, juego: 0, figuras: 0 },
+    { marcador: 0, juego: 0, figuras: 0 });
+  assert.ok(octubreEnCurso.every((f) => !f.titulos.marcador && !f.titulos.juego && !f.titulos.figuras));
+});
+
+/** @scenarios el-medallero-cuenta-los-titulos-por-competicion */
+test('la columna de títulos del medallero nombra solo las competiciones con algún título', async () => {
+  const { pintarTemporadas } = await import('../../../v2/js/ui/temporadas.js');
+  const instantaneas = conTresCompeticiones('2026-10', 'cerrada');
+  // Medallas para que el medallero no salga vacío.
+  instantaneas.get('2026-10').logros = { fondista: ['Ana', 'Bea', 'Cris'] };
+  const contenedor = { innerHTML: '' };
+
+  pintarTemporadas(contenedor, instantaneas);
+  // Solo el medallero: las tarjetas, que van antes, también enlazan los nombres.
+  const medallero = contenedor.innerHTML.slice(contenedor.innerHTML.indexOf('MEDALLERO'));
+  const fila = (nombre) => medallero.split('<div class="fila">').find((f) => f.includes(`>${nombre}<`));
+
+  assert.match(fila('Ana'), /🏆 1/);
+  assert.ok(!/🎮|🎨/.test(fila('Ana')), 'Ana no tiene títulos del juego ni de figuras');
+  assert.match(fila('Bea'), /🎮 1/);
+  assert.match(fila('Bea'), /🎨 1/);
+  assert.ok(!/🏆/.test(fila('Bea')));
+});

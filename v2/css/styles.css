@@ -471,6 +471,11 @@ main { padding-block: 2rem; }
 /* «83 %» lleva espacio por tipografía, y en la columna estrecha de móvil se partía en dos líneas. Se
    resuelve aquí y no con un espacio duro en el fuente: un carácter invisible en el código es una trampa. */
 .fila.album-fila .num, .album-cifra b { white-space: nowrap; }
+/* SuperWordleBros (slice `marcador-del-juego`): puesto, jugador, puntos, niveles y victorias. En móvil se
+   quedan los puntos, como en el marcador: niveles y victorias son las `.num.suave` que ya se ocultan. */
+.cabeza.juego-cabeza, .fila.juego-fila {
+  grid-template-columns: 6px 34px minmax(7rem, 1fr) 5rem 5rem 5.5rem;
+}
 .album-ficha { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; padding: 0.4rem 0; }
 .album-cifra { display: flex; flex-direction: column; gap: 2px; }
 .album-cifra b { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; line-height: 1; }
@@ -764,7 +769,14 @@ main { padding-block: 2rem; }
   font-size: 0.68rem; font-weight: 400; line-height: 1.35; color: var(--liga-tinta);
 }
 .temporada-card .campeon { display: flex; flex-direction: column; gap: 4px; }
-.temporada-card .campeon .quien { display: flex; gap: 0.6rem; align-items: baseline; }
+.temporada-card .campeon .quien { display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; }
+/* Desde octubre, tres huecos: más pequeños y separados por una raya, para que la tarjeta no triplique su alto. */
+.temporada-card .campeon.de-competicion { gap: 2px; padding-top: 6px; border-top: 1px solid var(--borde); }
+.temporada-card .campeon.de-competicion .competicion {
+  font-family: var(--mono); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; color: var(--liga-suave);
+}
+.temporada-card .campeon.de-competicion .ganador { font-size: 1.05rem; }
+.temporada-card .campeon.de-competicion .media { font-size: 1.05rem; }
 .temporada-card .ganador { font-size: 1.25rem; font-weight: 600; color: inherit; text-decoration: none; }
 .temporada-card .ganador:hover { color: var(--liga-verde); }
 .temporada-card .ganador.vacia { color: var(--liga-suave); font-weight: 400; font-size: 1rem; }

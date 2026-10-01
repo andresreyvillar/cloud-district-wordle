@@ -1264,3 +1264,34 @@ TONO_DEL_HILO: dict[str, tuple[str, ...]] = {
         "{jugador} ha dicho algo y {dudan} personas han tenido opinión inmediata.",
     ),
 }
+
+
+#: El arranque del mes: las tres primeras jornadas de la temporada (slice `resumen-diario-compuesto`,
+#: `el-mes-arranca`). **No hablan de ventajas**: con dos o tres jornadas, cualquier orden es ruido.
+ARRANQUE_DEL_MES: tuple[str, ...] = (
+    "Arranca el mes: marcador a cero y todo el mundo convencido de que este es el suyo.",
+    "Mes nuevo, excusas nuevas. Aún no hay nada escrito.",
+    "Primeras jornadas del mes: aquí se viene a tantear, no a ganar.",
+    "Se reparten las cartas otra vez. De momento, nadie tiene nada.",
+    "Empieza la temporada: que nadie se crea nada con dos jornadas.",
+)
+
+#: La recta final: las cinco últimas jornadas laborables (`la-recta-final-cuenta-lo-que-queda`). Suben la
+#: tensión sin inventarse una pelea: los datos que la acompañan dicen si la hay.
+RECTA_FINAL: tuple[str, ...] = (
+    "Aquí ya no se regala nada.",
+    "Cada intento de más empieza a doler.",
+    "Es el momento de los nervios y de las aperturas raras.",
+    "Quien haya guardado algo para el final, que lo saque ya.",
+    "Se acabaron las jornadas de calentamiento.",
+)
+
+#: El último laborable del mes (`la-ultima-jornada-se-anuncia`). El resumen sale cuando el día ya se ha
+#: jugado, así que se cuenta como lo que es: el mes está decidido, a falta del podio.
+ULTIMA_JORNADA: tuple[str, ...] = (
+    "el mes está decidido: mañana, el podio.",
+    "se acabó lo que se daba. Mañana se reparten las medallas.",
+    "no hay más jornadas. Lo que hay es lo que queda.",
+    "telón. Mañana sale el podio y no se admiten reclamaciones.",
+    "fin del mes. El que ha llegado, ha llegado.",
+)

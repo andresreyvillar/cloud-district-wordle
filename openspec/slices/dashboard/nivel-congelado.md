@@ -58,6 +58,11 @@ día no depende de quién lo calcule.
 **THEN** la jornada de D-1 no se congela todavía; si la de D-2 no lo estaba —el cron estuvo caído—, se congela
 esa
 
+### un-dia-que-no-cuenta-no-crea-nivel
+**WHEN** la última jornada con resultados es de fin de semana, o de un laborable con menos de cinco jugadores
+**THEN** no se congela: se congela la última jornada que cuenta para la temporada, así que el nivel del viernes
+sigue en juego el sábado, el domingo y el lunes aunque alguien juegue al Wordle el fin de semana
+
 ### un-nivel-congelado-no-cambia
 **WHEN** el cron vuelve a correr, o llega tarde una cuadrícula de una jornada ya congelada
 **THEN** el nivel guardado no cambia: el script no lo reescribe, y la base de datos rechaza cualquier

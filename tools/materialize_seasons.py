@@ -58,6 +58,8 @@ def materializar(
     tabla,
     ahora: datetime.datetime,
     dry_run: bool = False,
+    niveles=(),
+    marcas=(),
 ) -> Informe:
     """Calcula y escribe la instantánea de cada temporada de `objetivo`.
 
@@ -70,13 +72,48 @@ def materializar(
             "temporada": temporada,
             # La procedencia entra aquí, en el borde: `instantanea` no puede leer git sin dejar de ser
             # determinista. Sin ella, un payload escrito con código viejo es indistinguible de uno bueno.
-            "payload": instantanea(resultados, temporada, version()),
+            "payload": instantanea(resultados, temporada, version(), niveles=niveles, marcas=marcas),
             "updated_at": ahora.isoformat(),
         }
         if not dry_run:
             tabla.upsert(fila, CLAVE)
         escritas.append(temporada)
     return Informe(materializadas=len(escritas), temporadas=tuple(escritas))
+
+
+#: Lo que se lee de las dos tablas del juego. Solo lo que la clasificación usa.
+COLUMNAS_DE_NIVELES = "jornada,fecha"
+COLUMNAS_DE_MARCAS = "jornada,jugador,segundos,estrellas"
+
+
+def _leer_paginado(cliente, tabla: str, columnas: str, orden: str) -> list[dict]:
+    """Una tabla entera, paginando como `leer_resultados`: PostgREST corta en 1000 filas sin avisar."""
+    filas, desplazamiento = [], 0
+    while True:
+        pagina = con_reintento(
+            lambda: (
+                cliente.table(tabla)
+                .select(columnas)
+                .order(orden)
+                .range(desplazamiento, desplazamiento + PAGINA - 1)
+                .execute()
+                .data
+            ),
+            que=f"leer {tabla}",
+        )
+        if not pagina:
+            return filas
+        filas.extend(pagina)
+        if len(pagina) < PAGINA:
+            return filas
+        desplazamiento += PAGINA
+
+
+def leer_juego(cliente) -> tuple[list[dict], list[dict]]:
+    """Los niveles congelados y las marcas del SuperWordleBros (slice `clasificacion-del-juego`). Solo lee."""
+    niveles = _leer_paginado(cliente, "game_levels", COLUMNAS_DE_NIVELES, "jornada")
+    marcas = _leer_paginado(cliente, "game_times", COLUMNAS_DE_MARCAS, "jornada")
+    return niveles, marcas
 
 
 class TablaSupabase:
@@ -210,7 +247,13 @@ def main(argv: list[str] | None = None) -> int:
 
     tabla = None if argumentos.dry_run else TablaSupabase(URL, KEY)
     ahora = datetime.datetime.now(datetime.timezone.utc)
-    informe = materializar(resultados, objetivo, tabla, ahora, dry_run=argumentos.dry_run)
+    from supabase import create_client
+
+    niveles, marcas = leer_juego(create_client(URL, KEY))
+    print(f"{len(niveles)} niveles del juego · {len(marcas)} marcas")
+    informe = materializar(
+        resultados, objetivo, tabla, ahora, dry_run=argumentos.dry_run, niveles=niveles, marcas=marcas
+    )
 
     print()
     print("ENSAYO (no se ha escrito nada)" if argumentos.dry_run else "EJECUCIÓN REAL")

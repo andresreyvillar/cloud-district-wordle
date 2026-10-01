@@ -12,7 +12,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { congelar } from '../../../tools/congelar_nivel.mjs';
-import { HORA_DE_CONGELAR, jornadaACongelar, nivelDe } from '../../../v2/js/domain/superbros.js';
+import { readFileSync } from 'node:fs';
+
+import {
+  HORA_DE_CONGELAR, MUESTRA_MINIMA_DEL_DIA, jornadaACongelar, nivelDe,
+} from '../../../v2/js/domain/superbros.js';
 import { normalizar } from '../../../v2/js/data/results.js';
 
 /** Filas con la forma de la tabla: la jornada 1722 es la del 24, la 1723 la del 25. */
@@ -21,7 +25,21 @@ const FILAS = [
   { slack_user_id: 'U_ANA', player_name: 'Ana', wordle_id: 1722, score: 2, date: '2026-09-24', pattern: '🟩🟨⬛⬛⬛/🟩🟩🟩🟩🟩' },
   { slack_user_id: 'U_BEA', player_name: 'Bea', wordle_id: 1722, score: 4, date: '2026-09-24', pattern: '⬛⬛⬛⬛🟩/⬛⬛🟨⬛🟩/🟩⬛🟩⬛🟩/🟩🟩🟩🟩🟩' },
   { slack_user_id: 'U_BEA', player_name: 'Bea', wordle_id: 1723, score: 3, date: '2026-09-25', pattern: '🟩⬛⬛⬛⬛/🟩🟩⬛⬛⬛/🟩🟩🟩🟩🟩' },
+  // Relleno para que cada jornada tenga los cinco jugadores con los que un día cuenta para la temporada: solo
+  // esos días crean nivel.
+  ...[[1721, '2026-09-23', 4], [1722, '2026-09-24', 3], [1723, '2026-09-25', 4]].flatMap(([wordle_id, date, faltan]) =>
+    ['Cris', 'Dani', 'Eva', 'Fede'].slice(0, faltan).map((nombre) => ({
+      slack_user_id: `U_${nombre.toUpperCase()}`, player_name: nombre, wordle_id, score: 4, date,
+      pattern: '⬛⬛⬛⬛⬛/⬛🟩⬛⬛⬛/⬛🟩🟩⬛⬛/🟩🟩🟩🟩🟩',
+    }))),
 ];
+
+/** `n` jugadores de una jornada, para construir días que cuentan o que no. */
+function jornadaCon(wordle_id, date, n) {
+  return Array.from({ length: n }, (_, i) => ({
+    slack_user_id: `U_J${i}`, player_name: `J${i}`, wordle_id, score: 4, date, pattern: '🟩🟩🟩🟩🟩',
+  }));
+}
 const RESULTADOS = FILAS.map(normalizar);
 
 const URL_BASE = 'https://ejemplo.supabase.co';
@@ -167,7 +185,7 @@ test('dice qué congela antes de escribir', async () => {
   await congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '10:00', seco: false, log: (l) => lineas.push(l) });
 
   assert.equal(escritoAlDecirlo, true, 'la línea con la jornada sale antes del POST');
-  assert.match(lineas.join('\n'), /#1722 · 2026-09-24 · 2 tramos/);
+  assert.match(lineas.join('\n'), /#1722 · 2026-09-24 · 5 tramos/);
 });
 
 /** @scenarios el-cron-declara-lo-que-escribe */
@@ -211,4 +229,34 @@ test('si PostgREST falla, el script falla y lo dice', async () => {
     congelar({ fetch, url: URL_BASE, clave: 'k', hoy: '2026-09-25', hora: '10:00', seco: false, log: () => {} }),
     /500/,
   );
+});
+
+/** @scenarios un-dia-que-no-cuenta-no-crea-nivel */
+test('un sábado con partidas no crea nivel: el del viernes sigue en juego', () => {
+  const conSabado = [...FILAS, ...jornadaCon(1724, '2026-09-26', 6)].map(normalizar);
+
+  assert.equal(jornadaACongelar(conSabado, '2026-09-27', '03:00'), 1723);
+  assert.equal(jornadaACongelar(conSabado, '2026-09-28', '10:00'), 1723);
+});
+
+/** @scenarios un-dia-que-no-cuenta-no-crea-nivel */
+test('un laborable con cuatro jugadores no crea nivel', () => {
+  const conLunesCorto = [...FILAS, ...jornadaCon(1726, '2026-09-28', 4)].map(normalizar);
+
+  assert.equal(jornadaACongelar(conLunesCorto, '2026-09-29', '10:00'), 1723);
+});
+
+/** @scenarios un-dia-que-no-cuenta-no-crea-nivel */
+test('el lunes con cinco jugadores sí se congela el martes', () => {
+  const conLunes = [...FILAS, ...jornadaCon(1724, '2026-09-26', 6), ...jornadaCon(1726, '2026-09-28', 5)].map(normalizar);
+
+  assert.equal(jornadaACongelar(conLunes, '2026-09-29', '02:00'), 1726);
+});
+
+/** @scenarios un-dia-que-no-cuenta-no-crea-nivel */
+test('el mínimo de jugadores es el mismo que el del pipeline', () => {
+  const seasons = readFileSync(new URL('../../../tools/seasons.py', import.meta.url), 'utf8');
+  const [, delPipeline] = /^MUESTRA_MINIMA_DEL_DIA = (\d+)$/m.exec(seasons);
+
+  assert.equal(MUESTRA_MINIMA_DEL_DIA, Number(delPipeline));
 });

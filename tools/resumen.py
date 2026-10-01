@@ -17,22 +17,29 @@ del día son premios distintos a propósito, y casi nunca los gana la misma pers
 
 from __future__ import annotations
 
+import calendar
+import datetime
+
 from album import album
 from comentarios import seccion_de_comentarios
 from figures import CULO, FIGURAS, figura, rasgos
-from seasons import resultados_de_temporada
+from juego import ESCALA, PUNTOS_DESDE_EL_OCTAVO, clasificacion_del_juego, niveles_que_puntuan, puestos_de_nivel
+from podios import podio_de_texto
+from seasons import TEMPORADA_CERO, dias_de_temporada, resultados_de_temporada
 from standings import clasificacion
 
-#: Cuántos entran en el top del mensaje. Cinco es lo que pide el diseño del resumen.
-TOP = 5
+#: Los puestos de cada podio del mensaje: el marcador, el juego y las figuras. Tres: la cabeza, no la tabla —
+#: la tabla está en la web—. Se corta **por puesto**: un empate en el tercero sube entero.
+TOP = 3
 
-#: Cuántos del álbum. Tres: la cabeza, no la tabla — la tabla está en la web.
+#: Cuántos del álbum. El mismo podio de tres.
 CABEZA_DEL_ALBUM = 3
 
 #: Límite de `initial_comment` en Slack, para dejar constancia de contra qué se mide.
 #:
-#: **No hay recorte, y a propósito**: el mensaje está acotado por construcción —dos líneas, cinco del top y
-#: tres del álbum— así que no crece con el grupo por muchos jugadores que haya. Se escribió un recorte antes
+#: **No hay recorte, y a propósito**: el mensaje está acotado por construcción —dos líneas, tres podios de
+#: tres puestos con como mucho tres nombres por escalón, y el bloque del momento del mes— así que no crece con
+#: el grupo por muchos jugadores que haya. Se escribió un recorte antes
 #: de comprobarlo, y su test pasaba con 499 caracteres contra 3000: no ejercitaba nada. Lo que se verifica
 #: ahora es la propiedad de verdad, que el mensaje no crece.
 LIMITE_DE_SLACK = 3000
@@ -188,31 +195,96 @@ def bloque_palabra(palabra: tuple[str, str] | None) -> str:
 
 
 def bloque_top(resultados: list[dict], temporada: str, jornada: int) -> str:
-    """Los cinco primeros del marcador, con el emoji de lo que dibujó cada uno **hoy**.
+    """El podio del marcador: los tres primeros puestos con su media.
 
-    Quien no jugó hoy no lleva emoji: poner el de otro día haría que el resumen contase una jornada que no
-    es la de hoy.
+    **Se corta por puesto, no por número de filas.** Con puestos compartidos, quedarse con las tres primeras
+    filas puede partir un empate por la mitad. Empatar es lo normal: el 62% de las jornadas tiene empate en la
+    mejor nota del día.
+
+    El dibujo del día ya no va aquí: el podio es un bloque de ancho fijo y un emoji ocupa dos columnas. Sigue
+    en la obra del día. `jornada` se conserva en la firma para no cambiar a quien la llama.
     """
     clasificados = [fila for fila in clasificacion(resultados, temporada) if fila["clasificado"]]
-    if not clasificados:
+    puestos = [
+        {"posicion": fila["posicion"], "nombre": fila["nombre"], "cifra": _cifra(fila["media_temporada"])}
+        for fila in clasificados
+        if fila["posicion"] <= TOP
+    ]
+    return podio_de_texto(f"📊 *Marcador · {_etiqueta(resultados, temporada)}*", puestos)
+
+
+def _tiempo(segundos) -> str:
+    """El tiempo del juego con centésimas, como lo enseña su ranking: `0:31.20`."""
+    centesimas = max(0, round(float(segundos) * 100))
+    minutos, resto = divmod(centesimas, 6000)
+    return f"{minutos}:{resto / 100:05.2f}"
+
+
+def _nivel_del_dia(niveles, jornada: int) -> int | None:
+    """El nivel que se jugó el día de la jornada: el último congelado **anterior** a ella.
+
+    El de la jornada de hoy se congela mañana. Tras un fin de semana es el del viernes, que se ha jugado de
+    sábado a lunes.
+    """
+    anteriores = [nivel["jornada"] for nivel in niveles or () if nivel["jornada"] < jornada]
+    return max(anteriores) if anteriores else None
+
+
+def bloque_juego(resultados: list[dict], temporada: str, jornada: int, niveles=(), marcas=()) -> str:
+    """El SuperWordleBros: quién ganó el nivel del día, y el podio del mes por puntos.
+
+    La clasificación sale de `juego.clasificacion_del_juego`, la misma que guarda la instantánea que pinta la
+    web: el mensaje no tiene su propia versión de la escala.
+    """
+    del_nivel = []
+    nivel = _nivel_del_dia(niveles, jornada)
+    if nivel is not None:
+        # El orden del ranking del nivel: más estrellas primero y, con las mismas, menos tiempo.
+        del_nivel = sorted(
+            (m for m in marcas or () if m["jornada"] == nivel),
+            key=lambda m: (-int(m.get("estrellas") or 0), round(float(m["segundos"]) * 100)),
+        )
+
+    tabla = clasificacion_del_juego(resultados, list(niveles or ()), list(marcas or ()), temporada)
+    puestos = [
+        {"posicion": fila["posicion"], "nombre": fila["nombre"], "cifra": f"{fila['puntos']} pts"}
+        for fila in tabla["clasificacion"]
+        if fila["posicion"] <= TOP
+    ]
+    if not del_nivel and not puestos:
         return ""
 
-    # **Se corta por puesto, no por número de filas.** Con puestos compartidos, quedarse con los cinco
-    # primeros de la lista puede partir un empate por la mitad y dejar fuera a alguien que va igual que el
-    # quinto. Empatar es lo normal: el 62% de las jornadas tiene empate en la mejor nota del día.
-    tabla = [fila for fila in clasificados if fila["posicion"] <= TOP]
+    if del_nivel:
+        nombres = _nombres_por_jugador(resultados)
+        clave = lambda m: (int(m.get("estrellas") or 0), round(float(m["segundos"]) * 100))  # noqa: E731
+        # Por nombre entre los empatados: el orden de las filas de la base de datos no puede cambiar el mensaje.
+        ganadores = sorted(
+            (nombres.get(m["jugador"], m["jugador"]) for m in del_nivel if clave(m) == clave(del_nivel[0])),
+            key=str.lower,
+        )
+        estrellas = int(del_nivel[0].get("estrellas") or 0)
+        verbo = "lo ganan" if len(ganadores) > 1 else "lo gana"
+        cuantos = len(del_nivel)
+        titulo = (
+            f"🎮 *SuperWordleBros* — el nivel #{nivel} {verbo} {_y(ganadores)} con ⭐ {estrellas} en "
+            f"{_tiempo(del_nivel[0]['segundos'])} ({cuantos} {'jugador' if cuantos == 1 else 'jugadores'})"
+        )
+    else:
+        titulo = f"🎮 *SuperWordleBros · {_etiqueta(resultados, temporada)}*"
 
-    dibujos = _figura_del_dia_por_jugador(resultados, jornada)
-    lineas = []
-    anterior = None
-    for fila in tabla:
-        # El número solo se escribe cuando cambia: repetir "2º" en dos líneas seguidas se lee como un error
-        # de copia; una línea sangrada se lee como lo que es, un empate.
-        marca = f"{fila['posicion']}º" if fila["posicion"] != anterior else "  ·"
-        anterior = fila["posicion"]
-        emoji = f" {dibujos[fila['jugador']]}" if fila["jugador"] in dibujos else ""
-        lineas.append(f"{marca} {fila['nombre']} — {_cifra(fila['media_temporada'])}{emoji}")
-    return f"📊 *Marcador · {_etiqueta(resultados, temporada)}*\n" + "\n".join(lineas)
+    if not puestos:
+        return titulo
+    return podio_de_texto(titulo, puestos)
+
+
+def _nombres_por_jugador(resultados: list[dict]) -> dict[str, str]:
+    """El nombre de la fila más reciente de cada jugador, como en la clasificación del juego."""
+    ultima: dict[str, dict] = {}
+    for fila in resultados:
+        previa = ultima.get(fila["slack_user_id"])
+        if previa is None or fila["wordle_id"] > previa["wordle_id"]:
+            ultima[fila["slack_user_id"]] = fila
+    return {jugador: fila.get("player_name") or jugador for jugador, fila in ultima.items()}
 
 
 #: Ventaja que deja de ser ventaja, en media de intentos por día. Con siete jornadas, 0,15 es un solo intento
@@ -938,21 +1010,157 @@ def tira(recuento: dict[str, int], categorias: list[dict]) -> str:
 
 
 def bloque_album(resultados: list[dict], temporada: str) -> str:
-    """La cabeza del ranking de belleza. Vacío si nadie está clasificado."""
+    """El podio de figuras: los tres primeros puestos del ranking de belleza con su puntuación media.
+
+    Vacío si nadie está clasificado. La tira agrupada de cada uno se queda en la web: son emojis, y en el
+    bloque de ancho fijo del podio descuadran los escalones.
+    """
     datos = album(resultados, temporada)
-    clasificados = [fila for fila in datos["jugadores"] if fila["clasificado"]][:CABEZA_DEL_ALBUM]
-    if not clasificados:
+    puestos = [
+        {"posicion": fila["posicion"], "nombre": fila["nombre"], "cifra": f"{_cifra(fila['media'])} pts"}
+        for fila in datos["jugadores"]
+        if fila["clasificado"] and fila["posicion"] <= CABEZA_DEL_ALBUM
+    ]
+    return podio_de_texto("🎨 *Ranking de figuras*", puestos)
+
+
+#: Jornadas del principio del mes en las que el resumen dice que el mes arranca.
+JORNADAS_DE_ARRANQUE = 3
+
+#: Laborables que tienen que quedar en el mes, como mucho, para que empiece la recta final: las cinco últimas
+#: jornadas son la de hoy y las cuatro que quedan.
+LABORABLES_DE_RECTA_FINAL = 4
+
+
+def _fecha_de(resultados: list[dict], jornada: int) -> datetime.date | None:
+    fecha = next((fila["date"] for fila in resultados if fila["wordle_id"] == jornada), None)
+    return datetime.date.fromisoformat(str(fecha)[:10]) if fecha else None
+
+
+def _laborables_del_mes(desde: datetime.date, incluido: bool) -> int:
+    """Los laborables que quedan en el mes de `desde`, contándolo o no. Con el calendario, no con el reloj:
+    los festivos no se conocen y cuentan como laborables."""
+    ultimo = calendar.monthrange(desde.year, desde.month)[1]
+    primero = desde.day if incluido else desde.day + 1
+    return sum(1 for dia in range(primero, ultimo + 1) if desde.replace(day=dia).weekday() < 5)
+
+
+#: Nombres que se escriben en una línea del momento del mes antes de resumir el resto con «y N más». Un empate
+#: de muchos en cabeza no puede alargar el mensaje con el grupo.
+NOMBRES_EN_UNA_LINEA = 3
+
+
+def _nombres(filas: list[dict]) -> str:
+    nombres = [fila["nombre"] for fila in filas]
+    if len(nombres) > NOMBRES_EN_UNA_LINEA:
+        return ", ".join(nombres[:NOMBRES_EN_UNA_LINEA]) + f" y {len(nombres) - NOMBRES_EN_UNA_LINEA} más"
+    return _y(nombres)
+
+
+def _cabeza_y_siguientes(tabla: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Todos los del primer puesto y **todos** los del siguiente: con un empate en el 2º, nombrar solo al primero
+    de la lista era contar la mitad."""
+    if not tabla:
+        return [], []
+    cabeza = [fila for fila in tabla if fila["posicion"] == tabla[0]["posicion"]]
+    resto = [fila for fila in tabla if fila["posicion"] > tabla[0]["posicion"]]
+    siguientes = [fila for fila in resto if fila["posicion"] == resto[0]["posicion"]] if resto else []
+    return cabeza, siguientes
+
+
+def _tension_del_juego(resultados, temporada, jornada, fecha, niveles, marcas) -> str:
+    """La línea del SuperWordleBros en la recta final: cuántos puntos quedan en juego y si el segundo llega.
+
+    **Aquí sí se puede calcular**, y se calcula como cota exacta. Cada nivel por jugar da hasta 10 al segundo y
+    nada al líder. El nivel **abierto** es distinto: ya tiene marcas contadas y sigue admitiéndolas, así que el
+    segundo puede subir hasta 10 desde lo que tenga en él y el líder, si ya tiene marca, caer hasta 1. Contarlo
+    como 10 limpios decía «ya no puede» cuando sí podía (lo cazó el Gate 4d).
+    """
+    tabla = clasificacion_del_juego(resultados, list(niveles), list(marcas), temporada)["clasificacion"]
+    if len(tabla) < 2:
+        return ""
+    abierto = _nivel_del_dia(niveles, jornada)
+    abierto_cuenta = abierto in niveles_que_puntuan(resultados, list(niveles), temporada)
+    por_jugar = _laborables_del_mes(fecha, incluido=True)
+    en_juego = ESCALA[0] * (int(abierto_cuenta) + por_jugar)
+    if not en_juego:
         return ""
 
-    lineas, anterior = [], None
-    for fila in clasificados:
-        marca = f"{fila['posicion']}º" if fila["posicion"] != anterior else "  ·"
-        anterior = fila["posicion"]
-        lineas.append(
-            f"{marca} {fila['nombre']} — {_cifra(fila['media'])} pts "
-            f"{tira(fila['recuento'], datos['categorias'])}"
+    cabeza, siguientes = _cabeza_y_siguientes(tabla)
+    if len(cabeza) > 1:
+        return (
+            f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego y la cabeza está empatada entre "
+            f"{_nombres(cabeza)}, a {cabeza[0]['puntos']}."
         )
-    return "🎨 *Ranking de figuras*\n" + "\n".join(lineas)
+    primero, segundo = cabeza[0], siguientes[0]
+    ventaja = primero["puntos"] - segundo["puntos"]
+
+    vuelco = ESCALA[0] * por_jugar
+    if abierto_cuenta:
+        del_abierto = puestos_de_nivel([m for m in marcas if m["jornada"] == abierto])
+        del_lider = del_abierto.get(primero["jugador"], (None, 0))[1]
+        del_segundo = del_abierto.get(segundo["jugador"], (None, 0))[1]
+        suelo_del_lider = PUNTOS_DESDE_EL_OCTAVO if primero["jugador"] in del_abierto else 0
+        vuelco += (ESCALA[0] - del_segundo) + (del_lider - suelo_del_lider)
+
+    quienes = _nombres(siguientes)
+    varios = len(siguientes) > 1
+    if ventaja <= vuelco:
+        return (
+            f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego: {quienes} todavía "
+            f"{'pueden' if varios else 'puede'} alcanzar a {primero['nombre']}, que "
+            f"{'les' if varios else 'le'} saca {ventaja}."
+        )
+    return (
+        f"🎮 En el SuperWordleBros quedan {en_juego} puntos en juego y {quienes} ya no "
+        f"{'pueden' if varios else 'puede'} alcanzar a {primero['nombre']}, que {'les' if varios else 'le'} saca "
+        f"{ventaja}."
+    )
+
+
+def bloque_momento_del_mes(resultados: list[dict], temporada: str, jornada: int, niveles=(), marcas=()) -> str:
+    """En qué momento del mes está el resumen: arranque, recta final o última jornada. Vacío a mitad de mes.
+
+    Se decide con **la fecha de la jornada y el calendario** (§10): el mismo resumen sale igual lo ejecute quien
+    lo ejecute y cuando lo ejecute.
+    """
+    from refranero import ARRANQUE_DEL_MES, RECTA_FINAL, ULTIMA_JORNADA
+    from voz import _del_ciclo
+
+    fecha = _fecha_de(resultados, jornada)
+    if fecha is None or temporada == TEMPORADA_CERO:
+        return ""
+    quedan = _laborables_del_mes(fecha, incluido=False)
+
+    if quedan > LABORABLES_DE_RECTA_FINAL:
+        dias = dias_de_temporada(resultados, temporada)
+        if jornada in dias and dias.index(jornada) < JORNADAS_DE_ARRANQUE:
+            return "🏁 " + _del_ciclo(ARRANQUE_DEL_MES, jornada)
+        return ""
+
+    if quedan == 0:
+        lineas = [f"⏳ *Última jornada del mes* — {_del_ciclo(ULTIMA_JORNADA, jornada)}"]
+    else:
+        cuantas = "queda 1 jornada" if quedan == 1 else f"quedan {quedan} jornadas"
+        lineas = [f"⏳ *Recta final* — {cuantas}. {_del_ciclo(RECTA_FINAL, jornada)}"]
+
+    clasificados = [fila for fila in clasificacion(resultados, temporada) if fila["clasificado"]]
+    if clasificados:
+        cabeza, siguientes = _cabeza_y_siguientes(clasificados)
+        media = _cifra(cabeza[0]["media_temporada"])
+        if len(cabeza) > 1:
+            lineas.append(f"{_nombres(cabeza)} van empatados en cabeza con {media}.")
+        elif siguientes:
+            # Sobre la media **publicada**: si a la vista van 3,00 y 3,05, la distancia es 0,05 y no 0,0526.
+            distancia = _cifra(round(siguientes[0]["media_temporada"], 2) - round(cabeza[0]["media_temporada"], 2))
+            verbo = "están" if len(siguientes) > 1 else "está"
+            lineas.append(f"{cabeza[0]['nombre']} manda con {media}; {_nombres(siguientes)} {verbo} a {distancia}.")
+        lineas.append("Si acaban igualados, comparten el primer puesto.")
+
+    juego = _tension_del_juego(resultados, temporada, jornada, fecha, niveles or (), marcas or ())
+    if juego:
+        lineas.append(juego)
+    return "\n".join(lineas)
 
 
 def _voz(resultados: list[dict], temporada: str, jornada: int, senales) -> list[str]:
@@ -1056,12 +1264,23 @@ def _pulla_del_album(resultados: list[dict], temporada: str, jornada: int) -> st
 
 
 def resumen_del_dia(
-    resultados: list[dict], temporada: str, jornada: int, senales=None, palabra=None, tono=None
+    resultados: list[dict],
+    temporada: str,
+    jornada: int,
+    senales=None,
+    palabra=None,
+    tono=None,
+    niveles=None,
+    marcas=None,
 ) -> str:
     """El resumen completo. **Una sección sin datos no se imprime**, no se imprime vacía.
 
     `palabra` es `(palabra, acepcion)` de la jornada, o `None`. Entra por parámetro porque averiguarla es red
-    y la red vive en el borde: así el mensaje sigue fijándose en un test.
+    y la red vive en el borde: así el mensaje sigue fijándose en un test. `niveles` y `marcas` son los del
+    SuperWordleBros, por lo mismo; sin ellos no sale su podio.
+
+    **Los podios van en orden** —marcador, juego, figuras—, decisión del dueño, y el momento del mes justo
+    antes de ellos: es lo que explica cuánto pesa cada ventaja.
     """
     del_dia = _del_dia(resultados, jornada)
     secciones = [
@@ -1072,6 +1291,7 @@ def resumen_del_dia(
         # **Una** línea de cierre —el meme si la jornada tiene forma, y si no el proverbio— entre la jornada y
         # los rankings. Tres frases seguidas era un tercer bloque de comentarios y el mensaje ya tiene dos.
         *_voz(resultados, temporada, jornada, senales),
+        bloque_momento_del_mes(resultados, temporada, jornada, niveles or (), marcas or ()),
         bloque_top(resultados, temporada, jornada),
         # El relevo va justo tras el marcador: es lo que explica por qué el orden ha cambiado.
         bloque_relevo(resultados, temporada, jornada),
@@ -1079,6 +1299,7 @@ def resumen_del_dia(
         # nadie sabía a qué se referían.
         _pulla_del_marcador(resultados, temporada, jornada),
         bloque_rivalidad(resultados, temporada, jornada),
+        bloque_juego(resultados, temporada, jornada, niveles or (), marcas or ()),
         bloque_album(resultados, temporada),
         _pulla_del_album(resultados, temporada, jornada),
     ]

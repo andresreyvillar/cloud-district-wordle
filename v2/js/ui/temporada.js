@@ -387,6 +387,48 @@ export function bloqueDeAlbum(carga) {
     </section>`;
 }
 
+/**
+ * El bloque del SuperWordleBros: la clasificación del juego del mes, **tal cual la dejó el pipeline** (slice
+ * `marcador-del-juego`). No puntúa ni ordena: si lo hiciera, la web y el resumen del canal podrían enseñar
+ * tablas distintas. Vacío sin clasificación, o con una instantánea anterior a que existiera la clave `juego`.
+ */
+export function bloqueDelJuego(carga) {
+  const juego = carga?.juego;
+  const tabla = juego?.clasificacion ?? [];
+  if (!tabla.length) return '';
+
+  const filas = tabla
+    .map((fila, i) => {
+      const anterior = i > 0 ? tabla[i - 1].posicion : null;
+      return `
+      <div class="fila juego-fila">
+        <i class="acento" style="background:${fila.posicion <= 3 ? COLOR.bueno : 'rgba(43,39,51,.12)'}"></i>
+        ${marcaDePuesto(fila.posicion, anterior)}
+        <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
+        <span class="num fuerte">${escapar(fila.puntos)}</span>
+        <span class="num suave">${escapar(fila.niveles)}</span>
+        <span class="num suave">${escapar(fila.victorias)}</span>
+      </div>`;
+    })
+    .join('');
+
+  const escala = (juego.escala ?? []).map(escapar).join(' · ');
+  const niveles = Number(juego.niveles) || 0;
+  return `
+    <section class="bloque">
+      <header class="bloque-cab amarillo"><h2>SUPERWORDLEBROS</h2>
+        <span>${niveles} ${niveles === 1 ? 'nivel' : 'niveles'} este mes · un juego de Joel</span></header>
+      <div class="cabeza juego-cabeza">
+        <i></i><span>Pos</span><span>Jugador</span>
+        <span class="der">Puntos</span><span class="der">Niveles</span><span class="der">Victorias</span>
+      </div>
+      ${filas}
+      <p class="nota">Cada nivel reparte ${escala} puntos por puesto, del más rápido al más lento, y el mes los
+        suma. Un empate en centésimas comparte puesto y puntos. Solo puntúan los niveles de días que cuentan
+        para la temporada.</p>
+    </section>`;
+}
+
 function estadisticas(carga) {
   const dificultad = carga.dificultad ?? {};
   const jornadas = Object.keys(dificultad)
@@ -488,6 +530,7 @@ export function pintarTemporada(contenedor, carga, temporada) {
       ${logros(carga)}
       ${glosario(carga)}
       ${bloqueDeAlbum(carga)}
+      ${bloqueDelJuego(carga)}
       ${estadisticas(carga)}
     </div>`;
 }

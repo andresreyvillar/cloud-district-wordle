@@ -1,0 +1,61 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-30T08:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tdd-rojo: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño pide una clasificación del SuperWordleBros en la temporada, debajo del álbum de figuras, con las
+    marcas diarias. Decide puntos por puesto en cada nivel (10-8-6-5-4-3-2, luego 1) y que el nivel se cierre
+    al congelarse el siguiente. Supuesto declarado en el slice: solo puntúan los niveles de días de temporada
+    (laborables con cinco jugadores), como en la clasificación general.
+
+    Tres slices: clasificacion-del-juego (nuevo, cron), marcador-del-juego (nuevo, web) y ranking-del-juego
+    (modificación: cierre del nivel). Tests con aserciones reales y marcados pendientes; activados, fallan 12
+    de 12 en la clasificación, 5 de 6 en la web y el del cierre. Los dos verdes son vigilancias que ya se
+    cumplen hoy (sin marcas no hay bloque; el último nivel sigue abierto). Una ronda de corrección: un fixture
+    de desempate dejaba a un tercer jugador con los mismos puntos; se comprobó la aritmética de todos los
+    fixtures con una implementación de referencia de usar y tirar.
+
+- run: '2026-09-30T13:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    Implementado y visto en local sin escribir en producción: la instantánea se calculó en local con los datos
+    reales y se sirvió a la web interceptando la petición; el resumen se imprimió con local_stack --seco.
+    Cambios pedidos por el dueño a mitad: las estrellas pesan más que el tiempo (ranking del nivel, regla de
+    mejora en la base de datos, puntos por puesto y ganador del resumen); un fin de semana no crea nivel, así
+    que el del viernes se juega hasta el lunes; una línea en blanco entre el título y cada podio.
+
+    Mutación, once errores derivados de lo que prohíben los deltas, cada uno en rojo en su escenario. Dos
+    tests del podio buscaban cada podio por su posición —el segundo bloque de código era «el del juego»— y un
+    cambio de orden los tumbaba a todos; ahora buscan por título. Dependencias legítimas declaradas: quitar el
+    filtro de días de temporada cambia también cuántos niveles lleva el mes. Un `checks:` con YAML inválido se
+    descartaba en silencio (lección del 2026-09-30).
+
+- run: '2026-09-30T14:00:00Z'
+  fase: gate-4d
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    adversarial: pass
+  rondas_correccion: 0
+  notas: >-
+    Dos verificadores. La clasificación del juego se sostiene (determinismo con 50 barajados, empates en
+    centésimas, temporada 0, nombres por fila más reciente). La web se sostiene: orden del bloque, escapado,
+    `jornadaACongelar` con fines de semana y cambios de hora en cuatro zonas, y el nivel cerrado en la
+    pestaña.

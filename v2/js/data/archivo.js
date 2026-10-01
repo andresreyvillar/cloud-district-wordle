@@ -15,6 +15,34 @@ const TEMPORADA_CERO = '0';
 const EN_CURSO = 'en curso';
 
 /**
+ * Desde qué temporada cuentan las tres competiciones —marcador, SuperWordleBros y figuras—. Decisión del dueño:
+ * el juego empezó a mitad de septiembre, así que septiembre y las anteriores solo tienen el marcador.
+ */
+export const DESDE_TRES_COMPETICIONES = '2026-10';
+
+/** Las competiciones de una temporada, en el orden en que se enseñan. */
+const COMPETICIONES = [
+  { clave: 'marcador', titulo: 'MARCADOR', filas: (carga) => carga.clasificacion ?? [] },
+  { clave: 'juego', titulo: 'SUPERWORDLEBROS', filas: (carga) => carga.juego?.clasificacion ?? [] },
+  { clave: 'figuras', titulo: 'FIGURAS', filas: (carga) => carga.album?.jugadores ?? [] },
+];
+
+/**
+ * **Todos los del primer puesto**, no el primero de la lista. Con la misma cifra comparten puesto, y coronar
+ * solo al que la lista pone delante era decidir un desempate que la clasificación no hace.
+ */
+function cabezaDe(tabla) {
+  const clasificados = tabla.filter((fila) => fila.clasificado !== false);
+  const primero = clasificados[0];
+  return primero ? clasificados.filter((fila) => fila.posicion === primero.posicion) : [];
+}
+
+/** Si una temporada cuenta las tres competiciones. Los identificadores `AAAA-MM` se comparan como texto. */
+export function tieneTresCompeticiones(temporada) {
+  return temporada !== TEMPORADA_CERO && temporada >= DESDE_TRES_COMPETICIONES;
+}
+
+/**
  * Una entrada por temporada materializada, de la más reciente a la más antigua.
  *
  * Ordena por `ordinal`, no por el identificador: la temporada 0 es un bloque histórico y ordenarla como
@@ -25,13 +53,14 @@ export function archivo(instantaneas) {
     .map(([temporada, carga]) => {
       const tabla = carga.clasificacion ?? [];
       const primero = tabla.find((fila) => fila.clasificado !== false) ?? null;
-      // **Todos los del primer puesto**, no el primero de la lista. Con la misma media publicada comparten
-      // puesto, y coronar solo al que la lista pone delante —por días jugados o por orden alfabético— era
-      // decidir un desempate que la clasificación no hace.
-      const cabeza = primero
-        ? tabla.filter((fila) => fila.clasificado !== false && fila.posicion === primero.posicion)
-        : [];
+      const cabeza = cabezaDe(tabla);
       const cerrada = carga.estado !== EN_CURSO;
+      const competiciones = COMPETICIONES
+        .filter(({ clave }) => clave === 'marcador' || tieneTresCompeticiones(temporada))
+        .map(({ clave, titulo, filas }) => {
+          const lideres = cabezaDe(filas(carga));
+          return { clave, titulo, lideres, campeones: cerrada ? lideres : [] };
+        });
 
       return {
         temporada,
@@ -49,8 +78,10 @@ export function archivo(instantaneas) {
         resultados: carga.resultados ?? 0,
         media_grupo: carga.media_grupo ?? null,
         // Una temporada abierta no ha coronado a nadie: tiene quien va ganando, que no es lo mismo.
+        // Las del marcador, que es la única competición de las temporadas anteriores a octubre.
         campeones: cerrada ? cabeza : [],
         lideres: cabeza,
+        competiciones,
         // El primero de cada lista, para quien solo necesite uno. Con empate NO es «el campeón»: es el que la
         // lista pone delante, y para nombrar al campeón se usan las listas.
         campeon: cerrada ? primero : null,
@@ -92,6 +123,10 @@ function dondeVive(instantaneas) {
   return mapa;
 }
 
+function nuevaFicha(nombre) {
+  return { nombre, medallas: 0, temporadas_ganadas: 0, titulos: { marcador: 0, juego: 0, figuras: 0 }, por_clave: {} };
+}
+
 export function medallero(instantaneas) {
   const cuenta = new Map();
   const vive = dondeVive(instantaneas);
@@ -100,7 +135,7 @@ export function medallero(instantaneas) {
     for (const [clave, quienes] of Object.entries(carga.logros ?? {})) {
       for (const nombre of quienes) {
         if (!cuenta.has(nombre)) {
-          cuenta.set(nombre, { nombre, medallas: 0, temporadas_ganadas: 0, por_clave: {} });
+          cuenta.set(nombre, nuevaFicha(nombre));
         }
         const ficha = cuenta.get(nombre);
         ficha.medallas += 1;
@@ -110,13 +145,15 @@ export function medallero(instantaneas) {
   }
 
   // Ganar una temporada solo cuenta cuando está cerrada: en una abierta se va ganando, no se ha ganado.
-  // Un título compartido cuenta para cada uno de los campeones.
+  // Los títulos, **por competición**: un título del marcador no es uno de belleza. Uno compartido cuenta para
+  // cada campeón. `temporadas_ganadas` sigue siendo el del marcador, que es lo que siempre contó.
   for (const entrada of archivo(instantaneas)) {
-    for (const { nombre } of entrada.campeones) {
-      if (!cuenta.has(nombre)) {
-        cuenta.set(nombre, { nombre, medallas: 0, temporadas_ganadas: 0, por_clave: {} });
+    for (const { clave, campeones } of entrada.competiciones) {
+      for (const { nombre } of campeones) {
+        if (!cuenta.has(nombre)) cuenta.set(nombre, nuevaFicha(nombre));
+        cuenta.get(nombre).titulos[clave] += 1;
+        if (clave === 'marcador') cuenta.get(nombre).temporadas_ganadas += 1;
       }
-      cuenta.get(nombre).temporadas_ganadas += 1;
     }
   }
 

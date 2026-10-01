@@ -378,3 +378,16 @@
 - **Codificada en:** el caso, con tests que construyen un empate en cabeza en el archivo, la tarjeta, el
   medallero y el podio de cierre · **estado:** codificada · **destino mecánico pendiente:** una comprobación
   del harness que marque `clasificacion[0]` / `.find(` sobre clasificaciones fuera de `standings`.
+
+### 2026-09-30 — Un `checks:` con YAML inválido se descarta en silencio y el gate sale verde
+- **Qué pasó:** en `feat-resumen-con-podios`, el `describe` «los podios en orden: marcador, juego, figuras»
+  llevaba «: » sin comillas. El bloque no era YAML válido, `spec_parser._extract_checks` lo saltaba con
+  `continue`, y `verify gates` decía «gates OK» con solo uno de los tres checks del delta ejecutado. Se vio
+  porque el informe listaba menos checks de los escritos.
+- **Causa raíz:** el parser trata el YAML inválido como «no hay checks», y el gate no distingue «no hay» de
+  «no se pudieron leer». El comentario del parser dice que eso se reporta en `verify`, pero `verify gates` no
+  lo hace.
+- **Regla:** un `describe` o un `pattern` con «: » va **entre comillas**. Y tras escribir `checks:`, se cuenta
+  cuántos ✓ lista el gate: tienen que ser tantos como se escribieron.
+- **Codificada en:** esta lección · **estado:** pendiente · **destino mecánico pendiente:** que
+  `_gate_checks_probe` falle si un bloque ```yaml de un Requirement no parsea, en lugar de ignorarlo.

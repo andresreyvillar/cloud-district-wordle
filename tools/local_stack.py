@@ -151,27 +151,34 @@ def calcular(
     if not seco:
         _exige_estar_al_dia(insiste)
 
+    from supabase import create_client
+
+    # El juego también: sin niveles ni marcas, materializar desde aquí dejaría la clasificación del juego
+    # vacía en producción hasta la siguiente vuelta del cron.
+    niveles, marcas = mat.leer_juego(create_client(url, clave))
     tabla = None if seco else mat.TablaSupabase(url, clave)
     informe = mat.materializar(
-        resultados, objetivo, tabla, datetime.datetime.now(datetime.timezone.utc), dry_run=seco
+        resultados, objetivo, tabla, datetime.datetime.now(datetime.timezone.utc), dry_run=seco,
+        niveles=niveles, marcas=marcas,
     )
     print(f"  {'(seco, sin escribir)' if seco else 'escritas'}: {informe}")
-    return {t: seasons.instantanea(resultados, t) for t in objetivo}
+    return {t: seasons.instantanea(resultados, t, niveles=niveles, marcas=marcas) for t in objetivo}
 
 
 def resumen(url: str, clave: str) -> None:
     """El texto que el bot publicaría hoy. No publica: eso es lo único que no se deshace."""
     aviso("3 · Resumen diario  (en seco, no se publica)")
     sys.path.insert(0, str(RAIZ / "tools"))
-    from post_ranking import comentario, leer_resultados, objetivo_de_captura, seccion_de_medallas
+    from post_ranking import comentario, leer_juego, leer_resultados, objetivo_de_captura, seccion_de_medallas
 
     filas = leer_resultados()
+    niveles, marcas = leer_juego()
     medallas = seccion_de_medallas(filas)
     # El comentario nombra la web de la que sale la captura, así que necesita el objetivo configurado
     # (`CAPTURA_OBJETIVO`). Esta llamada se quedó atrás cuando el objetivo pasó a ser configurable.
     objetivo = objetivo_de_captura()
     print("  ┌" + "─" * 76)
-    for linea in comentario(medallas, objetivo, filas).splitlines():
+    for linea in comentario(medallas, objetivo, filas, niveles=niveles, marcas=marcas).splitlines():
         print(f"  │ {linea}")
     print("  └" + "─" * 76)
     if not medallas:

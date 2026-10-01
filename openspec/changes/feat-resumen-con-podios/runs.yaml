@@ -1,0 +1,83 @@
+# Run records del change pack (§11).
+
+- run: '2026-09-30T08:30:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tdd-rojo: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño pide los tres rankings del resumen como podio ASCII (bloques macizos) en orden general, juego y
+    figuras, y un resumen consciente del momento del mes (arranque, mitad, recta final de cinco laborables,
+    última jornada). Modificación de resumen-diario-compuesto: top-cinco-con-su-dibujo y cabeza-del-album se
+    sustituyen por podios; se añaden trece escenarios.
+
+    Una corrección antes de escribir: la vista previa que se enseñó al dueño decía que un empate a final de
+    mes lo gana quien más días ha jugado. Es falso: `standings.clasificacion` comparte puesto a igual media
+    publicada, y los días jugados solo ordenan la lista. El slice dice «comparte el primer puesto».
+
+    Fuera de alcance declarado: la alcanzabilidad del marcador general (no es exacta con la media imputada) y
+    el emoji del dibujo del día en el marcador (descuadra el bloque de código). Los fixtures se comprobaron
+    contra el código real antes de dar los tests por buenos.
+
+- run: '2026-09-30T13:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    Implementado y visto en local sin escribir en producción: la instantánea se calculó en local con los datos
+    reales y se sirvió a la web interceptando la petición; el resumen se imprimió con local_stack --seco.
+    Cambios pedidos por el dueño a mitad: las estrellas pesan más que el tiempo (ranking del nivel, regla de
+    mejora en la base de datos, puntos por puesto y ganador del resumen); un fin de semana no crea nivel, así
+    que el del viernes se juega hasta el lunes; una línea en blanco entre el título y cada podio.
+
+    Mutación, once errores derivados de lo que prohíben los deltas, cada uno en rojo en su escenario. Dos
+    tests del podio buscaban cada podio por su posición —el segundo bloque de código era «el del juego»— y un
+    cambio de orden los tumbaba a todos; ahora buscan por título. Dependencias legítimas declaradas: quitar el
+    filtro de días de temporada cambia también cuántos niveles lleva el mes. Un `checks:` con YAML inválido se
+    descartaba en silencio (lección del 2026-09-30).
+
+- run: '2026-09-30T14:00:00Z'
+  fase: gate-4d
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    adversarial: pass-tras-correccion
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    Refutación sostenida: «ya no puede alcanzarle» en el SuperWordleBros podía ser falso. Se contaban 10 puntos
+    por el nivel abierto como si estuviera vacío, pero ya tiene marcas y sigue admitiéndolas: el 2º puede subir
+    hasta 10 desde lo que tenga y el líder caer hasta 1. Ahora la cota es exacta (test con el contraejemplo del
+    verificador: 28 de ventaja, 20 «en juego», vuelco posible 29). Además: con la cabeza del juego empatada se
+    nombra a todos; con el 2º compartido, a todos los segundos (juego y general); los ganadores del nivel en
+    orden estable; la línea de empate en cabeza con tope de tres nombres; los acentos graves de un nombre ya no
+    cierran el bloque de código. Cada arreglo con su test, en rojo antes.
+
+- run: '2026-09-30T14:30:00Z'
+  fase: gate-4e
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    seguridad: pass-tras-correccion
+    tests: pass
+  rondas_correccion: 1
+  notas: >-
+    La revisión aprueba la migración (search_path vacío, todo cualificado, revoke/grant intactos, sin forma de
+    pisar la marca de otro) y el escapado HTML de la web. H-1: los nombres son nombres de perfil de Slack, que
+    cualquiera cambia, y entraban sin escapar en el mensaje que el bot publica solo; `<!channel>` avisaría a
+    todo el canal, y esta rama añadía líneas fuera de bloques de código. Ya existía antes, pero se arregla
+    aquí y en un solo punto: `upload_to_slack` escapa `&`, `<` y `>` de todo lo que sube (resumen y podio de
+    cierre), con un test que dobla el cliente de Slack. M-1: el log público dice el tipo de error, no el error.
+    L-1 (dos copias de `escapar` en la web) queda anotado, sin cambio.

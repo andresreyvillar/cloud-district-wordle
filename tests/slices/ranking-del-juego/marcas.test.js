@@ -213,10 +213,10 @@ test('se ordena por tiempo y se muestra el nombre del grupo', () => {
 });
 
 /** @scenarios un-ranking-por-nivel */
-test('dos tiempos iguales comparten puesto y el siguiente salta', () => {
+test('las mismas estrellas y el mismo tiempo comparten puesto y el siguiente salta', () => {
   const tabla = clasificacionDelNivel([
-    { jugador: 'U_CAR', segundos: 50, estrellas: 0 },
-    { jugador: 'U_ANA', segundos: 40, estrellas: 1 },
+    { jugador: 'U_CAR', segundos: 50, estrellas: 2 },
+    { jugador: 'U_ANA', segundos: 40, estrellas: 2 },
     { jugador: 'U_BEA', segundos: 40, estrellas: 2 },
   ], JUGADORES);
 
@@ -290,4 +290,52 @@ test('tras un fallo se puede volver a terminar y guardar', async () => {
 
   assert.equal(segundo.estado, 'mejora');
   assert.equal(enviadas.length, 2);
+});
+
+/** @scenarios terminar-un-nivel-cerrado-lo-dice */
+test('una marca rechazada por nivel cerrado lo dice y pide recargar', async () => {
+  const control = controlDelRanking({
+    api: api(new Error('Supabase: ese nivel ya está cerrado')), jornada: 1722, total: 2,
+  });
+  await control.elegir('U_BEA');
+
+  const { estado, texto } = await control.terminar({ segundos: 40, estrellas: 1 });
+
+  assert.equal(estado, 'cerrado');
+  assert.match(texto, /nivel ya está cerrado/);
+  assert.match(texto, /[Rr]ecarga/);
+  assert.ok(!/no se ha podido guardar/.test(texto), 'no es el aviso genérico de fallo');
+});
+
+/** @scenarios un-ranking-por-nivel */
+test('las estrellas pesan más que el tiempo', () => {
+  // El caso real: 9 estrellas en 0:12.03 no puede ir por delante de 13 estrellas en 0:13.00.
+  const tabla = clasificacionDelNivel([
+    { jugador: 'U_ANA', segundos: 12.03, estrellas: 9 },
+    { jugador: 'U_BEA', segundos: 13, estrellas: 13 },
+    { jugador: 'U_CAR', segundos: 11.74, estrellas: 13 },
+  ], JUGADORES);
+
+  assert.deepEqual(tabla.map((f) => [f.puesto, f.jugador]), [[1, 'U_CAR'], [2, 'U_BEA'], [3, 'U_ANA']]);
+});
+
+/** @scenarios un-ranking-por-nivel */
+test('mismo tiempo con distintas estrellas no es empate', () => {
+  const tabla = clasificacionDelNivel([
+    { jugador: 'U_ANA', segundos: 40, estrellas: 1 },
+    { jugador: 'U_BEA', segundos: 40, estrellas: 2 },
+  ], JUGADORES);
+
+  assert.deepEqual(tabla.map((f) => [f.puesto, f.jugador]), [[1, 'U_BEA'], [2, 'U_ANA']]);
+});
+
+/** @scenarios solo-se-sobrescribe-si-mejora */
+test('si no mejora, dice la marca que se queda con sus estrellas', async () => {
+  const control = controlDelRanking({ api: api({ mejora: false, segundos: 15, estrellas: 13 }), jornada: 1722, total: 20 });
+  await control.elegir('U_BEA');
+
+  const { texto } = await control.terminar({ segundos: 12, estrellas: 9 });
+
+  assert.match(texto, /13/);
+  assert.match(texto, /0:15\.00/);
 });

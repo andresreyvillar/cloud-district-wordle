@@ -152,7 +152,9 @@ def temporadas(resultados: list[dict]) -> list[dict]:
     ]
 
 
-def instantanea(resultados: list[dict], temporada: str, version: str = "") -> dict:
+def instantanea(
+    resultados: list[dict], temporada: str, version: str = "", niveles=(), marcas=()
+) -> dict:
     """La carga útil que se materializa para una temporada.
 
     Solo el modelo: qué días la forman, cuántos resultados cuentan y quién participó. **No ordena a nadie** —
@@ -171,6 +173,7 @@ def instantanea(resultados: list[dict], temporada: str, version: str = "") -> di
     # Imports locales para no crear ciclos: los módulos importan de este.
     from album import album
     from badges import medallas_de_temporada, medallas_permanentes
+    from juego import clasificacion_del_juego
     from rules import catalogo, como_json
     from standings import clasificacion, dificultad_por_dia
 
@@ -222,6 +225,9 @@ def instantanea(resultados: list[dict], temporada: str, version: str = "") -> di
         # El segundo ranking, el de figuras. Independiente del de puntuación por decisión explícita: no
         # entra en `clasificacion` ni la altera.
         "album": album(resultados, temporada),
+        # El tercero, el del SuperWordleBros: puntos por puesto en cada nivel del mes (slice
+        # `clasificacion-del-juego`). Niveles y marcas llegan del borde, como los resultados.
+        "juego": clasificacion_del_juego(resultados, list(niveles), list(marcas), temporada),
         # La procedencia del cálculo, no un dato del juego. Cadena vacía si quien materializa no la sabe:
         # inventarse un valor sería peor que declarar que no consta.
         "calculado_con": version,
