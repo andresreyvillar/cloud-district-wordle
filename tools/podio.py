@@ -79,6 +79,7 @@ def texto(resultados: list[dict], temporada: str, jornada: int) -> str:
     """
     from refranero import NUEVA_TEMPORADA, PODIO_CAMPEON, PODIO_CAMPEONES
     from resumen import _cifra
+    from podios import podio_de_texto
     from voz import _del_ciclo, con_nombre
 
     tabla = podio_de(resultados, temporada)
@@ -90,20 +91,19 @@ def texto(resultados: list[dict], temporada: str, jornada: int) -> str:
     lineas = [
         f"Ya tenemos los resultados de *Cloud District Wordle* del mes de {mes_y_año(temporada)} 🎉",
         "",
-        # El mes va **solo en la presentación**: con `etiqueta()` completa aquí, «agosto de 2026» salía dos
-        # veces en dos líneas seguidas.
-        f"🏆 *Así queda el podio · Temporada {ordinal(temporada)}*",
-        "",
+        # **El mismo podio ASCII que el resumen diario** (decisión del dueño): el 1º en el centro y más alto, y
+        # con un empate en cabeza los campeones juntos en ese escalón —la lista de medallas de antes ponía al
+        # segundo campeón debajo, con un «·», como si fuera menos—. El mes va **solo en la presentación**: con
+        # `etiqueta()` completa aquí, «agosto de 2026» salía dos veces en dos líneas seguidas. La coma decimal
+        # la pone `_cifra`, solo en el número: «Andrés R.» no puede acabar en «Andrés R,».
+        podio_de_texto(
+            f"🏆 *Así queda el podio · Temporada {ordinal(temporada)}*",
+            [
+                {"posicion": fila["posicion"], "nombre": fila["nombre"], "cifra": _cifra(fila["media_temporada"])}
+                for fila in tabla
+            ],
+        ),
     ]
-    medalla = {1: "🥇", 2: "🥈", 3: "🥉"}
-    anterior = None
-    for fila in tabla:
-        marca = medalla.get(fila["posicion"], "  ") if fila["posicion"] != anterior else "  ·"
-        anterior = fila["posicion"]
-        # La coma decimal se pone **solo en el número**. Aplicando `replace(".", ",")` a la línea entera,
-        # «Andrés R.» salía como «Andrés R,»: varios nombres del grupo acaban en punto. Se reutiliza `_cifra`
-        # del compositor en lugar de repetir el formateo, que es donde se cometió el fallo.
-        lineas.append(f"{marca} {fila['nombre']} — {_cifra(fila['media_temporada'])}")
 
     quienes = campeones(tabla)
     if quienes:
