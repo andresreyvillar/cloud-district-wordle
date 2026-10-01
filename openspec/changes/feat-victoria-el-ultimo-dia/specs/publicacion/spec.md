@@ -51,15 +51,16 @@ verified-by:
 
 ### Requirement: Desde octubre la victoria corona a los tres campeones
 
-Si la temporada que cierra es de octubre de 2026 en adelante, el mensaje de la victoria corona, además del
-marcador, al campeón del SuperWordleBros (por puntos) y al de figuras (por puntos por partida). Los empates se
+Si la temporada que cierra es de octubre de 2026 en adelante, el mensaje de la victoria dibuja, además del
+podio del marcador, **el podio del SuperWordleBros y el de figuras** —el mismo podio ASCII del resumen diario,
+en ese orden— y corona a sus campeones: el del juego por puntos y el de figuras por puntos por partida. Los empates se
 comparten en una frase en plural; una competición sin nadie clasificado no corona a nadie. Antes de octubre, el
 mensaje no cambia.
 
 #### Scenario: octubre corona a los tres
 - GIVEN una temporada 2026-10 cerrada con campeón en las tres competiciones
 - WHEN se compone la victoria
-- THEN hay una línea para el campeón del SuperWordleBros y otra para el de figuras, además del podio del marcador
+- THEN hay tres podios —marcador, SuperWordleBros y figuras— y una línea que corona al campeón de cada uno
 
 #### Scenario: septiembre corona solo el marcador
 - GIVEN la temporada 2026-09 con juego y figuras

@@ -26,3 +26,19 @@
     juego entra ahora por parámetro y solo se lee desde octubre. El verificador no refuta ninguno de los
     cuatro puntos; anotados: un dispatch manual durante el último día adelantaría la victoria, y si el mes
     acaba en fin de semana la despedida «arranca el mes» sale un día antes.
+
+- run: '2026-10-01T07:40:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    tests: pass
+    mutacion: pass
+    gates-mecanicos: pass
+  rondas_correccion: 0
+  notas: >-
+    El podio de septiembre salió solo con el marcador, como estaba decidido (tres campeones desde octubre).
+    El dueño quiere que desde octubre el cierre lleve los tres podios ASCII, como el resumen diario: el del
+    SuperWordleBros y el de figuras se dibujan tras el del marcador, cada uno con la línea que corona a su
+    campeón. Septiembre se queda como salió. Mutación: quitar el podio del juego y dejar solo la línea →
+    rojo en los-tres-campeones-desde-octubre.

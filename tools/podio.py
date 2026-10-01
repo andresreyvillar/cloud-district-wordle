@@ -81,33 +81,49 @@ def _juntos(nombres: list[str]) -> str:
 
 
 def _otros_campeones(resultados: list[dict], temporada: str, niveles, marcas) -> list[str]:
-    """Las líneas de los campeones del SuperWordleBros y de figuras, desde octubre de 2026. Un empate se
-    comparte en plural, como en el marcador; una competición sin nadie no corona a nadie."""
+    """Los podios del SuperWordleBros y de figuras, con la línea que corona a cada campeón, desde octubre de 2026.
+
+    **El mismo podio ASCII que el resumen diario**, en el mismo orden —juego y figuras tras el marcador—: el
+    cierre de mes cuenta las tres competiciones igual que se cuentan cada noche. Un empate se comparte en
+    plural; una competición sin nadie no dibuja podio ni corona a nadie.
+    """
     from album import album
     from juego import clasificacion_del_juego
+    from podios import podio_de_texto
     from resumen import _cifra
 
     if temporada == TEMPORADA_CERO or temporada < DESDE_TRES_COMPETICIONES:
         return []
-    lineas = []
+    bloques = []
+
     juego = clasificacion_del_juego(resultados, list(niveles), list(marcas), temporada)["clasificacion"]
     cabeza = [f for f in juego if f["posicion"] == 1]
     if cabeza:
-        puntos = cabeza[0]["puntos"]
-        nombres = _juntos([f["nombre"] for f in cabeza])
-        lineas.append(
+        podio = podio_de_texto(
+            "🕹️ *Así queda el SuperWordleBros*",
+            [{"posicion": f["posicion"], "nombre": f["nombre"], "cifra": f"{f['puntos']} pts"} for f in juego if f["posicion"] <= 3],
+        )
+        puntos, nombres = cabeza[0]["puntos"], _juntos([f["nombre"] for f in cabeza])
+        corona = (
             f"🎮 Campeón del SuperWordleBros: {nombres}, con {puntos} puntos." if len(cabeza) == 1
             else f"🎮 {nombres} comparten el primer puesto del SuperWordleBros, con {puntos} puntos."
         )
-    figuras = [f for f in album(resultados, temporada)["jugadores"] if f["clasificado"] and f["posicion"] == 1]
-    if figuras:
-        media = _cifra(figuras[0]["media"])
-        nombres = _juntos([f["nombre"] for f in figuras])
-        lineas.append(
-            f"🎨 Campeón de figuras: {nombres}, con {media} puntos por partida." if len(figuras) == 1
+        bloques.append(f"{podio}\n\n{corona}")
+
+    figuras = [f for f in album(resultados, temporada)["jugadores"] if f["clasificado"]]
+    primeros = [f for f in figuras if f["posicion"] == 1]
+    if primeros:
+        podio = podio_de_texto(
+            "🖼️ *Así queda el álbum de figuras*",
+            [{"posicion": f["posicion"], "nombre": f["nombre"], "cifra": f"{_cifra(f['media'])} pts"} for f in figuras if f["posicion"] <= 3],
+        )
+        media, nombres = _cifra(primeros[0]["media"]), _juntos([f["nombre"] for f in primeros])
+        corona = (
+            f"🎨 Campeón de figuras: {nombres}, con {media} puntos por partida." if len(primeros) == 1
             else f"🎨 {nombres} comparten el primer puesto de figuras, con {media} puntos por partida."
         )
-    return lineas
+        bloques.append(f"{podio}\n\n{corona}")
+    return bloques
 
 
 def texto(
@@ -160,9 +176,8 @@ def texto(
             lucidas = " ".join(POR_CLAVE[clave].emoji for clave in insignias)
             lineas.append(f"Se lleva además {lucidas} de la temporada.")
 
-    otros = _otros_campeones(resultados, temporada, niveles or (), marcas or ())
-    if otros:
-        lineas += ["", *otros]
+    for bloque in _otros_campeones(resultados, temporada, niveles or (), marcas or ()):
+        lineas += ["", bloque]
 
     if ultima_jornada:
         lineas += ["", ultima_jornada]

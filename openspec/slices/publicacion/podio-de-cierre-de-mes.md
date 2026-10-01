@@ -96,8 +96,9 @@ obra del día
 
 ### los-tres-campeones-desde-octubre
 **WHEN** la temporada que cierra es de octubre de 2026 en adelante
-**THEN** además del marcador, el mensaje corona al campeón del SuperWordleBros y al de figuras, con los empates
-compartidos; una competición sin nadie clasificado no corona a nadie
+**THEN** además del marcador, el mensaje dibuja el podio del SuperWordleBros y el de figuras —el mismo podio ASCII
+del resumen diario, en ese orden— y corona a sus campeones, con los empates compartidos; una competición sin
+nadie clasificado no dibuja podio ni corona a nadie
 
 ### el-cierre-no-se-publica-dos-veces
 **WHEN** el canal ya tiene el podio de ese mes

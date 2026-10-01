@@ -213,3 +213,29 @@ def test_desde_cuando_se_coronan_los_tres_es_lo_mismo_en_el_mensaje_y_en_la_web(
     [en_la_web] = re.findall(r"DESDE_TRES_COMPETICIONES = '([0-9-]+)'", archivo)
 
     assert DESDE_TRES_COMPETICIONES == en_la_web
+
+
+# @scenarios los-tres-campeones-desde-octubre
+def test_octubre_dibuja_los_tres_podios_como_el_resumen():
+    from podio import texto
+
+    mensaje = texto(OCTUBRE, "2026-10", jornada_de("2026-10-30"), NIVELES_DE_OCTUBRE, MARCAS_DE_OCTUBRE)
+    marcador, juego, figuras = mensaje.split("```")[1::2]
+
+    assert all("█" in podio for podio in (marcador, juego, figuras)), "tres podios de bloques macizos"
+    assert "Cris" in juego and "20 pts" in juego
+    from album import album
+
+    lider = next(f for f in album(OCTUBRE, "2026-10")["jugadores"] if f["clasificado"] and f["posicion"] == 1)
+    assert lider["nombre"] in figuras and "pts" in figuras
+    assert mensaje.index("SuperWordleBros") < mensaje.index("figuras"), "el juego antes que las figuras"
+
+
+# @scenarios los-tres-campeones-desde-octubre
+def test_septiembre_solo_dibuja_el_podio_del_marcador():
+    from podio import texto
+
+    septiembre = mes("2026-09-01", "2026-09-30")
+    mensaje = texto(septiembre, "2026-09", jornada_de("2026-09-30"), [nivel("2026-09-25")], [marca("2026-09-25", "Cris", 30)])
+
+    assert len(mensaje.split("```")[1::2]) == 1
