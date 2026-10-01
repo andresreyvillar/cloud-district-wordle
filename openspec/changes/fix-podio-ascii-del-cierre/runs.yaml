@@ -1,0 +1,18 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-01T07:20:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    A petición del dueño, el mismo día del podio de septiembre: dos campeones, juntos en lo más alto. El test
+    primero comparaba la fila de los campeones con la del tercero, pero con cuatro empatados en el 3º sus
+    nombres se apilan a la misma altura; lo que se comprueba es que los campeones van encima del escalón más
+    alto. Mutación: dejar fuera al segundo campeón → rojo en el-podio-se-dibuja-como-el-del-resumen.

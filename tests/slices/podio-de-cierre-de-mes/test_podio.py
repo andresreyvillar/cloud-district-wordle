@@ -97,7 +97,7 @@ def test_se_felicita_al_campeon_y_se_enseñan_sus_medallas():
     filas = AGOSTO_JUGADO + SEPTIEMBRE_JUGADO
     mensaje = texto(filas, "2026-08", 6)
     assert "Ana" in mensaje
-    assert "🥇" in mensaje and "🥈" in mensaje
+    assert "```" in mensaje and "█" in mensaje, "el podio va dibujado, como en el resumen diario"
     insignias = medallas_del_campeon(filas, "2026-08", "Ana")
     assert insignias, "Ana gana algo en el mes"
     from badges import POR_CLAVE
@@ -306,3 +306,24 @@ def test_con_tres_empatados_ninguna_frase_da_por_hecho_que_son_dos():
         felicitacion = next(l for l in mensaje.splitlines() if l.startswith("👑"))
         assert "Ana, Bea y Cris" in felicitacion
         assert not any(dual in felicitacion.lower() for dual in duales), felicitacion
+
+
+# @scenarios el-podio-se-dibuja-como-el-del-resumen
+def test_el_podio_de_cierre_se_dibuja_con_los_dos_campeones_en_lo_mas_alto():
+    """Septiembre de 2026 acabó con dos campeones: los dos van en el escalón central, el más alto."""
+    from podios import COLUMNA
+
+    empatados = _mes(AGOSTO, [{"Ana": 2, "Bea": 2, "Cris": 5}] * 5)
+    mensaje = texto(empatados + SEPTIEMBRE_JUGADO, "2026-08", 6)
+
+    podio = mensaje.split("```")[1].strip("\n").splitlines()
+    assert any("█" in linea for linea in podio)
+    centro = [linea[COLUMNA + 1:2 * COLUMNA + 1] for linea in podio]
+    assert any("Ana" in c for c in centro) and any("Bea" in c for c in centro), "los dos en la columna central"
+    # Encima de su escalón, que es el más alto: el bloque central empieza antes que ningún otro.
+    fila_de = lambda nombre: next(i for i, linea in enumerate(podio) if nombre in linea)  # noqa: E731
+    escalon_central = next(i for i, c in enumerate(centro) if "█" in c)
+    primer_bloque = next(i for i, linea in enumerate(podio) if "█" in linea)
+    assert escalon_central == primer_bloque, "el escalón de los campeones es el más alto"
+    assert fila_de("Ana") < escalon_central and fila_de("Bea") < escalon_central
+    assert "🥇" not in mensaje and "🥈" not in mensaje, "sin la lista de medallas de antes"

@@ -57,6 +57,12 @@ a quien ganó un mes ya celebrado.
 **WHEN** dos personas empatan en un puesto del podio
 **THEN** suben las dos, porque cortar por número de filas partiría el empate por la mitad.
 
+### el-podio-se-dibuja-como-el-del-resumen
+**WHEN** se compone el podio del mes que cierra
+**THEN** se dibuja con el mismo podio ASCII de bloques macizos del resumen diario, dentro de un bloque de código:
+el 1º en el centro y más alto, con todos los empatados en su escalón —dos campeones, juntos en lo más alto—, el
+2º a la izquierda y el 3º a la derecha, cada uno con su media
+
 ### el-mensaje-abre-presentando-el-juego-y-el-mes
 **WHEN** se publica el cierre de mes
 **THEN** la primera línea dice de qué juego y de qué mes son los resultados, porque el mensaje sale una vez al
