@@ -1,0 +1,30 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-02T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 2
+  notas: >-
+    El dueño pide sustituir la pestaña Reglas por una pestaña Info que explique cómo se juega, las
+    competiciones y lo que publica el bot, con una sección solo de reglas vigentes. Decide: propuestas fuera
+    de la web, Info solo con las vigentes y las rutas viejas a /info.
+
+    Mutación: la histórica cuenta como vigente → rojo solo en solo-se-ensenan-las-reglas-vigentes; una cifra
+    escrita a mano en la explicación → rojo solo en la-explicacion-no-lleva-numeros; /reglas deja de
+    resolver a Info → rojo en los-enlaces-viejos-llevan-a-info y en los dos tests del router que comprueban
+    esa misma ruta.
+
+    Correcciones: en el navegador, el índice de ejes llevaba a la portada por el <base href> (el fallo venía
+    de la pestaña Reglas) y las rutas viejas dejaban /reglas en la barra de direcciones; los dos se arreglan
+    en app.js y se comprueban a mano, sin test automático. El verificador refuta «cada noche» (no hay resumen
+    en fin de semana) y señala texto viejo en el slice y dos etiquetas @scenarios infladas; corregido.
+    Anotado: si el último laborable no llega a cinco jugadores, no crea nivel, y el nivel anterior se juega
+    en el mes nuevo pero puntúa en el viejo.

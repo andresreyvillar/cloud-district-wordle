@@ -5,10 +5,10 @@
  * calcula recibe la temporada y los resultados por parámetro, y por eso se puede verificar con datos fijos.
  */
 
-import { conBase, configurarBase, resolver, VISTAS } from './router.js';
+import { conBase, configurarBase, resolver, rutaDe, VISTAS } from './router.js';
 import { animar, movimientoReducido, seguirScroll } from './ui/animacion.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
-import { pintarReglas } from './ui/reglas.js';
+import { pintarInfo } from './ui/info.js';
 import { pintarDatos } from './ui/datos.js';
 import { pintarHoy } from './ui/hoy.js';
 import { desmontarJuego, pintarJuego } from './ui/juego.js';
@@ -115,11 +115,9 @@ function despachar(destino, resultados, instantaneas) {
     pintarJugador(vista, instantaneas, actual, destino.jugador);
     return;
   }
-  if (destino.vista === VISTAS.REGLAS) {
-    // Las reglas viajan con la temporada: se leen de la que se esté mirando, así que una cerrada
-    // explica las que se le aplicaron y no las de hoy.
-    const carga = instantaneas.get(actual);
-    pintarReglas(vista, carga?.reglas, actual);
+  if (destino.vista === VISTAS.INFO) {
+    // Las reglas vigentes son las de la temporada en curso: Info cuenta cómo se juega hoy.
+    pintarInfo(vista, instantaneas.get(actual)?.reglas);
     return;
   }
   pintarPendiente(vista, { ...destino, temporada: actual }, PENDIENTES[destino.vista]);
@@ -161,8 +159,22 @@ export async function arrancar() {
     return;
   }
 
-  pintar(resolver(window.location.pathname), resultados, instantaneas);
+  const inicial = resolver(window.location.pathname);
+  // Los enlaces viejos a `/reglas` siguen funcionando, pero la barra dice dónde se está: en `/info`.
+  if (inicial.vista === VISTAS.INFO) {
+    window.history.replaceState({}, '', rutaDe(inicial) + window.location.hash);
+  }
+  pintar(inicial, resultados, instantaneas);
   seguirScroll();
+
+  // Un ancla salta dentro de la vista. Sin esto, el `<base href="/2/">` resuelve `#eje-…` contra la portada
+  // y el índice de ejes sacaba de la página.
+  document.addEventListener('click', (evento) => {
+    const ancla = evento.target.closest('a[href^="#"]');
+    if (!ancla) return;
+    evento.preventDefault();
+    document.getElementById(ancla.getAttribute('href').slice(1))?.scrollIntoView();
+  });
 
   // Los enlaces internos se interceptan para que el router los resuelva sin ir al servidor.
   document.addEventListener('click', (evento) => {

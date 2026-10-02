@@ -9,8 +9,8 @@
  *     /temporadas               archivo + medallero
  *     /hoy                      el día en curso
  *     /datos                    tabla cruda
- *     /reglas                   las reglas de la temporada en curso
- *     /t/<AAAA-MM>/reglas       las reglas con las que se calculó esa temporada
+ *     /info                     cómo se juega, las competiciones y las reglas vigentes
+ *     /reglas, /t/<AAAA-MM>/reglas   llevan a /info: las reglas ya no se enseñan por temporada
  *
  * Función **pura**: entra una cadena, sale un objeto. No toca el DOM, no lee `location` y no consulta la
  * red, y por eso se verifica con `node --test` sin navegador.
@@ -66,7 +66,7 @@ export const VISTAS = Object.freeze({
   HOY: 'hoy',
   DATOS: 'datos',
   JUEGO: 'juego',
-  REGLAS: 'reglas',
+  INFO: 'info',
   JUGADOR: 'jugador',
   DESCONOCIDA: 'desconocida',
 });
@@ -106,8 +106,9 @@ export function resolver(ruta) {
     // El juego no depende de la temporada que se esté mirando: su nivel es el de la última jornada cerrada.
     return { vista: VISTAS.JUEGO };
   }
-  if (primero === 'reglas' && resto.length === 0) {
-    return { vista: VISTAS.REGLAS, temporada: null };
+  // `/reglas` era la pestaña de antes: lleva a Info, para que ningún enlace viejo dé error.
+  if ((primero === 'info' || primero === 'reglas') && resto.length === 0) {
+    return { vista: VISTAS.INFO, temporada: null };
   }
 
   if (primero === 't' && TEMPORADA_RE.test(resto[0] || '')) {
@@ -121,7 +122,7 @@ export function resolver(ruta) {
     // Las reglas viven dentro del eje de la temporada: una cerrada conserva las que se le aplicaron, y sin
     // la temporada en la ruta ese escenario es inalcanzable.
     if (resto.length === 2 && resto[1] === 'reglas') {
-      return { vista: VISTAS.REGLAS, temporada };
+      return { vista: VISTAS.INFO, temporada: null };
     }
   }
 
@@ -170,8 +171,8 @@ function _rutaInterna(destino) {
     // funcionaba (`resolver` sí conoce `/juego`) y pulsar la pestaña no.
     case VISTAS.JUEGO:
       return '/juego';
-    case VISTAS.REGLAS:
-      return destino.temporada ? `/t/${destino.temporada}/reglas` : '/reglas';
+    case VISTAS.INFO:
+      return '/info';
     default:
       return '/';
   }
