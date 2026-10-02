@@ -14,6 +14,7 @@ import { alturaEnEscala, escalaDeDistribucion } from '../data/escala.js';
 import { ficha } from '../data/ficha.js';
 import { escapar } from './shell.js';
 import { tiraDeFiguras } from './temporada.js';
+import { nombreVisible } from '../domain/apodos.js';
 
 const COLOR = { bueno: '#3DE07A', medio: '#FFD23F', malo: '#8B5CFF', fallo: '#FF4D6D' };
 const FALLO = 7;
@@ -298,7 +299,7 @@ export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
       : '<p>No hay resultados suyos en ninguna temporada.</p>';
     contenedor.innerHTML = `
       <section class="vacio">
-        <h1>${escapar(f.nombre)}</h1>
+        <h1>${escapar(nombreVisible(f.nombre))}</h1>
         <p class="serif">No jugó ninguna jornada de ${escapar(f.etiqueta)}.</p>
         ${otras}
         <p><a href="${escapar(conBase(`/t/${temporada}`))}">Volver al marcador</a></p>
@@ -316,7 +317,7 @@ export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
       <header class="titular">
         <div>
           ${puesto}
-          <h1>${escapar(f.nombre)}</h1>
+          <h1>${escapar(nombreVisible(f.nombre))}</h1>
           <p class="serif">${escapar(f.etiqueta)} · ${escapar(f.estado ?? '')}</p>
         </div>
         <div class="hud">${hud(f)}</div>

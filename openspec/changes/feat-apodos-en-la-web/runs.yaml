@@ -1,0 +1,31 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-02T11:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 2
+  notas: >-
+    El dueño quiere que la web llame a Carrillo «C̶a̶r̶r̶i̶l̶l̶o̶ ChatGPT». Decide: solo la web, tachado Unicode,
+    hasta que lo quite, y también en la etiqueta del nivel del SuperWordleBros. El apodo es presentación: se
+    aplica al pintar (diecisiete puntos en v2/js/ui) y no al cargar, porque medallas y archivo cruzan por
+    nombre. Comprobado en Chromium con los datos reales: temporada, hoy, datos, juego y ficha, ningún
+    «Carrillo» suelto.
+
+    Mutación: nombreVisible sin apodos → rojo en los escenarios del apodo; el motor con el nivel sin apodos →
+    rojo solo en el-nivel-del-juego-pinta-el-apodo; los logros sin apodo → rojo en el de cada vista y en la
+    auditoría; el selector con el nombre como valor → rojo en la-identidad-no-cambia (y en recordar al
+    jugador). Corrección: el test del montaje casaba con un comentario; y un primer mutante del selector era
+    equivalente (el apodo va por nombre, no por id) y se cambió por uno que sí rompe la identidad.
+
+    El verificador no refuta ninguno de los cinco puntos y señala huecos en la auditoría por regex (un nombre
+    en una variable con otro nombre, un escapar partido en dos líneas): se añaden tests que pintan Hoy, la
+    ficha y Datos de verdad, y uno que elige al apodado en el selector y comprueba que la marca va con su id.
+    Mutarlos (quitar el apodo de cada una de esas vistas) pone en rojo el test nuevo.

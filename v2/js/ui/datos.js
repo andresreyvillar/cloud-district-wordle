@@ -10,6 +10,7 @@
 
 import { filasDeDatos } from '../data/tabla.js';
 import { escapar } from './shell.js';
+import { nombreVisible } from '../domain/apodos.js';
 
 const MOTIVOS = {
   muestra: 'ese día no llegó al mínimo de jugadores',
@@ -41,7 +42,7 @@ export function pintarDatos(contenedor, resultados, instantaneas) {
       return `
         <tr${f.cuenta === false ? ' class="descartada"' : ''}>
           <td class="mono">${escapar(f.fecha)}</td>
-          <td>${escapar(f.nombre)}</td>
+          <td>${escapar(nombreVisible(f.nombre))}</td>
           <td class="mono">#${f.jornada}</td>
           <td class="mono der${f.fallo ? ' fallo' : ''}">${escapar(f.marca)}</td>
           <td>${marca}</td>
