@@ -418,3 +418,24 @@ le liaba: una regla «sin decidir» al lado de una que sí se aplica se leía co
 (`#eje-…`) llevaba a la portada, y el fallo ya estaba en la pestaña vieja. El verificador, por su parte,
 cazó un «cada noche» que no era verdad: el resumen no sale los fines de semana. Una página que explica las
 reglas tiene que poder comprobarse contra el código, también en la prosa.
+
+## 2026-10-02 — Un apodo es presentación, no identidad
+
+**Qué.** La web puede pintar a un jugador con un apodo declarado. El primero es Carrillo, que juega estos días
+con ChatGPT y en la web sale como «C̶a̶r̶r̶i̶l̶l̶o̶ ChatGPT». Slack no cambia.
+
+**Por qué importa.** Es una broma, pero toca la parte más frágil del sistema: quién es quién.
+
+**Decisiones.**
+- **Al pintar, no al cargar.** En la web la identidad es el id de Slack, pero medallas y archivo cruzan por
+  nombre. Un apodo puesto al cargar los datos les habría quitado sus medallas a los apodados sin que nada
+  fallara.
+- **Tachado Unicode** (decisión del dueño): es texto plano, así que vale igual en el HTML, en un `<option>` y
+  en el lienzo del juego.
+- **El motor no se toca.** La vista le pasa una copia del nivel con las etiquetas apodadas, y el nivel
+  congelado sigue igual.
+
+**Aprendizaje.** No había un componente común para pintar nombres: el mismo patrón estaba copiado en
+diecisiete sitios. La auditoría por regex que obliga a pasar por `nombreVisible` es la red que suple esa
+falta. Además, un mutante equivalente, que cambiaba algo que nunca podía cambiar, parecía una prueba superada
+y no probaba nada.

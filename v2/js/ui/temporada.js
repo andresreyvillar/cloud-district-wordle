@@ -16,6 +16,7 @@ import { albumDeTemporada } from '../data/album.js';
 import { alturaDeIntentos } from '../data/escala.js';
 import { rutaDeFicha } from '../data/ficha.js';
 import { escapar } from './shell.js';
+import { nombreVisible } from '../domain/apodos.js';
 
 /** La paleta de la maqueta: el color dice el resultado de un vistazo. */
 const COLOR = { bueno: '#3DE07A', medio: '#FFD23F', malo: '#8B5CFF', fallo: '#FF4D6D' };
@@ -112,7 +113,7 @@ function podio(tabla, temporada) {
           <span class="pos">${fila.posicion}º</span>
           <span class="avg">${escapar(cifra(fila.media_temporada))}</span>
         </div>
-        <a class="nombre" href="${escapar(rutaDeFicha(temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
+        <a class="nombre" href="${escapar(rutaDeFicha(temporada, fila.jugador))}">${escapar(nombreVisible(fila.nombre))}</a>
         ${fila.por_dia.length <= 40 ? `<div class="tiras">${tira(fila.por_dia, 20)}</div>` : ''}
         <span class="detalle">${fila.jugados} de ${fila.dias} jornadas · media jugada ${escapar(cifra(fila.media_jugada))}</span>
       </div>`,
@@ -160,7 +161,7 @@ export function titular(clasificados) {
   const empatados = filas.filter((fila) => fila.posicion === lider.posicion);
 
   if (empatados.length === 2) {
-    return `${escapar(empatados[0].nombre)} y ${escapar(empatados[1].nombre)} van empatados a
+    return `${escapar(nombreVisible(empatados[0].nombre))} y ${escapar(nombreVisible(empatados[1].nombre))} van empatados a
       ${escapar(nota)} de media: la temporada se decide entre los dos.`;
   }
   if (empatados.length > 2) {
@@ -170,16 +171,16 @@ export function titular(clasificados) {
 
   const siguiente = filas.find((fila) => fila.posicion !== lider.posicion);
   if (!siguiente) {
-    return `${escapar(lider.nombre)} lidera con ${escapar(nota)} de media por día.`;
+    return `${escapar(nombreVisible(lider.nombre))} lidera con ${escapar(nota)} de media por día.`;
   }
 
   const ventaja = siguiente.media_temporada - lider.media_temporada;
   if (ventaja <= VENTAJA_MINIMA) {
-    return `${escapar(lider.nombre)} lidera con ${escapar(nota)}, pero ${escapar(siguiente.nombre)} le
+    return `${escapar(nombreVisible(lider.nombre))} lidera con ${escapar(nota)}, pero ${escapar(nombreVisible(siguiente.nombre))} le
       respira en el cuello a ${escapar(cifra(ventaja))}.`;
   }
-  return `${escapar(lider.nombre)} lidera con ${escapar(nota)} de media por día y
-    ${escapar(siguiente.nombre)} le sigue a ${escapar(cifra(ventaja))}.`;
+  return `${escapar(nombreVisible(lider.nombre))} lidera con ${escapar(nota)} de media por día y
+    ${escapar(nombreVisible(siguiente.nombre))} le sigue a ${escapar(cifra(ventaja))}.`;
 }
 
 export function marcaDePuesto(posicion, anterior) {
@@ -206,7 +207,7 @@ export function filaDeMarcador(fila, temporada, anterior = null) {
       <div class="fila${sinClasificar ? ' sin-clasificar' : ''}">
         <i class="acento" style="background:${acento}"></i>
         ${marcaDePuesto(sinClasificar ? null : fila.posicion, anterior)}
-        <a class="nom" href="${escapar(rutaDeFicha(temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
+        <a class="nom" href="${escapar(rutaDeFicha(temporada, fila.jugador))}">${escapar(nombreVisible(fila.nombre))}</a>
         <span class="tiras">${fila.por_dia.length <= 40 ? tira(fila.por_dia, 14) : ''}</span>
         <span class="num fuerte">${escapar(cifra(fila.media_temporada))}</span>
         <span class="num suave">${escapar(cifra(fila.media_jugada))}</span>
@@ -302,7 +303,7 @@ function logros(carga) {
         </header>
         <h3>${escapar(logro.nombre)}</h3>
         <p>${escapar(logro.regla)}</p>
-        <span class="quienes">${quienes.length ? escapar(quienes.join(', ')) : '—'}</span>
+        <span class="quienes">${quienes.length ? escapar(quienes.map(nombreVisible).join(', ')) : '—'}</span>
       </article>`;
   }).join('');
 
@@ -355,7 +356,7 @@ export function bloqueDeAlbum(carga) {
       <div class="fila album-fila${sinPuesto ? ' sin-clasificar' : ''}">
         <i class="acento" style="background:${sinPuesto ? 'transparent' : fila.posicion <= 3 ? COLOR.bueno : 'rgba(43,39,51,.12)'}"></i>
         ${marcaDePuesto(sinPuesto ? null : fila.posicion, anterior)}
-        <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
+        <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(nombreVisible(fila.nombre))}</a>
         <span class="tiras figuras">${tiraDeFiguras(fila.tira)}</span>
         <span class="num fuerte">${escapar(puntosPorPartida(fila.media))}</span>
         <span class="num suave">${fila.figuras}/${fila.partidas}</span>
@@ -404,7 +405,7 @@ export function bloqueDelJuego(carga) {
       <div class="fila juego-fila">
         <i class="acento" style="background:${fila.posicion <= 3 ? COLOR.bueno : 'rgba(43,39,51,.12)'}"></i>
         ${marcaDePuesto(fila.posicion, anterior)}
-        <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(fila.nombre)}</a>
+        <a class="nom" href="${escapar(rutaDeFicha(carga.temporada, fila.jugador))}">${escapar(nombreVisible(fila.nombre))}</a>
         <span class="num fuerte">${escapar(fila.puntos)}</span>
         <span class="num suave">${escapar(fila.niveles)}</span>
         <span class="num suave">${escapar(fila.victorias)}</span>
@@ -513,7 +514,7 @@ export function pintarTemporada(contenedor, carga, temporada) {
           ${
             lider.por_dia.length <= 40
               ? `<div class="hero-tira">
-            <span class="mono etiqueta">Partida de ${escapar(lider.nombre)}, jornada a jornada</span>
+            <span class="mono etiqueta">Partida de ${escapar(nombreVisible(lider.nombre))}, jornada a jornada</span>
             <div class="tiras grande">${tira(lider.por_dia, 30)}</div>
             ${leyenda()}
           </div>`

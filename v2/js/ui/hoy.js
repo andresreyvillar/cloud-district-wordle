@@ -12,6 +12,7 @@
 import { diaEnCurso, figurasDeLaJornada } from '../data/dia.js';
 import { rutaDeFicha } from '../data/ficha.js';
 import { escapar } from './shell.js';
+import { nombreVisible } from '../domain/apodos.js';
 
 const COLOR = { bueno: '#3DE07A', medio: '#FFD23F', malo: '#8B5CFF', fallo: '#FF4D6D' };
 const FALLO = 7;
@@ -82,7 +83,7 @@ export function tarjetasDeHoy(dia, temporada, carga) {
       <a class="resultado" href="${escapar(rutaDeFicha(temporada, j.jugador))}"
          style="border-left-color:${color(j.intentos)}">
         <span class="orden">${i + 1}</span>
-        <span class="quien">${escapar(j.nombre)}</span>
+        <span class="quien">${escapar(nombreVisible(j.nombre))}</span>
         ${figura ? `<span class="figura-hoy">${escapar(figura)}</span>` : ''}
         <span class="marca">${j.fallo ? 'X' : j.intentos}<em>/6</em></span>
       </a>`;
@@ -136,7 +137,7 @@ export function pintarHoy(contenedor, resultados, instantaneas, temporada) {
     ? `<div class="ausentes">${dia.faltan
         .map(
           (j) =>
-            `<a href="${escapar(rutaDeFicha(temporada, j.jugador))}">${escapar(j.nombre)}</a>`,
+            `<a href="${escapar(rutaDeFicha(temporada, j.jugador))}">${escapar(nombreVisible(j.nombre))}</a>`,
         )
         .join('')}</div>`
     : '<p class="nota">No falta nadie: ha jugado toda la temporada.</p>';

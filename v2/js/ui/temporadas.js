@@ -10,6 +10,7 @@
 import { archivo, medallero } from '../data/archivo.js';
 import { rutaDeFicha } from '../data/ficha.js';
 import { escapar } from './shell.js';
+import { nombreVisible } from '../domain/apodos.js';
 
 const LOGROS = {
   suertudo: 'Suertud@',
@@ -56,7 +57,7 @@ function hueco(t, competicion, conTitulo) {
   }
 
   const enlaces = quienes.map(
-    (quien) => `<a class="ganador" href="${escapar(rutaDeFicha(t.temporada, quien.jugador))}">${escapar(quien.nombre)}</a>`,
+    (quien) => `<a class="ganador" href="${escapar(rutaDeFicha(t.temporada, quien.jugador))}">${escapar(nombreVisible(quien.nombre))}</a>`,
   );
   // La cifra es una: si comparten puesto, es que comparten cifra.
   const nombre = quienes.length
@@ -116,8 +117,8 @@ function medalleroBloque(tabla) {
       (f) => `
       <div class="fila">
         ${f.jugador
-          ? `<a class="nom" href="${escapar(rutaDeFicha(f.temporada, f.jugador))}">${escapar(f.nombre)}</a>`
-          : `<span class="nom sin-ficha">${escapar(f.nombre)}</span>`}
+          ? `<a class="nom" href="${escapar(rutaDeFicha(f.temporada, f.jugador))}">${escapar(nombreVisible(f.nombre))}</a>`
+          : `<span class="nom sin-ficha">${escapar(nombreVisible(f.nombre))}</span>`}
         <span class="detalle">${Object.entries(f.por_clave)
           .map(([clave, n]) => `${escapar(LOGROS[clave] ?? clave)}${n > 1 ? ` ×${n}` : ''}`)
           .join(' · ')}</span>

@@ -13,6 +13,7 @@ import {
   clasificacionDelNivel, cuandoFue, jugadoresDelGrupo, textoParaCompartir, tiempoPreciso,
 } from '../domain/superbros.js';
 import { recurso } from '../router.js';
+import { nivelConApodos, nombreVisible } from '../domain/apodos.js';
 
 /** Escapa lo que venga de datos antes de meterlo en el DOM. Nombres de jugador incluidos. */
 function escapar(texto) {
@@ -214,7 +215,7 @@ export function recordarJugador(almacen, jugador) {
 /** El desplegable «¿Quién eres?». Exportado para poder verificarlo sin navegador. */
 export function selectorDeJugador(jugadores, elegido) {
   const opciones = (jugadores ?? []).map(({ jugador, nombre }) =>
-    `<option value="${escapar(jugador)}"${jugador === elegido ? ' selected' : ''}>${escapar(nombre)}</option>`,
+    `<option value="${escapar(jugador)}"${jugador === elegido ? ' selected' : ''}>${escapar(nombreVisible(nombre))}</option>`,
   ).join('');
   return `
     <label class="quien-eres">
@@ -233,7 +234,7 @@ export function rankingDelNivel(clasificacion, elegido) {
   const filas = clasificacion.map((f) => `
         <tr${f.jugador === elegido ? ' class="es-tuya"' : ''}>
           <td>${escapar(f.puesto)}</td>
-          <td>${escapar(f.nombre)}</td>
+          <td>${escapar(nombreVisible(f.nombre))}</td>
           <td>${escapar(tiempoPreciso(f.segundos))}</td>
           <td>⭐ ${escapar(f.estrellas)}</td>
         </tr>`).join('');
@@ -519,7 +520,7 @@ export async function pintarJuego(contenedor, resultados, hoy, ranking = RANKING
       // Si mientras cargaba se cambió de pestaña, no se monta: sería un juego fantasma sobre un lienzo que
       // ya no está en la página.
       if (miTurno !== turno || !lienzo.isConnected) return;
-      partida = montar(lienzo, nivel, Phaser);
+      partida = montar(lienzo, nivelConApodos(nivel), Phaser);
       lienzo.addEventListener(EVENTO_PISTA, () => {
         if (!tutorialVisto(almacen)) abrirTutorial(contenedor, partida, almacen);
       });
