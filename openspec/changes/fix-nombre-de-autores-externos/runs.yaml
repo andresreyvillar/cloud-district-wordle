@@ -1,0 +1,25 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-02T13:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    Entraron usuarios externos (Slack Connect) y el resultado de uno se guardó con su id como nombre:
+    users.list solo devuelve miembros del workspace. Diagnóstico solo de lectura: el mensaje trae
+    user_profile con su nombre y users.info también lo da; era el único autor de la ventana fuera del
+    directorio. completar_directorio lo resuelve; la fila mal guardada se corrige sola en el siguiente cron
+    (upsert que reescribe player_name). Extracción real en seco con el código nuevo: su línea lleva el nombre
+    y ninguna lleva un id como nombre. El dueño declara su forma masculina en personas.py.
+
+    Mutación: fetch_messages sin completar → rojo solo en el borde; ignorar el perfil del mensaje → rojo en
+    el perfil y en el reprocesado; no apuntar el fallo → rojo en no repetir la consulta; reconsultar a quien
+    ya está → rojo en los tres de consultas. Correcciones: los dobles nuevos tapaban dos homónimos del
+    fichero (SlackFalso, mensaje) y el gate pidió los deltas de identidad y resultados.

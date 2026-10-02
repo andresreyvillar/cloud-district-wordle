@@ -439,3 +439,20 @@ con ChatGPT y en la web sale como «C̶a̶r̶r̶i̶l̶l̶o̶ ChatGPT». Slack no
 diecisiete sitios. La auditoría por regex que obliga a pasar por `nombreVisible` es la red que suple esa
 falta. Además, un mutante equivalente, que cambiaba algo que nunca podía cambiar, parecía una prueba superada
 y no probaba nada.
+
+## 2026-10-02 — Un usuario externo entra con su id como nombre
+
+**Qué.** Llegaron al canal usuarios externos (Slack Connect), y el resultado de uno se guardó con su
+identificador como nombre. El extractor ahora completa el directorio con el perfil que trae el propio
+mensaje o, si no lo trae, con `users.info`.
+
+**Por qué importa.** `users.list` solo devuelve a los miembros del workspace. El slice ya contaba con que
+alguien quedara fuera del directorio, pero lo daba por un caso teórico: los desactivados sí aparecen.
+
+**Decisión.** La fila mal guardada no se arregla a mano. La ingesta es un `upsert` que reescribe el nombre
+mientras el mensaje esté en la ventana, así que se corrige sola con el siguiente cron, sin ninguna escritura
+exploratoria en producción.
+
+**Aprendizaje.** El diagnóstico se hizo leyendo, primero la tabla y después la API, antes de tocar nada. Eso
+bastó para descartar las dos hipótesis más caras: que Slack no diera el nombre y que hiciera falta un
+backfill.

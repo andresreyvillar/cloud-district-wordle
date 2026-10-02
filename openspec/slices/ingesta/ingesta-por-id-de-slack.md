@@ -59,6 +59,13 @@ acordada para ella
 **WHEN** un jugador cambia su nombre en Slack y publica un resultado nuevo
 **THEN** el resultado va al mismo jugador que sus resultados anteriores.
 
+### autor-externo-se-nombra-por-su-perfil
+**WHEN** publica un resultado alguien que no está en el directorio del workspace, como un usuario externo
+de Slack Connect
+**THEN** se guarda con el nombre de su perfil: el que trae el propio mensaje o, si no lo trae, el que
+devuelve Slack al consultarlo. Se consulta una vez por autor y ejecución, y el identificador solo se usa
+como nombre si Slack no da ninguno.
+
 ### reprocesar-la-ventana-no-duplica
 **WHEN** el mismo mensaje se procesa dos veces, como ocurre cada hora con la ventana de 50
 **THEN** sigue habiendo una sola fila para ese jugador y ese puzzle.
@@ -102,9 +109,10 @@ ejecutarla no encontraría nada que arreglar.
 
 ## Edge cases
 
-- **Alguien fuera del directorio**: `users.list` devuelve también a los desactivados, así que el caso real
-  es un usuario que la API no devuelva. Sin nombre legible se guarda el identificador como nombre: es feo
-  pero no pierde el resultado, y el jugador sigue siendo el correcto.
+- **Alguien fuera del directorio**: `users.list` devuelve también a los desactivados, pero **no a los
+  usuarios externos** (Slack Connect), que entraron en el canal el 2026-10-02. Su nombre sale de su perfil
+  ([[#autor-externo-se-nombra-por-su-perfil]]). Solo si Slack no lo da por ninguna vía se guarda el
+  identificador como nombre: es feo pero no pierde el resultado, y el jugador sigue siendo el correcto.
 - **El nombre cambia entre dos ejecuciones**: las filas viejas conservan el nombre viejo y las nuevas
   llevan el nuevo. La identidad no se mueve, que es lo que importa para contar. Que la web muestre un solo
   nombre por jugador es cosa de la v2.0, que lo resolverá del identificador al pintar.

@@ -99,6 +99,34 @@ def directorio(cli: WebClient | None = None) -> dict:
         return mapa
 
 
+def completar_directorio(nombres: dict, mensajes: list[dict], cli) -> dict:
+    """El directorio con los autores que `users.list` no devuelve: los **usuarios externos** (Slack Connect).
+
+    Su nombre sale del `user_profile` que trae el propio mensaje y, si no lo trae, de `users.info`. Se consulta
+    una vez por autor: si Slack no da nombre, se apunta el identificador —lo de siempre— y no se insiste.
+    El directorio de partida no se modifica.
+    """
+    completo = dict(nombres)
+    for mensaje in mensajes:
+        autor = mensaje.get("user")
+        if not autor or autor in completo:
+            continue
+        perfil = mensaje.get("user_profile")
+        if perfil:
+            completo[autor] = nombre_visible({"id": autor, "profile": perfil})
+            continue
+        try:
+            completo[autor] = nombre_visible(cli.users_info(user=autor)["user"])
+        except SlackApiError as error:
+            print(
+                f"Aviso: no se pudo obtener el nombre de {autor} ({error.response['error']}). "
+                "Se emitirá el identificador como nombre.",
+                file=sys.stderr,
+            )
+            completo[autor] = autor
+    return completo
+
+
 def linea_de_mensaje(mensaje: dict, nombres: dict) -> str | None:
     """La línea del lote para un mensaje, o `None` si no debe emitirse.
 
@@ -163,6 +191,7 @@ def fetch_messages(ahora: dt.datetime | None = None) -> str:
         print(f"Error conectando a Slack: {error.response['error']}", file=sys.stderr)
         sys.exit(1)
 
+    nombres = completar_directorio(nombres, mensajes, cli)
     lineas = [linea_de_mensaje(mensaje, nombres) for mensaje in mensajes]
     return "\n".join(linea for linea in lineas if linea is not None)
 
