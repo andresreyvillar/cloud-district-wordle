@@ -25,7 +25,7 @@ from album import album
 from comentarios import nombres_unidos, seccion_de_comentarios
 from figures import CULO, FIGURAS, figura, rasgos
 from juego import ESCALA, PUNTOS_DESDE_EL_OCTAVO, clasificacion_del_juego, niveles_que_puntuan, puestos_de_nivel
-from podios import podio_de_texto
+from podios import lista_de_texto, podio_de_texto
 from personas import HUECO, concuerda
 from seasons import MUESTRA_MINIMA_DEL_DIA, TEMPORADA_CERO, dias_de_temporada, es_laborable, resultados_de_temporada
 from standings import clasificacion
@@ -276,7 +276,8 @@ def bloque_juego(resultados: list[dict], temporada: str, jornada: int, niveles=(
 
     if not puestos:
         return titulo
-    return podio_de_texto(titulo, puestos)
+    # En lista y no en dibujo: el podio ASCII es del marcador general (decisión del dueño, 2026-10-02).
+    return lista_de_texto(titulo, puestos)
 
 
 def _nombres_por_jugador(resultados: list[dict]) -> dict[str, str]:
@@ -1081,10 +1082,9 @@ def bloque_participacion(resultados: list[dict], jornada: int) -> str:
 
 
 def bloque_album(resultados: list[dict], temporada: str) -> str:
-    """El podio de figuras: los tres primeros puestos del ranking de belleza con su puntuación media.
+    """Los tres primeros del ranking de belleza con su puntuación media.
 
-    Vacío si nadie está clasificado. La tira agrupada de cada uno se queda en la web: son emojis, y en el
-    bloque de ancho fijo del podio descuadran los escalones.
+    Vacío si nadie está clasificado. Va en lista, como el juego: el dibujo es del marcador general.
     """
     datos = album(resultados, temporada)
     puestos = [
@@ -1092,7 +1092,7 @@ def bloque_album(resultados: list[dict], temporada: str) -> str:
         for fila in datos["jugadores"]
         if fila["clasificado"] and fila["posicion"] <= CABEZA_DEL_ALBUM
     ]
-    return podio_de_texto("🎨 *Ranking de figuras*", puestos)
+    return lista_de_texto("🎨 *Ranking de figuras*", puestos)
 
 
 #: Jornadas del principio del mes en las que el resumen dice que el mes arranca.

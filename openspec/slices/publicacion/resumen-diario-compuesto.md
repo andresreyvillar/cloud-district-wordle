@@ -146,11 +146,14 @@ escalón su puesto, su nombre y su media.
 ### podio-del-juego
 **WHEN** el nivel que se jugó ese día tiene marcas, o la clasificación del juego del mes tiene jugadores
 **THEN** después del podio del marcador va una línea con quién ganó ese nivel, su tiempo con centésimas y
-cuántos lo terminaron, y debajo el podio del SuperWordleBros del mes con los puntos de cada uno.
+cuántos lo terminaron, y debajo los tres primeros del SuperWordleBros del mes con sus puntos, **en lista y
+no en podio ASCII**: el dibujo es solo para el marcador general, que es el protagonista (decisión del dueño,
+2026-10-02).
 
 ### podio-de-figuras
 **WHEN** hay jugadores clasificados en el álbum
-**THEN** después del podio del juego va el podio de figuras, con la puntuación media de cada uno.
+**THEN** después del juego van los tres primeros del álbum con la puntuación media de cada uno, en lista
+como los del juego.
 
 ### los-podios-van-en-orden
 **WHEN** hay datos para los tres rankings
@@ -238,7 +241,8 @@ reglas dentro del publicador.
 ### el-mensaje-no-crece-con-el-grupo
 **WHEN** la temporada tiene muchos jugadores
 **THEN** el mensaje no crece con ellos: está acotado por construcción —dos líneas, tres podios de tres
-puestos con como mucho tres nombres por escalón, y el bloque del momento del mes— y por eso cabe siempre en el
+puestos con como mucho tres nombres por puesto —un dibujo y dos listas—, y el bloque del momento del mes— y
+por eso cabe siempre en el
 comentario de Slack.
 
 ### el-resumen-se-enciende-con-una-variable

@@ -29,3 +29,23 @@
     la cuenta: ahora statistics.median) y cuatro mutantes que sobrevivían (mínimo por mediana, sin filtro de
     temporada, sin corte a veinte, debut por nombre). Con los tests nuevos los cuatro dan rojo, igual que
     treinta debutantes que no alargan el bloque.
+
+- run: '2026-10-02T17:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Dos cambios pedidos tras la vista previa del mensaje de hoy. La concordancia: cinco claves no tenían
+    plural y `frase` caía al singular; ahora todas lo tienen y un test exige plural para cada clave y que no
+    conjugue en singular tras los nombres (mutantes: un plural en singular y quitar uno → rojo). Y el dueño
+    decide que juego y figuras vayan en lista y el podio ASCII sea solo del marcador (mutantes: volver al
+    dibujo en cada uno y nombrar a todos en la lista → rojo en su escenario). Corrección: un test suponía un
+    orden de Ana y Bea que el fixture no da, porque empatan.
+

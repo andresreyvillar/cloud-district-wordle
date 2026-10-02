@@ -154,9 +154,21 @@ FRASES: dict[str, tuple[str, ...]] = {
         "Día fino de {jugador}, muy por encima de la media 🌟",
         "{jugador} ha ido a lo suyo y le ha salido bien 🌟",
     ),
+    # Dos sembrados el mismo día se fusionan en una línea. Sin plural, el 2 de octubre iba a salir «Carlos H. y
+    # Rubén Cogollor ha ido a lo suyo y le ha salido bien».
+    "sembrado-varios": (
+        "{jugador} están sembrad{g}s hoy 🌟",
+        "Día fino de {jugador}, muy por encima de la media 🌟",
+        "{jugador} han ido a lo suyo y les ha salido bien 🌟",
+    ),
     "no-inspirado": (
         "{jugador} hoy no estaba inspirad{g} 😅",
         "A {jugador} se le ha atragantado la palabra 😅",
+        "Día para olvidar de {jugador} 😅",
+    ),
+    "no-inspirado-varios": (
+        "{jugador} hoy no estaban inspirad{g}s 😅",
+        "A {jugador} se les ha atragantado la palabra 😅",
         "Día para olvidar de {jugador} 😅",
     ),
     # **Acertar a la primera es lo más raro del juego** —0,01 de frecuencia— y por eso `clavada` gana a la
@@ -177,15 +189,33 @@ FRASES: dict[str, tuple[str, ...]] = {
         "{jugador} ha hecho un 1 y ahora tiene que convivir con las miradas 🤨",
         "Un 1 de {jugador}. Vamos a necesitar ver la repetición 🤨",
     ),
+    "clavada-varios": (
+        "{jugador} lo han sacado a la PRIMERA. Que alguien revise el diccionario 🍀",
+        "A la primera, {jugador}. Esto o es brujería o es que ya la sabían 🍀",
+        "{jugador} han acertado a la primera. Aquí nadie va a fingir que se lo cree 🤨",
+        "Dos 1 el mismo día, {jugador}. Explicadnos el método, que hay interés 🤨",
+        "{jugador} han resuelto antes de empezar. El canal exige una rueda de prensa 🤨",
+        "A la primera, {jugador}. Esto ya no es suerte, es una conspiración 🤨",
+    ),
     "rezagado": (
         "{jugador} ha subido el resultado con el día ya vencido ⏰",
         "Aparece {jugador} a última hora, como siempre ⏰",
+        "{jugador} publicando cuando ya nadie miraba ⏰",
+    ),
+    "rezagado-varios": (
+        "{jugador} han subido el resultado con el día ya vencido ⏰",
+        "Aparecen {jugador} a última hora, como siempre ⏰",
         "{jugador} publicando cuando ya nadie miraba ⏰",
     ),
     "rezagado-con-suerte": (
         "{jugador} publica el último y con un {dato:.0f}. Habiendo visto los demás, claro 🕵️",
         "Curioso: {jugador} llega tarde y clava un {dato:.0f}. Nada que declarar 🕵️",
         "El último en publicar es {jugador}, y con un {dato:.0f}. Cosas del azar 🕵️",
+    ),
+    "rezagado-con-suerte-varios": (
+        "{jugador} publican los últimos y con un {dato:.0f}. Habiendo visto los demás, claro 🕵️",
+        "Curioso: {jugador} llegan tarde y clavan un {dato:.0f}. Nada que declarar 🕵️",
+        "Los últimos en publicar son {jugador}, y con un {dato:.0f}. Cosas del azar 🕵️",
     ),
     "rajado": (
         "{jugador} no ha aparecido justo el día difícil 👀",

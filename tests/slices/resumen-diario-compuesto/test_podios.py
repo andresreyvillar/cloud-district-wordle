@@ -42,6 +42,11 @@ def podio_tras(texto: str, titulo: str) -> str:
     return texto.split(titulo, 1)[1].split("```")[1]
 
 
+def lista_tras(texto: str, titulo: str) -> list[str]:
+    """Las líneas de la lista que sigue al título: hasta la primera línea en blanco."""
+    return texto.split(titulo, 1)[1].split("\n\n", 1)[0].splitlines()[1:]
+
+
 def podio(puestos, titulo="📊 *Marcador*"):
     from podios import podio_de_texto
 
@@ -71,16 +76,19 @@ def test_el_juego_lleva_el_ganador_del_nivel_del_dia_y_su_podio():
     linea = next(l for l in texto.splitlines() if l.startswith(JUEGO))
     assert f"#{jornada_de(AYER)}" in linea
     assert "Cris" in linea and "0:31.20" in linea and "3 jugadores" in linea
-    juego = podio_tras(texto, JUEGO)
-    assert "Cris" in juego and "10" in juego, "el podio del mes con los puntos"
+    juego = lista_tras(texto, JUEGO)
+    assert juego[0].startswith("1º Cris") and "10 pts" in juego[0], juego
+    assert "█" not in "\n".join(juego), "el juego va en lista, no en podio ASCII"
 
 
 # @scenarios podio-de-figuras
 def test_las_figuras_salen_como_podio_con_su_puntuacion_media():
-    figuras = podio_tras(resumen(), FIGURAS)
+    figuras = lista_tras(resumen(), FIGURAS)
 
-    assert "Bea" in figuras and "Ana" in figuras, "geométrico y loro puntúan"
-    assert "█" in figuras
+    # En el fixture, Ana y Bea empatan a 3,00: comparten puesto y línea.
+    assert figuras[0] == "1º Ana y Bea · 3,00 pts", figuras
+    assert all(" pts" in linea for linea in figuras)
+    assert "█" not in "\n".join(figuras), "las figuras van en lista, no en podio ASCII"
 
 
 # @scenarios los-podios-van-en-orden
@@ -124,7 +132,7 @@ def test_sin_marcas_no_hay_podio_del_juego_y_los_demas_siguen_en_orden():
     texto = resumen(niveles=[], marcas=[])
 
     assert JUEGO not in texto
-    assert len(bloques_de_codigo(texto)) == 2
+    assert len(bloques_de_codigo(texto)) == 1, "solo el marcador lleva dibujo"
     assert texto.index(MARCADOR) < texto.index(FIGURAS)
 
 
@@ -203,3 +211,19 @@ def test_un_mensaje_sin_caracteres_especiales_sale_igual():
 
     assert "<" not in texto and "&" not in texto
     assert para_slack(texto) == texto
+
+
+# @scenarios el-podio-cabe-en-el-movil
+def test_la_lista_resume_los_empates_y_no_crece():
+    from podios import lista_de_texto
+
+    puestos = [
+        {"posicion": 1, "nombre": "Ana", "cifra": "18 pts"},
+        *({"posicion": 2, "nombre": n, "cifra": "14 pts"} for n in ("Bea", "Cris", "Dani", "Eva", "Fede")),
+        {"posicion": 7, "nombre": "Gus", "cifra": "3 pts"},
+    ]
+
+    lineas = lista_de_texto("🎮 *SuperWordleBros*", puestos).splitlines()
+
+    assert lineas == ["🎮 *SuperWordleBros*", "1º Ana · 18 pts", "2º Bea, Cris, Dani y 2 más · 14 pts"]
+    assert lista_de_texto("🎮 *SuperWordleBros*", []) == ""

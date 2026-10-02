@@ -195,11 +195,10 @@ def test_el_podio_de_figuras_sale_con_su_puntuacion():
     bloque = bloque_album(limpia + sucia, "0")
 
     assert bloque.startswith("🎨 *Ranking de figuras*")
-    podio = bloque.split("```")[1]
-    assert "Ana" in podio
+    lineas = bloque.splitlines()[1:]
     # Ocho loros a 2 puntos entre ocho partidas: 2,00 puntos por partida (ponderación del 2026-08-09:
-    # geométrico 3 · loro 2 · flor 1).
-    assert "2,00 pts" in podio, f"la puntuación ponderada no sale: {bloque}"
+    # geométrico 3 · loro 2 · flor 1). En lista, no en podio ASCII: el dibujo es del marcador.
+    assert lineas[0] == "1º Ana · 2,00 pts", f"la puntuación ponderada no sale: {bloque}"
 
 
 # @scenarios sin-jornada-no-hay-resumen

@@ -16,12 +16,17 @@ pop que rota.
 
 - `tools/album.py`: `minimo_de_la_temporada`; `minimo` y `clasificado` usan el mínimo efectivo.
 - `tools/rules.py`: la regla `figuras-ponderadas` explica el mínimo que crece.
-- `tools/resumen.py`: `bloque_participacion`, tras la jornada.
+- `tools/resumen.py`: `bloque_participacion`, tras la jornada; el juego y las figuras en lista.
+- `tools/podios.py`: `lista_de_texto`. El podio ASCII queda solo para el marcador (decisión del dueño).
+- `tools/comentarios.py`: el plural de las cinco claves que no lo tenían (`sembrado`, `no-inspirado`,
+  `clavada`, `rezagado`, `rezagado-con-suerte`); la vista previa del 2 de octubre decía «Carlos H. y Rubén
+  Cogollor ha ido a lo suyo».
 
 ## Out of Scope
 
 - La temporada 0 conserva el mínimo fijo.
 - La web no cambia de código: enseña el `minimo` que trae la instantánea.
+- El mensaje de la victoria del mes mantiene sus tres podios ASCII hasta que el dueño decida.
 
 ## Impact
 
@@ -46,4 +51,4 @@ python3 -m tools.wslice verify gates --slice resumen-diario-compuesto --change-i
 |---|---|
 | `ranking` | el mínimo de partidas del álbum crece con el mes (MODIFIED) |
 | `resultados` | la instantánea publica el mínimo que se aplicó (MODIFIED) |
-| `publicacion` | el resumen cuenta la participación cuando es noticia |
+| `publicacion` | el resumen cuenta la participación cuando es noticia · juego y figuras en lista (MODIFIED) |
