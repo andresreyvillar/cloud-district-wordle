@@ -51,6 +51,8 @@ FORMAS: dict[str, str] = {
     "Marcos Granado": MASCULINO,
     "marcos.granado": MASCULINO,
     "Javi Calvo": MASCULINO,
+    # Usuario externo (Slack Connect), desde el 2026-10-02. Declarado por el dueño.
+    "Alex Piñeiro": MASCULINO,
 }
 
 #: Lo que se escribe en la plantilla donde el género cambia la palabra: `sembrad{g}`, `anch{g}`.

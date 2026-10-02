@@ -326,3 +326,114 @@ def test_un_fallo_en_la_segunda_pagina_aborta_en_lugar_de_emitir_medio_lote():
 
     with pytest.raises(SlackApiError):
         mensajes_de_la_ventana(canal, "C1", AHORA)
+
+
+class DirectorioFalso:
+    """Doble de `users.info`: cuenta las consultas, y falla para quien no conoce."""
+
+    def __init__(self, perfiles: dict[str, dict]) -> None:
+        self.perfiles = perfiles
+        self.consultas: list[str] = []
+
+    def users_info(self, user: str) -> dict:
+        from slack_sdk.errors import SlackApiError
+
+        self.consultas.append(user)
+        if user not in self.perfiles:
+            raise SlackApiError("user_not_found", {"ok": False, "error": "user_not_found"})
+        return {"user": {"id": user, "profile": self.perfiles[user]}}
+
+
+def mensaje_de(autor: str, numero: int, perfil: dict | None = None) -> dict:
+    datos = {"user": autor, "text": f"La palabra del día #{numero} 3/6", "ts": "1785830232.0"}
+    if perfil is not None:
+        datos["user_profile"] = perfil
+    return datos
+
+
+# @scenarios autor-externo-se-nombra-por-su-perfil
+def test_un_autor_externo_toma_el_nombre_del_perfil_que_trae_el_mensaje():
+    from tools.extract_slack import completar_directorio, linea_de_mensaje
+
+    slack = DirectorioFalso({})
+    mensajes = [mensaje_de("U_EXTERNO", 1700, {"display_name": "Alex P.", "real_name": "Alex Pérez"})]
+
+    nombres = completar_directorio(NOMBRES, mensajes, slack)
+
+    assert linea_de_mensaje(mensajes[0], nombres).split("|")[2] == "Alex P."
+    assert slack.consultas == [], "si el mensaje trae el perfil, no se consulta a Slack"
+    assert NOMBRES.get("U_EXTERNO") is None, "el directorio de partida no se toca"
+
+
+# @scenarios autor-externo-se-nombra-por-su-perfil
+def test_sin_perfil_en_el_mensaje_se_consulta_a_slack_una_vez_por_autor():
+    from tools.extract_slack import completar_directorio
+
+    slack = DirectorioFalso({"U_EXTERNO": {"display_name": "", "real_name": "Alex Pérez"}})
+    mensajes = [mensaje_de("U_EXTERNO", 1700), mensaje_de("U_EXTERNO", 1701)]
+
+    nombres = completar_directorio(NOMBRES, mensajes, slack)
+
+    assert nombres["U_EXTERNO"] == "Alex Pérez", "display_name vacío: se usa el nombre real"
+    assert slack.consultas == ["U_EXTERNO"]
+
+
+# @scenarios autor-externo-se-nombra-por-su-perfil
+def test_si_slack_no_da_el_nombre_se_guarda_el_identificador_y_no_se_repite_la_consulta():
+    from tools.extract_slack import completar_directorio
+
+    slack = DirectorioFalso({})
+    mensajes = [mensaje_de("U_FANTASMA", 1700), mensaje_de("U_FANTASMA", 1701)]
+
+    nombres = completar_directorio(NOMBRES, mensajes, slack)
+
+    assert nombres["U_FANTASMA"] == "U_FANTASMA"
+    assert slack.consultas == ["U_FANTASMA"]
+
+
+# @scenarios autor-externo-se-nombra-por-su-perfil
+def test_quien_esta_en_el_directorio_no_cambia_ni_se_consulta():
+    from tools.extract_slack import completar_directorio
+
+    slack = DirectorioFalso({"U1CKSFSSX": {"display_name": "Otro nombre"}})
+    mensajes = [mensaje_de("U1CKSFSSX", 1700, {"display_name": "Otro nombre"}), {"text": "sin autor", "ts": "1.0"}]
+
+    nombres = completar_directorio(NOMBRES, mensajes, slack)
+
+    assert nombres["U1CKSFSSX"] == "carlos.h"
+    assert slack.consultas == []
+
+
+# @scenarios autor-externo-se-nombra-por-su-perfil
+def test_la_extraccion_completa_el_directorio_antes_de_emitir_las_lineas():
+    """El borde: `fetch_messages` tiene que usar el directorio completado, no el de `users.list` a secas."""
+    import inspect
+
+    from tools import extract_slack
+
+    fuente = inspect.getsource(extract_slack.fetch_messages)
+
+    assert "completar_directorio(" in fuente
+    assert fuente.index("completar_directorio(") < fuente.index("linea_de_mensaje(")
+
+
+# @scenarios autor-externo-se-nombra-por-su-perfil
+def test_la_fila_guardada_con_el_id_como_nombre_se_corrige_al_reprocesar():
+    """Lo que pasó el 2026-10-02: la fila entró con el id; al reprocesar la ventana se reescribe su nombre."""
+    from tools.add_results import escribir, filas_a_escribir
+    from tools.extract_slack import completar_directorio, linea_de_mensaje
+
+    def ingerir(nombres):
+        filas, _ = filas_a_escribir([linea_de_mensaje(externo, nombres)])
+        escribir(filas, tabla)
+
+    tabla = TablaFalsa()
+    externo = mensaje_de("U_EXTERNO", 1700, {"display_name": "Alex P."})
+    ingerir(NOMBRES)
+    assert tabla.filas[0]["player_name"] == "U_EXTERNO", "así entró antes del arreglo"
+
+    ingerir(completar_directorio(NOMBRES, [externo], DirectorioFalso({})))
+
+    assert len(tabla.filas) == 1
+    assert tabla.filas[0]["slack_user_id"] == "U_EXTERNO"
+    assert tabla.filas[0]["player_name"] == "Alex P."
