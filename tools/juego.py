@@ -24,6 +24,11 @@ from seasons import dias_de_temporada, temporada_de
 #: Los puntos de los siete primeros puestos de cada nivel.
 ESCALA = (10, 8, 6, 5, 4, 3, 2)
 
+#: Desde qué hora de Madrid se congela el nivel de la jornada de ayer. **La misma que la del cron**
+#: (`v2/js/domain/superbros.js::HORA_DE_CONGELAR`, que es quien congela); está aquí para que el catálogo de
+#: reglas la publique leyéndola del código, y un test comprueba que las dos coinciden.
+HORA_DE_CONGELAR = "02:00"
+
 #: Los puntos del octavo en adelante. Uno, y no cero: terminar el nivel ya es jugar, y la escala premia jugar.
 PUNTOS_DESDE_EL_OCTAVO = 1
 

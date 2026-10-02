@@ -37,7 +37,7 @@ def test_toda_regla_dice_que_hace_y_por_que_existe():
         assert regla.por_que.strip(), f"{regla.id} no dice por qué existe"
 
 
-# @scenarios cada-regla-dice-si-se-aplica
+# @scenarios las-propuestas-siguen-en-el-catalogo
 def test_el_estado_de_cada_regla_es_uno_de_los_tres_declarados():
     from tools.rules import catalogo
 
@@ -45,7 +45,7 @@ def test_el_estado_de_cada_regla_es_uno_de_los_tres_declarados():
         assert regla.estado in ESTADOS, f"{regla.id} tiene estado {regla.estado!r}"
 
 
-# @scenarios cada-regla-dice-si-se-aplica
+# @scenarios los-parametros-son-los-que-el-calculo-usa
 def test_el_modelo_de_imputacion_consta_como_aplicado_y_lo_esta_de_verdad():
     """El estado de una regla no se cree: se comprueba contra el cálculo.
 
@@ -79,7 +79,7 @@ def test_el_modelo_de_imputacion_consta_como_aplicado_y_lo_esta_de_verdad():
     assert imputar(4.0, 4.0) == 4.0 + MARGEN
 
 
-# @scenarios las-reglas-sin-decidir-se-declaran
+# @scenarios las-propuestas-siguen-en-el-catalogo
 def test_una_regla_sin_decidir_dice_que_falta_decidir():
     from tools.rules import catalogo
 
@@ -90,7 +90,7 @@ def test_una_regla_sin_decidir_dice_que_falta_decidir():
         assert regla.falta_decidir.strip(), f"{regla.id} no dice qué falta"
 
 
-# @scenarios cada-regla-dice-si-se-aplica
+# @scenarios las-propuestas-siguen-en-el-catalogo
 def test_hay_reglas_aplicadas_que_el_grupo_no_ha_votado_y_se_declara():
     """La información más incómoda de la página, y la más útil.
 
@@ -117,6 +117,13 @@ def test_hay_reglas_aplicadas_que_el_grupo_no_ha_votado_y_se_declara():
         "album-de-figuras",
         "figuras-ponderadas",
         "figuras-no-puntuan",
+        # Las del SuperWordleBros, desde el 2026-10-02: las decidió el dueño mientras se construía el juego, y
+        # el grupo no las ha votado.
+        "juego-puntos-por-puesto",
+        "juego-estrellas-antes-que-tiempo",
+        "juego-nivel-diario",
+        "juego-nivel-cerrado",
+        "juego-ultimo-dia-mes-siguiente",
     }, (
         f"lo aplicado sin votar ha cambiado: {aplicadas_sin_votar}. Si el grupo las ha votado, actualiza "
         "el catálogo y este test; si no, es que alguien ha marcado como votada una regla que no lo está."
@@ -153,7 +160,7 @@ def test_las_reglas_con_umbral_declaran_al_menos_un_parametro():
         assert busca(identificador).parametros, f"{identificador} no declara parámetros"
 
 
-# @scenarios la-temporada-cerrada-conserva-sus-reglas
+# @scenarios los-parametros-son-los-que-el-calculo-usa
 def test_la_instantanea_de_una_temporada_lleva_sus_reglas():
     from tools.seasons import instantanea
 
@@ -174,7 +181,7 @@ def test_la_instantanea_de_una_temporada_lleva_sus_reglas():
     assert {"temporada-mensual", "solo-dias-laborables", "dia-con-muestra-minima"} <= ids
 
 
-# @scenarios la-temporada-cerrada-conserva-sus-reglas
+# @scenarios los-parametros-son-los-que-el-calculo-usa
 def test_las_reglas_de_la_instantanea_son_serializables():
     """Van a JSONB, así que no puede haber dataclasses ni tuplas dentro."""
     import json
@@ -218,3 +225,42 @@ def test_la_prosa_del_catalogo_no_lleva_markdown():
             texto = getattr(regla, campo)
             assert "**" not in texto, f"{regla.id}/{campo} lleva markdown"
             assert "`" not in texto, f"{regla.id}/{campo} lleva markdown"
+
+
+# @scenarios el-superwordlebros-tiene-sus-reglas
+def test_el_juego_tiene_sus_cinco_reglas_aplicadas_con_parametros():
+    from rules import APLICADA, catalogo
+
+    del_juego = [r for r in catalogo() if r.eje == "juego"]
+
+    assert {r.id for r in del_juego} == {
+        "juego-puntos-por-puesto", "juego-estrellas-antes-que-tiempo", "juego-nivel-diario",
+        "juego-nivel-cerrado", "juego-ultimo-dia-mes-siguiente",
+    }
+    assert all(r.estado == APLICADA for r in del_juego)
+    fuentes = {p.fuente for r in del_juego for p in r.parametros}
+    assert {"juego.ESCALA", "juego.PUNTOS_DESDE_EL_OCTAVO", "juego.HORA_DE_CONGELAR",
+            "seasons.MUESTRA_MINIMA_DEL_DIA"} <= fuentes
+
+
+# @scenarios el-superwordlebros-tiene-sus-reglas
+def test_la_hora_de_congelar_es_la_misma_que_usa_el_cron():
+    import re
+    from pathlib import Path
+
+    from juego import HORA_DE_CONGELAR
+
+    js = (Path(__file__).resolve().parents[3] / "v2/js/domain/superbros.js").read_text(encoding="utf-8")
+    [del_cron] = re.findall(r"export const HORA_DE_CONGELAR = '([0-9:]+)'", js)
+
+    assert HORA_DE_CONGELAR == del_cron
+
+
+# @scenarios solo-se-ensenan-las-reglas-vigentes
+def test_solo_las_de_la_temporada_cero_son_historicas():
+    from rules import catalogo
+
+    historicas = {r.id for r in catalogo() if r.historica}
+
+    assert historicas == {"temporada-cero", "minimo-en-la-temporada-cero"}
+    assert all("historica" in r for r in __import__("rules").como_json(catalogo()))

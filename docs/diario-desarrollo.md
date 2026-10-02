@@ -398,3 +398,23 @@ misma tabla tiempos de dos escenarios distintos.
 **Aprendizaje.** Un mutante que deja pasar un `delete` borra el estado compartido de los tests y el rojo
 cae en cascada. Parecía una cazada amplia y no decía nada: los intentos destructivos van en transacciones que
 se deshacen.
+
+## 2026-10-02 — Reglas pasa a Info: lo que necesita quien juega, no quien decide
+
+**Qué.** La pestaña Reglas se sustituye por Info. Explica cómo se juega, qué competiciones hay y qué publica
+el bot, y debajo muestra solo las reglas que se aplican hoy. `/reglas` y `/t/AAAA-MM/reglas` llevan a `/info`.
+
+**Por qué importa.** El catálogo, con propuestas, estados y votos, sirve a quien decide las reglas. Al grupo
+le liaba: una regla «sin decidir» al lado de una que sí se aplica se leía como si las dos contaran.
+
+**Decisiones.**
+- **Las propuestas salen de la web.** Siguen en `tools/rules.py`, que es donde se discuten.
+- **La explicación no lleva cifras.** Los números solo aparecen en las reglas, que los leen del cálculo, y un
+  test lo vigila. Si no, la prosa envejecería en cuanto alguien recalibrara un umbral.
+- **Las reglas del SuperWordleBros entran en el catálogo**, con su propio eje, y la hora de congelar el
+  nivel se comprueba igual en Python y en JS.
+
+**Aprendizaje.** El navegador cazó lo que los tests no veían. Con `<base href="/2/">`, el índice de ejes
+(`#eje-…`) llevaba a la portada, y el fallo ya estaba en la pestaña vieja. El verificador, por su parte,
+cazó un «cada noche» que no era verdad: el resumen no sale los fines de semana. Una página que explica las
+reglas tiene que poder comprobarse contra el código, también en la prosa.

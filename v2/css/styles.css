@@ -1394,3 +1394,28 @@ nav[data-navegacion] a {
   background: rgb(232 185 35 / 16%);
   font-weight: 700;
 }
+
+/* La pestaña Info (slice `reglas-explicadas`): tres bloques de explicación y, debajo, las reglas vigentes.
+   Las reglas reutilizan las piezas de arriba; aquí solo va lo que la explicación añade. */
+.info-bloque { display: flex; flex-direction: column; gap: 0.85rem; }
+.info-bloque > h2 {
+  margin: 0; padding-bottom: 0.5rem;
+  font-size: 1.3rem; font-weight: 650; color: var(--liga-tinta);
+  border-bottom: 2px solid var(--liga-verde);
+}
+.info-bloque > p { margin: 0; max-width: 68ch; color: var(--liga-media); }
+.info-bloque > p strong { color: var(--liga-tinta); }
+.info-bloque a { color: var(--liga-tinta); text-decoration-color: var(--liga-verde); }
+.info-bloque > .nota { font-size: 0.88rem; color: var(--liga-suave); }
+.info-rejilla {
+  display: grid; gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+}
+.info-rejilla article {
+  padding: 1.1rem 1.25rem;
+  background: var(--superficie);
+  border: 2px solid var(--borde); border-radius: 14px;
+}
+.info-rejilla h3 { margin: 0 0 0.45rem; font-size: 1rem; color: var(--liga-tinta); }
+.info-rejilla p { margin: 0; font-size: 0.9rem; color: var(--liga-media); }
+.eje-titulo { margin: 0; font-size: 1.1rem; font-weight: 650; color: var(--liga-tinta); }

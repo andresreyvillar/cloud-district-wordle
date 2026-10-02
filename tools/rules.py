@@ -30,10 +30,11 @@ from dataclasses import asdict, dataclass, field
 import album
 import badges
 import calendario
+import juego
 import seasons
 import standings
 
-EJES = ("temporada", "clasificacion", "medallas", "figuras", "datos")
+EJES = ("temporada", "clasificacion", "medallas", "figuras", "juego", "datos")
 
 APLICADA = "aplicada"
 ACORDADA_SIN_APLICAR = "acordada-sin-aplicar"
@@ -65,6 +66,9 @@ class Regla:
     votada: bool = False
     falta_decidir: str = ""
     parametros: tuple[Parametro, ...] = field(default_factory=tuple)
+    #: Solo vale para la temporada 0. Sigue en el catálogo —esa temporada se calculó con ella—, pero la web la
+    #: deja fuera de las reglas vigentes para no liar a quien solo quiere saber cómo se juega hoy.
+    historica: bool = False
 
 
 def _p(nombre: str, valor, fuente: str, unidad: str = "") -> Parametro:
@@ -107,6 +111,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "que es castigar por no jugar antes de estar."
             ),
             estado=APLICADA,
+            historica=True,
             votada=True,
             parametros=(
                 _p("la temporada 1 empieza", seasons.INICIO_TEMPORADAS, "seasons.INICIO_TEMPORADAS"),
@@ -238,6 +243,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "resultado de un partido ya jugado; y sin el mínimo la lideraría quien apenas jugó."
             ),
             estado=APLICADA,
+            historica=True,
             votada=True,
             parametros=(
                 _p("partidas mínimas", standings.MINIMO_PARA_CLASIFICAR,
@@ -403,6 +409,91 @@ def catalogo() -> tuple[Regla, ...]:
             ),
         ),
         # ── lo que el grupo tiene sobre la mesa ──────────────────────────────────────────────────
+        Regla(
+            id="juego-puntos-por-puesto",
+            eje="juego",
+            titulo="Cada nivel reparte puntos por puesto, y el mes los suma",
+            que_hace=(
+                "Cada día se juega un nivel hecho con las cuadrículas de la jornada anterior, y tu mejor partida "
+                "entra en su ranking. El primero se lleva diez puntos, el segundo ocho, y así hacia abajo; del "
+                "octavo en adelante, uno, así que terminar el nivel siempre suma. La clasificación del mes suma "
+                "los puntos de todos sus niveles, y a igualdad de puntos se comparte puesto."
+            ),
+            por_que=(
+                "Los tiempos de niveles distintos no se pueden sumar: cada nivel tiene otro largo, según cuántos "
+                "jugaron ese día. El puesto sí se compara, y puntuar también al último premia jugar a menudo."
+            ),
+            estado=APLICADA,
+            parametros=(
+                _p("puntos de los siete primeros", juego.ESCALA, "juego.ESCALA"),
+                _p("del octavo en adelante", juego.PUNTOS_DESDE_EL_OCTAVO, "juego.PUNTOS_DESDE_EL_OCTAVO", "punto"),
+            ),
+        ),
+        Regla(
+            id="juego-estrellas-antes-que-tiempo",
+            eje="juego",
+            titulo="Las estrellas cuentan más que el tiempo",
+            que_hace=(
+                "En el ranking de un nivel va delante quien consigue más estrellas, tarde lo que tarde. El tiempo "
+                "solo ordena a quienes tienen las mismas estrellas, en centésimas. Puedes reintentar sin límite: "
+                "tu marca cambia solo si la mejoras, con más estrellas o con las mismas en menos tiempo."
+            ),
+            por_que=(
+                "Recoger las estrellas es lo difícil del nivel: correr hasta la meta saltándoselas daría el "
+                "ranking a quien menos juega. Unas pocas estrellas rápidas iban por delante de un nivel casi "
+                "completo."
+            ),
+            estado=APLICADA,
+        ),
+        Regla(
+            id="juego-nivel-diario",
+            eje="juego",
+            titulo="Cada día que cuenta crea un nivel, que se congela de madrugada",
+            que_hace=(
+                "El nivel de un día se congela de madrugada del día siguiente y desde entonces es el mismo para "
+                "todos. Solo crean nivel los días que cuentan para la temporada: un fin de semana no lo crea, así "
+                "que el nivel del viernes se juega el sábado, el domingo y el lunes."
+            ),
+            por_que=(
+                "Congelarlo a una hora fija deja entrar las cuadrículas que llegan tarde y evita que el escenario "
+                "cambie mientras alguien lo juega. Y si un fin de semana con pocas partidas creara nivel, "
+                "cerraría el del viernes a mitad de fin de semana."
+            ),
+            estado=APLICADA,
+            parametros=(
+                _p("se congela a partir de las", juego.HORA_DE_CONGELAR, "juego.HORA_DE_CONGELAR", "de Madrid"),
+                _p("jugadores para que un día cuente", seasons.MUESTRA_MINIMA_DEL_DIA,
+                   "seasons.MUESTRA_MINIMA_DEL_DIA", "jugadores"),
+            ),
+        ),
+        Regla(
+            id="juego-nivel-cerrado",
+            eje="juego",
+            titulo="Un nivel se cierra cuando se congela el siguiente",
+            que_hace=(
+                "Mientras su nivel es el último congelado, puedes mejorar tu marca. En cuanto se congela el "
+                "siguiente, el anterior queda cerrado y su ranking ya no cambia."
+            ),
+            por_que=(
+                "Así la clasificación del mes no se reescribe hacia atrás: nadie puede volver a un nivel viejo a "
+                "mejorar una marca cuando el resto ya está jugando otro."
+            ),
+            estado=APLICADA,
+        ),
+        Regla(
+            id="juego-ultimo-dia-mes-siguiente",
+            eje="juego",
+            titulo="El nivel del último día laborable cuenta en el mes siguiente",
+            que_hace=(
+                "Cada nivel puntúa en el mes de su jornada, salvo el del último día laborable del mes: ese se "
+                "juega ya en el mes nuevo y puntúa en él."
+            ),
+            por_que=(
+                "Así el juego cierra a la vez que el mes, y su campeón se puede coronar la noche del último día, "
+                "junto a los del marcador y las figuras."
+            ),
+            estado=APLICADA,
+        ),
         Regla(
             id="podios-separados",
             eje="clasificacion",

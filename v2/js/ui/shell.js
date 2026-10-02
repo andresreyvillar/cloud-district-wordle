@@ -14,7 +14,7 @@ const SECCIONES = [
   { vista: VISTAS.DATOS, etiqueta: 'Datos' },
   // Pestaña nueva: lleva sticker hasta esta fecha incluida. Pasada, desaparece sola sin tocar código.
   { vista: VISTAS.JUEGO, etiqueta: 'SuperWordleBros', nuevaHasta: '2026-10-09' },
-  { vista: VISTAS.REGLAS, etiqueta: 'Reglas' },
+  { vista: VISTAS.INFO, etiqueta: 'Info' },
 ];
 
 /** Escapa lo que venga de datos antes de meterlo en el DOM. Nombres de jugador incluidos. */
