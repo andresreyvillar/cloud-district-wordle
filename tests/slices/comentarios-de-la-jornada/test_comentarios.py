@@ -528,3 +528,25 @@ def test_resolver_en_uno_sigue_teniendo_su_hecho_propio():
     clavadas = [h for h in hechos_de_la_jornada(filas, "0", 1603) if h.clave == "clavada"]
 
     assert {h.jugador for h in clavadas} == {"Ana", "B"}
+
+
+# @scenarios la-frase-concuerda-en-numero
+def test_toda_clave_tiene_su_plural_y_el_plural_no_habla_en_singular():
+    """«Carlos H. y Rubén Cogollor ha ido a lo suyo» iba a salir el 2 de octubre: `sembrado` no tenía plural y
+    `frase` caía en silencio al singular. Ahora cada clave lo tiene, y ninguna frase plural conjuga en singular."""
+    from comentarios import FRASES, frase
+
+    claves = [clave for clave in FRASES if not clave.endswith("-varios")]
+    assert [c for c in claves if f"{c}-varios" not in FRASES] == []
+
+    import re
+
+    # El verbo que va justo detrás de los nombres, y el trato de tú: es donde el singular se delata. «Les ha
+    # salido» o «nos ha costado» son impersonales y están bien.
+    singular = re.compile(
+        r"Ana y Bea (ha|está|estaba|es|publica|llega|tiene|lo ha)\b|\b(se le|le ha|eres|te|Explícanos)\b"
+    )
+    for clave in claves:
+        for jornada in range(len(FRASES[f"{clave}-varios"])):
+            texto = frase(clave, jornada, "Ana y Bea", dato=2, varios=True)
+            assert not singular.search(texto), f"{clave}: {texto!r}"

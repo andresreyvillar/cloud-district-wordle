@@ -96,3 +96,25 @@ def podio_de_texto(titulo: str, puestos: list[dict]) -> str:
     lineas = [" ".join(fila).rstrip() for fila in zip(*columnas)]
     # Una línea en blanco entre el título y el bloque: da aire por encima del podio (decisión del dueño).
     return f"{titulo}\n\n```\n" + "\n".join(lineas) + "\n```"
+
+
+def lista_de_texto(titulo: str, puestos: list[dict]) -> str:
+    """Los tres primeros en lista, con su título: una línea por puesto, «1º Ana · 18 pts».
+
+    Es la forma de los rankings que no son el marcador —juego y figuras—: el dibujo se reserva para el
+    marcador general, que es el protagonista del mensaje (decisión del dueño, 2026-10-02). Los empatados
+    comparten línea y, como en el podio, se nombran tres y se resume el resto. Sin puestos, cadena vacía.
+    """
+    lineas = []
+    for puesto in ALTURA:
+        filas = [f for f in puestos if f["posicion"] == puesto]
+        if not filas:
+            continue
+        nombres = [" ".join(str(f["nombre"]).split()) for f in filas[:NOMBRES_POR_ESCALON]]
+        resto = len(filas) - len(nombres)
+        if resto:
+            quienes = f"{', '.join(nombres)} y {resto} más"
+        else:
+            quienes = nombres[0] if len(nombres) == 1 else f"{', '.join(nombres[:-1])} y {nombres[-1]}"
+        lineas.append(f"{puesto}º {quienes} · {filas[0]['cifra']}")
+    return f"{titulo}\n" + "\n".join(lineas) if lineas else ""

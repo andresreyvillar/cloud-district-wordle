@@ -1,0 +1,51 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-02T15:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 3
+  notas: >-
+    El 2 de octubre juegan 18 (récord; el anterior, 16) y debutan 7; el resumen no lo decía y el podio de
+    figuras no salía porque nadie llegaba a las cinco partidas del álbum. El dueño decide el mínimo escalonado
+    (jornadas del mes, tope cinco), el bloque de participación solo cuando es noticia y los debutantes por su
+    nombre. Resumen de hoy generado en seco con los datos reales: récord, 7 debutantes con tres nombrados y
+    el podio de figuras el día 2.
+
+    Mutación: mínimo fijo → rojo en los dos del escalonado; la temporada 0 escalonando → rojo en su mínimo
+    fijo (y en el de quien no llega, que mide lo mismo); el bloque todos los días → rojo en el día normal;
+    sin afluencia → rojo solo en el de mucha gente; todos los nombres → rojo en el resumen de nombres; la
+    coletilla fija → rojo en la rotación. Correcciones: el fixture del día 2 dejaba un día de cuatro, que no
+    cuenta; y la concordancia se llamaba `concuerda`, no `concordar`.
+
+    El verificador no refuta ningún punto; señala la mediana superior con jornadas pares (umbral más alto de
+    la cuenta: ahora statistics.median) y cuatro mutantes que sobrevivían (mínimo por mediana, sin filtro de
+    temporada, sin corte a veinte, debut por nombre). Con los tests nuevos los cuatro dan rojo, igual que
+    treinta debutantes que no alargan el bloque.
+
+- run: '2026-10-02T17:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    Dos cambios pedidos tras la vista previa del mensaje de hoy. La concordancia: cinco claves no tenían
+    plural y `frase` caía al singular; ahora todas lo tienen y un test exige plural para cada clave y que no
+    conjugue en singular tras los nombres (mutantes: un plural en singular y quitar uno → rojo). Y el dueño
+    decide que juego y figuras vayan en lista y el podio ASCII sea solo del marcador (mutantes: volver al
+    dibujo en cada uno y nombrar a todos en la lista → rojo en su escenario). Corrección: un test suponía un
+    orden de Ana y Bea que el fixture no da, porque empatan.
+
