@@ -19,13 +19,15 @@ from __future__ import annotations
 
 import calendar
 import datetime
+import statistics
 
 from album import album
-from comentarios import seccion_de_comentarios
+from comentarios import nombres_unidos, seccion_de_comentarios
 from figures import CULO, FIGURAS, figura, rasgos
 from juego import ESCALA, PUNTOS_DESDE_EL_OCTAVO, clasificacion_del_juego, niveles_que_puntuan, puestos_de_nivel
 from podios import podio_de_texto
-from seasons import TEMPORADA_CERO, dias_de_temporada, resultados_de_temporada
+from personas import HUECO, concuerda
+from seasons import MUESTRA_MINIMA_DEL_DIA, TEMPORADA_CERO, dias_de_temporada, es_laborable, resultados_de_temporada
 from standings import clasificacion
 
 #: Los puestos de cada podio del mensaje: el marcador, el juego y las figuras. Tres: la cabeza, no la tabla —
@@ -1009,6 +1011,75 @@ def tira(recuento: dict[str, int], categorias: list[dict]) -> str:
     )
 
 
+#: Debutantes que hacen noticia una jornada. Uno se da la bienvenida a sí mismo en el canal; tres son una ola.
+DEBUTANTES_NOTICIA = 3
+
+#: Cuánto por encima de lo normal es «mucha más gente»: un cuarto más que la mediana.
+AFLUENCIA_NOTICIA = 1.25
+
+#: Las jornadas de temporada anteriores contra las que se mide lo normal: un mes de laborables, más o menos.
+JORNADAS_DE_REFERENCIA = 20
+
+#: Debutantes que se nombran antes de resumir el resto con «y N más»: el mensaje no crece con el grupo.
+NOMBRES_DE_BIENVENIDA = 3
+
+#: La coletilla del día de mucha gente. **Rota por jornada** (`_del_ciclo`), así que dos días seguidos de
+#: récord no repiten. Referencias pop que el grupo reconoce, y ninguna se ríe de nadie: se ríen de la cola.
+COLETILLAS_DE_PARTICIPACION = (
+    "Primera regla del club del Wordle: no se hace spoiler de la palabra.",
+    "Ni el reencuentro de OT juntó a tanta gente.",
+    "Esto ya no es un canal, es el Bernabéu en noche de Champions.",
+    "Somos legión. La media del grupo lo va a notar.",
+    "La mesa del Wordle es como la de Nochebuena: siempre cabe uno más.",
+    "This is fine 🔥: el canal a reventar y el bot aguantando.",
+)
+
+
+def bloque_participacion(resultados: list[dict], jornada: int) -> str:
+    """Cuántos han jugado, **solo si es noticia**: récord del canal, una ola de debutantes o mucha más gente
+    de lo normal (decisión del dueño, 2026-10-02). Un día como los demás no lo menciona.
+
+    Lo normal es la mediana de las últimas `JORNADAS_DE_REFERENCIA` jornadas que cuentan para una temporada
+    —laborables con muestra—, para que un sábado de tres no lo rebaje. Sin jornadas anteriores no hay
+    con qué comparar, y el bloque no sale: el primer día del canal todos serían debutantes y récord.
+    """
+    jugadores_de: dict[int, dict[str, str]] = {}
+    fecha_de: dict[int, str] = {}
+    debut: dict[str, int] = {}
+    for fila in resultados:
+        jugadores_de.setdefault(fila["wordle_id"], {})[fila["slack_user_id"]] = fila.get("player_name") or fila["slack_user_id"]
+        fecha_de[fila["wordle_id"]] = fila["date"]
+        debut[fila["slack_user_id"]] = min(debut.get(fila["slack_user_id"], fila["wordle_id"]), fila["wordle_id"])
+
+    hoy = jugadores_de.get(jornada, {})
+    anteriores = sorted(j for j in jugadores_de if j < jornada)
+    referencia = [
+        len(jugadores_de[j]) for j in anteriores
+        if es_laborable(fecha_de[j]) and len(jugadores_de[j]) >= MUESTRA_MINIMA_DEL_DIA
+    ][-JORNADAS_DE_REFERENCIA:]
+    if not hoy or not referencia:
+        return ""
+
+    cuantos = len(hoy)
+    record = cuantos > max(len(jugadores_de[j]) for j in anteriores)
+    # La mediana de verdad: con un número par de jornadas, la superior hacía el umbral más alto de la cuenta.
+    normal = statistics.median(referencia)
+    debutantes = sorted((nombre for jugador, nombre in hoy.items() if debut[jugador] == jornada), key=str.casefold)
+    if not (record or len(debutantes) >= DEBUTANTES_NOTICIA or cuantos >= AFLUENCIA_NOTICIA * normal):
+        return ""
+
+    lineas = [f"👥 *{cuantos} jugadores hoy*{', récord del canal' if record else ''} (lo normal: {int(normal + 0.5)})."]
+    if debutantes:
+        nombrados = debutantes[:NOMBRES_DE_BIENVENIDA]
+        resto = len(debutantes) - len(nombrados)
+        nombres = f"{', '.join(nombrados)} y {resto} más" if resto else nombres_unidos(nombrados)
+        verbo = "Debuta" if len(debutantes) == 1 else f"Debutan {len(debutantes)}"
+        bienvenida = concuerda(f"¡Bienvenid{HUECO}{'' if len(debutantes) == 1 else 's'}!", debutantes)
+        lineas.append(f"{verbo}: {nombres}. {bienvenida}")
+    lineas.append(f"_{COLETILLAS_DE_PARTICIPACION[jornada % len(COLETILLAS_DE_PARTICIPACION)]}_")
+    return "\n".join(lineas)
+
+
 def bloque_album(resultados: list[dict], temporada: str) -> str:
     """El podio de figuras: los tres primeros puestos del ranking de belleza con su puntuación media.
 
@@ -1304,6 +1375,8 @@ def resumen_del_dia(
         # palabra escrita y su significado no los ha visto nadie.
         bloque_palabra(palabra),
         bloque_la_jornada(resultados, temporada, jornada, senales, tono),
+        # Cuántos han jugado, solo los días que es noticia: va con la jornada, que es de lo que habla.
+        bloque_participacion(resultados, jornada),
         # **Una** línea de cierre —el meme si la jornada tiene forma, y si no el proverbio— entre la jornada y
         # los rankings. Tres frases seguidas era un tercer bloque de comentarios y el mensaje ya tiene dos.
         *_voz(resultados, temporada, jornada, senales),

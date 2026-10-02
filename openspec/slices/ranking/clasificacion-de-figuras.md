@@ -141,6 +141,14 @@ salió del grupo y medir contra todas sus jornadas ordenaría por antigüedad y 
 **WHEN** un jugador tiene menos partidas clasificadas que el mínimo
 **THEN** su álbum se publica igual pero sin puesto, y no puede encabezar el ranking de belleza.
 
+### el-minimo-crece-con-las-jornadas-del-mes
+**WHEN** se calcula el álbum de una temporada mensual
+**THEN** el mínimo de partidas para clasificar es el número de jornadas que lleva la temporada, con tope en el
+mínimo de siempre: la primera jornada basta una partida, la segunda dos, y desde la quinta rige el mínimo
+entero. Así el ranking de belleza —y su podio en el resumen— existe desde el primer día del mes, y quien
+falta no se cuela, porque la media sigue siendo sobre las jornadas de la temporada. En la temporada 0 el
+mínimo es fijo (decisión del dueño, 2026-10-02).
+
 ### orden-determinista-del-album
 **WHEN** dos jugadores empatan en tasa
 **THEN** va delante quien aportó más figuras, y a igualdad de figuras, el orden es por nombre — nunca el

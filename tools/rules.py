@@ -369,7 +369,8 @@ def catalogo() -> tuple[Regla, ...]:
             que_hace=(
                 "Un 📐 geométrico y un 🍑 culo valen 3 puntos, un 🦜 loro 2 y una 🌷 flor 1. Un 🌀 abstracto "
                 "no suma, pero cuenta: tu puntuación del álbum son los puntos entre las jornadas de la "
-                "temporada, no entre las partidas que jugaste."
+                "temporada, no entre las partidas que jugaste. Para tener puesto hacen falta tantas partidas "
+                "como jornadas lleva el mes, hasta el mínimo: así hay ranking desde el primer día."
             ),
             por_que=(
                 "El orden sale de lo raras que son, medido: el geométrico aparece en el 7% de las partidas, "
@@ -386,7 +387,7 @@ def catalogo() -> tuple[Regla, ...]:
                 "la constancia: quien saca un geométrico compensa tres abstractos."
             ),
             parametros=(
-                _p("mínimo de partidas", album.MINIMO_PARA_EL_ALBUM, "album.MINIMO_PARA_EL_ALBUM", "partidas"),
+                _p("tope del mínimo de partidas", album.MINIMO_PARA_EL_ALBUM, "album.MINIMO_PARA_EL_ALBUM", "partidas"),
             ),
         ),
         Regla(

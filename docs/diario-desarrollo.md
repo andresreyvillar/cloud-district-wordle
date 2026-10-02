@@ -456,3 +456,22 @@ exploratoria en producción.
 **Aprendizaje.** El diagnóstico se hizo leyendo, primero la tabla y después la API, antes de tocar nada. Eso
 bastó para descartar las dos hipótesis más caras: que Slack no diera el nombre y que hiciera falta un
 backfill.
+
+## 2026-10-02 — Dieciocho jugadores, y un álbum con ranking desde el primer día
+
+**Qué.** El resumen cuenta cuántos han jugado cuando es noticia: récord del canal, una ola de debutantes o
+mucha más gente de lo normal. Da la bienvenida a los nuevos por su nombre y cierra con una coletilla pop que
+rota. Además, el álbum tiene ranking desde la primera jornada del mes, porque el mínimo de partidas crece con
+el mes hasta cinco.
+
+**Por qué importa.** El 2 de octubre jugaron 18, récord, y debutaron 7. El mensaje no decía nada, y el podio
+de figuras faltaba porque nadie llegaba a cinco partidas.
+
+**Decisiones.**
+- **Solo cuando es noticia.** Contar cada día cuántos juegan sería ruido.
+- **El mínimo escalonado, y no un mínimo más bajo.** La anomalía que el 5 evitaba, un 100 % de tres
+  partidas, venía de medir sobre partidas jugadas. En las temporadas mensuales la media es sobre las jornadas,
+  así que faltar no mejora la de nadie y el mínimo puede seguir al mes.
+
+**Aprendizaje.** El fixture del primer test quitaba a un jugador de un día de cinco, y un día de cuatro no
+cuenta para la temporada. El test fallaba por el fixture, no por el código.

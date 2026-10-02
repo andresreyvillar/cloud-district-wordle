@@ -204,6 +204,23 @@ resumen sale igual lo ejecute quien lo ejecute y cuando lo ejecute.
 **THEN** el mensaje que publica el bot los enseña como texto: no avisa a nadie, no crea enlaces y no cambia el
 resto del mensaje
 
+### la-participacion-se-comenta-si-es-noticia
+**WHEN** la jornada bate el récord de jugadores del canal, trae tres o más debutantes, o junta bastante más
+gente de lo normal (un cuarto más que la mediana de las últimas veinte jornadas de temporada)
+**THEN** el resumen lo cuenta tras la jornada: cuántos han jugado, si es récord y cuánto es lo normal, y una
+coletilla pop que rota por jornada (decisión del dueño, 2026-10-02).
+
+### un-dia-normal-no-habla-de-participacion
+**WHEN** la participación de la jornada es la de siempre, o el canal no tiene jornadas anteriores con las que
+compararla
+**THEN** no sale el bloque: contar cada día cuántos juegan sería ruido, y sin historia no hay récord ni
+«normal».
+
+### los-debutantes-se-nombran
+**WHEN** hay debutantes —quien publica su primer resultado en el canal— en una jornada que es noticia
+**THEN** se les da la bienvenida por su nombre; con más de tres se nombran tres y se resume el resto con
+«y N más», para que el mensaje no crezca con el grupo.
+
 ### el-ultimo-dia-sale-la-victoria
 **WHEN** la jornada del resumen es el último día laborable del mes
 **THEN** no se publica el resumen diario: se publica el mensaje de la victoria del mes

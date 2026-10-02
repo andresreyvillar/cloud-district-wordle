@@ -429,3 +429,53 @@ def test_la_temporada_cero_mide_contra_las_partidas_jugadas():
 
     assert fila_de(carga, "U1")["denominador"] == 6, "sus partidas, no las 20 jornadas"
     assert fila_de(carga, "U1")["media"] == fila_de(carga, "U2")["media"] == 1.0
+
+
+def _mes_de_flores(dias: int, jugadores=("U1", "U2", "U3", "U4", "U5")) -> list[dict]:
+    """Los primeros `dias` laborables de octubre de 2026, con cinco jugadores: cada día cuenta para la temporada."""
+    import datetime
+
+    fechas, dia = [], datetime.date(2026, 10, 1)
+    while len(fechas) < dias:
+        if dia.weekday() < 5:
+            fechas.append(dia.isoformat())
+        dia += datetime.timedelta(days=1)
+    return [
+        resultado(jugador, 1729 + (datetime.date.fromisoformat(fecha) - datetime.date(2026, 10, 1)).days, FLOR, fecha=fecha)
+        for fecha in fechas
+        for jugador in jugadores
+    ]
+
+
+# @scenarios el-minimo-crece-con-las-jornadas-del-mes
+def test_el_segundo_dia_del_mes_basta_con_haber_jugado_los_dos():
+    from album import album
+
+    filas = _mes_de_flores(2, jugadores=("U1", "U2", "U3", "U4", "U5", "U6"))
+    # U6 solo jugó el primer día: no llega a las dos jornadas que lleva el mes. El día 2 sigue contando,
+    # porque lo juegan cinco.
+    filas = [f for f in filas if not (f["slack_user_id"] == "U6" and f["date"] == "2026-10-02")]
+
+    carga = album(filas, "2026-10")
+
+    assert carga["minimo"] == 2
+    assert all(fila_de(carga, j)["clasificado"] for j in ("U1", "U2", "U3", "U4", "U5"))
+    assert fila_de(carga, "U6")["clasificado"] is False
+
+
+# @scenarios el-minimo-crece-con-las-jornadas-del-mes
+def test_el_primer_dia_basta_una_partida_y_desde_la_quinta_jornada_rige_el_minimo_entero():
+    from album import MINIMO_PARA_EL_ALBUM, album
+
+    assert album(_mes_de_flores(1), "2026-10")["minimo"] == 1
+    assert album(_mes_de_flores(7), "2026-10")["minimo"] == MINIMO_PARA_EL_ALBUM
+
+
+# @scenarios el-minimo-crece-con-las-jornadas-del-mes
+def test_en_la_temporada_cero_el_minimo_sigue_fijo():
+    from album import MINIMO_PARA_EL_ALBUM, album
+
+    carga = album(partidas("U1", [FLOR]), "0")
+
+    assert carga["minimo"] == MINIMO_PARA_EL_ALBUM
+    assert carga["jugadores"][0]["clasificado"] is False

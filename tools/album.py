@@ -96,6 +96,20 @@ def _denominador(temporada: str, jornadas: int, partidas: int) -> int:
     return partidas if temporada == TEMPORADA_CERO else max(jornadas, partidas)
 
 
+def minimo_de_la_temporada(temporada: str, jornadas: int) -> int:
+    """Las partidas que hacen falta para tener puesto en el álbum.
+
+    **En una temporada mensual crece con el mes**: tantas como jornadas lleva, con tope en
+    `MINIMO_PARA_EL_ALBUM` (decisión del dueño, 2026-10-02). Sin eso no había ranking de belleza —ni su podio
+    en el resumen— hasta la quinta jornada. La anomalía que el mínimo evitaba no vuelve: la media es sobre las
+    jornadas de la temporada, así que quien falta no mejora la suya. En la temporada 0, donde la media es sobre
+    las partidas jugadas, el mínimo sigue fijo.
+    """
+    if temporada == TEMPORADA_CERO:
+        return MINIMO_PARA_EL_ALBUM
+    return max(1, min(MINIMO_PARA_EL_ALBUM, jornadas))
+
+
 def album(resultados: list[dict], temporada: str) -> dict:
     """El álbum de una temporada: reparto, cobertura y una fila por jugador con algo que clasificar.
 
@@ -123,7 +137,7 @@ def album(resultados: list[dict], temporada: str) -> dict:
         nombre_de[jugador] = fila.get("player_name") or jugador
 
     return {
-        "minimo": MINIMO_PARA_EL_ALBUM,
+        "minimo": minimo_de_la_temporada(temporada, len({fila["wordle_id"] for fila in cuentan})),
         "clasificadas": sum(reparto.values()),
         "sin_patron": sin_patron,
         "reparto": {categoria: reparto[categoria] for categoria in CATEGORIAS},
@@ -230,7 +244,7 @@ def _ranking(
                 "media": round(puntos / denominador, PRECISION),
                 "tasa": round(figuras / partidas, PRECISION),
                 "recuento": {categoria: cuenta[categoria] for categoria in CATEGORIAS},
-                "clasificado": partidas >= MINIMO_PARA_EL_ALBUM,
+                "clasificado": partidas >= minimo_de_la_temporada(temporada, jornadas),
             }
         )
 
