@@ -475,3 +475,18 @@ de figuras faltaba porque nadie llegaba a cinco partidas.
 
 **Aprendizaje.** El fixture del primer test quitaba a un jugador de un día de cinco, y un día de cuatro no
 cuenta para la temporada. El test fallaba por el fixture, no por el código.
+
+## 2026-10-07 — El podio de septiembre, dos veces: contar mensajes no escala
+
+**Qué.** El cierre de mes comprueba si ya publicó el podio leyendo el canal **por fecha**, desde una semana
+antes del mes nuevo, y no un número fijo de mensajes. El cron baja de los días 1-7 a los días 1-3.
+
+**Por qué importa.** El 7 de octubre el podio de septiembre salió otra vez. Se leían 150 mensajes y el
+original estaba en el 153: con la gente nueva el canal pasó de 17 mensajes al día a 37. En agosto había pasado
+lo mismo con 30 leídos y el original en el 44, y el arreglo fue subir el número.
+
+**Decisión.** Una ventana por fecha alcanza lo mismo juegue la gente que juegue. La fecha sale de la
+temporada, no del reloj, y la semana de margen cubre la victoria publicada la última noche del mes cerrado.
+
+**Aprendizaje.** Subir un límite calibrado con el volumen de hoy solo aplaza el fallo hasta que el grupo
+crece. Si lo que se busca tiene fecha, la ventana también tiene que ser de fechas.

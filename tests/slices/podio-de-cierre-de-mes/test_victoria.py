@@ -109,7 +109,7 @@ class Canal:
         self.mensajes = list(mensajes)
         self.subidas: list[tuple[str, str]] = []
 
-    def leer(self, paginas=1):
+    def leer(self, paginas=1, **_):
         return self.mensajes
 
     def subir(self, ruta, texto, titulo, canal=None):
