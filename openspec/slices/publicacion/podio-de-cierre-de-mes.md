@@ -6,7 +6,7 @@ actor: sistema
 trigger:
   type: cron
   surface: pipeline
-  detail: "0 9 1-7 * * — workflow post_podium.yml: post_podium.py"
+  detail: "0 9 1-3 * * — workflow post_podium.yml: post_podium.py"
 events:
   emits: []
   consumes: []
@@ -29,14 +29,15 @@ estaba llena y al siguiente vacía. Ni se felicitaba al que había ganado ni se 
 Este slice publica, una vez al empezar el mes, el podio del mes que cierra —con su imagen— la felicitación al
 campeón y el ánimo para la temporada nueva.
 
-## Por qué del 1 al 7 y no solo el 1
+## Por qué del 1 al 3 y no solo el 1
 
 **«El primer día de competición del mes» no se puede expresar en cron.** Al restringir día del mes y día de la
 semana a la vez, cron los interpreta como **O**: `1-7 * 1-5` dispararía además todos los laborables. Así que la
 condición vive en el código y sale de los datos.
 
-Y del 1 al 7 porque el mensaje es idempotente y **GitHub descarta ventanas** —medido en este repositorio, un
-86% en los peores días—: si el 1 no corre, se publica el 2 y el cierre no se pierde.
+Y del 1 al 3 porque el mensaje es idempotente y **GitHub descarta ventanas** —medido en este repositorio, un
+86% en los peores días—: si el 1 no corre, se publica el 2 y el cierre no se pierde. Era del 1 al 7; el dueño
+lo bajó a tres días el 2026-10-07, después de que el podio de septiembre se republicara el día 7.
 
 ## Comportamiento observable
 
@@ -80,9 +81,15 @@ podio, que va justo debajo.
 
 ### la-comprobacion-alcanza-los-dias-que-el-cron-corre
 **WHEN** se comprueba si el mes ya se celebró
-**THEN** se lee bastante historial del canal para reconocer el mensaje aunque se publicara varios días antes:
-el cron corre durante los primeros días del mes, así que una ventana corta lo republica cuando el original ya
-ha quedado atrás.
+**THEN** se lee el canal **por fecha** —todo lo publicado desde una semana antes del arranque del mes nuevo,
+sin tope de mensajes— para reconocerlo aunque se publicara días antes, incluida la victoria de la última noche
+del mes cerrado: contando mensajes, la ventana se quedó corta dos veces cuando el canal creció (agosto en la
+posición 44 con 30 leídos; septiembre en la 153 con 150).
+
+### el-cierre-se-intenta-los-tres-primeros-dias
+**WHEN** se programa la publicación del cierre de mes
+**THEN** el cron corre los días 1, 2 y 3 del mes, a las 09:00 UTC: si GitHub se salta un día, se publica al
+siguiente.
 
 ### la-victoria-sale-la-noche-del-ultimo-dia
 **WHEN** el resumen diario corre para la jornada del último día laborable del mes

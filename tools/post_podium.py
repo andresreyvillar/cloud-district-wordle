@@ -7,13 +7,14 @@ Slice: `podio-de-cierre-de-mes`.
 la inmediatamente anterior. Nada de fechas del reloj, que es lo que permite fijar el mensaje en un test.
 
 **Es idempotente**, igual que el resumen diario: el título de la imagen lleva el mes celebrado, y si el canal
-ya lo tiene no se vuelve a publicar. Por eso el cron corre **del día 1 al 7** en lugar de solo el 1: si GitHub
+ya lo tiene no se vuelve a publicar. Por eso el cron corre **del día 1 al 3** en lugar de solo el 1: si GitHub
 se salta la ventana —y estos días se salta el 86%—, se publica al día siguiente y no se pierde el cierre.
 """
 
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import os
 import sys
 
@@ -23,9 +24,8 @@ load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from podio import DESDE_TRES_COMPETICIONES, temporada_que_cierra, texto  # noqa: E402
+from podio import DESDE_TRES_COMPETICIONES, _siguiente, temporada_que_cierra, texto  # noqa: E402
 from post_ranking import (  # noqa: E402
-    PAGINAS_DE_HISTORIA,
     TITULO_DEL_PODIO,
     capture_ranking,
     leer_juego,
@@ -35,6 +35,24 @@ from post_ranking import (  # noqa: E402
     upload_to_slack,
     ya_celebrado,
 )
+
+#: Días antes del arranque del mes nuevo desde los que se lee el canal. La victoria sale la noche del último
+#: laborable del mes cerrado, que puede caer hasta tres días antes del día 1 —un mes que acaba en domingo—, o
+#: más con un festivo: una semana lo cubre de sobra sin leer el mes entero.
+DIAS_ANTES_DEL_MES_NUEVO = 7
+
+
+def desde_de_la_comprobacion(temporada: str) -> float:
+    """Desde cuándo se lee el canal para saber si `temporada` ya se celebró, en segundos UTC.
+
+    **Sale de la temporada, no del reloj** (§10), y **es una fecha, no un número de mensajes**: el 7 de octubre
+    de 2026 el podio de septiembre se republicó porque estaba en la posición 153 y se leían 150. Por fecha, la
+    comprobación alcanza lo mismo juegue la gente que juegue.
+    """
+    año, mes = (int(parte) for parte in _siguiente(temporada).split("-"))
+    arranque = dt.datetime(año, mes, 1, tzinfo=dt.timezone.utc)
+    return (arranque - dt.timedelta(days=DIAS_ANTES_DEL_MES_NUEVO)).timestamp()
+
 
 async def celebrar(
     capturar=capture_ranking,
@@ -58,11 +76,9 @@ async def celebrar(
         print("no hay mes cerrado que celebrar todavía")
         return 0
 
-    # **Hace falta mucha más historia que en el mensaje diario.** El cron corre del 1 al 7, así que la
-    # comprobación tiene que alcanzar hasta siete días atrás; medido, el canal mueve hasta 17 mensajes al día,
-    # o sea ~120. Con la ventana de 30 que hereda el resumen diario el podio de agosto se republicó tres días
-    # después: el original estaba en la posición 44 del historial.
-    if ya_celebrado(leer_mensajes(paginas=PAGINAS_DE_HISTORIA), temporada):
+    # **Por fecha, no por número de mensajes.** Contando, el podio se republicó dos veces: agosto estaba en la
+    # posición 44 y se leían 30; septiembre, en la 153 y se leían 150.
+    if ya_celebrado(leer_mensajes(limite=200, desde=desde_de_la_comprobacion(temporada)), temporada):
         print(f"el podio de {temporada} ya está publicado: no se repite")
         return 0
 

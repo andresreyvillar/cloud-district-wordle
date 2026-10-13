@@ -1,0 +1,23 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-07T17:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El 7 de octubre el podio de septiembre se republicó: la comprobación leía 150 mensajes y el original
+    estaba en la posición 153 (el canal pasó de 17 a 37 mensajes al día). Diagnóstico solo de lectura sobre
+    el historial. La comprobación del cierre lee ahora por fecha (oldest, una semana antes del mes nuevo) y
+    el cron baja de 1-7 a 1-3 por decisión del dueño. Lectura real en seco con el código nuevo: 282
+    mensajes, septiembre reconocido como ya celebrado.
+
+    Mutación: sin oldest → rojo en el lector; sin margen → rojo en la victoria de fin de semana; contar
+    páginas en celebrar → rojo en el caso de la posición 153; tope de páginas con fecha → rojo en los dos
+    tests del lector. Corrección: el doble del canal de test_victoria no aceptaba los argumentos nuevos.

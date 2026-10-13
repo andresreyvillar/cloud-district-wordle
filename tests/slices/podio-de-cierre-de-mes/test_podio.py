@@ -202,26 +202,35 @@ def test_el_mensaje_abre_presentando_el_juego_y_el_mes():
     assert mensaje.count("agosto de 2026") == 1, mensaje
 
 
-# @scenarios la-comprobacion-alcanza-los-dias-que-el-cron-corre
-def test_la_comprobacion_alcanza_mas_alla_de_una_pagina():
-    """**El fallo real: el podio de agosto se publicó dos veces.**
+def _ts(instante: str) -> float:
+    import datetime as dt
 
-    El original quedó en la posición 44 del historial y la guarda leía 30 mensajes, así que no lo encontró y
-    republicó tres días después. El cron corre del 1 al 7 y el canal mueve hasta 17 mensajes al día: la
-    comprobación tiene que alcanzar unos 120, no 30.
+    return dt.datetime.fromisoformat(instante).replace(tzinfo=dt.timezone.utc).timestamp()
+
+
+# @scenarios la-comprobacion-alcanza-los-dias-que-el-cron-corre
+def test_la_comprobacion_lee_por_fecha_y_no_por_numero_de_mensajes():
+    """**El fallo real, dos veces.** En agosto el original estaba en la posición 44 y se leían 30; el 7 de
+    octubre estaba en la 153 y se leían 150: el canal pasó de 17 mensajes al día a 37. Contar mensajes se queda
+    corto cada vez que el grupo crece; leer desde una fecha, no.
     """
     import post_podium
 
-    marca = {"bot_id": "B1", "files": [{"title": "Podio del mes :trophy: · 2026-08"}]}
-    relleno = [{"user": "U1", "text": "La palabra del día #1700 4/6"} for _ in range(43)]
+    marca = {"ts": str(_ts("2026-09-01T07:06:57")), "bot_id": "B1",
+             "files": [{"title": "Podio del mes :trophy: · 2026-08"}]}
+    # 152 mensajes posteriores al original, como el 7 de octubre.
+    relleno = [{"ts": str(_ts("2026-09-03T08:00:00") + i), "user": "U1", "text": "La palabra del día #1700 4/6"}
+               for i in range(152)][::-1]
+    canal = relleno + [marca]
 
-    paginas_pedidas = []
+    pedidas = []
 
     def historial(**kwargs):
-        paginas_pedidas.append(kwargs.get("paginas", 1))
-        # Solo devuelve la marca si se piden páginas suficientes para llegar a la posición 44.
-        cuantos = 30 * kwargs.get("paginas", 1)
-        return (relleno + [marca])[:cuantos]
+        pedidas.append(kwargs)
+        desde = kwargs.get("desde")
+        if desde is None:
+            return canal[: 30 * kwargs.get("paginas", 1)]
+        return [m for m in canal if float(m["ts"]) >= desde]
 
     subidas = []
 
@@ -237,9 +246,50 @@ def test_la_comprobacion_alcanza_mas_alla_de_una_pagina():
         )
     )
     assert codigo == 0
-    assert paginas_pedidas and paginas_pedidas[0] > 1, (
-        f"el podio tiene que pedir más de una página: pidió {paginas_pedidas}")
-    assert not subidas, "con el original a 44 mensajes de distancia, no debe republicar"
+    assert pedidas and pedidas[0].get("desde") is not None, f"tiene que leer desde una fecha: {pedidas}"
+    assert not subidas, "con el original a 153 mensajes de distancia, no debe republicar"
+
+
+# @scenarios la-comprobacion-alcanza-los-dias-que-el-cron-corre
+def test_la_fecha_cubre_la_victoria_de_la_ultima_noche_aunque_el_mes_acabe_en_fin_de_semana():
+    """Octubre de 2026 acaba en sábado: la victoria sale la noche del viernes 30, que en UTC ya es el 31 de
+    madrugada. La comprobación del día 1 de noviembre tiene que alcanzarla, y no leer el mes entero."""
+    from post_podium import desde_de_la_comprobacion
+
+    desde = desde_de_la_comprobacion("2026-10")
+
+    assert desde <= _ts("2026-10-30T23:30:00"), "la victoria de la última noche queda dentro"
+    assert desde >= _ts("2026-10-15T00:00:00"), "no hace falta leer el mes entero"
+
+
+# @scenarios la-comprobacion-alcanza-los-dias-que-el-cron-corre
+def test_el_lector_desde_una_fecha_pagina_hasta_el_final():
+    """Con fecha, el lector pasa `oldest` a Slack y sigue el cursor hasta que se acaba, sin tope de páginas."""
+    from post_ranking import mensajes_recientes
+
+    class CanalLargo:
+        def __init__(self, paginas):
+            self.paginas = paginas
+            self.llamadas = []
+
+        def conversations_history(self, **kwargs):
+            self.llamadas.append(kwargs)
+            i = int(kwargs.get("cursor", "0"))
+            siguiente = {"next_cursor": str(i + 1)} if i + 1 < self.paginas else {}
+            return {"messages": [{"ts": str(i)}], "response_metadata": siguiente}
+
+    canal = CanalLargo(8)
+    mensajes = mensajes_recientes(cliente=canal, desde=1790000000.0)
+
+    assert len(mensajes) == 8, "lee las ocho páginas, más de las cinco de antes"
+    assert all(llamada.get("oldest") == "1790000000.0" for llamada in canal.llamadas), canal.llamadas[0]
+
+
+# @scenarios el-cierre-se-intenta-los-tres-primeros-dias
+def test_el_cron_del_cierre_corre_del_uno_al_tres():
+    flujo = (Path(__file__).resolve().parents[3] / ".github" / "workflows" / "post_podium.yml").read_text()
+
+    assert "- cron: '0 9 1-3 * *'" in flujo, "el cierre se intenta los tres primeros días del mes"
 
 
 # @scenarios la-comprobacion-alcanza-los-dias-que-el-cron-corre

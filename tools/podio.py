@@ -5,7 +5,7 @@ Slice: `podio-de-cierre-de-mes` (openspec/slices/publicacion/podio-de-cierre-de-
 **Qué mes se celebra sale de los datos, no del reloj** (§10). La temporada en curso es la del último resultado
 de la tabla, y la que se celebra es la inmediatamente anterior. Si el mes nuevo todavía no tiene resultados
 —a primera hora del día 1 puede no haberlos— no se celebra nada y se vuelve a intentar al día siguiente: el
-cron corre del 1 al 7 justo para eso.
+cron corre del 1 al 3 justo para eso.
 
 **No se recalcula nada.** El podio sale de `standings.clasificacion` y las medallas de `badges`, los mismos
 que publica la web ([ADR 0008](../openspec/decisions/0008-donde-vive-el-calculo.md)).

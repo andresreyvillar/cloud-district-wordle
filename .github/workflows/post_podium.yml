@@ -2,17 +2,17 @@ name: Monthly Podium Post
 
 on:
   schedule:
-    # **Del día 1 al 7, y a las 11:00 de Madrid.**
+    # **Del día 1 al 3, y a las 11:00 de Madrid.**
     #
     # No se puede expresar «el primer día de competición del mes» en cron: al restringir día del mes y día de
     # la semana a la vez, cron los interpreta como O y no como Y, así que `1-7 * 1-5` dispararía además todos
     # los laborables. La condición vive en el código y sale de los datos.
     #
-    # Del 1 al 7 porque el mensaje es idempotente y GitHub descarta ventanas: si el día 1 no corre, se
-    # publica el 2 y el cierre no se pierde. A las 09:00 UTC porque a esa hora ya ha jugado la mayoría —el
+    # Del 1 al 3 porque el mensaje es idempotente y GitHub descarta ventanas: si el día 1 no corre, se
+    # publica el 2 y el cierre no se pierde. Era del 1 al 7; tres días bastan (decisión del dueño, 2026-10-07). A las 09:00 UTC porque a esa hora ya ha jugado la mayoría —el
     # pico del canal está entre las 08:00 y las 10:00 de Madrid— y hace falta al menos un resultado del mes
     # nuevo para saber que el anterior ha cerrado.
-    - cron: '0 9 1-7 * *'
+    - cron: '0 9 1-3 * *'
   workflow_dispatch:
 
 jobs:

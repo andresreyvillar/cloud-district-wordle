@@ -174,13 +174,9 @@ TITULO_DEL_PODIO = "Podio del mes 🏆 · {temporada}"
 
 #: Páginas de historial que se leen para saber si el mes ya se celebró. Cada página son 30 mensajes.
 #:
-#: **Cinco, con margen de sobra.** El cron corre del día 1 al 7, así que la marca puede estar a siete días de
-#: distancia; el canal mueve hasta 17 mensajes al día, unos 120 en esa ventana. Con una sola página —la que
-#: le basta al resumen diario, que reconoce un mensaje de minutos antes— el podio de agosto se republicó el
-#: día 4: el original estaba en la posición 44 y la ventana llegaba a la 30.
-#:
-#: Se paginan siempre y no solo hasta encontrarla porque esto corre una vez al mes: cinco llamadas de más al
-#: mes no compensan la complejidad de parar antes.
+#: Solo la usa la victoria, que busca una publicación de esa misma noche. **El cierre de mes del día 1 ya no
+#: cuenta mensajes**: lee por fecha (`desde`), porque con cinco páginas el podio de septiembre se republicó el
+#: 7 de octubre de 2026 —estaba en la posición 153— cuando el canal pasó de 17 mensajes al día a 37.
 PAGINAS_DE_HISTORIA = 5
 
 
@@ -593,7 +589,7 @@ def ya_publicada(mensajes: list[dict], jornada: int | None) -> bool:
 
 
 def mensajes_recientes(
-    limite: int = 30, cliente=None, canal: str | None = None, paginas: int = 1
+    limite: int = 30, cliente=None, canal: str | None = None, paginas: int = 1, desde: float | None = None
 ) -> list[dict]:
     """Los últimos mensajes del canal, para saber si ya se publicó. Un fallo de lectura devuelve vacío.
 
@@ -606,6 +602,10 @@ def mensajes_recientes(
     hasta siete días atrás. Con una sola página el podio de agosto se republicó tres días después: estaba en
     la posición 44 del historial y la ventana llegaba a la 30.
 
+    `desde` lee **por fecha**: todo lo publicado desde ese instante, siguiendo el cursor hasta el final sin tope
+    de páginas. Contar mensajes se queda corto cada vez que el grupo crece: el 7 de octubre de 2026 el podio de
+    septiembre estaba en la posición 153 y las cinco páginas llegaban a la 150.
+
     Devolver vacío ante un fallo significa **publicar**: entre no publicar el resumen del día y arriesgar un
     duplicado si además el canal no responde, se elige publicar. Un canal caído no puede dejar al grupo sin
     mensaje.
@@ -614,10 +614,15 @@ def mensajes_recientes(
         cli = cliente if cliente is not None else WebClient(token=SLACK_TOKEN)
         mensajes: list[dict] = []
         cursor = None
-        for _ in range(max(1, paginas)):
+        pedidas = 0
+        while desde is not None or pedidas < max(1, paginas):
             respuesta = cli.conversations_history(
-                channel=canal or CHANNEL_ID, limit=limite, **({"cursor": cursor} if cursor else {})
+                channel=canal or CHANNEL_ID,
+                limit=limite,
+                **({"cursor": cursor} if cursor else {}),
+                **({"oldest": str(desde)} if desde is not None else {}),
             )
+            pedidas += 1
             mensajes += respuesta.get("messages") or []
             cursor = (respuesta.get("response_metadata") or {}).get("next_cursor")
             if not cursor:
