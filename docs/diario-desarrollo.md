@@ -490,3 +490,25 @@ temporada, no del reloj, y la semana de margen cubre la victoria publicada la ú
 
 **Aprendizaje.** Subir un límite calibrado con el volumen de hoy solo aplaza el fallo hasta que el grupo
 crece. Si lo que se busca tiene fecha, la ventana también tiene que ser de fechas.
+
+## 2026-10-14 — Un sitio para debatir las reglas, y la primera votación: los spoilers
+
+**Qué.** Info tiene un apartado «Debate de reglas». Muestra las votaciones abiertas, con cada opción, sus votos y
+quién la votó, y las propuestas del grupo con su autor. Para votar o proponer basta con elegir tu nombre. La
+primera votación es qué hacer con los spoilers, con la opción de no hacer nada.
+
+**Por qué importa.** Un comentario con una pista evidente ayudó a los que jugaron después en la jornada #1742.
+Medido sobre 211 jornadas, publicar tarde no da ventaja por sí solo: la ventaja aparece el día del spoiler.
+Decidirlo en el canal se pierde entre resultados.
+
+**Decisiones.**
+- **Quién eres se elige, sin cuentas**, como en el SuperWordleBros. Por eso **los votos se ven con su nombre**:
+  si alguien vota por otro, el otro lo ve y lo corrige. Es la forma de que suplantar a alguien sea visible.
+- **Las propuestas no se publican solas.** La web es pública y van firmadas con el nombre de un compañero: quedan
+  pendientes hasta que el dueño las aprueba, y la clave pública ni siquiera puede leerlas.
+- **La web no escribe en las tablas**: llama a `votar_regla` y `proponer_regla`, que validan, igual que
+  `registrar_tiempo`.
+
+**Aprendizaje.** Al restaurar una mutación, dos copias de seguridad con el mismo nombre de fichero (`debate.js` de
+`ui/` y de `domain/`) se pisaron y la vista se restauró con el contenido del dominio. Era un fichero nuevo, sin
+copia en git. Las copias de una prueba de mutación necesitan nombres únicos, no solo una carpeta aparte.

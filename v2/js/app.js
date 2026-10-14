@@ -8,6 +8,7 @@
 import { conBase, configurarBase, resolver, rutaDe, VISTAS } from './router.js';
 import { animar, movimientoReducido, seguirScroll } from './ui/animacion.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
+import { pintarDebate } from './ui/debate.js';
 import { pintarInfo } from './ui/info.js';
 import { pintarDatos } from './ui/datos.js';
 import { pintarHoy } from './ui/hoy.js';
@@ -118,6 +119,8 @@ function despachar(destino, resultados, instantaneas) {
   if (destino.vista === VISTAS.INFO) {
     // Las reglas vigentes son las de la temporada en curso: Info cuenta cómo se juega hoy.
     pintarInfo(vista, instantaneas.get(actual)?.reglas);
+    // El debate se lee aparte y llega después: si la base de datos tarda o falla, el resto de Info ya está.
+    pintarDebate(vista.querySelector('#debate-de-reglas'), resultados);
     return;
   }
   pintarPendiente(vista, { ...destino, temporada: actual }, PENDIENTES[destino.vista]);

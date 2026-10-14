@@ -1,0 +1,40 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-14T17:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 3
+  notas: >-
+    El dueño pidió en Info una zona para debatir reglas, con propuestas firmadas y la norma anti-spoilers en
+    votación con la opción de no hacer nada. Rechazó el cuestionario y pidió seguir: se tomaron las opciones
+    recomendadas (nombre elegido como en el juego, propuestas pendientes hasta aprobarlas, un voto cambiable,
+    cierra el dueño). La base de datos se prueba en un Postgres local desechable con los roles de Supabase; la
+    web con node --test y con Playwright contra el servidor local interceptando rule_* y rpc: ninguna escritura
+    salió a Supabase.
+
+    Mutación: sin comprobar votación abierta → rojo en la cerrada; política de lectura abierta → rojo en solo
+    aprobadas; tope de pendientes a 99 → rojo en la cuarta; recuento que guarda el primer voto → rojo en el
+    voto cambiado; votar sin nombre → rojo en sin-jugador; propuesta sin escapar → rojo en el escape.
+    Correcciones: el test de apodos exigía escapar(nombreVisible(...)) en cada nombre; votar redibujaba el
+    apartado y borraba una propuesta a medio escribir (se conserva); al restaurar una mutación, dos copias con el
+    mismo nombre de fichero pisaron ui/debate.js, que se reconstruyó y se volvió a verificar.
+
+    Gate 4d (verificador adversarial, solo lectura): sin hallazgos graves. Corregidos los bajos: btrim que solo
+    quitaba espacios (una explicación de saltos de línea pasaba; dos casos nuevos, rojos con el btrim viejo),
+    tope de pendientes sin cerrojo ante peticiones simultáneas (pg_advisory_xact_lock por autor), la vista no se
+    refrescaba tras un voto rechazado. Aceptado y anotado: el mensaje del tope confirma que otra persona tiene
+    tres pendientes, coherente con el modelo de nombre elegido.
+
+    Producción (2026-10-14, a petición del dueño): migración aplicada como create_rule_debate (versión
+    20261014154832; el fichero del repo va con su propia marca, como en create_game_times). Verificado: la
+    votación anti-spoilers abierta con 4 opciones; anon sin INSERT/UPDATE/TRUNCATE en las tablas y con EXECUTE en
+    las dos funciones; y, como anon dentro de un bloque do que termina en excepción, votar y cambiar el voto, una
+    propuesta pendiente que anon no lee, un desconocido rechazado (22023) y el insert directo denegado
+    (42501). Después: 0 votos y 0 propuestas.
