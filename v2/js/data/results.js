@@ -159,3 +159,35 @@ export async function leerNivelCongelado(cliente) {
 export const NIVEL_CONGELADO = {
   ultimo: async () => leerNivelCongelado(await cliente()),
 };
+
+/**
+ * El debate de reglas: votaciones, votos y propuestas aprobadas. Slice `debate-de-reglas`.
+ *
+ * Las propuestas pendientes no llegan: la política de la tabla solo deja leer las aprobadas con la clave pública.
+ */
+export async function leerDebate(cliente) {
+  const [votaciones, votos, propuestas] = await Promise.all([
+    cliente.from('rule_polls').select('id,titulo,descripcion,opciones,abierta').order('created_at'),
+    cliente.from('rule_votes').select('votacion,votante,opcion'),
+    cliente.from('rule_proposals').select('id,autor,titulo,texto,created_at').order('created_at', { ascending: false }),
+  ]);
+  const fallo = [votaciones, votos, propuestas].find((r) => r.error);
+  if (fallo) throw new Error(`Supabase: ${fallo.error.message}`);
+  return { votaciones: votaciones.data ?? [], votos: votos.data ?? [], propuestas: propuestas.data ?? [] };
+}
+
+/** Las dos escrituras del debate, por función: es la base de datos la que decide qué entra. */
+async function llamar(cliente, funcion, argumentos) {
+  const { data, error } = await cliente.rpc(funcion, argumentos);
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return data;
+}
+
+/** La API del debate que usa Info. Los tests le pasan otra. */
+export const DEBATE = {
+  leer: async () => leerDebate(await cliente()),
+  votar: async ({ votacion, votante, opcion }) =>
+    llamar(await cliente(), 'votar_regla', { p_votacion: votacion, p_votante: votante, p_opcion: opcion }),
+  proponer: async ({ autor, titulo, texto }) =>
+    llamar(await cliente(), 'proponer_regla', { p_autor: autor, p_titulo: titulo, p_texto: texto }),
+};
