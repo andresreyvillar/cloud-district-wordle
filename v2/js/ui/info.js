@@ -8,6 +8,7 @@
  * alguien recalibrara un umbral, y la página contradiría a sus propias reglas. Un test lo comprueba.
  */
 
+import { VISTAS, rutaDe } from '../router.js';
 import { reglasVigentes } from './reglas.js';
 
 const PALABRA_DEL_DIA = 'https://lapalabradeldia.com';
@@ -63,13 +64,12 @@ const LO_QUE_PUBLICA_EL_BOT = `
       finales y los campeones de cada competición.</p>
   </section>`;
 
-const DEBATE_DE_REGLAS = `
-  <section class="info-bloque debate">
+/** El debate tiene su pestaña: aquí solo se cuenta que existe y se lleva a ella. */
+const DEBATE_DE_REGLAS = () => `
+  <section class="info-bloque">
     <h2>Debate de reglas</h2>
-    <p>Las reglas las decide el grupo. Aquí se votan las normas que están en el aire y se proponen otras nuevas:
-      elige quién eres, vota o escribe tu propuesta. Los votos se ven con su nombre, y las propuestas aparecen
-      cuando se aprueban.</p>
-    <div id="debate-de-reglas"></div>
+    <p>Las reglas las decide el grupo. En la pestaña <a href="${rutaDe({ vista: VISTAS.DEBATE })}">Debate</a> se
+      votan las normas que están en el aire y se proponen otras nuevas.</p>
   </section>`;
 
 /** Pinta la pestaña Info. `reglas` son las de la instantánea de la temporada en curso, o nada. */
@@ -96,6 +96,6 @@ export function pintarInfo(contenedor, reglas) {
         <h2>Reglas vigentes</h2>
         ${reglasHtml}
       </section>
-      ${DEBATE_DE_REGLAS}
+      ${DEBATE_DE_REGLAS()}
     </div>`;
 }

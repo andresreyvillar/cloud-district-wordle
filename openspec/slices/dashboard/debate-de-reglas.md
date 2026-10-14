@@ -6,7 +6,7 @@ actor: jugador
 trigger:
   type: ui
   surface: web
-  detail: "pestaña Info — /info, apartado «Debate de reglas»: votar una norma abierta o proponer una nueva, eligiendo quién eres"
+  detail: "pestaña Debate — /debate: votar una norma abierta o proponer una nueva, eligiendo quién eres"
 events:
   emits: []
   consumes: []
@@ -17,10 +17,10 @@ tests_root: tests/slices/debate-de-reglas/
 blocked: null
 ---
 
-# En Info se votan las normas abiertas y se proponen nuevas
+# En la pestaña Debate se votan las normas abiertas y se proponen nuevas
 
 **Actor:** quien juega
-**Trigger:** votar o enviar una propuesta en el apartado «Debate de reglas» de Info
+**Trigger:** votar o enviar una propuesta en la pestaña Debate
 
 ## Contexto
 
@@ -43,8 +43,17 @@ La web **no escribe en las tablas**: llama a dos funciones de la base de datos q
 
 ## Comportamiento observable
 
+### el-debate-tiene-su-pestana
+**WHEN** se abre `/debate` o se pulsa la pestaña Debate del menú
+**THEN** se ve el debate sin tener que bajar por la página: nació como apartado al final de Info y en móvil
+quedaba a unos 11.000 px del principio. Info conserva un párrafo que lleva a la pestaña.
+
+### el-enlace-viejo-lleva-al-debate
+**WHEN** alguien abre `/info#debate-de-reglas`, el primer enlace que se compartió
+**THEN** llega a la pestaña Debate y la barra dice `/debate`
+
 ### la-votacion-abierta-se-ve-con-su-recuento
-**WHEN** se abre Info y hay una votación abierta
+**WHEN** se abre el debate y hay una votación abierta
 **THEN** se ve su pregunta, cada opción con cuántos votos lleva y quién la ha votado
 
 ### se-vota-eligiendo-tu-nombre
@@ -68,7 +77,7 @@ La web **no escribe en las tablas**: llama a dos funciones de la base de datos q
 **THEN** se guarda como pendiente, se le dice que aparecerá cuando se apruebe y no se ve todavía en la web
 
 ### solo-se-ven-las-propuestas-aprobadas
-**WHEN** se abre Info
+**WHEN** se abre el debate
 **THEN** se ven las propuestas aprobadas con su autor, y ni las pendientes ni las rechazadas son legibles con la
 clave pública
 
@@ -87,7 +96,7 @@ texto vacío o demasiado largo, o de quien ya tiene tres propuestas pendientes
 
 ### si-el-debate-no-carga-info-sigue
 **WHEN** la base de datos no responde
-**THEN** el resto de Info se ve igual y el apartado dice que no se ha podido cargar
+**THEN** la pestaña enseña su cabecera y dice que no se ha podido cargar; el resto de la web no se entera
 
 ## Estado después
 
@@ -105,5 +114,5 @@ votación `anti-spoilers` existe y está abierta. No se toca `wordle_results` ni
 
 ## Slices compañeros
 
-- [[reglas-explicadas]] — la pestaña Info donde vive el apartado.
+- [[reglas-explicadas]] — la pestaña Info, que lleva al debate.
 - [[ranking-del-juego]] — de donde salen el selector «¿Quién eres?» y el patrón de escritura por función.

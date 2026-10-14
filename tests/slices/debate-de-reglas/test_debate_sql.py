@@ -56,6 +56,14 @@ def test_la_votacion_anti_spoilers_existe_abierta_y_con_la_opcion_de_no_hacer_na
     assert len(opciones(db)) >= 3
 
 
+# @scenarios la-votacion-abierta-se-ve-con-su-recuento
+def test_la_votacion_pregunta_por_la_consecuencia_y_no_por_la_norma(db):
+    """«Solo prevención» era no hacer nada: dar pistas ya está prohibido. Todas las opciones son consecuencias."""
+    assert opciones(db) == ["anular", "sancionar", "cortar", "nada"]
+    titulo = db(f"select titulo from public.rule_polls where id = '{VOTACION}'", rol="anon").stdout.strip()
+    assert "pista" in titulo.lower()
+
+
 # @scenarios se-vota-eligiendo-tu-nombre
 def test_la_clave_publica_vota_con_la_funcion_y_el_voto_se_lee(db):
     resultado = votar(db, ANA, opciones(db)[0])

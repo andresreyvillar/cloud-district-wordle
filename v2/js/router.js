@@ -10,6 +10,7 @@
  *     /hoy                      el día en curso
  *     /datos                    tabla cruda
  *     /info                     cómo se juega, las competiciones y las reglas vigentes
+ *     /debate                   las normas en votación y las propuestas del grupo
  *     /reglas, /t/<AAAA-MM>/reglas   llevan a /info: las reglas ya no se enseñan por temporada
  *
  * Función **pura**: entra una cadena, sale un objeto. No toca el DOM, no lee `location` y no consulta la
@@ -67,6 +68,7 @@ export const VISTAS = Object.freeze({
   DATOS: 'datos',
   JUEGO: 'juego',
   INFO: 'info',
+  DEBATE: 'debate',
   JUGADOR: 'jugador',
   DESCONOCIDA: 'desconocida',
 });
@@ -106,6 +108,9 @@ export function resolver(ruta) {
     // El juego no depende de la temporada que se esté mirando: su nivel es el de la última jornada cerrada.
     return { vista: VISTAS.JUEGO };
   }
+  if (primero === 'debate' && resto.length === 0) {
+    return { vista: VISTAS.DEBATE };
+  }
   // `/reglas` era la pestaña de antes: lleva a Info, para que ningún enlace viejo dé error.
   if ((primero === 'info' || primero === 'reglas') && resto.length === 0) {
     return { vista: VISTAS.INFO, temporada: null };
@@ -144,6 +149,15 @@ export function seccionDe(vista) {
   return vista;
 }
 
+/**
+ * El destino de verdad de un enlace con ancla. El debate empezó como un apartado de Info, y el primer enlace que
+ * se compartió fue `/info#debate-de-reglas`: ahora lleva a su pestaña. **Pura**: el ancla entra por parámetro.
+ */
+export function destinoConAncla(destino, ancla) {
+  if (destino?.vista === VISTAS.INFO && ancla === '#debate-de-reglas') return { vista: VISTAS.DEBATE };
+  return destino;
+}
+
 /** La ruta canónica de una vista. Es la inversa de `resolver`, y sirve para construir enlaces. */
 export function rutaDe(destino) {
   return conBase(_rutaInterna(destino));
@@ -173,6 +187,8 @@ function _rutaInterna(destino) {
       return '/juego';
     case VISTAS.INFO:
       return '/info';
+    case VISTAS.DEBATE:
+      return '/debate';
     default:
       return '/';
   }
