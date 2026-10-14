@@ -10,7 +10,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { recuento } from '../../../v2/js/domain/debate.js';
-import { controlDelDebate, pintarDebate, vistaDebate } from '../../../v2/js/ui/debate.js';
+import { configurarBase, destinoConAncla, resolver, rutaDe, VISTAS } from '../../../v2/js/router.js';
+import { controlDelDebate, pintarDebate, pintarPaginaDebate, vistaDebate } from '../../../v2/js/ui/debate.js';
+import { navegacion } from '../../../v2/js/ui/shell.js';
 import { pintarInfo } from '../../../v2/js/ui/info.js';
 
 const JUGADORES = [
@@ -184,13 +186,48 @@ test('si la lectura falla, el apartado lo dice', async () => {
   assert.match(contenedor.innerHTML, /No se ha podido cargar/);
 });
 
-/** @scenarios si-el-debate-no-carga-info-sigue */
-test('Info deja su sitio al debate después de las reglas vigentes', () => {
+/** @scenarios el-debate-tiene-su-pestana */
+test('Info ya no carga el debate: cuenta que existe y lleva a su pestaña', () => {
+  configurarBase('/2/');
   const contenedor = { innerHTML: '' };
   pintarInfo(contenedor, []);
+  configurarBase('/');
 
   const html = contenedor.innerHTML;
   assert.match(html, /<h2>Debate de reglas<\/h2>/);
-  assert.match(html, /id="debate-de-reglas"/);
-  assert.ok(html.indexOf('Reglas vigentes') < html.indexOf('Debate de reglas'));
+  assert.match(html, /<a href="\/2\/debate">Debate<\/a>/);
+  assert.doesNotMatch(html, /id="debate-de-reglas"/);
+});
+
+/** @scenarios el-debate-tiene-su-pestana */
+test('/debate es su propia vista, con pestaña en el menú', () => {
+  configurarBase('/2/');
+  const vista = resolver('/2/debate').vista;
+  const ida = resolver(rutaDe({ vista: VISTAS.DEBATE })).vista;
+  const nav = navegacion({ vista: VISTAS.DEBATE });
+  configurarBase('/');
+
+  assert.equal(vista, VISTAS.DEBATE);
+  assert.equal(ida, VISTAS.DEBATE);
+  assert.match(nav, /<a href="\/2\/debate"[^>]*aria-current="page"[^>]*>Debate/);
+});
+
+/** @scenarios el-debate-tiene-su-pestana, si-el-debate-no-carga-info-sigue */
+test('la pestaña pinta su cabecera aunque la base de datos falle', async () => {
+  const contenedor = { innerHTML: '' };
+
+  await pintarPaginaDebate(contenedor, [], { leer: async () => { throw new Error('caído'); } });
+
+  assert.match(contenedor.innerHTML, /<h1>/);
+  assert.match(contenedor.innerHTML, /id="debate-de-reglas"/);
+});
+
+/** @scenarios el-enlace-viejo-lleva-al-debate */
+test('/info#debate-de-reglas lleva a la pestaña Debate, y cualquier otra ancla se queda en Info', () => {
+  const info = { vista: VISTAS.INFO, temporada: null };
+
+  assert.deepEqual(destinoConAncla(info, '#debate-de-reglas'), { vista: VISTAS.DEBATE });
+  assert.equal(destinoConAncla(info, '#eje-temporada'), info);
+  assert.equal(destinoConAncla(info, ''), info);
+  assert.equal(destinoConAncla({ vista: VISTAS.HOY }, '#debate-de-reglas').vista, VISTAS.HOY);
 });

@@ -5,10 +5,10 @@
  * calcula recibe la temporada y los resultados por parámetro, y por eso se puede verificar con datos fijos.
  */
 
-import { conBase, configurarBase, resolver, rutaDe, VISTAS } from './router.js';
+import { conBase, configurarBase, destinoConAncla, resolver, rutaDe, VISTAS } from './router.js';
 import { animar, movimientoReducido, seguirScroll } from './ui/animacion.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
-import { pintarDebate } from './ui/debate.js';
+import { pintarPaginaDebate } from './ui/debate.js';
 import { pintarInfo } from './ui/info.js';
 import { pintarDatos } from './ui/datos.js';
 import { pintarHoy } from './ui/hoy.js';
@@ -119,8 +119,11 @@ function despachar(destino, resultados, instantaneas) {
   if (destino.vista === VISTAS.INFO) {
     // Las reglas vigentes son las de la temporada en curso: Info cuenta cómo se juega hoy.
     pintarInfo(vista, instantaneas.get(actual)?.reglas);
-    // El debate se lee aparte y llega después: si la base de datos tarda o falla, el resto de Info ya está.
-    pintarDebate(vista.querySelector('#debate-de-reglas'), resultados);
+    return;
+  }
+  if (destino.vista === VISTAS.DEBATE) {
+    // El debate se lee aparte y llega después: si la base de datos tarda o falla, la cabecera ya está.
+    pintarPaginaDebate(vista, resultados);
     return;
   }
   pintarPendiente(vista, { ...destino, temporada: actual }, PENDIENTES[destino.vista]);
@@ -162,12 +165,20 @@ export async function arrancar() {
     return;
   }
 
-  const inicial = resolver(window.location.pathname);
-  // Los enlaces viejos a `/reglas` siguen funcionando, pero la barra dice dónde se está: en `/info`.
-  if (inicial.vista === VISTAS.INFO) {
+  const pedido = resolver(window.location.pathname);
+  const inicial = destinoConAncla(pedido, window.location.hash);
+  // Los enlaces viejos a `/reglas` y a `/info#debate-de-reglas` siguen funcionando, pero la barra dice dónde se
+  // está: en `/info` o en `/debate`.
+  if (inicial !== pedido) {
+    window.history.replaceState({}, '', rutaDe(inicial));
+  } else if (inicial.vista === VISTAS.INFO) {
     window.history.replaceState({}, '', rutaDe(inicial) + window.location.hash);
   }
   pintar(inicial, resultados, instantaneas);
+  // El navegador salta al ancla al cargar, cuando la vista aún no está pintada: se hace aquí, ya con ella.
+  if (inicial === pedido && window.location.hash) {
+    document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView();
+  }
   seguirScroll();
 
   // Un ancla salta dentro de la vista. Sin esto, el `<base href="/2/">` resuelve `#eje-…` contra la portada

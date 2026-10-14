@@ -1,0 +1,24 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-14T19:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    El enlace compartido /info#debate-de-reglas no bajaba al apartado (medido en producción: scrollY 0 con el
+    debate a ~11.000 px en móvil). El dueño eligió pestaña propia. Playwright contra el servidor local con
+    Supabase interceptado: /debate enseña la votación sin bajar, el enlace viejo y el de Info llevan a /debate, y
+    un ancla de Info (#eje-temporada) ya baja al cargar. Mutación: sin redirigir el ancla → rojo en el enlace
+    viejo; sin la ruta /debate → rojo en la pestaña. Corrección: la pegatina ¡NUEVO! en Debate rompía los tests
+    de la pegatina del juego (una sola pestaña nueva); nadie la pidió y se quitó. El gate pidió el delta de resultados (sin cambios de esquema).
+
+    Votación reformulada a petición del dueño: migración reword_anti_spoilers_poll aplicada en producción con 0
+    votos; verificado título nuevo, abierta y opciones anular,sancionar,cortar,nada. El test nuevo está rojo sin la
+    migración y verde con ella.

@@ -116,6 +116,25 @@ function almacenDe(documento) {
   }
 }
 
+/** La pestaña Debate: su cabecera y el apartado, que se carga después. */
+export function pintarPaginaDebate(contenedor, resultados, api = DEBATE) {
+  contenedor.innerHTML = `
+    <div class="info reglas">
+      <header class="reglas-cabecera">
+        <div class="reglas-titular">
+          <p class="etiqueta">debate</p>
+          <h1>Las reglas las decide el grupo</h1>
+        </div>
+      </header>
+      <section class="info-bloque debate">
+        <p>Aquí se votan las normas que están en el aire y se proponen otras nuevas: elige quién eres, vota o escribe
+          tu propuesta. Los votos se ven con su nombre, y las propuestas aparecen cuando se aprueban.</p>
+        <div id="debate-de-reglas"></div>
+      </section>
+    </div>`;
+  return pintarDebate(contenedor.querySelector?.('#debate-de-reglas') ?? null, resultados, api);
+}
+
 /** Pinta el apartado en `contenedor` y lo deja funcionando. Si la base de datos no responde, lo dice. */
 export async function pintarDebate(contenedor, resultados, api = DEBATE) {
   if (!contenedor) return;
