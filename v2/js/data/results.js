@@ -163,17 +163,19 @@ export const NIVEL_CONGELADO = {
 /**
  * El debate de reglas: votaciones, votos y propuestas aprobadas. Slice `debate-de-reglas`.
  *
- * Las propuestas pendientes no llegan: la política de la tabla solo deja leer las aprobadas con la clave pública.
+ * Las propuestas rechazadas no llegan: la política de la tabla no deja leerlas con la clave pública.
  */
 export async function leerDebate(cliente) {
-  const [votaciones, votos, propuestas] = await Promise.all([
+  const lecturas = await Promise.all([
     cliente.from('rule_polls').select('id,titulo,descripcion,opciones,abierta').order('created_at'),
     cliente.from('rule_votes').select('votacion,votante,opcion'),
-    cliente.from('rule_proposals').select('id,autor,titulo,texto,created_at').order('created_at', { ascending: false }),
+    cliente.from('rule_proposals').select('id,autor,titulo,texto,estado,created_at').order('created_at', { ascending: false }),
+    cliente.from('rule_proposal_votes').select('propuesta,votante,voto'),
   ]);
-  const fallo = [votaciones, votos, propuestas].find((r) => r.error);
+  const fallo = lecturas.find((r) => r.error);
   if (fallo) throw new Error(`Supabase: ${fallo.error.message}`);
-  return { votaciones: votaciones.data ?? [], votos: votos.data ?? [], propuestas: propuestas.data ?? [] };
+  const [votaciones, votos, propuestas, votosDePropuestas] = lecturas.map((r) => r.data ?? []);
+  return { votaciones, votos, propuestas, votosDePropuestas };
 }
 
 /** Las dos escrituras del debate, por función: es la base de datos la que decide qué entra. */
@@ -190,4 +192,6 @@ export const DEBATE = {
     llamar(await cliente(), 'votar_regla', { p_votacion: votacion, p_votante: votante, p_opcion: opcion }),
   proponer: async ({ autor, titulo, texto }) =>
     llamar(await cliente(), 'proponer_regla', { p_autor: autor, p_titulo: titulo, p_texto: texto }),
+  votarPropuesta: async ({ propuesta, votante, voto }) =>
+    llamar(await cliente(), 'votar_propuesta', { p_propuesta: propuesta, p_votante: votante, p_voto: voto }),
 };

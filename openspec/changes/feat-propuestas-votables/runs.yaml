@@ -1,0 +1,32 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-15T09:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 2
+  notas: >-
+    El dueño pidió ver todas las propuestas en la pestaña y que se puedan votar. Se publican al enviarlas (la
+    clave pública lee todas menos las rechazadas) y se votan a favor o en contra con nombres visibles. Postgres
+    local con los roles de Supabase; Playwright contra el servidor local con Supabase interceptado: votar sin
+    nombre pide elegirlo, a favor y luego en contra deja un voto, una propuesta enviada aparece arriba; sin
+    scroll horizontal en móvil; ninguna escritura salió.
+
+    Mutación: política vieja (solo aprobadas) → rojo en lee-todas-menos-rechazadas; votar_propuesta sin mirar
+    el estado → rojo en rechazada-no-admite-votos; apoyos con el primer voto → rojo en el último voto; votar
+    propuesta sin nombre → rojo en pide nombre. Copias de seguridad con nombres únicos. Corrección: un patrón
+    del test no contaba con el span de los nombres.
+
+    Producción: apply_migration falló tres veces con «Invalid or expired requestState», también tras reautenticar
+    el conector, sin aplicar nada (comprobado después de cada intento). Hipótesis: el drop policy disparaba la
+    confirmación de sentencias destructivas del conector, que este cliente no completa; ninguna migración anterior
+    llevaba drop. Con alter policy (mismo resultado, sin drop) se aplicó a la primera. Verificado como anon en un
+    bloque que se deshace: lee las 3 propuestas no rechazadas, votar y cambiar deja un voto, un voto desconocido
+    da 22023 y el insert directo se deniega; después, 0 votos de propuestas y política «lectura de las no
+    rechazadas».

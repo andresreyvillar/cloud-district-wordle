@@ -1467,3 +1467,15 @@ nav[data-navegacion] a {
   .opcion { flex-direction: column; align-items: stretch; }
   .votar { align-self: flex-start; }
 }
+.apoyos { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.votar-propuesta {
+  display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem; max-width: 100%;
+  padding: 5px 10px;
+  border: 2px solid var(--borde); border-radius: 8px;
+  background: var(--superficie); color: var(--liga-tinta);
+  font: inherit; font-size: 0.85rem; font-weight: 600; text-align: left; cursor: pointer;
+}
+.votar-propuesta .quienes { font-weight: 400; color: var(--liga-suave); overflow-wrap: anywhere; }
+.votar-propuesta.a_favor[aria-pressed="true"] { border-color: var(--liga-verde); background: var(--liga-verde); color: #0f2418; }
+.votar-propuesta.en_contra[aria-pressed="true"] { border-color: var(--amarillo); background: var(--amarillo); color: #2a2205; }
+.votar-propuesta[aria-pressed="true"] .quienes { color: inherit; }

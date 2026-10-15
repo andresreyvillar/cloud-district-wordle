@@ -17,3 +17,13 @@ export function recuento(votacion, votos) {
     return { id, texto, votantes, total: votantes.length };
   });
 }
+
+/** Quién está a favor y quién en contra de una propuesta. Como en `recuento`, cuenta el último voto de cada uno. */
+export function apoyos(propuesta, votos) {
+  const ultimo = new Map();
+  for (const voto of votos ?? []) {
+    if (voto?.propuesta === propuesta?.id) ultimo.set(voto.votante, voto.voto);
+  }
+  const de = (sentido) => [...ultimo].filter(([, voto]) => voto === sentido).map(([votante]) => votante);
+  return { a_favor: de('a_favor'), en_contra: de('en_contra') };
+}
