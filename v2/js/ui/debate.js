@@ -8,7 +8,7 @@
 
 import { DEBATE } from '../data/results.js';
 import { nombreVisible } from '../domain/apodos.js';
-import { recuento } from '../domain/debate.js';
+import { apoyos, recuento } from '../domain/debate.js';
 import { jugadoresDelGrupo } from '../domain/superbros.js';
 import { jugadorRecordado, recordarJugador, selectorDeJugador } from './juego.js';
 import { escapar } from './shell.js';
@@ -47,14 +47,27 @@ function vistaVotacion(votacion, todos, nombre, elegido) {
       </article>`;
 }
 
-function vistaPropuestas(propuestas, nombre) {
-  if (!propuestas?.length) return '<p class="nota">Todavía no hay propuestas aprobadas. ¡Estrena tú la primera!</p>';
-  return `<ul class="propuestas">${propuestas.map((p) => `
+const SENTIDOS = [['a_favor', 'A favor'], ['en_contra', 'En contra']];
+
+function vistaPropuestas(propuestas, votos, nombre, elegido) {
+  if (!propuestas?.length) return '<p class="nota">Todavía no hay propuestas. ¡Estrena tú la primera!</p>';
+  return `<ul class="propuestas">${propuestas.map((p) => {
+    const quien = apoyos(p, votos);
+    const botones = SENTIDOS.map(([sentido, etiqueta]) => {
+      const lista = quien[sentido];
+      const quienes = lista.map((id) => nombreVisible(nombre(id))).sort((a, b) => a.localeCompare(b, 'es')).join(', ');
+      const mio = lista.includes(elegido);
+      return `<button type="button" class="votar-propuesta ${sentido}" data-propuesta="${escapar(p.id)}" data-voto="${sentido}"`
+        + ` aria-pressed="${mio}">${etiqueta} · ${lista.length}${quienes ? ` <span class="quienes">${escapar(quienes)}</span>` : ''}</button>`;
+    }).join('');
+    return `
       <li>
-        <strong>${escapar(p.titulo)}</strong>
+        <strong>${escapar(p.titulo)}</strong>${p.estado === 'aprobada' ? ' <span class="etiqueta">aprobada</span>' : ''}
         <p>${escapar(p.texto)}</p>
         <span class="nota">Propuesta de ${escapar(nombreVisible(nombre(p.autor)))}</span>
-      </li>`).join('')}</ul>`;
+        <div class="apoyos">${botones}</div>
+      </li>`;
+  }).join('')}</ul>`;
 }
 
 /** El apartado entero. Exportado para poder verificarlo sin navegador. */
@@ -66,13 +79,13 @@ export function vistaDebate(datos, jugadores, elegido) {
     <p class="estado-debate" role="status"></p>
     ${votaciones || '<p class="nota">Todavía no hay votaciones.</p>'}
     <h3 class="eje-titulo">Propuestas del grupo</h3>
-    ${vistaPropuestas(datos?.propuestas, nombre)}
+    ${vistaPropuestas(datos?.propuestas, datos?.votosDePropuestas, nombre, elegido)}
     <form class="propuesta-nueva">
       <h3 class="eje-titulo">Propón una regla</h3>
       <label>Título <input name="titulo" maxlength="120" required></label>
       <label>Explícala <textarea name="texto" rows="4" maxlength="2000" required></textarea></label>
       <button type="submit">Enviar propuesta</button>
-      <p class="nota">Va firmada con tu nombre y se publica aquí cuando se aprueba.</p>
+      <p class="nota">Va firmada con tu nombre y se publica al momento, para que el grupo la vote.</p>
       <p class="estado-propuesta" role="status"></p>
     </form>`;
 }
@@ -94,13 +107,22 @@ export function controlDelDebate({ api = DEBATE } = {}) {
         return { estado: 'error', texto: `No se ha podido guardar el voto: ${motivo(error)}.` };
       }
     },
+    async votarPropuesta(elegido, propuesta, voto) {
+      if (!elegido) return { estado: 'sin-jugador', texto: 'Elige tu nombre para votar.' };
+      try {
+        await api.votarPropuesta({ propuesta, votante: elegido, voto });
+        return { estado: 'votado', texto: 'Voto guardado. Puedes cambiarlo cuando quieras.' };
+      } catch (error) {
+        return { estado: 'error', texto: `No se ha podido guardar el voto: ${motivo(error)}.` };
+      }
+    },
     async proponer(elegido, titulo, texto) {
       if (!elegido) return { estado: 'sin-jugador', texto: 'Elige tu nombre para proponer.' };
       const limpio = { autor: elegido, titulo: String(titulo ?? '').trim(), texto: String(texto ?? '').trim() };
       if (!limpio.titulo || !limpio.texto) return { estado: 'incompleta', texto: 'Falta el título o la explicación.' };
       try {
         await api.proponer(limpio);
-        return { estado: 'pendiente', texto: '¡Recibida! Aparecerá aquí cuando se apruebe.' };
+        return { estado: 'publicada', texto: '¡Publicada! Ya se puede votar.' };
       } catch (error) {
         return { estado: 'error', texto: `No se ha podido enviar: ${motivo(error)}.` };
       }
@@ -174,11 +196,23 @@ export async function pintarDebate(contenedor, resultados, api = DEBATE) {
       if (resultado.estado !== 'sin-jugador') datos = await api.leer().catch(() => datos);
       montar(resultado);
     }));
+    contenedor.querySelectorAll('button.votar-propuesta').forEach((boton) => boton.addEventListener('click', async () => {
+      const resultado = await control.votarPropuesta(elegido, Number(boton.dataset.propuesta), boton.dataset.voto);
+      if (resultado.estado !== 'sin-jugador') datos = await api.leer().catch(() => datos);
+      montar(resultado);
+    }));
     contenedor.querySelector('.propuesta-nueva')?.addEventListener('submit', async (evento) => {
       evento.preventDefault();
       const formulario = evento.target;
       const resultado = await control.proponer(elegido, formulario.titulo.value, formulario.texto.value);
-      if (resultado.estado === 'pendiente') formulario.reset();
+      if (resultado.estado !== 'publicada') {
+        avisar(resultado, '.estado-propuesta');
+        return;
+      }
+      // Publicada: se vacía el formulario, se relee y se redibuja para que aparezca en la lista.
+      formulario.reset();
+      datos = await api.leer().catch(() => datos);
+      montar();
       avisar(resultado, '.estado-propuesta');
     });
   };

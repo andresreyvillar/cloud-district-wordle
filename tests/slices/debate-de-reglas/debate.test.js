@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { recuento } from '../../../v2/js/domain/debate.js';
+import { apoyos, recuento } from '../../../v2/js/domain/debate.js';
 import { configurarBase, destinoConAncla, resolver, rutaDe, VISTAS } from '../../../v2/js/router.js';
 import { controlDelDebate, pintarDebate, pintarPaginaDebate, vistaDebate } from '../../../v2/js/ui/debate.js';
 import { navegacion } from '../../../v2/js/ui/shell.js';
@@ -42,7 +42,12 @@ const PROPUESTAS = [
   { id: 1, autor: 'U-BEA', titulo: 'Premio al más madrugador', texto: 'Una medalla para quien publique primero.', created_at: '2026-10-14T09:00:00Z' },
 ];
 
-const DATOS = { votaciones: [VOTACION], votos: VOTOS, propuestas: PROPUESTAS };
+const VOTOS_DE_PROPUESTAS = [
+  { propuesta: 1, votante: 'U-ANA', voto: 'a_favor' },
+  { propuesta: 1, votante: 'U-CRIS', voto: 'en_contra' },
+];
+
+const DATOS = { votaciones: [VOTACION], votos: VOTOS, propuestas: PROPUESTAS, votosDePropuestas: VOTOS_DE_PROPUESTAS };
 
 /** @scenarios la-votacion-abierta-se-ve-con-su-recuento */
 test('el recuento cuenta los votos de cada opción y dice quién la votó', () => {
@@ -116,19 +121,19 @@ test('con nombre elegido el voto se envía con quién vota y qué', async () => 
   assert.deepEqual(enviados, [{ votacion: 'anti-spoilers', votante: 'U-ANA', opcion: 'anular' }]);
 });
 
-/** @scenarios una-propuesta-queda-pendiente */
-test('una propuesta se envía y se avisa de que queda pendiente de aprobar', async () => {
+/** @scenarios una-propuesta-se-publica-al-momento */
+test('una propuesta se envía y se avisa de que ya está publicada', async () => {
   const enviadas = [];
   const control = controlDelDebate({ api: { proponer: async (p) => { enviadas.push(p); return { estado: 'pendiente' }; } } });
 
   const resultado = await control.proponer('U-BEA', '  Sin spoilers  ', ' Nada de pistas antes de las 18:00. ');
 
-  assert.equal(resultado.estado, 'pendiente');
-  assert.match(resultado.texto, /aprueb/i);
+  assert.equal(resultado.estado, 'publicada');
+  assert.match(resultado.texto, /publicada/i);
   assert.deepEqual(enviadas, [{ autor: 'U-BEA', titulo: 'Sin spoilers', texto: 'Nada de pistas antes de las 18:00.' }]);
 });
 
-/** @scenarios una-propuesta-queda-pendiente, sin-nombre-no-se-vota */
+/** @scenarios una-propuesta-se-publica-al-momento, sin-nombre-no-se-vota */
 test('una propuesta sin nombre o sin texto no se envía', async () => {
   const enviadas = [];
   const control = controlDelDebate({ api: { proponer: async (p) => enviadas.push(p) } });
@@ -151,7 +156,7 @@ test('si la base de datos rechaza el voto o la propuesta, se dice y no se da por
   assert.equal(propuesta.estado, 'error');
 });
 
-/** @scenarios solo-se-ven-las-propuestas-aprobadas */
+/** @scenarios una-propuesta-se-publica-al-momento */
 test('las propuestas que llegan se pintan con su autor y hay formulario para proponer', () => {
   const html = vistaDebate(DATOS, JUGADORES, null);
 
@@ -159,6 +164,39 @@ test('las propuestas que llegan se pintan con su autor y hay formulario para pro
   assert.match(html, /Una medalla para quien publique primero\./);
   assert.match(html, /Bea/);
   assert.match(html, /<form class="propuesta-nueva"/);
+});
+
+/** @scenarios las-propuestas-se-votan */
+test('los apoyos de una propuesta separan a favor y en contra, y cuenta el último voto de cada uno', () => {
+  const votos = [...VOTOS_DE_PROPUESTAS, { propuesta: 1, votante: 'U-CRIS', voto: 'a_favor' }, { propuesta: 2, votante: 'U-BEA', voto: 'en_contra' }];
+
+  const { a_favor, en_contra } = apoyos(PROPUESTAS[0], votos);
+
+  assert.deepEqual(a_favor, ['U-ANA', 'U-CRIS']);
+  assert.deepEqual(en_contra, []);
+});
+
+/** @scenarios las-propuestas-se-votan */
+test('cada propuesta enseña sus votos a favor y en contra, con nombres y botones', () => {
+  const html = vistaDebate(DATOS, JUGADORES, 'U-CRIS');
+  const propuesta = html.slice(html.indexOf('Premio al más madrugador'));
+
+  assert.match(propuesta, /data-propuesta="1" data-voto="a_favor"[^>]*aria-pressed="false"/);
+  assert.match(propuesta, /data-propuesta="1" data-voto="en_contra"[^>]*aria-pressed="true"/);
+  assert.match(propuesta, /A favor · 1 <span class="quienes">Ana<\/span>/);
+  assert.match(propuesta, /En contra · 1 <span class="quienes">Cris<\/span>/);
+});
+
+/** @scenarios las-propuestas-se-votan, sin-nombre-no-se-vota */
+test('votar una propuesta pide nombre y, con él, envía quién vota qué', async () => {
+  const enviados = [];
+  const control = controlDelDebate({ api: { votarPropuesta: async (v) => enviados.push(v) } });
+
+  assert.equal((await control.votarPropuesta(null, 1, 'a_favor')).estado, 'sin-jugador');
+  const hecho = await control.votarPropuesta('U-BEA', 1, 'en_contra');
+
+  assert.equal(hecho.estado, 'votado');
+  assert.deepEqual(enviados, [{ propuesta: 1, votante: 'U-BEA', voto: 'en_contra' }]);
 });
 
 /** @scenarios el-texto-de-los-jugadores-se-escapa */

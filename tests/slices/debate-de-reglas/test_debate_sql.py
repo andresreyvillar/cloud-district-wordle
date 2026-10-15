@@ -31,7 +31,7 @@ def db():
 
 @pytest.fixture(autouse=True)
 def limpio(db):
-    assert db("truncate public.rule_votes, public.rule_proposals; "
+    assert db("truncate public.rule_votes, public.rule_proposal_votes, public.rule_proposals; "
               f"update public.rule_polls set abierta = true where id = '{VOTACION}'").returncode == 0
 
 
@@ -106,7 +106,7 @@ def test_un_voto_imposible_se_rechaza(db, votante, opcion, votacion, motivo):
     assert db("select count(*) from public.rule_votes").stdout.strip() == "0"
 
 
-# @scenarios una-propuesta-queda-pendiente
+# @scenarios una-propuesta-se-publica-al-momento
 def test_una_propuesta_entra_pendiente(db):
     resultado = proponer(db, BEA, "  Sin spoilers  ")
 
@@ -115,14 +115,70 @@ def test_una_propuesta_entra_pendiente(db):
     assert db("select autor, titulo, estado from public.rule_proposals").stdout.strip() == f"{BEA}|Sin spoilers|pendiente"
 
 
-# @scenarios solo-se-ven-las-propuestas-aprobadas, una-propuesta-queda-pendiente
-def test_la_clave_publica_solo_lee_las_aprobadas(db):
+# @scenarios las-propuestas-rechazadas-no-se-ven, una-propuesta-se-publica-al-momento
+def test_la_clave_publica_lee_todas_menos_las_rechazadas(db):
     for titulo in ("Uno", "Dos", "Tres"):
         assert proponer(db, ANA, titulo).returncode == 0
     assert db("update public.rule_proposals set estado = 'aprobada' where titulo = 'Uno'; "
               "update public.rule_proposals set estado = 'rechazada' where titulo = 'Dos'").returncode == 0
 
-    assert db("select titulo from public.rule_proposals", rol="anon").stdout.split() == ["Uno"]
+    assert sorted(db("select titulo from public.rule_proposals", rol="anon").stdout.split()) == ["Tres", "Uno"]
+
+
+def id_de(db, titulo):
+    return db(f"select id from public.rule_proposals where titulo = '{titulo}'").stdout.strip()
+
+
+def votar_propuesta(db, propuesta, votante, voto):
+    return db(f"select public.votar_propuesta({propuesta}, '{votante}', '{voto}')", rol="anon")
+
+
+# @scenarios las-propuestas-se-votan
+def test_una_propuesta_se_vota_a_favor_y_el_voto_se_puede_cambiar(db):
+    assert proponer(db, ANA).returncode == 0
+    propuesta = id_de(db, "Sin spoilers")
+
+    assert votar_propuesta(db, propuesta, BEA, "a_favor").returncode == 0
+    assert votar_propuesta(db, propuesta, ANA, "en_contra").returncode == 0
+    assert votar_propuesta(db, propuesta, ANA, "a_favor").returncode == 0
+
+    filas = db("select votante, voto from public.rule_proposal_votes order by votante", rol="anon").stdout.split()
+    assert filas == [f"{ANA}|a_favor", f"{BEA}|a_favor"], "una persona, un voto, el último"
+
+
+# @scenarios las-propuestas-se-votan, las-propuestas-rechazadas-no-se-ven
+def test_una_propuesta_rechazada_no_admite_votos(db):
+    assert proponer(db, ANA).returncode == 0
+    propuesta = id_de(db, "Sin spoilers")
+    assert db(f"update public.rule_proposals set estado = 'rechazada' where id = {propuesta}").returncode == 0
+
+    resultado = votar_propuesta(db, propuesta, BEA, "a_favor")
+
+    assert resultado.returncode != 0
+    assert "propuesta desconocida" in resultado.stderr
+
+
+# @scenarios la-base-de-datos-valida-lo-que-entra
+@pytest.mark.parametrize("votante, voto, motivo", [
+    (NADIE, "a_favor", "jugador desconocido"),
+    (ANA, "quizas", "voto desconocido"),
+])
+def test_un_voto_imposible_a_una_propuesta_se_rechaza(db, votante, voto, motivo):
+    assert proponer(db, ANA).returncode == 0
+
+    resultado = votar_propuesta(db, id_de(db, "Sin spoilers"), votante, voto)
+
+    assert resultado.returncode != 0
+    assert motivo in resultado.stderr
+    assert db("select count(*) from public.rule_proposal_votes").stdout.strip() == "0"
+
+
+# @scenarios la-base-de-datos-valida-lo-que-entra
+def test_votar_una_propuesta_que_no_existe_se_rechaza(db):
+    resultado = votar_propuesta(db, 999999, ANA, "a_favor")
+
+    assert resultado.returncode != 0
+    assert "propuesta desconocida" in resultado.stderr
 
 
 # @scenarios la-base-de-datos-valida-lo-que-entra
@@ -163,6 +219,8 @@ def test_con_tres_pendientes_no_se_admite_una_cuarta(db):
     "update public.rule_polls set abierta = false",
     "delete from public.rule_polls",
     "truncate public.rule_votes",
+    f"insert into public.rule_proposal_votes (propuesta, votante, voto) values (1, '{ANA}', 'a_favor')",
+    "delete from public.rule_proposal_votes",
 ])
 def test_la_clave_publica_no_escribe_en_las_tablas(db, sentencia, rol):
     resultado = db(sentencia, rol=rol)

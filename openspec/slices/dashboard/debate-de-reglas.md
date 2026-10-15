@@ -34,9 +34,12 @@ sobre 211 jornadas, publicar tarde no da ventaja por sí solo: la ventaja aparec
 decide qué hacer, incluida la opción de no hacer nada.
 
 **Quién eres se elige**, como en el SuperWordleBros (decisión del dueño): sin cuentas ni contraseñas. Por eso
-**los votos se ven con su nombre**: si alguien vota en nombre de otro, el otro lo ve y lo cambia. Y por eso las
-**propuestas no se publican solas**: quedan pendientes hasta que el dueño las aprueba, porque la web es pública
-y el texto va firmado con el nombre de un compañero identificable.
+**los votos se ven con su nombre**: si alguien vota en nombre de otro, el otro lo ve y lo cambia.
+
+**Las propuestas se publican al enviarlas y se votan** (decisión del dueño, 2026-10-15). Al principio quedaban
+pendientes hasta que el dueño las aprobaba; el primer día llegaron tres y el dueño prefirió verlas todas y que el
+grupo las vote a favor o en contra. El dueño conserva una salida: una propuesta marcada `rechazada` deja de verse,
+porque la web es pública y el texto va firmado con el nombre de un compañero identificable.
 
 La web **no escribe en las tablas**: llama a dos funciones de la base de datos que deciden qué entra, igual que
 `registrar_tiempo`. El dueño aprueba propuestas y cierra votaciones desde Supabase.
@@ -72,18 +75,23 @@ quedaba a unos 11.000 px del principio. Info conserva un párrafo que lleva a la
 **WHEN** el dueño cierra una votación
 **THEN** se ve su resultado sin botones de votar, y la base de datos rechaza cualquier voto que llegue
 
-### una-propuesta-queda-pendiente
+### una-propuesta-se-publica-al-momento
 **WHEN** alguien envía una propuesta con su nombre, un título y una explicación
-**THEN** se guarda como pendiente, se le dice que aparecerá cuando se apruebe y no se ve todavía en la web
+**THEN** se guarda, se le dice que ya está publicada y aparece en el debate con su autor
 
-### solo-se-ven-las-propuestas-aprobadas
-**WHEN** se abre el debate
-**THEN** se ven las propuestas aprobadas con su autor, y ni las pendientes ni las rechazadas son legibles con la
-clave pública
+### las-propuestas-rechazadas-no-se-ven
+**WHEN** el dueño marca una propuesta como rechazada
+**THEN** deja de verse en la web y no es legible con la clave pública; las demás, pendientes o aprobadas, sí
+
+### las-propuestas-se-votan
+**WHEN** alguien elige su nombre y vota una propuesta a favor o en contra
+**THEN** su voto se guarda —uno por persona y propuesta, cambiable— y la propuesta enseña cuántos y quiénes están
+a favor y en contra; una propuesta rechazada no admite votos
 
 ### la-base-de-datos-valida-lo-que-entra
-**WHEN** llega un voto o una propuesta de alguien que no ha jugado nunca, a una opción que no existe, con un
-texto vacío o demasiado largo, o de quien ya tiene tres propuestas pendientes
+**WHEN** llega un voto o una propuesta de alguien que no ha jugado nunca, a una opción o propuesta que no existe,
+con un sentido de voto que no es a favor ni en contra, con un texto vacío o demasiado largo, o de quien ya tiene
+tres propuestas pendientes
 **THEN** se rechaza y no se guarda nada
 
 ### la-web-no-escribe-en-las-tablas
@@ -91,7 +99,7 @@ texto vacío o demasiado largo, o de quien ya tiene tres propuestas pendientes
 **THEN** se rechaza: solo las funciones escriben
 
 ### el-texto-de-los-jugadores-se-escapa
-**WHEN** una propuesta aprobada o un nombre contiene HTML
+**WHEN** una propuesta o un nombre contiene HTML
 **THEN** se pinta como texto, no como marcado
 
 ### si-el-debate-no-carga-info-sigue
@@ -100,15 +108,16 @@ texto vacío o demasiado largo, o de quien ya tiene tres propuestas pendientes
 
 ## Estado después
 
-`rule_polls`, `rule_votes` y `rule_proposals` en Supabase, escritas solo por `votar_regla` y `proponer_regla`. La
+`rule_polls`, `rule_votes`, `rule_proposals` y `rule_proposal_votes` en Supabase, escritas solo por `votar_regla`,
+`proponer_regla` y `votar_propuesta`. La
 votación `anti-spoilers` existe y está abierta. No se toca `wordle_results` ni `season_snapshots`.
 
 ## Edge cases
 
 - **Suplantación**: elegir el nombre de otro es posible por diseño; los votos con nombre lo hacen visible y el
   afectado lo corrige votando de nuevo.
-- **Aprobar y cerrar**: el dueño, desde Supabase, con
-  `update public.rule_proposals set estado = 'aprobada' where id = …` y
+- **Ocultar, aprobar y cerrar**: el dueño, desde Supabase, con
+  `update public.rule_proposals set estado = 'rechazada' where id = …` (u `'aprobada'`, que la marca como tal) y
   `update public.rule_polls set abierta = false where id = …`.
 - **Una norma votada no se aplica sola**: el resultado lo convierte en regla el dueño, con su slice.
 
