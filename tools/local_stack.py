@@ -156,13 +156,17 @@ def calcular(
     # El juego también: sin niveles ni marcas, materializar desde aquí dejaría la clasificación del juego
     # vacía en producción hasta la siguiente vuelta del cron.
     niveles, marcas = mat.leer_juego(create_client(url, clave))
+    soluciones = mat.leer_soluciones()
     tabla = None if seco else mat.TablaSupabase(url, clave)
     informe = mat.materializar(
         resultados, objetivo, tabla, datetime.datetime.now(datetime.timezone.utc), dry_run=seco,
-        niveles=niveles, marcas=marcas,
+        niveles=niveles, marcas=marcas, soluciones=soluciones,
     )
     print(f"  {'(seco, sin escribir)' if seco else 'escritas'}: {informe}")
-    return {t: seasons.instantanea(resultados, t, niveles=niveles, marcas=marcas) for t in objetivo}
+    return {
+        t: seasons.instantanea(resultados, t, niveles=niveles, marcas=marcas, soluciones=soluciones)
+        for t in objetivo
+    }
 
 
 def resumen(url: str, clave: str) -> None:

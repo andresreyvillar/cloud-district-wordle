@@ -16,6 +16,7 @@ ganando y la web lo muestra, así que las dos cosas tienen que salir del mismo c
 
 from __future__ import annotations
 
+import sys
 from collections import defaultdict
 
 from calendario import es_laborable
@@ -153,7 +154,7 @@ def temporadas(resultados: list[dict]) -> list[dict]:
 
 
 def instantanea(
-    resultados: list[dict], temporada: str, version: str = "", niveles=(), marcas=()
+    resultados: list[dict], temporada: str, version: str = "", niveles=(), marcas=(), soluciones=None
 ) -> dict:
     """La carga útil que se materializa para una temporada.
 
@@ -202,7 +203,7 @@ def instantanea(
             if jugador not in ganadores[clave]:
                 ganadores[clave].append(jugador)
 
-    return {
+    carga = {
         "temporada": temporada,
         "ordinal": ordinal(temporada),
         "etiqueta": etiqueta(temporada),
@@ -232,3 +233,15 @@ def instantanea(
         # inventarse un valor sería peor que declarar que no consta.
         "calculado_con": version,
     }
+    # Cómo juega cada uno (slice `indicadores-de-juego`). Solo con la lista de soluciones, que llega del borde;
+    # sin ella la instantánea sale igual y la ficha dice que los indicadores no están disponibles.
+    # **Un fallo aquí no puede bloquear la instantánea**: sin indicadores, el resto sale igual.
+    if soluciones:
+        import indicadores
+
+        try:
+            hasta = max((fila["wordle_id"] for fila in resultados), default=0)
+            carga["indicadores"] = indicadores.indicadores(resultados, temporada, soluciones, hasta)
+        except Exception as error:  # noqa: BLE001 — son un extra de la ficha; la clasificación no depende de ellos
+            print(f"indicadores de juego: sin bloque para {temporada} ({type(error).__name__})", file=sys.stderr)
+    return carga

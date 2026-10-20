@@ -68,7 +68,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: pip install slack_sdk python-dotenv supabase
+        run: pip install slack_sdk python-dotenv supabase msgpack
 
       # **El latido**: sincroniza, espera y repite, todo dentro del mismo job.
       #

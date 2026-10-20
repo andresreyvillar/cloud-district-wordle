@@ -1,0 +1,50 @@
+# Run records del change pack (§11).
+
+- run: '2026-10-20T12:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: skip
+  rondas_correccion: 0
+  notas: >-
+    El dueño pidió estadísticas por jugador y un medidor de sospecha de trampas. Tras el análisis de octubre
+    (cuadrículas contra la lista de soluciones; solucionador por entropía 3,41) se descartó el medidor público y
+    se acordaron cuatro indicadores en tono de juego. Slice nuevo con el precedente de album-de-figuras (bloque
+    propio en la ficha, cálculo en la instantánea). Tests pendientes (skip/todo): 11 en Python y 7 en JS, 12/12
+    escenarios declarados.
+
+- run: '2026-10-20T15:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 3
+  notas: >-
+    tools/indicadores.py (puro), instantanea(soluciones=...), leer_soluciones en el borde de la materialización y
+    de local_stack, msgpack en update_stats.yml, y la tarjeta «Cómo juegas» en la ficha. Con datos reales, solo
+    lectura: ~10 s por temporada, ~5 KB de bloque; octubre con 26 jugadores con cifras.
+
+    Mutación (derivada de lo que el delta prohíbe): acertar con una candidata suma algo → rojo en suma-cero; leer
+    soluciones futuras → rojo en no-pasa-de-la-ultima-jornada; apertura desplazada → rojo en apertura; borde sin
+    proteger → rojo en el borde; con pocas partidas enseña cifras → rojo en pocas partidas. La semilla con hash()
+    SOBREVIVIÓ (con un fixture pequeño cualquier sorteo da las mismas medianas): se añadió un test que fija la
+    regla (semilla = jornada en texto) y la caza. Tras el Gate 4d: sin import sys, sin try en la instantánea, sin
+    validar la última fila y con aciertos a mitad de partida, los cuatro rojos en su escenario.
+
+    Gate 4d (dos verificadores independientes). Sostenidas y corregidas: la última fila no se validaba (GGGGY,
+    basura y GGGGG a mitad de partida contaban); una solución que no fuera de cinco letras tumbaba la
+    materialización entera (ahora se ignora y, además, cualquier fallo de los indicadores deja la instantánea sin
+    el bloque); tres valores sin escapar en la tarjeta; «Le faltan 1 partida»; una apertura que no fuera lista
+    dejaba la ficha en blanco. Al verlo pintado: «−0,68… la suerte le sonríe» se contradecía, porque la suerte
+    absoluta del grupo sale negativa (los tanteos restan); se enseña frente al grupo y la frase sale de la misma
+    cifra. Segunda pasada de los verificadores: todo resuelto, sin refutaciones nuevas.
