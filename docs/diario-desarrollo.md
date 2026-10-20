@@ -512,3 +512,23 @@ Decidirlo en el canal se pierde entre resultados.
 **Aprendizaje.** Al restaurar una mutación, dos copias de seguridad con el mismo nombre de fichero (`debate.js` de
 `ui/` y de `domain/`) se pisaron y la vista se restauró con el contenido del dominio. Era un fichero nuevo, sin
 copia en git. Las copias de una prueba de mutación necesitan nombres únicos, no solo una carpeta aparte.
+
+## 2026-10-20 — Cómo juega cada uno, sin medidor de trampas
+
+**Qué.** La ficha de cada jugador tiene un bloque «Cómo juegas» con cuatro indicadores: eficiencia frente al
+grupo y a un solucionador perfecto (3,41), cuántas palabras le quedan tras el primer y el segundo intento,
+cuánta suerte ha tenido frente al grupo y su acierto más milagroso.
+
+**Por qué importa.** El dueño preguntó si las mejores medias del mes eran creíbles. Medirlo pedía saber cuántas
+soluciones seguían siendo posibles en cada intento, y eso sale de los colores de la cuadrícula y de la lista de
+soluciones del juego. Hecho ese cálculo, se puede enseñar a todos.
+
+**Decisiones.**
+- **Sin medidor de trampas.** Con una cuarentena de jugadores, cada mes alguien tiene una racha del 1–2 % por
+  puro azar. Un número junto al nombre de un compañero, en una web pública, no puede decir por qué.
+- **La suerte se enseña frente al grupo.** En absoluto, todo el grupo sale con suerte negativa, porque los
+  intentos de tanteo también restan; sin la comparación, la cifra y su frase se contradecían.
+
+**Aprendizaje.** Una de las mutaciones —sembrar el sorteo con `hash()`— sobrevivió: con un fixture pequeño,
+cualquier sorteo da las mismas medianas, así que comparar salidas no detecta nada. El test que la caza comprueba
+la regla (la semilla es la jornada), no el resultado.

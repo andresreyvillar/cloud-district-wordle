@@ -60,6 +60,7 @@ def materializar(
     dry_run: bool = False,
     niveles=(),
     marcas=(),
+    soluciones=None,
 ) -> Informe:
     """Calcula y escribe la instantánea de cada temporada de `objetivo`.
 
@@ -72,13 +73,29 @@ def materializar(
             "temporada": temporada,
             # La procedencia entra aquí, en el borde: `instantanea` no puede leer git sin dejar de ser
             # determinista. Sin ella, un payload escrito con código viejo es indistinguible de uno bueno.
-            "payload": instantanea(resultados, temporada, version(), niveles=niveles, marcas=marcas),
+            "payload": instantanea(
+                resultados, temporada, version(), niveles=niveles, marcas=marcas, soluciones=soluciones
+            ),
             "updated_at": ahora.isoformat(),
         }
         if not dry_run:
             tabla.upsert(fila, CLAVE)
         escritas.append(temporada)
     return Informe(materializadas=len(escritas), temporadas=tuple(escritas))
+
+
+def leer_soluciones() -> list[dict] | None:
+    """La lista de soluciones de La Palabra del Día, para los indicadores de juego. **El borde**: si la descarga o
+    el descifrado fallan, `None`, y la instantánea se materializa sin los indicadores en lugar de no materializarse.
+    """
+    import palabra
+
+    try:
+        binz = palabra.descarga_soluciones()
+        return palabra.descifra(binz) if binz else None
+    except Exception as error:  # noqa: BLE001 — un formato nuevo del juego no puede tumbar la materialización
+        print(f"indicadores de juego: sin lista de soluciones ({type(error).__name__})", file=sys.stderr)
+        return None
 
 
 #: Lo que se lee de las dos tablas del juego. Solo lo que la clasificación usa.
@@ -251,8 +268,11 @@ def main(argv: list[str] | None = None) -> int:
 
     niveles, marcas = leer_juego(create_client(URL, KEY))
     print(f"{len(niveles)} niveles del juego · {len(marcas)} marcas")
+    soluciones = leer_soluciones()
+    print(f"lista de soluciones: {'sí' if soluciones else 'no (sin indicadores de juego)'}")
     informe = materializar(
-        resultados, objetivo, tabla, ahora, dry_run=argumentos.dry_run, niveles=niveles, marcas=marcas
+        resultados, objetivo, tabla, ahora, dry_run=argumentos.dry_run, niveles=niveles, marcas=marcas,
+        soluciones=soluciones,
     )
 
     print()

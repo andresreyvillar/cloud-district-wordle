@@ -288,6 +288,91 @@ function palmaresBloque(lista) {
 }
 
 /** Pinta la ficha. Si el jugador no jugó esa temporada, lo dice y ofrece las que sí. */
+/** Un número con coma decimal, sin ceros de más: 40,5 · 4 · 3,08. */
+const num = (valor, decimales = 2) => Number(valor).toLocaleString('es-ES', { maximumFractionDigits: decimales });
+
+/** Con signo siempre, y el menos tipográfico: +3,03 · −0,68. */
+const conSigno = (valor) => `${valor > 0 ? '+' : valor < 0 ? '−' : ''}${num(Math.abs(valor))}`;
+
+/**
+ * Los aciertos de diferencia con el grupo a partir de los cuales se habla de suerte. La frase sale de **la misma
+ * cifra que se enseña**: decidirla por partida dejaba «+9 aciertos… suerte corriente» en una temporada larga.
+ */
+const MARGEN_DE_SUERTE = 1;
+
+function fraseDeSuerte(aciertosFrenteAlGrupo) {
+  if (aciertosFrenteAlGrupo >= MARGEN_DE_SUERTE) return 'la suerte le sonríe más que al resto';
+  if (aciertosFrenteAlGrupo <= -MARGEN_DE_SUERTE) return 'la suerte le debe alguna';
+  return 'suerte corriente, como la del grupo';
+}
+
+/**
+ * El bloque «Cómo juegas»: eficiencia, apertura, suerte y acierto más milagroso. Slice `indicadores-de-juego`.
+ *
+ * **Habla de juego y de suerte, nunca de trampas** (decisión del dueño): los datos dicen cuánta suerte hubo, no
+ * por qué. Exportada para verificarla sin navegador.
+ */
+export function tarjetaDeIndicadores(indicadores, jugador) {
+  const cabecera = (detalle) =>
+    `<header class="bloque-cab"><h2>CÓMO JUEGAS</h2><span>${escapar(detalle)}</span></header>`;
+  if (!indicadores) {
+    return `
+    <section class="bloque indicadores">
+      ${cabecera('')}
+      <p class="nota">Los indicadores de juego no están disponibles ahora mismo: salen de la lista de soluciones
+        del juego, y en el último cálculo no se pudo leer.</p>
+    </section>`;
+  }
+  const mio = indicadores.jugadores?.[jugador];
+  if (!mio) return '';
+  if (mio.faltan) {
+    return `
+    <section class="bloque indicadores">
+      ${cabecera(`${mio.partidas} con cuadrícula`)}
+      <p class="nota">${mio.faltan === 1 ? 'Le falta 1 partida' : `Le faltan ${escapar(mio.faltan)} partidas`} con
+        cuadrícula para ver sus indicadores: hacen falta ${escapar(indicadores.minimo)}.</p>
+    </section>`;
+  }
+
+  const grupo = indicadores.grupo ?? {};
+  // Una apertura que no sea lista no puede dejar la ficha en blanco: se pinta como «sin dato».
+  const [tras1, tras2] = Array.isArray(mio.apertura) ? mio.apertura : [];
+  const [grupo1, grupo2] = Array.isArray(grupo.apertura) ? grupo.apertura : [];
+  const cifra = (v, decimales = 1) => (v !== null && v !== '' && Number.isFinite(Number(v)) ? num(v, decimales) : '—');
+  // **Frente al grupo, no en absoluto.** La suerte absoluta de todo el grupo sale negativa —los intentos de tanteo,
+  // que no podían acertar, también restan—, y enseñar «−0,68» junto a «la suerte le sonríe» se contradecía.
+  const partidas = Number(mio.partidas) || 0;
+  const diferencia = (Number(mio.suerte_por_partida) || 0) - (Number(grupo.suerte_por_partida) || 0);
+  const frenteAlGrupo = Math.round(diferencia * partidas * 100) / 100;
+  const milagro = mio.milagro;
+  const textoMilagro = !milagro
+    ? 'Ningún acierto esta temporada.'
+    : milagro.candidatas <= 1
+      ? 'Siempre acertó sabiendo la palabra: ninguna victoria de pura suerte.'
+      : `#${escapar(milagro.jornada)} · ${escapar(milagro.intentos)}/6 entre ${escapar(milagro.candidatas)} candidatas
+         (1 de cada ${escapar(milagro.candidatas)})`;
+
+  return `
+    <section class="bloque indicadores">
+      ${cabecera(`${partidas} partidas con cuadrícula`)}
+      <dl class="indicadores-lista">
+        <div><dt>🎯 Eficiencia</dt>
+          <dd><b>${cifra(mio.media, 2)}</b> intentos de media · grupo ${cifra(grupo.media, 2)} · solucionador perfecto
+            ${cifra(indicadores.referencia, 2)}</dd></div>
+        <div><dt>🔎 Apertura</dt>
+          <dd>Tras el 1.º intento le quedan ${cifra(tras1)} palabras posibles (grupo: ${cifra(grupo1)}) · tras el
+            2.º, ${cifra(tras2)} (grupo: ${cifra(grupo2)})</dd></div>
+        <div><dt>🍀 Suerte</dt>
+          <dd><b>${conSigno(frenteAlGrupo)}</b> aciertos de suerte frente a la media del grupo en sus
+            ${partidas} partidas · ${fraseDeSuerte(frenteAlGrupo)}</dd></div>
+        <div><dt>✨ Acierto más milagroso</dt>
+          <dd>${textoMilagro}</dd></div>
+      </dl>
+      <p class="nota">Estimado con los colores de sus cuadrículas y la lista de soluciones del juego: no se sabe qué
+        palabras probó, solo qué colores le salieron.</p>
+    </section>`;
+}
+
 export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
   const f = ficha(instantaneas, temporada, jugador);
 
@@ -332,6 +417,7 @@ export function pintarJugador(contenedor, instantaneas, temporada, jugador) {
       ${distribucion(f)}
       ${desglose(f)}
       ${tarjetaDeAlbum(albumDeJugador(instantaneas.get(temporada) ?? null, jugador))}
+      ${tarjetaDeIndicadores(instantaneas.get(temporada)?.indicadores, jugador)}
       ${medallas(f)}
       ${palmaresBloque(conJugador)}
       <p class="volver"><a href="${escapar(conBase(`/t/${temporada}`))}">← Volver al marcador de ${escapar(f.etiqueta)}</a></p>
