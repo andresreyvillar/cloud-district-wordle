@@ -1,6 +1,6 @@
 ---
 name: slice-propose
-description: Propone un slice nuevo (o modifica uno existente) siguiendo el protocolo canónico de wordle-stats — autoría de slice + deltas + change pack, con gates mecánicos y TDD rojo. Usar cuando el usuario pida "crea un slice para X", "especifica la feature Y" o describa un comportamiento nuevo de la app.
+description: Propone un slice nuevo (o modifica uno existente) siguiendo el protocolo canónico de wordle-stats — autoría de slice + Requirements en las specs vivas (ADR 0009), con gates mecánicos y TDD rojo. Usar cuando el usuario pida "crea un slice para X", "especifica la feature Y" o describa un comportamiento nuevo de la app.
 ---
 
 # /slice-propose — Fases 0-2 del protocolo
@@ -13,7 +13,7 @@ description: Propone un slice nuevo (o modifica uno existente) siguiendo el prot
 2. **Detección de colisión:** buscar en `slice list --json` un slice con el mismo trigger
    (`type + surface + detail` equivalente). Si existe → esto es una **modificación**, no un slice nuevo:
    - *menor* (texto/escenarios internos): editar el slice directamente.
-   - *significativo* (eventos, specs[], actor): change pack sobre el slice existente.
+   - *significativo* (eventos, specs[], actor): editar el slice y sus Requirements en una rama propia.
    - *estructural* (trigger, afecta >1 slice): parar y proponérselo al usuario como propuesta aparte.
 3. Identificar las capabilities cruzadas (de `openspec/specs/*`, ver la tabla de `openspec/README.md`).
 
@@ -26,15 +26,17 @@ Escribir (usando `openspec/slices/_template.md` como base):
    - Trigger legal según §3: `ui` solo en `web`; `cron`/`command` en `pipeline`. `http` y `event`
      no tienen surface válida todavía — si el comportamiento la necesita, para y dilo.
    - Lo no verificado se marca `?` — NUNCA inventar columnas, mensajes de Slack ni selectores.
-2. **Deltas** `openspec/changes/<change-id>/specs/<capability>/spec.md` por CADA capability de
-   `specs:[]` — `## ADDED/MODIFIED/REMOVED Requirements`, cada Requirement con `checks:` y/o
-   `verified-by:` + `#### Scenario:` GIVEN/WHEN/THEN.
-   - **NUNCA editar `openspec/specs/` directamente** (federated-untouched, §5).
-3. **Change pack** `openspec/changes/<change-id>/` — `proposal.md` (Why · What Changes ·
-   **Out of Scope** · Impact · Validation Gates · tabla Capabilities) + `tasks.md` (pasos numerados
-   para un implementador sin contexto, con comandos de test exactos).
+2. **Requirements en la spec viva** `openspec/specs/<capability>/spec.md` de CADA capability de
+   `specs:[]` (ADR 0009) — añadir o reescribir bloques `## Requirement: <título>` con
+   `<!-- origen: <change-id> -->`, `checks:` y/o `verified-by:` + `#### Scenario:` GIVEN/WHEN/THEN.
+   - Antes de añadir, **leer la spec entera**: si ya hay un Requirement que dice lo mismo, se edita ese.
+   - NUNCA escribir deltas `ADDED/MODIFIED` en un change pack: la spec vive en un solo sitio.
+   - Los términos, los del glosario (`docs/glosario.md`); un concepto nuevo se añade allí también.
+3. **Registro del cambio** `openspec/changes/<change-id>/runs.yaml`. `proposal.md` (Why · What
+   Changes · **Out of Scope** · Impact) y `tasks.md` (con comandos de test exactos) solo si el cambio
+   es grande o tiene decisiones que merecen escribirse.
 
-Naming: change-id `feat-<slug>`; rama `chore/openspec-slice-<slug>`.
+Naming: change-id `feat-<slug>`; rama `feat/<change-id>`.
 
 ### Estilo de autoría (escenarios, Requirements, proposals)
 - **Presente atemporal**: "el ranking excluye al jugador", nunca "excluirá" ni "se ha implementado".
@@ -63,13 +65,13 @@ Naming: change-id `feat-<slug>`; rama `chore/openspec-slice-<slug>`.
 ## Gates (máx 3 rondas de corrección; a la 3ª fallida → escalar al humano)
 ```bash
 python3 -m tools.wslice slice validate <slug>                                  # Gate 1a
-python3 -m tools.wslice verify gates --slice <slug> --change-id <change-id>    # Gate 1b
+python3 -m tools.wslice verify gates --slice <slug>                           # Gate 1b
 python3 -m tools.wslice slice coverage <slug>                                  # Gate 2
 ```
 Los tres con exit 0 antes de continuar.
 
 ## Handoff
-- `git add` de: slice, deltas, change pack, tests. **NUNCA commit automático.**
+- `git add` de: slice, specs vivas tocadas, registro del cambio, tests. **NUNCA commit automático.**
 - Registrar el run de la fase `propose` en `openspec/changes/<change-id>/runs.yaml` (§11).
 - Reportar al usuario: archivos creados, tabla capability→Requirements, resultado de gates,
   y el comando para arrancar la implementación: `/slice-implement <slug>`.

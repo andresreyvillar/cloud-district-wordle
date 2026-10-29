@@ -86,8 +86,12 @@ def parse_spec_file(path: Path | str) -> ParsedSpec:
         title = None
         buffer = []
 
+    en_codigo = False
     for line in lines:
-        match = REQ_RE.match(line)
+        # Dentro de un bloque de código, `# …` es un comentario, no un heading: no corta ni abre nada.
+        if line.lstrip().startswith("```"):
+            en_codigo = not en_codigo
+        match = None if en_codigo else REQ_RE.match(line)
         if match:
             flush()
             title = match.group(1)
@@ -95,6 +99,7 @@ def parse_spec_file(path: Path | str) -> ParsedSpec:
         # un heading de nivel <= al del Requirement corta el bloque
         if (
             title is not None
+            and not en_codigo
             and re.match(r"^#{1,2}\s", line)
             and not REQ_RE.match(line)
             and not line.startswith("####")

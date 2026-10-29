@@ -1,6 +1,6 @@
 ---
 slice: backfill-de-patrones
-status: proposed
+status: shipped
 kind: maintenance
 actor: sistema
 trigger:

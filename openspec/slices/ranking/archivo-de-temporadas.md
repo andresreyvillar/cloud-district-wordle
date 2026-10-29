@@ -1,6 +1,6 @@
 ---
 slice: archivo-de-temporadas
-status: proposed
+status: shipped
 kind: action
 actor: grupo
 trigger:

@@ -1,6 +1,6 @@
 ---
 slice: apodos-en-la-web
-status: proposed
+status: shipped
 kind: action
 actor: grupo
 trigger:

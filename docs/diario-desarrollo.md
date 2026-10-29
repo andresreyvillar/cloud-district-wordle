@@ -532,3 +532,21 @@ soluciones del juego. Hecho ese cálculo, se puede enseñar a todos.
 **Aprendizaje.** Una de las mutaciones —sembrar el sorteo con `hash()`— sobrevivió: con un fixture pequeño,
 cualquier sorteo da las mismas medianas, así que comparar salidas no detecta nada. El test que la caza comprueba
 la regla (la semilla es la jornada), no el resultado.
+
+## 2026-10-29 — Specs vivas: la spec se edita donde se edita el código
+
+**Qué.** El método deja de escribir los cambios de spec como deltas (`ADDED/MODIFIED`) en change packs que luego
+había que consolidar. Ahora cada rama edita la spec viva del dominio, junto al slice, el código y los tests. Se
+consolidaron de una vez los 91 packs: 186 Requirements en siete specs, todos los slices pasan a `shipped`, y
+llegan el glosario y la ontología del dominio.
+
+**Por qué importa.** El paso de consolidar venía después del merge y no se hizo nunca: no había ningún sitio
+donde leer qué hace un dominio. Y la CLI oficial de OpenSpec, que el repo imitaba, rechazaba los 91 packs.
+
+**Decisión.** Con una persona, ramas y PR, el diff ya es el delta; lo que hace falta es una sola fuente de verdad
+siempre al día ([ADR 0009](../openspec/decisions/0009-specs-vivas.md)). De OpenSpec se queda la estructura de
+carpetas; del método, todo lo que funcionaba: slices, TDD, gates, mutación y revisión adversarial.
+
+**Aprendizaje.** Verificar la spec entera, y no solo lo que cambia, sacó deuda que llevaba meses escondida: 48
+Requirements sin nada que los demostrara y un parser que se tragaba los `checks:` de un bloque con comentarios.
+Un gate que solo mira lo nuevo no ve lo que se pudre.

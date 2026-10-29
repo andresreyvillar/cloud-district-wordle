@@ -1,6 +1,6 @@
 ---
 slice: ingesta-por-id-de-slack
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

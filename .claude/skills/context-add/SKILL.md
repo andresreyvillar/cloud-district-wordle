@@ -58,4 +58,4 @@ El usuario decide; specs/slices/ADRs siempre pasan por su confirmación.
   las decisiones, no las conversaciones personales; nada de citas literales innecesarias ni de
   material sensible. El repo es público.
 - NUNCA meter en el repo capturas con información de terceros ni exports crudos del canal.
-- NUNCA editar `openspec/specs/` desde esta skill (federated-untouched — eso es de los slices).
+- NUNCA editar `openspec/specs/` desde esta skill: las specs vivas las cambian los slices, en su rama.

@@ -1,6 +1,6 @@
 ---
 slice: clasificacion-de-figuras
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

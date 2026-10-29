@@ -1,0 +1,22 @@
+# Run records del cambio (§11). Primer registro con el formato de specs vivas (ADR 0009): sin deltas.
+
+- run: '2026-10-29T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    tests: pass
+    verify-slice: pass
+  rondas_correccion: 3
+  notas: >-
+    El dueño eligió specs vivas en lugar de deltas y archive. Consolidación única de 91 packs en orden de git: 186
+    Requirements en 7 specs (un MODIFIED que renombró «04:00» a «02:00» se trató como renombre). 91 packs a
+    archive/, 34 slices a shipped. Al verificar la spec entera salieron 48 Requirements sin checks ni
+    verified-by: 46 se enlazaron con los tests tocados por los commits de su pack, uno con los tests que nombra
+    su propuesta y otro (el latido horario, que cumple la configuración del workflow) con checks sobre
+    update_stats.yml. Salió además un fallo del parser (un comentario # dentro de un bloque de código cortaba el
+    Requirement): test en rojo, arreglo, verde. Harness: fuera federated-untouched; specs-coverage y
+    checks-probe sobre la spec viva; los checks de índice se miran en los tests del propio Requirement; tests
+    del harness reescritos. Resultado: los 34 slices pasan verify y gates; pytest y node en verde.

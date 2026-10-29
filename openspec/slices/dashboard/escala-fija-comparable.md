@@ -1,6 +1,6 @@
 ---
 slice: escala-fija-comparable
-status: proposed
+status: shipped
 kind: action
 actor: grupo
 trigger:

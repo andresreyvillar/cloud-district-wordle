@@ -1,6 +1,6 @@
 ---
 slice: voz-de-la-jornada
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

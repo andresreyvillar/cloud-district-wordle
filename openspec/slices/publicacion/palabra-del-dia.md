@@ -1,6 +1,6 @@
 ---
 slice: palabra-del-dia
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

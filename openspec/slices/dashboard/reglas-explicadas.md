@@ -1,6 +1,6 @@
 ---
 slice: reglas-explicadas
-status: proposed
+status: shipped
 kind: action
 actor: grupo
 trigger:

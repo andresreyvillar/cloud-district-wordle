@@ -1,6 +1,6 @@
 ---
 slice: medallas-en-el-resumen-diario
-status: proposed
+status: shipped
 kind: scheduled
 actor: grupo
 trigger:

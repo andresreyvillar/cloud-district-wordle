@@ -1,6 +1,6 @@
 ---
 slice: clasificacion-de-temporada
-status: proposed
+status: shipped
 kind: action
 actor: grupo
 trigger:

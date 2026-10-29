@@ -1,6 +1,6 @@
 ---
 slice: captura-apunta-a-la-v2
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

@@ -4,14 +4,18 @@ Convención spec-driven. Todo se redacta en **español**; se mantienen sin tradu
 reservadas del esquema (`WHEN`, `THEN`, `## ADDED Requirements`, claves de frontmatter, identificadores).
 
 - **`slice-system.md`** — LA CONSTITUCIÓN: el protocolo canónico. Leer antes de cualquier slice.
-- **`specs/<capability>/spec.md`** — specs consolidadas por dominio (la "verdad" vigente).
+- **`specs/<capability>/spec.md`** — las **specs vivas** de cada dominio: la verdad vigente. Se editan
+  directamente en la rama de cada cambio, junto al código y los tests ([ADR 0009](decisions/0009-specs-vivas.md)).
 - **`slices/<capability>/<slug>.md`** — comportamientos observables end-to-end; se especifican y
   verifican por slice.
-- **`changes/<id>/`** + **`archive/`** — ciclo de vida de un cambio (proposal/tasks/runs/deltas → archivado).
+- **`changes/<id>/`** — el registro de cada cambio: `runs.yaml` (obligatorio) y `proposal.md`/`tasks.md`
+  (opcionales). **`changes/archive/`** guarda los change packs con deltas de antes del ADR 0009, como historia.
+- **[`../docs/glosario.md`](../docs/glosario.md)** y **[`../docs/ontologia.md`](../docs/ontologia.md)** — el
+  vocabulario del dominio y cómo se relacionan sus conceptos.
 - **`decisions/`** — ADRs: las decisiones que condicionan el resto.
 
 Las **capabilities son simplemente los dominios** bajo los que cuelgan specs y slices — no hay
-registro central; las specs se van materializando conforme se especifica cada slice.
+registro central; cada dominio tiene su spec viva en `specs/<capability>/spec.md`.
 
 ## Capabilities (inferidas del sistema en producción)
 

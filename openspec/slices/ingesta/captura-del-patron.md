@@ -1,6 +1,6 @@
 ---
 slice: captura-del-patron
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

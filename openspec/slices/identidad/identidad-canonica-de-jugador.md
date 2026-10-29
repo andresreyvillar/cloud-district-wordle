@@ -1,6 +1,6 @@
 ---
 slice: identidad-canonica-de-jugador
-status: proposed
+status: shipped
 kind: maintenance
 actor: sistema
 trigger:

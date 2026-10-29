@@ -167,3 +167,23 @@ def test_metrics_normaliza_timestamp_sin_comillas(make_workspace):
     report = build_report(collect_runs(ws))
     assert report.parse_errors == 0
     assert report.all_runs[0].run.startswith("2026-08-04")
+
+
+def test_un_comentario_dentro_de_un_bloque_de_codigo_no_corta_el_requirement(tmp_path):
+    """Un `# comentario` dentro de un bloque ```yaml``` no es un heading. El parser cortaba ahí el Requirement y
+    perdía sus `checks:` y su `verified-by:` (le pasó a «El patrón no participa en la identidad de la fila»)."""
+    from tools.wslice.spec_parser import parse_spec_file
+
+    spec = tmp_path / "spec.md"
+    spec.write_text(
+        "## Requirement: Con comentario en el YAML\n\n"
+        "```yaml\n# un comentario\nchecks:\n  - type: regex\n    file: x.py\n    pattern: 'y'\n```\n\n"
+        "verified-by:\n  - tests/x.py\n\n"
+        "# Fuera del bloque, un heading de nivel 1 sí corta\n",
+        encoding="utf-8",
+    )
+
+    [requisito] = parse_spec_file(spec).requirements
+
+    assert len(requisito.checks) == 1
+    assert requisito.verified_by == ("tests/x.py",)

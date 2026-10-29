@@ -1,6 +1,6 @@
 ---
 slice: nivel-congelado
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:
