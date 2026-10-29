@@ -8,7 +8,7 @@ citados; `sources/` es para humanos.
 
 ## Jerarquía de verdad
 
-**specs + slices** > **ADRs / glosario** > **briefs** > **sources** > conversación suelta
+**specs + slices** > **ADRs / [glosario](../glosario.md)** > **briefs** > **sources** > conversación suelta
 
 Si un brief contradice una spec, la spec gana y el brief se marca `superseded`. Si una fuente nueva
 contradice un brief, se actualiza el brief y se anota en `docs/diario-desarrollo.md`.

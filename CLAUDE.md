@@ -45,8 +45,8 @@ El stack de la v2.0 está sin decidir ([ADR 0004](openspec/decisions/0004-stack-
 openspec/
   slice-system.md        ← LA CONSTITUCIÓN: protocolo canónico (leer antes de cualquier slice)
   slices/<capability>/   ← slices (comportamiento observable, WHEN/THEN)
-  specs/<capability>/    ← capability specs consolidadas (7 dominios)
-  changes/<id>/          ← change packs (proposal + tasks + runs + deltas) · archive/
+  specs/<capability>/    ← specs vivas (7 dominios): se editan en la rama de cada cambio
+  changes/<id>/          ← registro de cada cambio (runs.yaml; proposal/tasks opcionales) · archive/ (histórico)
   decisions/             ← ADRs
 tools/wslice/            ← harness: validate · coverage · verify · gates · metrics
 tools/*.py               ← el pipeline: extract_slack → add_results · post_ranking
@@ -59,8 +59,10 @@ openspec.workspace.yaml  ← manifest del workspace para wslice
 
 **Rules:**
 - Comportamiento nuevo u observable = **slice** (vía `/slice-propose`). Nunca código directo sin spec.
-- Los cambios de spec viven como **deltas** en `openspec/changes/<id>/specs/`; las consolidadas
-  (`openspec/specs/`) solo se tocan en el archive post-merge.
+- **Specs vivas** ([ADR 0009](openspec/decisions/0009-specs-vivas.md)): un cambio edita la spec de cada
+  capability que cruza, en su rama, junto al slice, el código y los tests. Nada de deltas ni archive.
+- El vocabulario es el de [`docs/glosario.md`](docs/glosario.md); las relaciones, las de
+  [`docs/ontologia.md`](docs/ontologia.md).
 - Trigger `ui` solo en la surface `web`; `cron`/`command` en `pipeline`. `http` y `event` no tienen
   surface válida todavía (§3).
 
@@ -96,7 +98,7 @@ Jerarquía de verdad: specs+slices > ADRs/glosario > briefs > sources.
 
 ## Observability & Lessons (§11)
 
-- Cada ejecución de fase sobre un change pack registra su run en `openspec/changes/<id>/runs.yaml`;
+- Cada ejecución de fase de un cambio registra su run en `openspec/changes/<id>/runs.yaml`;
   `wslice metrics` agrega el histórico.
 - Todo fallo con causa raíz produce una regla permanente vía `/leccion` → `docs/lecciones.md`
   (cascada: gate/CI > protocolo > skill > CLAUDE.md). Una lección `pendiente` es deuda — el audit la reporta.
@@ -110,7 +112,8 @@ Presente atemporal, honesto con los errores.
 ## File Placement Rules
 
 - Slice nuevo → `openspec/slices/<capability>/<slug>.md` (base: `openspec/slices/_template.md`).
-- Deltas de spec → `openspec/changes/<change-id>/specs/<capability>/spec.md`.
+- Requirements → la spec viva `openspec/specs/<capability>/spec.md` (`## Requirement:`, con `<!-- origen: <change-id> -->`).
+- Registro del cambio → `openspec/changes/<change-id>/runs.yaml`.
 - Tests del slice → `tests/slices/<slug>/` (= `tests_root` del frontmatter).
 - No crear capabilities nuevas sin acordarlo: las 7 existentes salen del análisis del sistema en
   producción (ver `openspec/README.md`).
@@ -132,7 +135,8 @@ feat/<change-id> · chore/openspec-slice-<slug>  ──PR──▶  main  ──
 
 ## Guardrails — Do NOT Touch Without Explicit Request
 
-- NUNCA editar `openspec/specs/` fuera del paso de archive (federated-untouched).
+- NUNCA cambiar comportamiento sin tocar en la misma rama la spec viva que lo describe; NUNCA volver a
+  escribir deltas `ADDED/MODIFIED` en un change pack (ADR 0009).
 - NUNCA editar `openspec/slice-system.md` — es la constitución; cambios requieren acuerdo explícito.
 - NUNCA commit/push/merge automático: handoff staged, el humano decide.
 - NUNCA escribir en la tabla de producción para explorar o probar. Los tests usan fixtures locales.

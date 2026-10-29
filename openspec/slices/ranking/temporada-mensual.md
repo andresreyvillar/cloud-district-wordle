@@ -1,6 +1,6 @@
 ---
 slice: temporada-mensual
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

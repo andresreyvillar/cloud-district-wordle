@@ -1,6 +1,6 @@
 ---
 slice: ruta-invalida
-status: proposed
+status: shipped
 kind: action
 actor: grupo
 trigger:

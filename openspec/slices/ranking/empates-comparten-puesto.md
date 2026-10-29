@@ -1,6 +1,6 @@
 ---
 slice: empates-comparten-puesto
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

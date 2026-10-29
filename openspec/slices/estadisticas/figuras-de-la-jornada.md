@@ -1,6 +1,6 @@
 ---
 slice: figuras-de-la-jornada
-status: proposed
+status: shipped
 kind: action
 actor: jugador
 trigger:

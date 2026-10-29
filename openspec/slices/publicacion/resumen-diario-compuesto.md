@@ -1,6 +1,6 @@
 ---
 slice: resumen-diario-compuesto
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

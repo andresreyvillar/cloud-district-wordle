@@ -1,6 +1,6 @@
 ---
 slice: cadencia-de-sincronizacion
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

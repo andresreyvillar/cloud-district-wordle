@@ -96,10 +96,10 @@ Cada Requirement de una capability spec **DEBE** tener al menos uno de:
 `indeterminate`; el Requirement solo pasa si un `verified-by:` lo cubre. *(En v1 del harness todos
 los probes son `indeterminate` → `verified-by` lleva el peso: TDD obligatorio por diseño.)*
 
-Formato del Requirement (en deltas y en specs consolidadas):
+Formato del Requirement en la spec viva (`openspec/specs/<capability>/spec.md`):
 
 ```markdown
-### Requirement: <Título en frase>
+## Requirement: <Título en frase>
 <cuerpo: la invariante>
 
 ```yaml
@@ -118,33 +118,35 @@ verified-by:
   - tests/slices/<slug>/test_happy_path.py
 ```
 
-## §5 — Change packs (ciclo de vida de un cambio)
+## §5 — Specs vivas (ciclo de vida de un cambio)
 
-Todo cambio con slice va en `openspec/changes/<change-id>/`:
+Desde el [ADR 0009](decisions/0009-specs-vivas.md) **las specs se editan directamente**: un cambio toca, en la
+misma rama, el slice, la spec viva de cada capability que cruza (`openspec/specs/<capability>/spec.md`), el
+código y los tests. El diff del PR **es** el delta: se revisa la spec junto al código que la cumple, y al
+mergear la spec de `main` ya es la verdad vigente. No hay paso de archive.
+
+Por qué: con deltas y archive post-merge, el archive no se hizo nunca —91 change packs, cero archivados, 187
+Requirements repartidos en 137 deltas y ninguna spec que leer—. En un repo de una persona con ramas y PR, el
+delta duplica lo que ya da `git diff`, y la consolidación diferida es justo el paso que se salta.
+
+Cada cambio deja **un registro mínimo** en `openspec/changes/<change-id>/`:
 
 ```
 openspec/changes/<change-id>/
-├── proposal.md          # OBLIGATORIO: Why · What Changes · Out of Scope (nunca omitir) ·
-│                        # Impact (slices/capabilities/archivos/migraciones/compat/riesgo) ·
-│                        # Validation Gates (comandos exactos) · tabla Capabilities
-├── tasks.md             # OBLIGATORIO: pasos numerados para un implementador sin contexto
-│                        # (Path + contexto + diff/copy-paste + verificación), validación de
-│                        # cierre con comandos exactos, commits sugeridos
-├── runs.yaml            # OBLIGATORIO desde la primera fase ejecutada (§11)
-├── design.md            # opcional
-└── specs/<capability>/spec.md   # DELTAS: ## ADDED / MODIFIED / REMOVED Requirements
+├── runs.yaml            # OBLIGATORIO desde la primera fase ejecutada (§11): la observabilidad del método
+├── proposal.md          # opcional: para cambios grandes o con decisiones que merecen escribirse
+│                        # (Why · What Changes · Out of Scope · Impact)
+└── tasks.md             # opcional: si existe, con comandos de test exactos (lo comprueba el gate)
 ```
 
-**Regla de oro (federated-untouched):** durante autoría e implementación **NUNCA** se editan las
-specs consolidadas (`openspec/specs/<capability>/spec.md`). Los cambios de spec viven como **deltas**
-dentro del change pack. Las consolidadas solo se actualizan en el **archive post-merge** (§6 fase 5).
-Gate mecánico: `git status --porcelain` no puede contener `openspec/specs/` fuera de un archive.
+Nada de `specs/<capability>/spec.md` dentro del change: la spec vive en un solo sitio.
+`openspec/changes/archive/` guarda los packs de antes del ADR 0009, como historia; no se añade nada.
 
-Cambios sin slice (bug fix menor, docs, tooling): change pack con `> Slice: N/A — <razón>` en
-`proposal.md`. Mismo ciclo, sin capa 1.
+**Trazabilidad en la spec:** un Requirement nuevo o reescrito lleva un comentario
+`<!-- origen: <change-id> -->` con el cambio que lo introdujo o lo cambió por última vez.
 
-Naming: change-id `feat-<slug>` / `fix-` / `refactor-` / `docs-`; rama de autoría
-`chore/openspec-slice-<slug>`; rama de implementación `feat/<change-id>`.
+Naming: change-id `feat-<slug>` / `fix-` / `refactor-` / `docs-`; rama `feat/<change-id>` (o `fix/…`,
+`refactor/…`). Un cambio sin slice (bug fix menor, docs, tooling) sigue el mismo ciclo sin capa 1.
 
 ## §6 — EL PROTOCOLO: pasos sí-o-sí
 
@@ -153,20 +155,22 @@ Seis fases. Cada una tiene gates; **si un gate falla, no se avanza**. A mano se 
 ### Fase 0 — Decidir el artefacto
 | Caso | Artefacto |
 |---|---|
-| Comportamiento observable nuevo (cruce de dominios, cron, publicación) | **Slice nuevo** + change pack |
-| Modificación de comportamiento existente | **Modificar slice** (menor → editar; significativo → change pack; estructural → propuesta aparte) |
-| Bug/refactor/docs sin cambio observable | **Change suelto** (`Slice: N/A`) |
+| Comportamiento observable nuevo (cruce de dominios, cron, publicación) | **Slice nuevo** + Requirements en las specs vivas |
+| Modificación de comportamiento existente | **Modificar slice** y los Requirements afectados (estructural → propuesta aparte) |
+| Bug/refactor/docs sin cambio observable | **Cambio sin slice** (spec solo si cambia un Requirement) |
 
 **Gate 0:** decisión explícita. La skill detecta colisiones contra `wslice slice list` (mismo trigger ⇒ modificar, no duplicar).
 
 ### Fase 1 — Proponer (`/slice-propose`)
 1. Bootstrap: `wslice` operativo, workspace válido.
-2. Autoría: slice `.md` (frontmatter §2 + escenarios `WHEN/THEN` con slug) + **deltas** por cada
-   capability de `specs:[]` (≥1 Requirement cada una) + change pack (`proposal.md` + `tasks.md`).
+2. Autoría: slice `.md` (frontmatter §2 + escenarios `WHEN/THEN` con slug) + **Requirements añadidos o
+   editados en la spec viva** de cada capability de `specs:[]` + `runs.yaml` (y `proposal.md` si el
+   cambio lo merece).
 3. **Gate 1a — `wslice slice validate <slug>`:** frontmatter completo, trigger legal (§3), `specs:[]`
    resuelven, escenarios con slug único, wikilinks resolubles.
-4. **Gate 1b — gates mecánicos:** federated-untouched · **spec-coverage** (cada capability declarada
-   tiene delta con ≥1 Requirement) · tasks.md con comandos de test exactos.
+4. **Gate 1b — `wslice verify gates --slice <slug>`:** **specs-coverage** (cada capability declarada
+   tiene spec viva con ≥1 Requirement) · **checks-probe** (los `checks:` de esas specs se ejecutan) ·
+   comandos de test exactos si hay `tasks.md`.
 5. Máximo **3 rondas** de corrección contra los gates; a la 3ª fallida → escalar al humano.
 6. Handoff: archivos staged, **sin commit automático** — el humano revisa y committea.
 
@@ -179,10 +183,12 @@ Seis fases. Cada una tiene gates; **si un gate falla, no se avanza**. A mano se 
    *(La eficacia real de estos tests se demuestra mecánicamente en el Gate 4c — prueba de mutación.)*
 
 ### Fase 3 — Implementar (`/slice-implement`)
-1. Cargar contexto: proposal + tasks + deltas (= el contrato) + specs consolidadas (read-only).
-2. Presentar plan derivado de `tasks.md` → **confirmación humana**.
+1. Cargar contexto: slice + los Requirements de la spec viva que el cambio añade o edita (= el contrato,
+   visible en el diff de la rama) + proposal/tasks si existen.
+2. Presentar plan → **confirmación humana**.
 3. Implementar acotado: **NUNCA** tocar módulos fuera de `specs:[]`, **NUNCA** inventar
-   funcionalidad que el delta no pide, **NUNCA** editar specs consolidadas ni el slice `.md`.
+   funcionalidad que la spec no pide. Si implementando se descubre que la spec estaba mal, se corrige la
+   spec **en la misma rama y a la vista** —es parte del diff que se revisa—, nunca en silencio.
 4. Los tests de la Fase 2 pasan de rojo → verde. Prohibido debilitar un test para ponerlo verde.
 
 ### Fase 4 — Verificar (gates de "aprobable"; todo verde o no mergea)
@@ -192,8 +198,8 @@ Seis fases. Cada una tiene gates; **si un gate falla, no se avanza**. A mano se 
 2. Migraciones de Supabase aplicadas y declaradas (cuando el change las traiga).
 3. **Gate 4a — `wslice verify slice <slug>`:** probes de los `checks:` (pass/indeterminate) +
    `verified-by` existentes + **cobertura escenario↔test = 100%**.
-4. **Gate 4b — cobertura de deltas:** cada Requirement del delta tiene código localizable
-   (`path:line`) + ≥1 test.
+4. **Gate 4b — cobertura de Requirements:** cada Requirement añadido o editado en la rama tiene código
+   localizable (`path:line`) + ≥1 test (`verified-by:`) o `checks:`.
 5. **Gate 4c — prueba de mutación (eficacia de los tests):** con los tests en verde, inyectar
    deliberadamente 1-3 errores en el código NUEVO del slice (invertir una condición, alterar un
    operador/constante, eliminar una llamada) — solo código de producción, NUNCA los tests
@@ -215,17 +221,15 @@ Seis fases. Cada una tiene gates; **si un gate falla, no se avanza**. A mano se 
    secrets o el token de Slack.
 8. README tocado actualizado o declarado "sin cambios — verificado".
 
-### Fase 5 — Aprobar + archivar
-1. Estado `awaiting_approval`: el humano revisa el diff.
-2. Merge `--no-ff` a `main`. **Solo el humano aprueba y mergea.**
+### Fase 5 — Aprobar y mergear
+1. Estado `awaiting_approval`: el humano revisa el diff —spec, slice, código y tests juntos—.
+2. Antes del merge, el slice nuevo pasa a `status: shipped` en la propia rama: lo que se mergea a `main`
+   se despliega (ver abajo), así que en `main` no hay slices «propuestos» que ya estén en producción.
+3. Merge `--no-ff` a `main`. **Solo el humano aprueba y mergea.**
    ⚠️ **Mergear a `main` despliega**: Cloudflare publica los assets y los workflows programados
    corren desde `main`. Ver [ADR 0003](decisions/0003-modelo-de-ramas-y-despliegue.md).
-3. **Archive (post-merge):** los deltas se propagan a `openspec/specs/<capability>/spec.md`
-   (ADDED añade, MODIFIED reemplaza, REMOVED borra), el change pack se mueve a
-   `openspec/changes/archive/<YYYY-MM-DD>-<change-id>/`, y el slice transiciona
-   `proposed → shipped` (primer archive que lo toca).
-4. Post-archive: `wslice verify slice <slug>` DEBE pasar con cobertura completa.
-5. **Revert de 1 clic**: `git revert -m 1 <merge-commit>` deshace el cambio entero.
+4. Tras el merge, `wslice verify slice <slug>` DEBE pasar con cobertura completa (ya lo hacía en la rama).
+5. **Revert de 1 clic**: `git revert -m 1 <merge-commit>` deshace el cambio entero, spec incluida.
 
 ### Fase 6 — Auditar (`/slice-audit`)
 Periódico y pre-release, sobre TODO el inventario:
@@ -235,20 +239,24 @@ Exit ≠ 0 bloquea release.
 
 ## §7 — Reglas transversales (no negociables)
 
-- **Comandos de test deterministas**: los comandos de `tasks.md`/Validation Gates son exactos y
-  reproducibles; el implementador no improvisa comandos.
+- **Comandos de test deterministas**: los comandos de test (de `tasks.md` si existe, o del slice) son
+  exactos y reproducibles; el implementador no improvisa comandos.
 - **Cobertura obligatoria**: todo change que toque código añade o actualiza tests. Sin excepción.
 - **El agente NUNCA despliega**: `main` es producción y el humano decide cuándo se mergea.
 - **El agente NUNCA auto-committea ni auto-pushea** — handoff staged.
 - **Los datos de producción son de personas reales**: los resultados de la tabla son de compañeros
   identificables. Nada de escrituras exploratorias en la tabla de producción; las pruebas usan
   fixtures locales. Si hace falta tocar producción, se hace con confirmación explícita y se revierte.
-- **Out of Scope explícito** en toda proposal — lo que no se hace se declara.
+- **Out of Scope explícito** en toda proposal que exista — lo que no se hace se declara.
+- **El vocabulario es el del glosario** ([`docs/glosario.md`](../docs/glosario.md)): un slice, un Requirement
+  o un test no inventan un término nuevo para un concepto que ya tiene nombre.
 
 ## §8 — Anti-patrones (bloquean)
 
 - Trigger `ui`/`http` sobre un módulo interno → **NUNCA** (§3).
-- Editar `openspec/specs/` fuera de archive → **NUNCA** (§5).
+- Cambiar comportamiento sin tocar la spec viva que lo describe → **NUNCA** (§5): la spec y el código
+  cambian en la misma rama.
+- Volver a escribir deltas `ADDED/MODIFIED` en un change pack → **NUNCA** (§5): la spec vive en un sitio.
 - Slice que emite y consume el mismo evento → **NUNCA** (partir en dos).
 - Implementar sin TDD rojo previo (Fase 2 saltada) → el gate 4a lo detecta.
 - Test debilitado/vaciado para poner verde un escenario → los gates 4c y 4d lo cazan.
@@ -271,6 +279,7 @@ Exit ≠ 0 bloquea release.
 | 12 capabilities inferidas del legacy | 7 capabilities inferidas del pipeline actual | dominio mucho menor; salen del análisis del código y de la tabla en producción |
 | Trigger `http` disponible (`apps/api`) | `http` sin surface válida hoy | la web es estática y Supabase es BaaS: no hay servidor propio |
 | Pipeline de contexto alimentado por documentos del cliente | Alimentado por el **canal de Slack** del grupo | la fuente de requisitos es la conversación del grupo, no un cliente |
+| Change packs con deltas `ADDED/MODIFIED/REMOVED` y archive post-merge (convención OpenSpec) | **Specs vivas**: se editan en la rama; el change pack queda en `runs.yaml` (+ proposal opcional) | el archive no se hizo nunca en 91 packs; con una persona y PR, el diff ya es el delta ([ADR 0009](decisions/0009-specs-vivas.md)) |
 
 ## §10 — Frontera determinista/agéntica
 
@@ -282,9 +291,8 @@ Todo proceso que no requiera juicio se implementa como herramienta determinista,
 
 | Proceso | Naturaleza |
 |---|---|
-| Scaffold de slice/change pack (plantillas) | herramienta |
+| Scaffold de slice (plantilla) | herramienta |
 | validate · coverage · verify · gates · metrics | herramienta (`tools/wslice`) |
-| **Archive** (deltas → specs consolidadas, transición de estado) | herramienta — **NUNCA agente** |
 | Mecánica git (rama, stage, merge, revert) | herramienta |
 | Mutación (Gate 4c) | herramienta — `mutmut` sobre los archivos del diff; el procedimiento manual de la skill es el fallback |
 | Cálculo de estadísticas y ranking | código determinista con **reloj y datos inyectados** (habilita golden tests) |
@@ -294,8 +302,8 @@ Todo proceso que no requiera juicio se implementa como herramienta determinista,
 
 - **`tasks.md` prescriptivo** (bloques literales/copy-paste cuando sea posible). El plan se genera
   UNA vez; re-ejecutar la implementación es re-seguir el mismo plan, no re-planificar.
-- **Append-only:** un slice `shipped` NUNCA se regenera. El rework es un change pack nuevo con
-  deltas y diff revisable.
+- **Append-only:** un slice `shipped` NUNCA se regenera. El rework es un cambio nuevo, en su rama, con
+  un diff revisable del slice y de la spec viva.
 - **Golden/snapshot tests** para salidas sensibles a deriva (JSON del ranking, texto del mensaje de
   Slack, HTML renderizado).
 - **Runtime determinista en el código de producto:** la fecha y los datos entran como parámetro;
@@ -308,8 +316,8 @@ Todo proceso que no requiera juicio se implementa como herramienta determinista,
 
 ### Run records (observabilidad)
 
-Toda ejecución de las Fases 1-4 sobre un change pack registra su resultado en
-**`openspec/changes/<id>/runs.yaml`** — el registro viaja con el change y se archiva con él.
+Toda ejecución de las Fases 1-4 de un cambio registra su resultado en
+**`openspec/changes/<id>/runs.yaml`** — el registro mínimo que cada cambio deja (§5).
 
 Entrada mínima: `run` (ISO, **entrecomillado**), `fase` (propose|tdd|implement|verify), `actor`
 (humano|fabrica), `gates` (mapa gate→pass|fail|skip), `rondas_correccion`. Opcionales: `modelo`,

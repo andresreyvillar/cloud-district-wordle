@@ -391,3 +391,28 @@
   cuántos ✓ lista el gate: tienen que ser tantos como se escribieron.
 - **Codificada en:** esta lección · **estado:** pendiente · **destino mecánico pendiente:** que
   `_gate_checks_probe` falle si un bloque ```yaml de un Requirement no parsea, en lugar de ignorarlo.
+
+### 2026-10-29 — Un comentario `#` dentro de un bloque de código cortaba el Requirement
+- **Qué pasó:** al consolidar las specs vivas (ADR 0009), «El patrón no participa en la identidad de la fila»
+  seguía saliendo «sin checks ni verified-by» aunque tenía los dos. Su bloque ```yaml empezaba con un
+  comentario `# Antes había aquí…`, y el parser trataba esa línea como un heading de nivel 1: cerraba el
+  Requirement ahí y perdía todo lo que venía después. Pasaba igual en los deltas; nadie lo vio porque esa
+  verificación se quedaba en `indeterminate`.
+- **Causa raíz:** `spec_parser.parse_spec_file` buscaba headings línea a línea sin saber si estaba dentro de
+  un bloque de código.
+- **Regla:** el parser ignora headings y títulos de Requirement dentro de bloques ``` (incluidos los
+  comentarios YAML).
+- **Codificada en:** `tools/wslice/spec_parser.py` y el test
+  `tests/harness/test_verify_y_metrics.py::test_un_comentario_dentro_de_un_bloque_de_codigo_no_corta_el_requirement`
+  · **estado:** codificada.
+
+### 2026-10-29 — La consolidación diferida no se hace nunca
+- **Qué pasó:** en dos meses y medio se acumularon 91 change packs y cero archives: ninguna spec consolidada,
+  34 slices en producción marcados `proposed`. Al consolidar salieron 48 Requirements sin `checks:` ni
+  `verified-by:` que ningún gate había visto, porque solo se verificaban los deltas del pack en curso.
+- **Causa raíz:** el paso que reunía la verdad (el archive) venía **después** del merge, cuando el cambio ya
+  estaba desplegado y no había nada que lo exigiera.
+- **Regla:** la spec se edita en la misma rama que el código (specs vivas), y los gates comprueban la spec
+  entera de cada dominio que cruza el slice, no solo lo que cambió.
+- **Codificada en:** ADR 0009, `openspec/slice-system.md` §5 y §6, y `tools/wslice/gates.py`
+  (`specs-coverage` y `checks-probe` sobre la spec viva) · **estado:** codificada.

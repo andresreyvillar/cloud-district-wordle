@@ -1,6 +1,6 @@
 ---
 slice: debate-de-reglas
-status: proposed
+status: shipped
 kind: action
 actor: jugador
 trigger:

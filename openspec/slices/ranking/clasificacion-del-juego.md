@@ -1,6 +1,6 @@
 ---
 slice: clasificacion-del-juego
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:

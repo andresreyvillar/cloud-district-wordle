@@ -4,7 +4,7 @@
     python3 -m tools.wslice slice validate [slug] [--json]
     python3 -m tools.wslice slice coverage <slug> [--json]
     python3 -m tools.wslice verify slice <slug> [--strict] [--json]
-    python3 -m tools.wslice verify gates [--slice <slug>] [--change-id <id>] [--json]
+    python3 -m tools.wslice verify gates [--slice <slug>] [--change-id <id opcional>] [--json]
     python3 -m tools.wslice metrics [--json]
 
 Exit code 0 = gate en verde; 1 = gate en rojo.
@@ -231,7 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     gates = verify_sub.add_parser("gates", help="gates mecánicos (Gate 1b)")
     gates.add_argument("--slice", dest="slice", help="slice a comprobar")
-    gates.add_argument("--change-id", dest="change_id", help="change pack a comprobar")
+    gates.add_argument("--change-id", dest="change_id", help="change pack opcional a comprobar (ADR 0009)")
     gates.set_defaults(handler=cmd_verify_gates)
 
     metrics = subparsers.add_parser("metrics", help="agrega los runs.yaml de los change packs (§11)")

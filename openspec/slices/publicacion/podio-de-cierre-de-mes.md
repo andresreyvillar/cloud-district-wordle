@@ -1,6 +1,6 @@
 ---
 slice: podio-de-cierre-de-mes
-status: proposed
+status: shipped
 kind: scheduled
 actor: sistema
 trigger:
