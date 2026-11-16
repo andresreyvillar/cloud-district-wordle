@@ -38,13 +38,13 @@ PIN_DE_PRUEBA = "prueba-local"
 #: Lo único que se puede llamar: las funciones públicas del evento, con sus parámetros.
 FUNCIONES = {
     "unirse_al_evento": ("p_evento", "p_nombre", "p_token", "p_clave"),
-    "estado_del_evento": ("p_evento",),
+    "estado_del_evento": ("p_evento", "p_token", "p_clave"),
     "mi_partida_del_evento": ("p_evento", "p_token"),
     "empezar_frase": ("p_evento", "p_token", "p_orden"),
     "intentar_palabra": ("p_evento", "p_token", "p_orden", "p_palabra", "p_numero"),
     "terminar_evento": ("p_evento", "p_pin"),
     "empezar_evento": ("p_evento", "p_pin"),
-    "ranking_del_evento": ("p_evento",),
+    "ranking_del_evento": ("p_evento", "p_token", "p_clave"),
 }
 
 ERROR_DE_POSTGRES = re.compile(r"ERROR:\s+([0-9A-Z]{5}):\s+(.*)")

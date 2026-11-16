@@ -75,14 +75,15 @@ export function apiDelEvento(cliente, evento, plazo = PLAZO_MS) {
     evento,
     unirse: (nombre, token, clave = null) =>
       llamar_('unirse_al_evento', { p_evento: evento, p_nombre: nombre, p_token: token, p_clave: clave }),
-    estado: () => llamar_('estado_del_evento', { p_evento: evento }),
+    // Con contraseña, el estado y el ranking solo llegan con el token de un participante o con la contraseña.
+    estado: (token = null, clave = null) => llamar_('estado_del_evento', { p_evento: evento, p_token: token, p_clave: clave }),
     miPartida: (token) => llamar_('mi_partida_del_evento', { p_evento: evento, p_token: token }),
     empezar: (token, orden) => llamar_('empezar_frase', { p_evento: evento, p_token: token, p_orden: orden }),
     intentar: (token, orden, palabra, numero) => llamar_('intentar_palabra',
       { p_evento: evento, p_token: token, p_orden: orden, p_palabra: palabra, p_numero: numero }),
     terminarEvento: (pin) => llamar_('terminar_evento', { p_evento: evento, p_pin: pin }),
     empezarEvento: (pin) => llamar_('empezar_evento', { p_evento: evento, p_pin: pin }),
-    ranking: () => llamar_('ranking_del_evento', { p_evento: evento }),
+    ranking: (token = null, clave = null) => llamar_('ranking_del_evento', { p_evento: evento, p_token: token, p_clave: clave }),
   };
 }
 

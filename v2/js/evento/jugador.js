@@ -46,6 +46,8 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
     sinConexion: false,
     // La explicación de cómo se juega, abierta desde la cabecera.
     ayuda: false,
+    // La contraseña de acceso, si el evento la pide. Solo en memoria: una vez dentro, basta el token.
+    clave: null,
   };
 
   const ahora = () => reloj() + s.desfase;
@@ -58,13 +60,13 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
   async function refrescar() {
     const pedido = reloj();
     try {
-      const estado = await api.estado();
+      const estado = await api.estado(s.token, s.clave);
       // La hora del servidor es la de mitad del viaje: sin descontar la latencia, el móvil iba adelantado lo que
       // tarda la petición.
       s.desfase = desfase(estado.ahora, (pedido + reloj()) / 2);
       s.estado = estado;
       s.sinConexion = false;
-      if (estado.terminado && !s.ranking) s.ranking = await api.ranking();
+      if (estado.terminado && !s.ranking) s.ranking = await api.ranking(s.token, s.clave);
     } catch (error) {
       if (error.tipo === 'red') s.sinConexion = true;
       else s.aviso = error.message;
@@ -98,8 +100,27 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
     await refrescar();
   }
 
-  /** Entra con un nombre y, si el evento la pide, la contraseña. */
-  async function entrar(nombre, contrasena = null) {
+  /**
+   * Prueba la contraseña de acceso: si es la buena, el servidor entrega el estado y la web pasa a pedir el nombre.
+   * Antes de eso no se enseña nada del evento.
+   */
+  async function desbloquear(clave) {
+    if (!String(clave ?? '')) {
+      s.aviso = 'Escribe la contraseña.';
+      return;
+    }
+    s.clave = clave;
+    await refrescar();
+    if (s.estado?.bloqueado) {
+      s.clave = null;
+      s.aviso = 'Contraseña incorrecta.';
+    } else {
+      s.aviso = null;
+    }
+  }
+
+  /** Entra con un nombre y, si el evento la pide, la contraseña (la que ya abrió el evento). */
+  async function entrar(nombre, contrasena = s.clave) {
     if (!String(nombre ?? '').trim()) {
       s.aviso = 'Escribe tu nombre para entrar.';
       return;
@@ -212,7 +233,10 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
     s.ayuda = !s.ayuda;
   }
 
-  return { estado: s, ahora, momento, arrancar, sincronizar, refrescar, entrar, elegir, empezar, teclear, borrar, enviar, ayuda };
+  return {
+    estado: s, ahora, momento, arrancar, sincronizar, refrescar, desbloquear, entrar, elegir, empezar, teclear, borrar,
+    enviar, ayuda,
+  };
 }
 
 // ── Vista ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -379,8 +403,23 @@ function frase(s, orden, m, ahora) {
   </section>`;
 }
 
+/**
+ * La puerta de un evento con contraseña: solo el campo para escribirla. Ni título, ni reglas, ni ayuda: quien no la
+ * sabe no tiene por qué saber de qué va el evento.
+ */
+export function vistaDeLaPuerta(s) {
+  return `<section class="ev-puerta">
+    <form data-formulario="clave">
+      <label for="ev-clave">Contraseña</label>
+      <input id="ev-clave" name="clave" type="password" autocomplete="off" required>
+      <button type="submit" class="ev-boton">Entrar</button>
+    </form>${aviso(s)}</section>`;
+}
+
 /** La pantalla del participante para un estado y una hora (ya corregida al servidor). */
 export function vistaDelEvento(s, ahora) {
+  if (!s.nombre && !s.recuperando && s.estado?.bloqueado) return vistaDeLaPuerta(s);
+
   const boton = `<button type="button" class="ev-ayuda-boton" data-accion="ayuda" aria-expanded="${Boolean(s.ayuda)}">${
     s.ayuda ? 'Cerrar' : '¿Cómo se juega?'}</button>`;
   const titulo = `<header class="ev-cabecera"><span class="ev-marca">${escapar(s.estado?.titulo ?? 'La frase del evento')}</span>${
@@ -397,8 +436,6 @@ export function vistaDelEvento(s, ahora) {
       <form data-formulario="entrar">
         <label for="ev-nombre">Tu nombre</label>
         <input id="ev-nombre" name="nombre" maxlength="30" autocomplete="name" required>
-        ${s.estado?.con_clave ? `<label for="ev-clave">Contraseña del evento</label>
-        <input id="ev-clave" name="clave" type="password" autocomplete="off" required>` : ''}
         <button type="submit" class="ev-boton">Entrar</button>
       </form>${aviso(s)}</section>`;
   }
@@ -427,6 +464,8 @@ const SONDEO_MS = 10_000;
 export async function montarEvento(contenedor, control, temporizador) {
   const pintar = () => {
     contenedor.innerHTML = vistaDelEvento(control.estado, control.ahora());
+    // La pestaña tampoco dice de qué va el evento hasta que se abre.
+    document.title = control.estado.estado?.titulo || 'Acceso';
   };
   const arriba = () => window.scrollTo?.(0, 0);
   // Enviar pinta dos veces: al salir («Enviando…», el teclado quieto) y al volver la respuesta.
@@ -462,7 +501,8 @@ export async function montarEvento(contenedor, control, temporizador) {
   contenedor.addEventListener('submit', async (evento) => {
     evento.preventDefault();
     const datos = new FormData(evento.target);
-    await control.entrar(datos.get('nombre'), datos.get('clave'));
+    if (evento.target.dataset.formulario === 'clave') await control.desbloquear(datos.get('clave'));
+    else await control.entrar(datos.get('nombre'));
     pintar();
   });
 

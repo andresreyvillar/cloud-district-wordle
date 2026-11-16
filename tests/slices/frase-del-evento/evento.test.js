@@ -506,22 +506,35 @@ test('tras la última frase se dice que el ranking sale al terminar el evento', 
 });
 
 /** @scenarios un-evento-con-contrasena-solo-deja-entrar-a-quien-la-sabe */
-test('si el evento tiene contraseña, la web la pide y la manda al entrar; si no, no la pide', async () => {
-  const api = apiFalsa({ est: { ...estado(), con_clave: true } });
+test('con contraseña, antes de darla solo se ve el campo para escribirla, sin nada del evento', async () => {
+  const cerrado = { ahora: new Date(T0).toISOString(), con_clave: true, bloqueado: true };
+  const api = apiFalsa({ estado: async (_token, clave) => (clave === 'cl4ve' ? { ...estado(), con_clave: true, bloqueado: false } : cerrado) });
   const control = controlDelEvento({ api, almacen: almacenFalso(), reloj: () => T0 + MIN, generarToken: () => 'tk-1' });
   await control.refrescar();
-  assert.match(vista(control), /name="clave" type="password"/);
 
-  await control.entrar('Ana', '');
-  assert.match(control.estado.aviso, /contraseña/);
-  assert.ok(!api.llamadas.some(([n]) => n === 'unirse'), 'sin contraseña no se llama');
+  const puerta = vista(control);
+  assert.match(puerta, /data-formulario="clave"[\s\S]*name="clave" type="password"/);
+  assert.doesNotMatch(puerta, /Evento de test|frase|Cómo se juega|ev-ayuda|ev-nombre|palabras/i);
 
-  await control.entrar('Ana', 'cl4ve');
+  await control.desbloquear('mala');
+  assert.match(vista(control), /Contraseña incorrecta/);
+  assert.match(vista(control), /data-formulario="clave"/);
+
+  await control.desbloquear('cl4ve');
+  assert.match(vista(control), /id="ev-nombre"/);
+  assert.match(vista(control), /Evento de test/);
+  await control.entrar('Ana');
   assert.deepEqual(api.llamadas.find(([n]) => n === 'unirse'), ['unirse', 'Ana', 'tk-1', 'cl4ve']);
+});
 
+/** @scenarios un-evento-con-contrasena-solo-deja-entrar-a-quien-la-sabe */
+test('un evento sin contraseña no la pide, y la pestaña dice Acceso hasta abrirse', async () => {
   const sin = controlDelEvento({ api: apiFalsa(), almacen: almacenFalso(), reloj: () => T0 + MIN });
   await sin.refrescar();
-  assert.doesNotMatch(vista(sin), /name="clave"/);
+  assert.doesNotMatch(vista(sin), /data-formulario="clave"/);
+  assert.match(vista(sin), /id="ev-nombre"/);
+  const app = readFileSync(new URL('../../../v2/js/app.js', import.meta.url), 'utf8');
+  assert.match(app, /document\.title = 'Acceso';/);
 });
 
 /** @scenarios se-explica-como-se-juega */

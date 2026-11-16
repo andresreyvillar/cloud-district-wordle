@@ -231,6 +231,21 @@ def test_el_ranking_solo_se_entrega_con_el_evento_terminado(db):
     assert rpc(db, "ranking_del_evento", EVENTO)[0]
 
 
+# @scenarios el-ranking-sale-al-terminar-el-evento, la-pantalla-pide-la-contrasena
+def test_con_contrasena_el_ranking_solo_se_entrega_con_ella_o_con_un_token(db):
+    empezado_hace(db, 60)
+    tk = participante(db, "Ana")
+    fijar_tiempo(db, tk, 1, 60_000)
+    terminado(db)
+    valor(db, "update public.event_editions set clave_hash = encode(sha256(convert_to('cl4ve', 'UTF8')), 'hex')")
+
+    assert not rpc(db, "ranking_del_evento", EVENTO)[0]
+    assert not rpc(db, "ranking_del_evento", EVENTO, None, "mala")[0]
+    assert rpc(db, "ranking_del_evento", EVENTO, None, "cl4ve")[1][0]["nombre"] == "Ana"
+    assert rpc(db, "ranking_del_evento", EVENTO, tk, None)[0]
+    assert "solucion" not in json.dumps(rpc(db, "estado_del_evento", EVENTO)[1]), "cerrado no enseña las frases"
+
+
 # @scenarios el-pin-no-esta-en-el-repositorio
 def test_las_migraciones_no_traen_frases_ni_huella_de_pin():
     for migracion in MIGRACIONES.glob("*.sql"):

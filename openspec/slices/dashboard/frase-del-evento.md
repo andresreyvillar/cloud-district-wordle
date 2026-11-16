@@ -68,8 +68,9 @@ de estadísticas tampoco. Parte con la marca de Cloud District y se adapta al te
 
 ### un-evento-con-contrasena-solo-deja-entrar-a-quien-la-sabe
 **WHEN** el evento tiene contraseña de acceso (una demo para la organización) y alguien intenta entrar
-**THEN** la web la pide junto al nombre, y el servidor rechaza a quien no la da o la da mal sin apuntarlo; un móvil
-ya apuntado no la vuelve a necesitar, y un evento sin contraseña no la pide
+**THEN** antes de darla solo se ve el campo para escribirla —ni título, ni reglas, ni ayuda; la pestaña dice
+«Acceso»— y el servidor no entrega nada del evento; con la contraseña buena se pide el nombre, y el servidor rechaza
+apuntar a quien no la da; un móvil ya apuntado no la vuelve a necesitar, y un evento sin contraseña no la pide
 
 ### un-nombre-no-se-repite
 **WHEN** desde otro móvil alguien intenta entrar con un nombre que ya está apuntado, aunque cambien las

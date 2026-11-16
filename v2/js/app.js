@@ -158,7 +158,8 @@ async function arrancarEvento(destino) {
   const hoja = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: recurso('css/evento.css') });
   const robots = Object.assign(document.createElement('meta'), { name: 'robots', content: 'noindex' });
   document.head.append(hoja, robots);
-  document.title = 'La frase del evento';
+  // Neutro hasta saber si el evento se puede enseñar: con contraseña, la pestaña no dice de qué va.
+  document.title = 'Acceso';
 
   const vista = elementos().vista;
   const { apiReal } = await import('./evento/api.js');

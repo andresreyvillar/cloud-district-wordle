@@ -64,13 +64,14 @@ body.modo-evento {
 .modo-evento h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--ev-tinta-suave); }
 .modo-evento p { line-height: 1.5; }
 
-.ev-entrada form { display: grid; gap: 0.6rem; margin-top: 1rem; }
-.ev-entrada label { font-weight: 600; }
-.ev-entrada input, .pa-pin input {
+.ev-entrada form, .ev-puerta form { display: grid; gap: 0.6rem; margin-top: 1rem; }
+.ev-puerta { padding-top: 20vh; }
+.ev-entrada label, .ev-puerta label { font-weight: 600; }
+.ev-entrada input, .ev-puerta input, .pa-pin input {
   font: inherit; font-size: 1.1rem; padding: 0.8rem; border-radius: var(--ev-radio);
   border: 2px solid var(--ev-borde); background: var(--ev-superficie); color: var(--ev-tinta);
 }
-.ev-entrada input:focus, .pa-pin input:focus { outline: none; border-color: var(--ev-acento); }
+.ev-entrada input:focus, .ev-puerta input:focus, .pa-pin input:focus { outline: none; border-color: var(--ev-acento); }
 
 .ev-boton {
   font: inherit; font-weight: 700; font-size: 1.05rem; cursor: pointer;

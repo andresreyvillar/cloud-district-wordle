@@ -1018,9 +1018,11 @@ apuntado con otro token se rechaza. Un evento admite como mucho 500 participante
 nombres de todos ni llenar el ranking.
 
 Un evento puede tener **contraseña de acceso** (`clave_hash`, la huella SHA-256, como la del PIN): entonces
-`unirse_al_evento` rechaza a quien no la da o la da mal, sin apuntarlo. Un token ya apuntado no la necesita.
-`estado_del_evento` dice si hace falta (`con_clave`), nunca la huella. La ruta oculta no protege nada en un
-repositorio público; la contraseña sí.
+`unirse_al_evento` rechaza a quien no la da o la da mal, sin apuntarlo, y **`estado_del_evento` y
+`ranking_del_evento` no enseñan nada del evento** —ni título, ni frases, ni horarios, ni contadores, ni nombres— a
+quien no trae la contraseña o el token de un participante: solo `{ahora, con_clave, bloqueado}`. Un token ya apuntado
+no la necesita. Nunca se entrega la huella. La ruta oculta no protege nada en un repositorio público; la contraseña
+sí.
 
 #### Scenario: el nombre ocupado se rechaza
 - **WHEN** otro token intenta apuntarse con «ANA » estando apuntada «Ana»
