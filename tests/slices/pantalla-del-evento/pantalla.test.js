@@ -140,3 +140,19 @@ test('un nombre con HTML se pinta como texto en el ranking', async () => {
   assert.doesNotMatch(html, /<b>Ana/);
   assert.match(html, /&lt;b&gt;Ana/);
 });
+
+/** @scenarios la-pantalla-pide-la-contrasena */
+test('con contraseña, el proyector solo pide la contraseña y después enseña el evento', async () => {
+  const cerrado = { ahora: new Date(T0).toISOString(), con_clave: true, bloqueado: true };
+  const api = apiFalsa({ estado: async (_token, clave) => (clave === 'cl4ve' ? estado({ inicio: null }) : cerrado) });
+  const control = controlDeLaPantalla({ api, reloj: () => T0 });
+  await control.refrescar();
+
+  const puerta = vistaDeLaPantalla(control.estado, control.ahora(), DIRECCION);
+  assert.match(puerta, /data-formulario="clave"/);
+  assert.doesNotMatch(puerta, /Evento de test|wordle\.example|participantes|name="pin"/);
+
+  await control.desbloquear('cl4ve');
+  const abierta = vistaDeLaPantalla(control.estado, control.ahora(), DIRECCION);
+  assert.match(abierta, /Evento de test[\s\S]*name="pin"/);
+});

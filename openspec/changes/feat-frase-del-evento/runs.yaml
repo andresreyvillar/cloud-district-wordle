@@ -113,3 +113,22 @@
     y ayudantes cerrados, contraseña mala rechazada, nombres invisibles rechazados. Evento `demo` creado con
     contraseña y PIN aleatorios fuera del repositorio. Revisión de seguridad: 8 funciones públicas, todas SECURITY
     DEFINER con search_path vacío; 9 ayudantes revocados.
+
+- run: '2026-11-16T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño ve que la demo, aun con contraseña, enseñaba de qué iba el evento a cualquiera que abriera el enlace: el
+    título, las reglas y la ayuda en la web, y el estado y el ranking por la API. Ahora estado_del_evento y
+    ranking_del_evento solo los entregan con la contraseña o el token de un participante, y la web enseña una puerta
+    con un único campo y la pestaña «Acceso». En producción, la migración con `drop function` pedía una confirmación
+    que no llegó a la interfaz y caducó dos veces: se rehízo sin `drop` (versiones nuevas sin valores por defecto, y
+    las de un parámetro delegando en ellas, cerradas igual). Verificado con la clave pública.

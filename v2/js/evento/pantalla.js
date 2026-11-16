@@ -11,18 +11,19 @@ import { escapar } from '../ui/shell.js';
 import { cuentaAtras, desfase, formatoTiempo, momentoDelEvento } from './dominio.js';
 
 export function controlDeLaPantalla({ api, reloj }) {
-  const s = { estado: null, desfase: 0, ranking: null, aviso: null, sinConexion: false };
+  // `clave`: la contraseña de acceso, si el evento la pide; solo en memoria (al recargar se vuelve a pedir).
+  const s = { estado: null, desfase: 0, ranking: null, aviso: null, sinConexion: false, clave: null };
 
   const ahora = () => reloj() + s.desfase;
 
   async function refrescar() {
     const pedido = reloj();
     try {
-      const estado = await api.estado();
+      const estado = await api.estado(null, s.clave);
       s.desfase = desfase(estado.ahora, (pedido + reloj()) / 2);
       s.estado = estado;
       s.sinConexion = false;
-      if (estado.terminado && !s.ranking) s.ranking = await api.ranking();
+      if (estado.terminado && !s.ranking) s.ranking = await api.ranking(null, s.clave);
     } catch (error) {
       if (error.tipo === 'red') s.sinConexion = true;
       else s.aviso = error.message;
@@ -40,10 +41,22 @@ export function controlDeLaPantalla({ api, reloj }) {
     await refrescar();
   }
 
+  async function desbloquear(clave) {
+    s.clave = clave || null;
+    await refrescar();
+    if (s.estado?.bloqueado) {
+      s.clave = null;
+      s.aviso = 'Contraseña incorrecta.';
+    } else {
+      s.aviso = null;
+    }
+  }
+
   return {
     estado: s,
     ahora,
     refrescar,
+    desbloquear,
     empezar: (pin) => conPin(api.empezarEvento, pin),
     terminar: (pin) => conPin(api.terminarEvento, pin),
   };
@@ -94,6 +107,12 @@ export function vistaDeLaPantalla(s, ahora, direccion) {
   const titulo = escapar(s.estado?.titulo ?? 'La frase del evento');
   const aviso = s.aviso || s.sinConexion
     ? `<p class="ev-aviso" role="alert">${escapar(s.aviso ?? 'Sin conexión: reintentando…')}</p>` : '';
+  // Con contraseña, nada del evento hasta que se escribe: ni título, ni dirección, ni contadores.
+  if (s.estado?.bloqueado) {
+    return `<div class="pa"><form class="pa-pin" data-formulario="clave">
+      <input name="clave" type="password" autocomplete="off" placeholder="Contraseña" aria-label="Contraseña">
+      <button type="submit" class="ev-boton">Entrar</button></form>${aviso}</div>`;
+  }
   const m = momentoDelEvento(s.estado, ahora);
 
   if (m.tipo === 'terminado') {
@@ -120,12 +139,15 @@ export function vistaDeLaPantalla(s, ahora, direccion) {
 export async function montarPantalla(contenedor, control, temporizador, direccion) {
   const pintar = () => {
     contenedor.innerHTML = vistaDeLaPantalla(control.estado, control.ahora(), direccion);
+    document.title = control.estado.estado?.titulo || 'Acceso';
   };
 
   contenedor.addEventListener('submit', async (evento) => {
     evento.preventDefault();
-    const pin = new FormData(evento.target).get('pin');
-    if (evento.target.dataset.formulario === 'terminar') await control.terminar(pin);
+    const datos = new FormData(evento.target);
+    const pin = datos.get('pin');
+    if (evento.target.dataset.formulario === 'clave') await control.desbloquear(datos.get('clave'));
+    else if (evento.target.dataset.formulario === 'terminar') await control.terminar(pin);
     else await control.empezar(pin);
     pintar();
   });

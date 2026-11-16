@@ -113,6 +113,24 @@ def test_con_contrasena_solo_entra_quien_la_sabe_y_un_movil_apuntado_no_la_repit
 
 
 # @scenarios un-evento-con-contrasena-solo-deja-entrar-a-quien-la-sabe
+def test_con_contrasena_el_estado_no_ensena_nada_a_quien_no_la_da(db):
+    valor(db, "update public.event_editions set clave_hash = encode(sha256(convert_to('cl4ve-larga', 'UTF8')), 'hex')")
+    tk = token()
+
+    for clave in (None, "mala"):
+        ok, cerrado = rpc(db, "estado_del_evento", EVENTO, None, clave)
+        assert ok and set(cerrado) == {"ahora", "con_clave", "bloqueado"}, cerrado
+        assert cerrado["bloqueado"] is True
+    assert rpc(db, "estado_del_evento", EVENTO)[1]["bloqueado"] is True, "la versión de un parámetro, también cerrada"
+    abierto = rpc(db, "estado_del_evento", EVENTO, None, "cl4ve-larga")[1]
+    assert abierto["bloqueado"] is False and abierto["titulo"] == "Evento de test"
+
+    assert unirse(db, "Ana", tk, "cl4ve-larga")[0]
+    dentro = rpc(db, "estado_del_evento", EVENTO, tk, None)[1]
+    assert dentro["bloqueado"] is False and len(dentro["frases"]) == 3, "dentro, basta el token"
+
+
+# @scenarios un-evento-con-contrasena-solo-deja-entrar-a-quien-la-sabe
 def test_un_evento_sin_contrasena_no_la_pide(db):
     assert estado(db)["con_clave"] is False
     assert unirse(db, "Ana", token())[0]

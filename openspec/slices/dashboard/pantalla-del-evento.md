@@ -68,6 +68,11 @@ escribe el presentador. La pantalla lee `estado_del_evento` cada pocos segundos 
 **THEN** las frases se liberan con el nuevo intervalo sin desplegar nada; con el evento ya empezado, el cambio se
 rechaza
 
+### la-pantalla-pide-la-contrasena
+**WHEN** el evento tiene contraseña de acceso y se abre el proyector
+**THEN** solo se ve el campo para escribirla; con la buena, la pantalla enseña el evento, y sin ella el servidor no
+entrega ni el estado ni el ranking
+
 ### antes-de-empezar-se-ve-la-espera
 **WHEN** el evento no ha empezado
 **THEN** la pantalla dice que está a punto de empezar, cuántos participantes hay apuntados y la dirección para
