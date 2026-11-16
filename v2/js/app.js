@@ -5,7 +5,7 @@
  * calcula recibe la temporada y los resultados por parámetro, y por eso se puede verificar con datos fijos.
  */
 
-import { conBase, configurarBase, destinoConAncla, resolver, rutaDe, VISTAS } from './router.js';
+import { conBase, configurarBase, destinoConAncla, esDelEvento, recurso, resolver, rutaDe, VISTAS } from './router.js';
 import { animar, movimientoReducido, seguirScroll } from './ui/animacion.js';
 import { cargarResultados, cargarInstantaneas } from './data/results.js';
 import { pintarPaginaDebate } from './ui/debate.js';
@@ -147,11 +147,65 @@ function navegar(ruta, resultados, instantaneas) {
   document.startViewTransition(pintarAhora);
 }
 
+/**
+ * El juego del evento: se pinta solo, sin la cabecera, la navegación ni los datos de la web de estadísticas
+ * (slices `frase-del-evento` y `pantalla-del-evento`). Con su propia hoja de estilos, que lleva el tema.
+ */
+async function arrancarEvento(destino) {
+  document.querySelector('.cabecera')?.remove();
+  document.querySelector('.pie')?.remove();
+  document.body.classList.add('modo-evento');
+  const hoja = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: recurso('css/evento.css') });
+  const robots = Object.assign(document.createElement('meta'), { name: 'robots', content: 'noindex' });
+  document.head.append(hoja, robots);
+  document.title = 'La frase del evento';
+
+  const vista = elementos().vista;
+  const { apiReal } = await import('./evento/api.js');
+  let api;
+  try {
+    api = await apiReal(window.location);
+  } catch (error) {
+    pintarError(vista, error.message);
+    return;
+  }
+  // El reloj y los temporizadores se leen aquí, en el borde (§10).
+  const reloj = () => Date.now();
+  const temporizador = { cada: (ms, fn) => setInterval(fn, ms) };
+
+  if (destino.vista === VISTAS.PANTALLA_DEL_EVENTO) {
+    const { controlDeLaPantalla, montarPantalla } = await import('./evento/pantalla.js');
+    const direccion = `${window.location.host}${conBase('/evento')}${window.location.search}`;
+    await montarPantalla(vista, controlDeLaPantalla({ api, reloj }), temporizador, direccion);
+    return;
+  }
+  const { controlDelEvento, montarEvento } = await import('./evento/jugador.js');
+  // La lista de palabras válidas, para avisar al momento de una que no vale. Si no carga, decide solo el servidor.
+  const palabras = await fetch(recurso('assets/evento/palabras.txt'))
+    .then((respuesta) => (respuesta.ok ? respuesta.text() : ''))
+    .then((texto) => (texto ? new Set(texto.split('\n').filter(Boolean)) : null))
+    .catch(() => null);
+  // El token del móvil se guarda en el navegador. Sin almacenamiento (incógnito estricto) se juega igual, pero al
+  // recargar habría que volver a entrar con otro nombre.
+  const almacen = {
+    leer: (clave) => { try { return window.localStorage.getItem(clave); } catch { return null; } },
+    guardar: (clave, valor) => { try { window.localStorage.setItem(clave, valor); } catch { /* sin almacenamiento */ } },
+  };
+  await montarEvento(vista, controlDelEvento({ api, almacen, reloj, palabras }), temporizador);
+}
+
 export async function arrancar() {
   // El prefijo se lee del propio documento: `<base href="/2/">` lo declara y aquí se recoge, así que la web
   // funciona montada donde sea sin recompilar nada ni configurar nada. Es lo primero que pasa, antes de que
   // cualquier vista construya un enlace.
   configurarBase(new URL('.', document.baseURI).pathname);
+
+  // El evento va antes que nada: no carga los resultados ni las instantáneas de la web de estadísticas.
+  const delEvento = resolver(window.location.pathname);
+  if (esDelEvento(delEvento)) {
+    await arrancarEvento(delEvento);
+    return;
+  }
 
   const { vista } = elementos();
   pintarCargando(vista);

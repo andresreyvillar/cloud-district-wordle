@@ -11,6 +11,8 @@
  *     /datos                    tabla cruda
  *     /info                     cómo se juega, las competiciones y las reglas vigentes
  *     /debate                   las normas en votación y las propuestas del grupo
+ *     /evento                   el juego del evento, en el móvil de cada participante (fuera de la navegación)
+ *     /evento/pantalla          el proyector del evento (fuera de la navegación)
  *     /reglas, /t/<AAAA-MM>/reglas   llevan a /info: las reglas ya no se enseñan por temporada
  *
  * Función **pura**: entra una cadena, sale un objeto. No toca el DOM, no lee `location` y no consulta la
@@ -69,6 +71,8 @@ export const VISTAS = Object.freeze({
   JUEGO: 'juego',
   INFO: 'info',
   DEBATE: 'debate',
+  EVENTO: 'evento',
+  PANTALLA_DEL_EVENTO: 'pantalla-del-evento',
   JUGADOR: 'jugador',
   DESCONOCIDA: 'desconocida',
 });
@@ -111,6 +115,13 @@ export function resolver(ruta) {
   if (primero === 'debate' && resto.length === 0) {
     return { vista: VISTAS.DEBATE };
   }
+  // El evento no es una pestaña: se llega por enlace o QR, y se pinta sin la web de estadísticas alrededor.
+  if (primero === 'evento' && resto.length === 0) {
+    return { vista: VISTAS.EVENTO };
+  }
+  if (primero === 'evento' && resto.length === 1 && resto[0] === 'pantalla') {
+    return { vista: VISTAS.PANTALLA_DEL_EVENTO };
+  }
   // `/reglas` era la pestaña de antes: lleva a Info, para que ningún enlace viejo dé error.
   if ((primero === 'info' || primero === 'reglas') && resto.length === 0) {
     return { vista: VISTAS.INFO, temporada: null };
@@ -146,7 +157,14 @@ export function resolver(ruta) {
 export function seccionDe(vista) {
   if (vista === VISTAS.JUGADOR) return VISTAS.TEMPORADA;
   if (vista === VISTAS.DESCONOCIDA) return null;
+  // El evento vive fuera de la navegación: ninguna sección lo contiene.
+  if (vista === VISTAS.EVENTO || vista === VISTAS.PANTALLA_DEL_EVENTO) return null;
   return vista;
+}
+
+/** Si un destino es del evento: esas vistas se pintan solas, sin la web de estadísticas ni sus datos. */
+export function esDelEvento(destino) {
+  return destino?.vista === VISTAS.EVENTO || destino?.vista === VISTAS.PANTALLA_DEL_EVENTO;
 }
 
 /**
@@ -189,6 +207,10 @@ function _rutaInterna(destino) {
       return '/info';
     case VISTAS.DEBATE:
       return '/debate';
+    case VISTAS.EVENTO:
+      return '/evento';
+    case VISTAS.PANTALLA_DEL_EVENTO:
+      return '/evento/pantalla';
     default:
       return '/';
   }

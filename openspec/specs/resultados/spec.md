@@ -931,3 +931,112 @@ checks:
 
 verified-by:
   - tests/slices/debate-de-reglas/test_debate_sql.py
+
+## Requirement: El evento vive en tablas aditivas que la clave pública no lee ni escribe
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+El juego del evento guarda sus datos en tablas propias: `event_editions` (el evento, su intervalo, su inicio, su
+final y la huella del PIN), `event_phrases` (las frases, por orden), `event_players` (nombre y token de cada móvil),
+`event_plays` (una partida por participante y frase, con las letras destapadas), `event_guesses` (las palabras con
+sus colores) y `event_words` (las palabras válidas de cinco letras). No toca `wordle_results` ni ninguna otra tabla
+de la web.
+
+La clave pública **no lee ni escribe** ninguna de ellas: todo pasa por funciones `SECURITY DEFINER` con
+`search_path` vacío que validan lo que entra y devuelven solo lo que se puede ver. Así la solución de una frase y
+la huella del PIN no son legibles desde el navegador.
+
+#### Scenario: la clave pública no lee las frases
+- **WHEN** se intenta leer `event_phrases` con la clave pública
+- **THEN** Postgres lo rechaza
+
+#### Scenario: la clave pública no escribe en las partidas
+- **WHEN** se intenta insertar, cambiar o borrar en `event_plays` o `event_guesses` con la clave pública
+- **THEN** Postgres lo rechaza
+
+verified-by:
+  - tests/slices/frase-del-evento/test_evento_sql.py
+
+## Requirement: La frase del evento solo sale del servidor al terminar el evento
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+Mientras el evento no ha terminado, ninguna función devuelve el texto de una frase. `empezar_frase`,
+`intentar_palabra` y `mi_partida_del_evento` devuelven la frase **con las letras que el participante ha destapado**
+y un `_` en cada letra tapada, con los espacios y los signos en su sitio. Terminado el evento, `estado_del_evento`
+incluye la solución de cada frase.
+
+#### Scenario: en curso no hay solución
+- **WHEN** se pide el estado del evento sin terminar, con partidas resueltas
+- **THEN** ninguna frase trae su solución
+
+#### Scenario: terminado, la solución es pública
+- **WHEN** se pide el estado del evento terminado
+- **THEN** cada frase trae su solución
+
+verified-by:
+  - tests/slices/frase-del-evento/test_evento_sql.py
+  - tests/slices/pantalla-del-evento/test_pantalla_sql.py
+
+## Requirement: El cronómetro del evento lo lleva el servidor y no se pausa
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+`empezar_frase` guarda `empezada_en` con la hora del servidor la primera vez y no la cambia si se repite.
+`intentar_palabra` guarda `terminada_en` con la hora del servidor al destapar la frase entera o al gastar la quinta
+palabra. El tiempo de una partida es la diferencia en milisegundos; no hay pausa ni tiempo máximo, y ninguna función
+acepta una hora que venga de la web.
+
+Una palabra con el evento sin empezar o ya terminado, en una frase no liberada, en una partida terminada o sin
+empezar se rechaza con `errcode 22023` sin guardar nada.
+
+`intentar_palabra` lleva el número de intento que la web cree que envía, y eso la hace **idempotente**: si llega
+otra vez el mismo número con la misma palabra (se perdió la respuesta), devuelve la partida como quedó sin guardar
+nada; un número que no es el siguiente se rechaza.
+
+#### Scenario: empezar dos veces no reinicia el reloj
+- **WHEN** un participante llama dos veces a `empezar_frase` en la misma frase
+- **THEN** `empezada_en` es la de la primera llamada
+
+#### Scenario: reenviar una palabra que ya llegó no gasta otra
+- **WHEN** llega dos veces la palabra 1 de una partida
+- **THEN** solo hay una palabra guardada y las dos respuestas son iguales
+
+verified-by:
+  - tests/slices/frase-del-evento/test_evento_sql.py
+
+## Requirement: En el evento, un nombre y un móvil por participante
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+`unirse_al_evento(evento, nombre, token)` apunta al participante. El nombre se normaliza (NFC, cualquier blanco
+—también el no separable y los de ancho cero— pasa a un espacio, y se recortan los extremos) y tiene de 1 a 30
+caracteres: letras latinas, cifras, espacios sueltos y `. ' -`, con al menos una letra o cifra. Así no caben
+nombres invisibles ni letras de otro alfabeto que imiten a las nuestras. Es único en el evento sin distinguir
+mayúsculas ni acentos. Un token ya apuntado conserva su nombre aunque llegue otro: devuelve el que tenía. Un nombre
+apuntado con otro token se rechaza. Un evento admite como mucho 500 participantes: un script no puede ocupar los
+nombres de todos ni llenar el ranking.
+
+Un evento puede tener **contraseña de acceso** (`clave_hash`, la huella SHA-256, como la del PIN): entonces
+`unirse_al_evento` rechaza a quien no la da o la da mal, sin apuntarlo. Un token ya apuntado no la necesita.
+`estado_del_evento` dice si hace falta (`con_clave`), nunca la huella. La ruta oculta no protege nada en un
+repositorio público; la contraseña sí.
+
+#### Scenario: el nombre ocupado se rechaza
+- **WHEN** otro token intenta apuntarse con «ANA » estando apuntada «Ana»
+- **THEN** se rechaza y no se crea ningún participante
+
+#### Scenario: un nombre invisible o de otro alfabeto se rechaza
+- **WHEN** alguien se apunta como «Аna» con A cirílica, o con solo un espacio de ancho cero
+- **THEN** se rechaza
+
+#### Scenario: sin la contraseña no se entra
+- **WHEN** alguien se apunta a un evento con contraseña sin darla, o con otra
+- **THEN** se rechaza y no se crea ningún participante
+
+#### Scenario: un token conserva su nombre
+- **WHEN** un token apuntado como «Ana» vuelve a apuntarse como «Bea»
+- **THEN** sigue siendo «Ana»
+
+verified-by:
+  - tests/slices/frase-del-evento/test_evento_sql.py

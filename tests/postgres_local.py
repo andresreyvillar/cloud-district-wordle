@@ -15,7 +15,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import pytest
+try:
+    import pytest
+except ImportError:  # `tools/evento_local.py` usa este módulo fuera de pytest, con el Python del sistema
+    pytest = None
 
 MIGRACIONES = Path(__file__).resolve().parents[1] / "supabase" / "migrations"
 
@@ -28,7 +31,8 @@ def _binario(nombre: str) -> str | None:
 
 INITDB, PG_CTL, PSQL = _binario("initdb"), _binario("pg_ctl"), _binario("psql")
 
-sin_postgres = pytest.mark.skipif(not (INITDB and PG_CTL and PSQL), reason="no hay Postgres local")
+sin_postgres = (pytest.mark.skipif(not (INITDB and PG_CTL and PSQL), reason="no hay Postgres local")
+                if pytest else None)
 
 ESQUEMA_MINIMO = """
 create role anon nologin;

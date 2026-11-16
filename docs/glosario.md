@@ -482,6 +482,56 @@ la ficha dice cuántas faltan en lugar de dar cifras.
 sola candidata suma cero: es saber la palabra. No es un medidor de trampas.
 · *Código*: `tools/indicadores.py:111`, `tools/indicadores.py:10` · *Dominio*: indicadores
 
+## Juego del evento
+
+Reglas de «La frase del día» de lapalabradeldia.com: la frase está tapada y se destapa con palabras.
+
+**Evento** — Una edición del juego para un evento de la empresa (`event_editions`): su intervalo, su inicio
+(`empieza_en`) y su final (`terminado_en`), que fija el presentador, y la huella del PIN. Las frases reales y el PIN
+se cargan por SQL y no están en el repositorio; solo el evento de prueba lo está.
+· *Evitar*: llamarlo «temporada» o «jornada» · *Código*: `supabase/migrations/20261112120000_create_event_game.sql` ·
+*Dominio*: resultados, dashboard
+
+**Frase del evento** — Lo que se destapa (`event_phrases`), por orden. Se compara sin tildes ni diéresis y con la ñ
+como letra propia; la frase entera solo se publica al terminar el evento.
+· *Dominio*: dashboard
+
+**Frase visible** — La frase tal como la ve un participante: cada letra tapada es `_`, y las destapadas, los espacios
+y los signos van en su sitio. Es lo único de una frase que sale del servidor antes de terminar el evento.
+· *Código*: `evento_visible` en la migración · *Dominio*: resultados
+
+**Letra destapada** — Una letra de la frase que el participante ha jugado en alguna palabra: se ve en todas las
+casillas donde aparece. Se gana con todas las letras distintas de la frase destapadas.
+· *Sinónimos aceptados*: descubierta (`event_plays.descubiertas`) · *Dominio*: dashboard
+
+**Liberar una frase** — Ponerla en juego: la frase k se libera a los (k−1) intervalos del inicio y se juega sin
+tiempo máximo hasta que el presentador termina el evento. El **intervalo** es una columna del evento (10 minutos en
+pruebas, 30 el día real) y no se cambia con el evento empezado.
+· *Evitar*: «ventana», que sugiere que la frase se cierra · *Dominio*: dashboard
+
+**Palabra del evento** — Cada intento: una palabra de cinco letras de `event_words`, el diccionario del evento, sacado
+del diccionario ortográfico de LibreOffice (RLA-ES, norma de la RAE) por `tools/diccionario_evento.py`. Cinco por
+frase. Sus letras salen **verdes** si están en la frase y no se habían destapado, **amarillas** si ya lo estaban y
+**grises** si no están: se colorea contra el conjunto de letras de la frase, no por posición.
+· *Código*: `evento_colores`, `intentar_palabra` · *Dominio*: dashboard
+
+**Participante** — Quien juega el evento: un nombre único en el evento (sin distinguir mayúsculas ni acentos)
+atado al **token** aleatorio de su móvil. No es un jugador del Wordle diario ni tiene `slack_user_id`.
+· *Evitar*: «jugador», que en el resto del glosario es alguien del canal · *Dominio*: resultados
+
+**Partida del evento** — Una por participante y frase (`event_plays`): el cronómetro empieza en cero al pulsar
+Empezar (`empezada_en`) y para al destapar la frase o gastar la quinta palabra (`terminada_en`), con la hora del
+servidor y sin pausa. Una partida a medias al terminar el evento no cuenta.
+· *Dominio*: resultados
+
+**Presentador** — Quien empieza y termina el evento con el PIN y lleva la pantalla del proyector (`/evento/pantalla`).
+· *Dominio*: dashboard
+
+**Ranking del evento** — Primero quien resolvió más frases; a igualdad, menos tiempo total, que suma las partidas
+terminadas (resueltas o perdidas). Sin puntos. Las mismas frases y el mismo tiempo comparten puesto. No se publica
+hasta terminar el evento.
+· *Dominio*: ranking
+
 ## El método
 
 El método trabaja con **specs vivas**: las capability specs de `openspec/specs/<capability>/spec.md` se editan

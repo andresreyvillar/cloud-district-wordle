@@ -1068,3 +1068,30 @@ checks:
 
 verified-by:
   - tests/slices/clasificacion-de-figuras/test_album.py
+
+## Requirement: El evento se ordena por frases resueltas y tiempo, y publica el ranking al terminar
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+El ranking del evento no tiene puntos (decisión del dueño): va delante quien resolvió más frases y, con las mismas,
+quien tardó menos en total. El tiempo total suma las partidas **terminadas** —resueltas o perdidas tras cinco
+palabras—, de `empezada_en` a `terminada_en` en milisegundos. Una partida a medias al terminar el evento no suma ni
+frase ni tiempo, y quien no terminó ninguna no sale. Las mismas frases y el mismo tiempo comparten puesto (1, 1, 3).
+
+`ranking_del_evento` solo lo entrega cuando el presentador ha terminado el evento. Antes rechaza la petición:
+durante el evento nadie ve su posición.
+
+#### Scenario: durante el evento no hay ranking
+- **WHEN** se pide el ranking con el evento sin terminar
+- **THEN** se rechaza
+
+#### Scenario: más frases resueltas va delante aunque tarde más
+- **WHEN** uno resolvió dos frases en diez minutos y otro una en un minuto
+- **THEN** va delante el de dos frases
+
+#### Scenario: una partida a medias no cuenta
+- **WHEN** el evento termina con una partida empezada y sin terminar
+- **THEN** no suma frase ni tiempo
+
+verified-by:
+  - tests/slices/pantalla-del-evento/test_pantalla_sql.py
