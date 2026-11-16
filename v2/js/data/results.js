@@ -9,8 +9,8 @@
  * fila. Lo de dentro (`js/domain/`) recibe objetos ya normalizados y no sabe de dónde vienen.
  */
 
-const SUPABASE_URL = 'https://oogturrjjcyrvzmiufff.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_h92oql1czQVyp30m49uxFA_23airRWH';
+export const SUPABASE_URL = 'https://oogturrjjcyrvzmiufff.supabase.co';
+export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_h92oql1czQVyp30m49uxFA_23airRWH';
 
 /** PostgREST devuelve 1000 filas por página. Contar sobre una sola ya produjo una cifra falsa una vez. */
 const PAGINA = 1000;

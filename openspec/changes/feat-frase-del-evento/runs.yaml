@@ -1,0 +1,115 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-12T12:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    coverage: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño pidió un juego para el evento de la empresa del 20 de noviembre, basado en el modo frase de
+    lapalabradeldia.com. Decidió: cronómetro desde Empezar, puntos por puesto ocultos hasta el final, ventanas
+    dinámicas (10 minutos en pruebas, 30 el día real) y frases de prueba inventadas. Pidió además que la
+    interfaz se adapte a Cloud District y al tema del evento: escenario de apariencia en hoja propia. Dos slices
+    (participante y presentador) sobre dashboard, resultados y ranking; 24 + 15 escenarios con tests pendientes.
+
+- run: '2026-11-12T13:00:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    coverage: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño aclara que jugarán 100-120 personas y pide una escala de puntos más grande: la del SuperWordleBros
+    (1 del octavo en adelante) empataría a casi todos. Escala nueva max(1, 101 − puesto).
+
+- run: '2026-11-12T13:30:00Z'
+  fase: propose
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    gates-mecanicos: pass
+    coverage: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño pide que la escala se base en los segundos y milisegundos que tarda cada uno, no en el puesto.
+    Puntos por frase = segundos que sobran de la ventana, con milésimas; 0 sin resolver; el ranking suma.
+
+- run: '2026-11-12T18:30:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: corregido
+  rondas_correccion: 2
+  notas: >-
+    El dueño pide desarrollar y probar en local sin subir nada: tools/evento_local.py levanta un Postgres desechable
+    con las migraciones y el evento de prueba y emula /rest/v1/rpc, servido en la red local para probar desde el
+    móvil. Corrección de spec a la vista: sin empezar el evento no hay cuenta atrás posible. Mutación: 22 mutantes
+    derivados de lo que la spec prohíbe, todos cazados en su escenario (uno se repitió porque rompía la sintaxis y
+    el filtro solo miraba FAILED). Gate 4d, dos verificadores: base de datos (nombres con invisibles, cirílicas y
+    NFD; altas sin tope; final contado por número de frases; intervalo cambiable con el evento en marcha; evento de
+    prueba por defecto en producción) y móvil (reenvío tras perder la respuesta guardaba el intento dos veces y
+    dejaba al acertante sin resultado; petición colgada bloqueaba el teclado; recarga sin red echaba al jugador;
+    palabras largas desbordaban; el teclado tapaba la fila; el proyector quitaba el foco al PIN). Todo corregido con
+    test. Quedan como decisiones del dueño: cuentas títere de incógnito y el soplo en la sala (reloj desde
+    Empezar), y si el proyector enseña «la han resuelto» en vivo. Los slices siguen proposed hasta que el dueño
+    lo pruebe en local y decida el tema visual.
+
+- run: '2026-11-12T21:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño señala que las mecánicas estaban mal. Las reglas de «La frase del día» no estaban publicadas en la web
+    de búsqueda: se sacaron del código público de lapalabradeldia.com (texto de ayuda y reductor del juego). Se
+    rehízo el juego: palabras válidas de cinco letras, cinco por frase, verde destapa en toda la frase, amarilla si
+    ya estaba, gris si no está, se gana al destapar todas las letras. Decisiones del dueño: 5 intentos, diccionario
+    propio «a partir de la RAE» (RLA-ES de LibreOffice, licencia libre; 8.798 palabras), sin pausa del reloj,
+    ranking por frases resueltas y tiempo. Sin tiempo máximo: las frases se liberan cada intervalo y se juegan hasta
+    que el presentador termina el evento. Mutación: 19 mutantes desde lo que la spec prohíbe, todos cazados en su
+    escenario. Lección: el slice se escribió sobre una suposición de las reglas sin verificarlas en la fuente; la
+    web no se dejaba leer y se dio por buena la versión conocida del Wordle.
+
+- run: '2026-11-16T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    seguridad: pass
+  rondas_correccion: 2
+  notas: >-
+    El dueño pide una demo online para la organización, en la pestaña oculta y con contraseña aleatoria. La ruta
+    oculta no protege nada en un repositorio público, así que se añade una contraseña de acceso opcional por evento
+    (huella SHA-256, como el PIN), comprobada por el servidor al entrar. Añadidos también: botón a la siguiente frase
+    con cuenta atrás y la explicación de cómo se juega con un ejemplo. El test de recarga cazó que el parámetro de la
+    contraseña tapaba la clave del almacenamiento (el token se guardaba con otro nombre). Producción: migraciones
+    aplicadas por MCP; el diccionario (8.798 filas) se cargó aparte con la clave de servicio porque el SQL entero no
+    cabía en una llamada. Verificación en producción dentro de una transacción deshecha y con la clave pública: tablas
+    y ayudantes cerrados, contraseña mala rechazada, nombres invisibles rechazados. Evento `demo` creado con
+    contraseña y PIN aleatorios fuera del repositorio. Revisión de seguridad: 8 funciones públicas, todas SECURITY
+    DEFINER con search_path vacío; 9 ayudantes revocados.

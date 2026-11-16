@@ -1344,3 +1344,90 @@ disponibles. El bloque no habla de trampas.
 
 verified-by:
   - tests/slices/indicadores-de-juego/indicadores.test.js
+
+## Requirement: El evento se juega en una ruta oculta, con su propia apariencia
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+`/evento` (el participante) y `/evento/pantalla` (el proyector) no aparecen en la navegación y se pintan sin la
+cabecera ni la navegación de la web de estadísticas. Tampoco cargan sus datos: la vista del evento solo habla con
+las funciones del evento. Su apariencia vive en una hoja de estilos propia que declara colores, tipografía y logo
+como variables, para pasar de la marca de Cloud District al tema del evento sin tocar el juego.
+
+#### Scenario: la navegación no lleva al evento
+- **WHEN** se pinta la navegación
+- **THEN** ningún enlace lleva a `/evento`
+
+#### Scenario: la ruta resuelve a la vista del evento
+- **WHEN** se resuelven `/evento` y `/evento/pantalla`
+- **THEN** dan la vista del participante y la del proyector
+
+verified-by:
+  - tests/slices/frase-del-evento/evento.test.js
+  - tests/slices/pantalla-del-evento/pantalla.test.js
+
+## Requirement: La frase del evento se destapa con palabras de cinco letras, como «La frase del día»
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+Las reglas son las de «La frase del día» de lapalabradeldia.com (decisión del dueño). Cada intento es una palabra de
+cinco letras que está en `event_words`, el diccionario del evento —derivado del diccionario ortográfico de
+LibreOffice (RLA-ES), que sigue la norma de la RAE—; una palabra que no está no gasta intento. Hay cinco intentos.
+
+Cada letra de la palabra se colorea contra **el conjunto de letras de la frase**, no por posición: `G` si está en
+la frase y no se había destapado con una palabra anterior (y entonces se destapa en todas las casillas donde
+aparece; repetida en la misma palabra, sale `G` las dos veces), `Y` si está pero ya estaba destapada, y `.` si no
+está. Se compara sin tildes ni diéresis, y la ñ es distinta de la n. **Se gana al destapar todas las letras
+distintas de la frase**; tras la quinta palabra con alguna tapada, se pierde.
+
+#### Scenario: la web lo explica con un ejemplo
+- **WHEN** el participante espera a que empiece el evento o pulsa «¿Cómo se juega?»
+- **THEN** ve las reglas en cuatro líneas y un ejemplo de colores con una frase inventada
+
+#### Scenario: verde destapa en toda la frase
+- **GIVEN** la frase «sol y mar» sin nada destapado
+- **WHEN** se juega «sacas»
+- **THEN** la s y la a salen verdes —las dos veces cada una—, la c gris, y la frase muestra «s__ _ _a_»
+
+#### Scenario: amarilla si ya estaba destapada
+- **GIVEN** la s ya destapada
+- **WHEN** se juega «sosos»
+- **THEN** la s sale amarilla y la o, verde
+
+#### Scenario: se gana al destapar la última letra
+- **WHEN** una palabra destapa las letras que quedaban
+- **THEN** la partida queda resuelta
+
+verified-by:
+  - tests/slices/frase-del-evento/test_evento_sql.py
+
+## Requirement: Las frases del evento se liberan cada intervalo desde que el presentador lo empieza
+
+<!-- origen: feat-frase-del-evento (added) -->
+
+`empezar_evento(evento, pin)` fija `empieza_en` con la hora del servidor si el PIN coincide con su huella y el
+evento no había empezado; si ya había empezado, no lo mueve. Con un intervalo de N minutos, la frase k se libera en
+`empieza_en + (k−1)·N` y se juega sin tiempo máximo hasta `terminado_en`, que fija `terminar_evento(evento, pin)`.
+El intervalo es una columna del evento: 10 minutos en las pruebas y 30 el día del evento, sin desplegar. Empezado el
+evento ya no se cambia: movería las liberaciones.
+
+`estado_del_evento` devuelve la hora del servidor, para que el cronómetro y las cuentas atrás no dependan del reloj
+del móvil, y por cada frase cuándo se libera, si está pendiente, abierta o cerrada, y cuántos la juegan, la han
+resuelto y se han quedado sin palabras. Nunca devuelve nombres ni tiempos.
+
+#### Scenario: al terminar una frase, la web lleva a la siguiente o cuenta lo que falta
+- **WHEN** un participante termina una frase y la siguiente aún no se ha liberado
+- **THEN** ve el botón de ir a ella apagado, con la cuenta atrás hasta que salga, y se enciende al llegar a cero
+
+#### Scenario: un PIN incorrecto no empieza ni termina el evento
+- **WHEN** se llama a `empezar_evento` o `terminar_evento` con un PIN que no coincide
+- **THEN** se rechaza y el evento sigue como estaba
+
+#### Scenario: la segunda frase sale al cumplirse el intervalo y la primera sigue abierta
+- **GIVEN** un evento empezado hace N minutos y un segundo
+- **WHEN** se pide su estado
+- **THEN** la frase 1 y la 2 están abiertas y la 3 pendiente
+
+verified-by:
+  - tests/slices/pantalla-del-evento/test_pantalla_sql.py
+  - tests/slices/pantalla-del-evento/pantalla.test.js
