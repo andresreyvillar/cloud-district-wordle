@@ -1,7 +1,7 @@
 """Ayudas para probar el juego del evento contra un Postgres local (`tests/postgres_local.py`).
 
-Un evento sintético `t` con tres frases que se liberan cada 10 minutos. Las funciones se llaman con el rol `anon`, como
-las llama la web; el tiempo se simula moviendo `empieza_en` y las horas de las partidas con el rol del dueño.
+Un evento sintético `t` con tres palabras y una lista de participantes **inventados** en tres grupos. Las funciones se
+llaman con el rol `anon`, como las llama la web; el tiempo se simula moviendo las horas con el rol del dueño.
 """
 
 from __future__ import annotations
@@ -10,15 +10,19 @@ import json
 import uuid
 
 EVENTO = "t"
-PIN = "pin-de-test"
-FRASES = {1: "sol y mar", 2: "El año, canción", 3: "Más vale tarde"}
-INTERVALO = 10
+PIN = "1234"
+PALABRAS = {1: "casas", 2: "perro", 3: "lapiz"}
+LISTA = [("Ana", "Rojo"), ("Bea", "Rojo"), ("Cris", "Azul"), ("Dani", "Azul"), ("Íñigo Pérez", "Verde"),
+         ("Eva", "Verde")]
+GRUPOS = sorted({grupo for _, grupo in LISTA})
 
 SEMILLA = (
-    "insert into public.event_editions (id, titulo, intervalo_minutos, pin_hash) values "
-    f"('{EVENTO}', 'Evento de test', {INTERVALO}, encode(sha256(convert_to('{PIN}', 'UTF8')), 'hex'));\n"
-    "insert into public.event_phrases (evento, orden, frase) values "
-    + ", ".join(f"('{EVENTO}', {orden}, '{frase}')" for orden, frase in FRASES.items())
+    "insert into public.event_editions (id, titulo, pin_hash) values "
+    f"('{EVENTO}', 'Evento de test', encode(sha256(convert_to('{PIN}', 'UTF8')), 'hex'));\n"
+    "insert into public.event_targets (evento, orden, palabra) values "
+    + ", ".join(f"('{EVENTO}', {orden}, '{palabra}')" for orden, palabra in PALABRAS.items())
+    + ";\ninsert into public.event_roster (evento, nombre, grupo) values "
+    + ", ".join(f"('{EVENTO}', '{nombre}', '{grupo}')" for nombre, grupo in LISTA)
     + ";"
 )
 
@@ -51,59 +55,63 @@ def valor(db, consulta: str) -> str:
     return resultado.stdout.strip()
 
 
-def reiniciar(db, intervalo: int = INTERVALO) -> None:
-    valor(db, "truncate public.event_players restart identity cascade; "
-              f"update public.event_editions set empieza_en = null, terminado_en = null, clave_hash = null, "
-              f"intervalo_minutos = {intervalo} "
-              f"where id = '{EVENTO}'")
+def reiniciar(db) -> None:
+    valor(db, "truncate public.event_rounds cascade; "
+              f"update public.event_roster set token = null, elegido_en = null where evento = '{EVENTO}'; "
+              "update public.event_editions set empieza_en = null, terminado_en = null, pin_fallos = 0, "
+              f"pin_bloqueado_hasta = null, segundos_por_intento = 30 where id = '{EVENTO}'")
 
 
-def empezado_hace(db, segundos: float) -> None:
-    """El evento empezó hace tantos segundos: con 10 minutos, 60 libera la frase 1 y 601 también la 2."""
-    valor(db, f"update public.event_editions set empieza_en = now() - make_interval(secs => {segundos}) "
-              f"where id = '{EVENTO}'")
-
-
-def unirse(db, nombre: str, tk: str, clave: str | None = None):
-    return rpc(db, "unirse_al_evento", EVENTO, nombre, tk, clave)
-
-
-def empezar(db, tk: str, orden: int = 1):
-    return rpc(db, "empezar_frase", EVENTO, tk, orden)
-
-
-def intentar(db, tk: str, palabra: str, orden: int = 1, numero: int | None = None):
-    """Una palabra. Sin `numero`, el siguiente de la partida, como lo calcula el móvil."""
-    if numero is None:
-        hechos = valor(db, "select coalesce(max(pl.intentos), 0) from public.event_plays pl join public.event_players p "
-                           f"on p.id = pl.jugador where p.token::text = '{tk}' and pl.orden = {orden}")
-        numero = int(hechos or 0) + 1
-    return rpc(db, "intentar_palabra", EVENTO, tk, orden, palabra, numero)
+def activado(db) -> None:
+    valor(db, f"update public.event_editions set empieza_en = now() - interval '1 second' where id = '{EVENTO}'")
 
 
 def terminado(db) -> None:
     """El evento terminado hace un segundo."""
-    valor(db, "update public.event_editions set terminado_en = now() - interval '1 second' "
-              f"where id = '{EVENTO}'")
+    valor(db, "update public.event_editions set empieza_en = coalesce(empieza_en, now() - interval '1 hour'), "
+              f"terminado_en = now() - interval '1 second' where id = '{EVENTO}'")
 
 
-def estado(db):
-    ok, datos = rpc(db, "estado_del_evento", EVENTO)
-    assert ok, datos
-    return datos
+def elegir(db, nombre: str, tk: str):
+    return rpc(db, "elegir_nombre", EVENTO, nombre, tk)
 
 
-def participante(db, nombre: str, orden: int = 1) -> str:
-    """Un participante apuntado con la frase `orden` empezada."""
+def jugador(db, nombre: str) -> str:
+    """Un móvil que ya ha elegido ese nombre (con el evento activado)."""
     tk = token()
-    assert unirse(db, nombre, tk)[0]
-    ok, datos = empezar(db, tk, orden)
+    ok, datos = elegir(db, nombre, tk)
     assert ok, datos
     return tk
 
 
-def fijar_tiempo(db, tk: str, orden: int, milisegundos: int) -> None:
-    """Deja la partida resuelta con un tiempo exacto, para probar el ranking sin esperar."""
-    valor(db, "update public.event_plays pl set terminada_en = pl.empezada_en + make_interval(secs => "
-              f"{milisegundos} / 1000.0), resuelta = true from public.event_players p "
-              f"where p.id = pl.jugador and p.token = '{tk}' and pl.orden = {orden}")
+def empezar(db, tk: str, orden: int = 1):
+    return rpc(db, "empezar_palabra", EVENTO, tk, orden)
+
+
+def probar(db, tk: str, palabra: str, orden: int = 1, numero: int | None = None):
+    """Un intento. Sin `numero`, el siguiente de la ronda, como lo calcula el móvil."""
+    if numero is None:
+        hechos = valor(db, "select coalesce(max(r.intentos), 0) from public.event_rounds r join public.event_roster p "
+                           f"on p.id = r.jugador where p.token::text = '{tk}' and r.orden = {orden}")
+        numero = int(hechos or 0) + 1
+    return rpc(db, "probar_palabra", EVENTO, tk, orden, palabra, numero)
+
+
+def estado(db):
+    ok, datos = rpc(db, "estado_del_juego", EVENTO)
+    assert ok, datos
+    return datos
+
+
+def panel(db, pin: str = PIN):
+    ok, datos = rpc(db, "panel_del_evento", EVENTO, pin)
+    assert ok, datos
+    return datos
+
+
+def fijar(db, nombre: str, orden: int, segundos: float, intentos: int, resuelta: bool = True) -> None:
+    """Deja jugada una palabra con un tiempo y unos intentos exactos, para probar los puntos sin esperar."""
+    valor(db, "insert into public.event_rounds (jugador, orden, empezada_en, terminada_en, resuelta, intentos) "
+              f"select id, {orden}, now() - interval '1 hour', now() - interval '1 hour' + make_interval(secs => "
+              f"{segundos}), {str(resuelta).lower()}, {intentos} from public.event_roster "
+              f"where evento = '{EVENTO}' and nombre = '{nombre}'")

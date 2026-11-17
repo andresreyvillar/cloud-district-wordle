@@ -1,0 +1,32 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-17T18:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+    seguridad: pass
+  rondas_correccion: 2
+  mutacion:
+    aplicadas: 30
+    cazadas: 30
+    reforzadas: 2
+  notas: >-
+    Cambio de última hora del dueño: palabras y no frases, el Wordle de siempre, todas seguidas con «Siguiente palabra
+    k/N»; lista de participantes precargada en diez grupos; puntos por palabra con tiempo e intentos (30 s por intento,
+    elegido con eventos simulados sobre la distribución real del canal), grupo por la media de su lista; el admin
+    activa y termina con un PIN de cuatro cifras; antes de activar, solo «se activará en breve». Estética del equipo
+    de diseño: negro, #FAF9F4, Host Grotesk y casillas del Wordle (Unica no se publica: es de pago). Rondas de
+    corrección: la migración se escribió antes que sus tests (al revés del protocolo), así que su eficacia la midió la
+    mutación: 21 mutaciones derivadas de lo que la spec prohíbe, 20 cazadas a la primera y una reforzada. La auditoría
+    adversarial sostuvo cuatro refutaciones (móvil atascado tras liberar su nombre, token guardado tras la respuesta,
+    solución fuera del diccionario irresoluble y oráculo de soluciones futuras, empates falsos por redondear la media)
+    y la de seguridad, el PIN de cuatro cifras adivinable en día y medio con el id público del evento: bloqueo que
+    dobla cada cinco fallos hasta una hora, lista y liberaciones cerradas al terminar, CSV sin tabulador inicial.
+    Nueve mutaciones más sobre esos arreglos, una reforzada. Sin desplegar: falta la decisión del dueño.

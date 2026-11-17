@@ -484,53 +484,55 @@ sola candidata suma cero: es saber la palabra. No es un medidor de trampas.
 
 ## Juego del evento
 
-Reglas de «La frase del día» de lapalabradeldia.com: la frase está tapada y se destapa con palabras.
+El Wordle de siempre, con varias palabras seguidas, una lista de participantes en grupos y un admin que lo activa.
 
-**Evento** — Una edición del juego para un evento de la empresa (`event_editions`): su intervalo, su inicio
-(`empieza_en`) y su final (`terminado_en`), que fija el presentador, y la huella del PIN. Las frases reales y el PIN
-se cargan por SQL y no están en el repositorio; solo el evento de prueba lo está.
-· *Evitar*: llamarlo «temporada» o «jornada» · *Código*: `supabase/migrations/20261112120000_create_event_game.sql` ·
+**Activar el evento** — Ponerlo en juego, cuando el admin quiere, con el PIN: desde ese momento se eligen nombres y se
+juegan todas las palabras. Antes, el enlace solo dice que el evento se activará en breve.
+· *Evitar*: «liberar», que era del juego de frases · *Código*: `empezar_evento` · *Dominio*: dashboard
+
+**Admin del evento** — Quien activa, sigue y termina el evento con el PIN, libera nombres y exporta los puntos
+(`/evento/admin`).
+· *Evitar*: «presentador», del juego de frases · *Dominio*: dashboard
+
+**Evento** — Una edición del juego para un evento de la empresa (`event_editions`): su inicio (`empieza_en`) y su
+final (`terminado_en`), que fija el admin, lo que vale un intento (`segundos_por_intento`) y la huella del PIN. Las
+palabras, la lista y el PIN se cargan por SQL y no están en el repositorio; solo el evento de prueba lo está.
+· *Evitar*: llamarlo «temporada» o «jornada» · *Código*: `supabase/migrations/20261117120000_event_words_game.sql` ·
 *Dominio*: resultados, dashboard
 
-**Frase del evento** — Lo que se destapa (`event_phrases`), por orden. Se compara sin tildes ni diéresis y con la ñ
-como letra propia; la frase entera solo se publica al terminar el evento.
-· *Dominio*: dashboard
+**Grupo** — Cada uno de los grupos (diez el día del evento) en que la organización reparte la lista. El móvil no lo
+conoce; puntúa la media de los puntos de toda su lista, hayan jugado o no.
+· *Código*: `event_roster.grupo` · *Dominio*: ranking
 
-**Frase visible** — La frase tal como la ve un participante: cada letra tapada es `_`, y las destapadas, los espacios
-y los signos van en su sitio. Es lo único de una frase que sale del servidor antes de terminar el evento.
-· *Código*: `evento_visible` en la migración · *Dominio*: resultados
+**Intento** — Una palabra de cinco letras de `event_words`, el diccionario del evento (sacado del diccionario
+ortográfico de LibreOffice, RLA-ES, norma de la RAE, por `tools/diccionario_evento.py`), o la solución de esa misma
+palabra. Seis por palabra. Sus letras salen **verdes** en su sitio, **amarillas** si están en otro sitio y quedan sin
+emparejar, y **grises** si no.
+· *Código*: `evento_wordle`, `probar_palabra` · *Dominio*: dashboard
 
-**Letra destapada** — Una letra de la frase que el participante ha jugado en alguna palabra: se ve en todas las
-casillas donde aparece. Se gana con todas las letras distintas de la frase destapadas.
-· *Sinónimos aceptados*: descubierta (`event_plays.descubiertas`) · *Dominio*: dashboard
-
-**Liberar una frase** — Ponerla en juego: la frase k se libera a los (k−1) intervalos del inicio y se juega sin
-tiempo máximo hasta que el presentador termina el evento. El **intervalo** es una columna del evento (10 minutos en
-pruebas, 30 el día real) y no se cambia con el evento empezado.
-· *Evitar*: «ventana», que sugiere que la frase se cierra · *Dominio*: dashboard
-
-**Palabra del evento** — Cada intento: una palabra de cinco letras de `event_words`, el diccionario del evento, sacado
-del diccionario ortográfico de LibreOffice (RLA-ES, norma de la RAE) por `tools/diccionario_evento.py`. Cinco por
-frase. Sus letras salen **verdes** si están en la frase y no se habían destapado, **amarillas** si ya lo estaban y
-**grises** si no están: se colorea contra el conjunto de letras de la frase, no por posición.
-· *Código*: `evento_colores`, `intentar_palabra` · *Dominio*: dashboard
-
-**Participante** — Quien juega el evento: un nombre único en el evento (sin distinguir mayúsculas ni acentos)
-atado al **token** aleatorio de su móvil. No es un jugador del Wordle diario ni tiene `slack_user_id`.
-· *Evitar*: «jugador», que en el resto del glosario es alguien del canal · *Dominio*: resultados
-
-**Partida del evento** — Una por participante y frase (`event_plays`): el cronómetro empieza en cero al pulsar
-Empezar (`empezada_en`) y para al destapar la frase o gastar la quinta palabra (`terminada_en`), con la hora del
-servidor y sin pausa. Una partida a medias al terminar el evento no cuenta.
+**Lista de participantes** — Quienes pueden jugar (`event_roster`), con su grupo, cargada por la organización. Cada
+nombre lo elige un solo móvil (su token); el admin puede liberarlo.
 · *Dominio*: resultados
 
-**Presentador** — Quien empieza y termina el evento con el PIN y lleva la pantalla del proyector (`/evento/pantalla`).
-· *Dominio*: dashboard
+**Marca** — En cada palabra resuelta, el tiempo más `segundos_por_intento` (30 s) por intento. Menos es mejor.
+· *Código*: `evento_puntos` · *Dominio*: ranking
 
-**Ranking del evento** — Primero quien resolvió más frases; a igualdad, menos tiempo total, que suma las partidas
-terminadas (resueltas o perdidas). Sin puntos. Las mismas frases y el mismo tiempo comparten puesto. No se publica
-hasta terminar el evento.
+**Palabra del evento** — Lo que se adivina (`event_targets`), por orden: cinco letras, sin tildes, con la ñ como letra
+propia. Solo se publica al terminar el evento.
+· *Evitar*: confundirla con un intento · *Dominio*: dashboard
+
+**Participante** — Quien juega el evento: un nombre de la lista atado al **token** aleatorio de su móvil. No es un
+jugador del Wordle diario ni tiene `slack_user_id`.
+· *Evitar*: «jugador», que en el resto del glosario es alguien del canal · *Dominio*: resultados
+
+**Puntos del evento** — En cada palabra, quien la resolvió se lleva 1 más uno por cada resolvedor con peor marca; quien
+no, 0. Un participante suma sus palabras; un grupo, la media de su lista. Solo se ven al terminar el evento.
 · *Dominio*: ranking
+
+**Ronda** — Una por participante y palabra (`event_rounds`): su cronómetro empieza al pulsar Empezar o Siguiente
+palabra (`empezada_en`) y para al resolverla o gastar el sexto intento (`terminada_en`), con la hora del servidor y sin
+pausa. Una ronda a medias al terminar el evento no puntúa.
+· *Dominio*: resultados
 
 ## El método
 

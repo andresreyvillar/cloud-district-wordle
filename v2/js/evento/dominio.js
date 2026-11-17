@@ -1,27 +1,12 @@
 /**
  * Lo que el juego del evento calcula en el navegador. **Puro**: el reloj y los datos entran por parámetro (§10).
  *
- * Los colores y lo destapado no se calculan aquí: los pone el servidor, que es el único que conoce la frase.
+ * Los colores no se calculan aquí: los pone el servidor, que es el único que conoce la palabra.
  */
 
-/** Cuántas palabras tiene cada frase, y cuántas letras cada palabra («La frase del día»). */
-export const INTENTOS = 5;
+/** Intentos por palabra y letras por intento: el Wordle de siempre. */
+export const INTENTOS = 6;
 export const LETRAS = 5;
-
-/**
- * La frase visible en palabras y casillas. El servidor manda `_` en cada letra tapada; una letra es una casilla
- * destapada, y cualquier otro carácter, un signo fijo. `«s__ _ _a_»` → tres palabras.
- */
-export function celdasDeLaFrase(visible) {
-  return String(visible ?? '')
-    .split(' ')
-    .filter((palabra) => palabra.length > 0)
-    .map((palabra) => [...palabra].map((c) => {
-      if (c === '_') return { tipo: 'tapada' };
-      if (/\p{L}/u.test(c)) return { tipo: 'letra', texto: c };
-      return { tipo: 'signo', texto: c };
-    }));
-}
 
 /** La letra de una tecla, en minúscula y sin tilde; la ñ es otra letra. Cualquier otra cosa, `null`. */
 export function letraDeTecla(tecla) {
@@ -32,24 +17,37 @@ export function letraDeTecla(tecla) {
   return /^[a-z]$/.test(sinTilde) ? sinTilde : null;
 }
 
-/** Una palabra como la escribiría el servidor: minúsculas, sin tildes, con ñ. */
-export function normaliza(palabra) {
-  return [...String(palabra ?? '')].map((c) => letraDeTecla(c) ?? '').join('');
+/** Un texto como lo compara el servidor: minúsculas, sin tildes, con ñ y sin espacios de sobra. */
+export function normaliza(texto) {
+  return String(texto ?? '').trim().toLowerCase().normalize('NFD').replace(/ñ/g, 'ñ')
+    .replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
 }
 
 /**
- * El color de cada tecla: verde si la letra está en la frase (salió verde o amarilla), gris si no está. Una letra
- * que salió verde no vuelve a gris.
+ * El color de cada tecla, como en el Wordle: verde si alguna vez salió verde, amarilla si salió amarilla y nunca
+ * verde, gris si solo salió gris. Una letra no baja de color.
  */
 export function coloresDelTeclado(intentos) {
+  const rango = { G: 3, Y: 2, '.': 1 };
   const colores = new Map();
   for (const { palabra, colores: c } of intentos ?? []) {
     [...palabra].forEach((letra, i) => {
-      if (c[i] === 'G' || c[i] === 'Y') colores.set(letra, 'G');
-      else if (!colores.has(letra)) colores.set(letra, '.');
+      if ((rango[c[i]] ?? 0) > (rango[colores.get(letra)] ?? 0)) colores.set(letra, c[i]);
     });
   }
   return colores;
+}
+
+/**
+ * Los nombres de la lista que encajan con lo escrito, sin mayúsculas ni tildes, y con los libres primero. Sin nada
+ * escrito, todos: es el desplegable. Al buscar, la ñ también vale como n: quien escribe «inigo» busca a Íñigo.
+ */
+export function buscarNombres(nombres, texto) {
+  const pliega = (x) => normaliza(x).replace(/ñ/g, 'n');
+  const busca = pliega(texto);
+  return (nombres ?? [])
+    .filter((n) => pliega(n.nombre).includes(busca))
+    .sort((a, b) => Number(b.libre) - Number(a.libre));
 }
 
 /** «2:41», o «1:02:03» si pasa de la hora. */
@@ -61,11 +59,6 @@ export function formatoTiempo(ms) {
   return horas > 0 ? `${horas}:${String(minutos).padStart(2, '0')}:${segundos}` : `${minutos}:${segundos}`;
 }
 
-/** Una cuenta atrás. Redondea hacia arriba: «0:00» es que ya llegó. */
-export function cuentaAtras(ms) {
-  return formatoTiempo(Math.ceil(Math.max(0, Number(ms)) / 1000) * 1000);
-}
-
 /** Lo que va el reloj del móvil por detrás del servidor, en milisegundos. */
 export function desfase(ahoraDelServidor, relojLocal) {
   const servidor = Date.parse(ahoraDelServidor);
@@ -73,24 +66,19 @@ export function desfase(ahoraDelServidor, relojLocal) {
 }
 
 /**
- * En qué momento está el evento, con la hora ya corregida al servidor:
- * - `sin-empezar`: el presentador aún no lo ha arrancado.
- * - `en-curso`: `liberadas` son las frases que ya se pueden jugar; `siguiente`, la próxima, que sale en `faltaMs`.
- * - `terminado`: el presentador lo ha terminado.
+ * Por dónde va un participante, a partir de sus rondas (`orden` → ronda) y del total de palabras:
+ * - `empezar`: aún no ha empezado ninguna; toca la 1.
+ * - `jugando`: tiene la ronda `orden` empezada y sin terminar.
+ * - `entre`: terminó la `orden` y la siguiente (`orden + 1`) está por empezar.
+ * - `fin`: terminó todas.
  */
-export function momentoDelEvento(estado, ahora) {
-  const frases = estado?.frases ?? [];
-  if (estado?.terminado) return { tipo: 'terminado', total: frases.length };
-  if (!estado?.empieza_en || frases.length === 0) return { tipo: 'sin-empezar', total: frases.length };
-  const liberadas = frases.filter((f) => Date.parse(f.abre_en) <= ahora);
-  const siguiente = frases.find((f) => Date.parse(f.abre_en) > ahora) ?? null;
-  return {
-    tipo: 'en-curso',
-    total: frases.length,
-    liberadas,
-    siguiente,
-    faltaMs: siguiente ? Date.parse(siguiente.abre_en) - ahora : null,
-  };
+export function puntoDelJuego(rondas, total) {
+  const empezadas = [...(rondas?.values?.() ?? [])].sort((a, b) => a.orden - b.orden);
+  const ultima = empezadas.at(-1);
+  if (!ultima) return { tipo: 'empezar', orden: 1 };
+  if (!ultima.terminada_en) return { tipo: 'jugando', orden: ultima.orden };
+  if (ultima.orden >= total) return { tipo: 'fin', orden: ultima.orden };
+  return { tipo: 'entre', orden: ultima.orden };
 }
 
 /** Un token aleatorio con forma de UUID v4. `crypto.randomUUID` solo existe en https, y en local se prueba por http. */

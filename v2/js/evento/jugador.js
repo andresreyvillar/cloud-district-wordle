@@ -1,96 +1,107 @@
 /**
  * El juego del evento en el móvil de cada participante: `/evento`.
  *
- * Slice: `frase-del-evento`. Reglas de «La frase del día»: la frase está tapada y se destapa con palabras válidas de
- * cinco letras, cinco como mucho; se gana al destapar todas sus letras. Tres piezas:
+ * Slice: `palabras-del-evento`. El Wordle de siempre, varias palabras seguidas: seis intentos para cada palabra de
+ * cinco letras, cada una con su cronómetro, que empieza al pulsar «Empezar» o «Siguiente palabra». Tres piezas:
  * - `controlDelEvento` guarda el estado y habla con la API. Sin DOM: se prueba con una API falsa.
  * - `vistaDelEvento` pinta ese estado. Pura: el reloj entra por parámetro.
  * - `montarEvento` es el borde: eventos del DOM, el cronómetro que avanza y el sondeo del estado.
  *
- * La frase entera no está nunca aquí hasta que termina el evento: el servidor manda solo lo destapado. Tampoco la
- * posición: durante el evento nadie ve su puesto (decisión del dueño).
+ * La solución no está nunca aquí hasta que termina el evento: el servidor manda solo los colores. Ni los puntos ni el
+ * grupo: los ve el admin al terminar (decisión del dueño).
  */
 
 import { escapar } from '../ui/shell.js';
 import {
-  INTENTOS, LETRAS, celdasDeLaFrase, coloresDelTeclado, cuentaAtras, desfase, formatoTiempo, letraDeTecla,
-  momentoDelEvento, tokenAleatorio,
+  INTENTOS, LETRAS, buscarNombres, coloresDelTeclado, desfase, formatoTiempo, letraDeTecla, normaliza, puntoDelJuego,
+  tokenAleatorio,
 } from './dominio.js';
 
 const CLAVE_DEL_TOKEN = 'evento:token';
 
 const MENSAJE_SIN_RED = 'No se ha podido conectar. Revisa la conexión y prueba otra vez.';
 
+/** El servidor no reconoce el token: el nombre se liberó, o es de otro evento. */
+const sinNombre = (error) => error?.tipo === 'rechazo' && /no has elegido nombre|evento desconocido/.test(error.message);
+
 /**
- * El estado del participante y lo que puede hacer. `almacen` es `{leer, guardar}`; `reloj`, los ms locales;
- * `palabras`, el conjunto de palabras válidas si se ha podido cargar (si no, decide solo el servidor).
+ * El estado del participante y lo que puede hacer. `almacen` es `{leer, guardar}`; `reloj`, los ms locales.
+ *
+ * Si una palabra vale lo decide el servidor: vale una del diccionario o la solución de esa misma palabra, que la
+ * empresa puede haber elegido fuera de él y que el móvil no puede conocer.
  */
-export function controlDelEvento({ api, almacen, reloj, palabras = null, generarToken = tokenAleatorio }) {
+export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAleatorio }) {
   const clave = `${CLAVE_DEL_TOKEN}:${api.evento}`;
   const s = {
     token: almacen.leer(clave),
     nombre: null,
-    // Hay token pero no se ha podido leer su partida (sin red al recargar): se reintenta, sin pedir el nombre.
+    // Hay token pero no se ha podido leer su juego (sin red al recargar): se reintenta, sin pedir el nombre.
     recuperando: false,
     estado: null,
     desfase: 0,
-    partidas: new Map(),
-    // La frase que se está mirando; `null` es la lista de frases.
-    seleccionada: null,
+    // La lista de nombres para elegir el propio, lo escrito en el buscador y si la lista está desplegada.
+    nombres: null,
+    buscado: '',
+    desplegado: false,
+    rondas: new Map(),
     escrito: [],
     aviso: null,
-    ranking: null,
     enviando: false,
     empezando: false,
     entrando: false,
     sinConexion: false,
-    // La explicación de cómo se juega, abierta desde la cabecera.
     ayuda: false,
-    // La contraseña de acceso, si el evento la pide. Solo en memoria: una vez dentro, basta el token.
-    clave: null,
   };
 
   const ahora = () => reloj() + s.desfase;
-  const momento = () => momentoDelEvento(s.estado, ahora());
-  const liberada = (orden) => {
-    const m = momento();
-    return m.tipo === 'en-curso' && m.liberadas.some((f) => f.orden === orden);
-  };
+  const total = () => Number(s.estado?.total) || 0;
+  const punto = () => puntoDelJuego(s.rondas, total());
+
+  async function cargarNombres() {
+    try {
+      s.nombres = await api.nombres();
+    } catch (error) {
+      if (error.tipo === 'red') s.sinConexion = true;
+    }
+  }
 
   async function refrescar() {
     const pedido = reloj();
     try {
-      const estado = await api.estado(s.token, s.clave);
+      const estado = await api.estado();
       // La hora del servidor es la de mitad del viaje: sin descontar la latencia, el móvil iba adelantado lo que
       // tarda la petición.
       s.desfase = desfase(estado.ahora, (pedido + reloj()) / 2);
       s.estado = estado;
       s.sinConexion = false;
-      if (estado.terminado && !s.ranking) s.ranking = await api.ranking(s.token, s.clave);
     } catch (error) {
       if (error.tipo === 'red') s.sinConexion = true;
       else s.aviso = error.message;
+      return;
     }
+    if (s.estado.activo && !s.nombre && !s.recuperando && !s.nombres) await cargarNombres();
   }
 
-  /** Rehace lo del participante desde el servidor: su nombre y sus partidas. */
+  /** Rehace lo del participante desde el servidor: su nombre y sus rondas. */
   async function sincronizar() {
     if (!s.token) return;
     try {
-      const mia = await api.miPartida(s.token);
-      s.nombre = mia.nombre;
-      for (const partida of mia.partidas ?? []) s.partidas.set(partida.orden, partida);
+      const mio = await api.miJuego(s.token);
+      s.nombre = mio.nombre;
+      s.rondas = new Map((mio.rondas ?? []).map((ronda) => [ronda.orden, ronda]));
       s.recuperando = false;
     } catch (error) {
-      // Solo un token que el evento no conoce (otro evento, una base reiniciada) se tira: se vuelve a entrar. Ante
-      // cualquier otro fallo se conserva y se reintenta en el siguiente sondeo, o el participante se quedaría
-      // fuera con su propio nombre ocupado.
-      if (error.tipo === 'rechazo' && /no estás apuntado|evento desconocido/.test(error.message)) {
+      // Solo un token que el evento no conoce (otro evento, un nombre liberado por el admin) se tira: se vuelve a
+      // elegir. Ante cualquier otro fallo (sin red, un tiempo agotado en la base de datos) se conserva y se reintenta,
+      // o el participante se quedaría fuera con su propio nombre ocupado.
+      if (sinNombre(error)) {
         s.token = null;
+        s.nombre = null;
+        s.rondas = new Map();
         s.recuperando = false;
       } else {
         s.recuperando = true;
-        s.sinConexion = error.tipo === 'red';
+        s.sinConexion = true;
       }
     }
   }
@@ -100,81 +111,82 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
     await refrescar();
   }
 
-  /**
-   * Prueba la contraseña de acceso: si es la buena, el servidor entrega el estado y la web pasa a pedir el nombre.
-   * Antes de eso no se enseña nada del evento.
-   */
-  async function desbloquear(clave) {
-    if (!String(clave ?? '')) {
-      s.aviso = 'Escribe la contraseña.';
-      return;
-    }
-    s.clave = clave;
-    await refrescar();
-    if (s.estado?.bloqueado) {
-      s.clave = null;
-      s.aviso = 'Contraseña incorrecta.';
-    } else {
-      s.aviso = null;
-    }
+  /** Lo escrito en el buscador de nombres: filtra la lista y la despliega. */
+  function buscar(texto) {
+    s.buscado = String(texto ?? '');
+    s.desplegado = true;
+    s.aviso = null;
   }
 
-  /** Entra con un nombre y, si el evento la pide, la contraseña (la que ya abrió el evento). */
-  async function entrar(nombre, contrasena = s.clave) {
-    if (!String(nombre ?? '').trim()) {
-      s.aviso = 'Escribe tu nombre para entrar.';
+  /** Abre o cierra la lista entera. */
+  function desplegar() {
+    s.desplegado = !s.desplegado;
+  }
+
+  /** Elige un nombre de la lista desplegada: queda escrito y la lista se cierra. */
+  function marcar(nombre) {
+    s.buscado = String(nombre ?? '');
+    s.desplegado = false;
+    s.aviso = null;
+  }
+
+  /** Entra con un nombre de la lista. Uno que no está en ella no se envía. */
+  async function entrar(nombre = s.buscado) {
+    const escrito = String(nombre ?? '').trim();
+    if (!escrito) {
+      s.aviso = 'Busca tu nombre en la lista.';
       return;
     }
-    if (s.estado?.con_clave && !String(contrasena ?? '')) {
-      s.aviso = 'Escribe la contraseña del evento.';
+    const enLaLista = s.nombres?.find((n) => normaliza(n.nombre) === normaliza(escrito));
+    if (s.nombres && !enLaLista) {
+      s.aviso = 'Ese nombre no está en la lista: elígelo de la lista.';
+      s.desplegado = true;
       return;
     }
     if (s.entrando) return;
     s.entrando = true;
-    // El token se fija antes de llamar: un doble toque en Entrar manda el mismo, y el servidor devuelve el mismo
-    // nombre en vez de decir que está ocupado.
+    // El token se fija y se guarda antes de llamar: un doble toque manda el mismo, y si la respuesta se pierde y se
+    // recarga, el móvil recupera el nombre que el servidor sí le dio.
     s.token ??= generarToken();
-    const token = s.token;
+    almacen.guardar(clave, s.token);
     try {
-      const respuesta = await api.unirse(nombre, token, contrasena || null);
-      almacen.guardar(clave, token);
+      const respuesta = await api.elegir(enLaLista?.nombre ?? escrito, s.token);
       s.nombre = respuesta.nombre;
       s.aviso = null;
+      s.desplegado = false;
     } catch (error) {
       s.aviso = error.tipo === 'rechazo' ? error.message : MENSAJE_SIN_RED;
+      if (error.tipo === 'rechazo') await cargarNombres();
     } finally {
       s.entrando = false;
     }
   }
 
-  /** Mira una frase de la lista (o vuelve a la lista con `null`). */
-  function elegir(orden) {
-    s.seleccionada = orden;
-    s.escrito = [];
-    s.aviso = null;
-  }
-
+  /** Empieza la palabra que toca: la primera, o la siguiente a la terminada. Su cronómetro arranca ahora. */
   async function empezar() {
-    const orden = s.seleccionada;
-    if (orden === null || !liberada(orden) || s.empezando) return;
+    const p = punto();
+    if (!s.estado?.activo || s.empezando || (p.tipo !== 'empezar' && p.tipo !== 'entre')) return;
+    const orden = p.tipo === 'empezar' ? 1 : p.orden + 1;
     s.empezando = true;
     try {
-      const yaEmpezada = s.partidas.has(orden);
-      s.partidas.set(orden, await api.empezar(s.token, orden));
-      // Un segundo toque en Empezar no borra lo que ya se ha escrito.
-      if (!yaEmpezada) s.escrito = [];
+      s.rondas.set(orden, await api.empezar(s.token, orden));
+      s.escrito = [];
       s.aviso = null;
     } catch (error) {
       s.aviso = error.tipo === 'rechazo' ? error.message : MENSAJE_SIN_RED;
-      if (error.tipo === 'rechazo') await refrescar();
+      // Un rechazo puede ser que el admin liberó el nombre: se rehace lo del participante, y sin nombre vuelve a elegir.
+      if (error.tipo === 'rechazo') {
+        await sincronizar();
+        await refrescar();
+      }
     } finally {
       s.empezando = false;
     }
   }
 
   function enJuego() {
-    const partida = s.partidas.get(s.seleccionada);
-    return partida && !partida.terminada_en && liberada(partida.orden) ? partida : null;
+    const p = punto();
+    return s.estado?.activo && p.tipo === 'jugando' ? s.rondas.get(p.orden) : null;
   }
 
   function teclear(letra) {
@@ -189,29 +201,22 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
     s.aviso = null;
   }
 
-  /**
-   * Envía la palabra escrita. Si falta alguna letra, o la palabra no está en la lista, no se envía nada y el intento
-   * no se gasta.
-   */
+  /** Envía lo escrito. Si falta alguna letra no se envía; si la palabra no vale, el servidor lo dice y no gasta intento. */
   async function enviar() {
-    const partida = enJuego();
-    if (!partida || s.enviando) return;
+    const ronda = enJuego();
+    if (!ronda || s.enviando) return;
     const faltan = LETRAS - s.escrito.length;
     if (faltan > 0) {
       s.aviso = faltan === 1 ? 'Falta 1 letra.' : `Faltan ${faltan} letras.`;
       return;
     }
     const palabra = s.escrito.join('');
-    if (palabras && !palabras.has(palabra)) {
-      s.aviso = 'La palabra no está en la lista.';
-      return;
-    }
     s.enviando = true;
     try {
       // El número del intento hace seguro reenviar: si el primero llegó y se perdió la respuesta, el servidor lo
       // reconoce y no gasta otro.
-      const numero = (partida.intentos?.length ?? 0) + 1;
-      s.partidas.set(partida.orden, await api.intentar(s.token, partida.orden, palabra, numero));
+      const numero = (ronda.intentos?.length ?? 0) + 1;
+      s.rondas.set(ronda.orden, await api.probar(s.token, ronda.orden, palabra, numero));
       s.escrito = [];
       s.aviso = null;
     } catch (error) {
@@ -234,8 +239,8 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
   }
 
   return {
-    estado: s, ahora, momento, arrancar, sincronizar, refrescar, desbloquear, entrar, elegir, empezar, teclear, borrar,
-    enviar, ayuda,
+    estado: s, ahora, punto, arrancar, sincronizar, refrescar, buscar, desplegar, marcar, entrar, empezar, teclear,
+    borrar, enviar, ayuda,
   };
 }
 
@@ -243,29 +248,18 @@ export function controlDelEvento({ api, almacen, reloj, palabras = null, generar
 
 const CLASE = { G: 'verde', Y: 'amarilla', '.': 'gris' };
 
-/** La frase con lo destapado: casillas tapadas, letras destapadas y signos en su sitio. */
-export function panelDeLaFrase(visible) {
-  const palabras = celdasDeLaFrase(visible);
-  // La palabra más larga fija el ancho de las casillas: «transformación» tiene que caber en 320 px.
-  const ancho = Math.max(1, ...palabras.map((palabra) => palabra.length));
-  return `<div class="ev-frase" style="--ev-ancho: ${ancho}" aria-label="La frase">${palabras.map((palabra) => (
-    `<span class="ev-palabra">${palabra.map((celda) => {
-      if (celda.tipo === 'tapada') return '<span class="ev-casilla"></span>';
-      if (celda.tipo === 'letra') return `<span class="ev-casilla destapada">${escapar(celda.texto.toUpperCase())}</span>`;
-      return `<span class="ev-signo">${escapar(celda.texto)}</span>`;
-    }).join('')}</span>`)).join('')}</div>`;
-}
-
-/** El tablero de cinco palabras: las enviadas con sus colores, la que se escribe y las que quedan. */
-export function tablero(partida, escrito = []) {
+/** El tablero de seis intentos: los enviados con sus colores, el que se escribe y los que quedan. */
+export function tablero(ronda, escrito = []) {
   const filas = [];
   const celdas = (letras, colores) => Array.from({ length: LETRAS }, (_, i) => {
     const letra = letras[i] ?? '';
     const color = colores ? ` ${CLASE[colores[i]] ?? ''}` : '';
     return `<span class="ev-celda${letra ? ' llena' : ''}${color}">${escapar(letra.toUpperCase())}</span>`;
   }).join('');
-  for (const { palabra, colores } of partida.intentos ?? []) filas.push(`<div class="ev-fila">${celdas([...palabra], colores)}</div>`);
-  if (!partida.terminada_en && filas.length < INTENTOS) filas.push(`<div class="ev-fila ev-actual">${celdas(escrito, null)}</div>`);
+  for (const { palabra, colores } of ronda.intentos ?? []) {
+    filas.push(`<div class="ev-fila">${celdas([...palabra], colores)}</div>`);
+  }
+  if (!ronda.terminada_en && filas.length < INTENTOS) filas.push(`<div class="ev-fila ev-actual">${celdas(escrito, null)}</div>`);
   while (filas.length < INTENTOS) filas.push(`<div class="ev-fila">${celdas([], null)}</div>`);
   return `<div class="ev-tablero" aria-label="Tablero">${filas.join('')}</div>`;
 }
@@ -286,53 +280,30 @@ export function teclado(intentos) {
   </div>`;
 }
 
-/**
- * Cómo se juega, con un ejemplo: casi nadie conoce este modo, y sin él la primera palabra se gasta sin entender por
- * qué una letra sale amarilla. El ejemplo es una frase inventada, no una del evento.
- */
+/** Cómo se juega: las reglas del Wordle y los tres colores, con un ejemplo inventado. */
 export function comoSeJuega() {
-  const ejemplo = tablero({ intentos: [{ palabra: 'sacas', colores: 'GG.GG' }], terminada_en: 'ejemplo' })
-    .replace(/<div class="ev-fila"><span class="ev-celda"><\/span>(<span class="ev-celda"><\/span>){4}<\/div>/g, '');
+  const fila = (palabra, colores) => `<div class="ev-fila">${[...palabra].map((letra, i) => (
+    `<span class="ev-celda ${CLASE[colores[i]]}">${letra}</span>`)).join('')}</div>`;
   return `<section class="ev-ayuda" aria-label="Cómo se juega">
     <h2>Cómo se juega</h2>
     <ol>
-      <li>La frase está <strong>tapada</strong>. Destápala escribiendo <strong>palabras de 5 letras</strong>: tienes
-        <strong>5 palabras</strong> por frase.</li>
-      <li>Cada letra de tu palabra se colorea:
+      <li>Adivina la <strong>palabra de 5 letras</strong> en <strong>6 intentos</strong>. Cada intento tiene que ser una
+        palabra que exista.</li>
+      <li>Tras cada intento, las letras cambian de color:
         <ul class="ev-leyenda">
-          <li><span class="ev-celda verde">S</span><span>está en la frase: se destapa <strong>en todos sus sitios</strong>.</span></li>
-          <li><span class="ev-celda amarilla">S</span><span>está, pero ya la tenías destapada: no suma nada.</span></li>
-          <li><span class="ev-celda gris">C</span><span>no está en la frase.</span></li>
+          <li><span class="ev-celda verde">A</span><span>La letra está en la palabra y en la posición correcta.</span></li>
+          <li><span class="ev-celda amarilla">A</span><span>La letra está en la palabra, pero en otra posición.</span></li>
+          <li><span class="ev-celda gris">A</span><span>La letra no aparece en la palabra.</span></li>
         </ul>
       </li>
-      <li><strong>Ganas al destapar todas las letras.</strong> No hace falta escribir la frase.</li>
+      <li>Al resolverla (o al gastar los 6 intentos) pasas a la siguiente con <strong>Siguiente palabra</strong>.</li>
     </ol>
-    <p class="ev-nota">Ejemplo: con la frase «SOL Y MAR», la palabra SACAS destapa la S y la A.</p>
-    ${ejemplo}${panelDeLaFrase('s__ _ _a_')}
-    <p class="ev-truco"><strong>Truco:</strong> empieza con palabras de letras distintas y frecuentes (vocales, S, R,
-      N, L, T). Cuando intuyas la frase, busca palabras con las letras que te faltan.</p>
-    <p class="ev-nota">El tiempo corre desde que pulsas Empezar y no se para aunque cierres la web. Gana quien resuelve
-      más frases y, a igualdad, quien tarda menos.</p>
+    <p class="ev-nota">Ejemplo con la palabra NUBES: en PLUMA la U está pero en otro sitio; en NUBIA, la N, la U y la B
+      están en su sitio.</p>
+    <div class="ev-tablero">${fila('PLUMA', '..Y..')}${fila('NUBIA', 'GGG..')}</div>
+    <p class="ev-nota">Cuentan los intentos y el tiempo de cada palabra, que corre desde que pulsas y no se para aunque
+      cierres la web. Las tildes no cuentan; la Ñ es una letra más.</p>
   </section>`;
-}
-
-function soluciones(estado) {
-  const con = (estado?.frases ?? []).filter((f) => f.solucion);
-  if (!con.length) return '';
-  return `<section class="ev-soluciones"><h2>Las frases</h2><ol>${con.map((f) => (
-    `<li value="${Number(f.orden)}">${escapar(f.solucion)}</li>`
-  )).join('')}</ol></section>`;
-}
-
-const frases = (n) => `${n} ${n === 1 ? 'frase' : 'frases'}`;
-
-export function vistaRanking(filas, miNombre) {
-  return `<section class="ev-ranking"><h2>Ranking final</h2><ol>${(filas ?? []).map((f) => `
-    <li class="${f.nombre === miNombre ? 'mia' : ''}">
-      <span class="ev-puesto">${Number(f.puesto)}</span>
-      <span class="ev-nombre">${escapar(f.nombre)}</span>
-      <span class="ev-marca-final">${frases(Number(f.resueltas))} · ${formatoTiempo(f.tiempo_ms)}</span>
-    </li>`).join('')}</ol></section>`;
 }
 
 function aviso(s) {
@@ -341,131 +312,137 @@ function aviso(s) {
   return texto ? `<p class="ev-aviso" role="alert">${escapar(texto)}</p>` : '';
 }
 
-function estadoDeLaPartida(partida, ahora) {
-  if (!partida) return 'Por jugar';
-  if (partida.resuelta) return `Resuelta en ${formatoTiempo(partida.tiempo_ms)}`;
-  if (partida.terminada_en) return 'Sin resolver';
-  return `Jugando · ${formatoTiempo(ahora - Date.parse(partida.empezada_en))}`;
-}
+const intentos = (n) => `${n} ${n === 1 ? 'intento' : 'intentos'}`;
 
-function lista(s, m, ahora) {
-  const tarjetas = m.liberadas.map((f) => {
-    const partida = s.partidas.get(f.orden);
-    const clase = partida?.resuelta ? ' resuelta' : partida?.terminada_en ? ' perdida' : partida ? ' jugando' : '';
-    return `<li><button type="button" class="ev-tarjeta${clase}" data-elegir="${Number(f.orden)}">
-      <strong>Frase ${Number(f.orden)}</strong><span>${estadoDeLaPartida(partida, ahora)}</span></button></li>`;
+/** Cómo le fue en cada palabra: resuelta (intentos y tiempo), sin resolver, sin terminar o sin jugar. */
+function resumen(s) {
+  const filas = Array.from({ length: Number(s.estado?.total) || 0 }, (_, i) => {
+    const ronda = s.rondas.get(i + 1);
+    const texto = !ronda ? 'Sin jugar' : !ronda.terminada_en ? 'Sin terminar'
+      : ronda.resuelta ? `${intentos(ronda.intentos.length)} · ${formatoTiempo(ronda.tiempo_ms)}` : 'Sin resolver';
+    const clase = ronda?.resuelta ? ' resuelta' : ronda?.terminada_en ? ' fallada' : '';
+    return `<li class="ev-resumen-fila${clase}"><span class="ev-etiqueta">Palabra ${i + 1}</span><span>${texto}</span></li>`;
   }).join('');
-  const siguiente = m.siguiente
-    ? `<p class="ev-nota">La frase ${Number(m.siguiente.orden)} sale en <strong class="ev-reloj" data-cuenta-atras="${Date.parse(m.siguiente.abre_en)}">${cuentaAtras(m.faltaMs)}</strong></p>`
-    : '<p class="ev-nota">Ya están todas las frases. El ranking sale cuando el presentador termine el evento.</p>';
-  return `<section class="ev-lista"><h1>Frases</h1><ol class="ev-tarjetas">${tarjetas}</ol>${siguiente}${aviso(s)}</section>`;
+  return `<ol class="ev-resumen">${filas}</ol>`;
 }
 
-/**
- * Tras terminar una frase, el paso a la siguiente: un botón si ya está liberada; si no, el mismo botón apagado con
- * lo que falta para que salga, que se enciende solo al llegar a cero (la cuenta atrás pide el estado y se repinta).
- */
-function aLaSiguiente(s, orden, m, ahora) {
-  const siguiente = (s.estado?.frases ?? []).find((f) => f.orden === orden + 1);
-  if (!siguiente) {
-    return '<p class="ev-nota">Era la última frase. El ranking sale cuando el presentador termine el evento.</p>';
-  }
-  const n = Number(siguiente.orden);
-  if (m.liberadas.some((f) => f.orden === n)) {
-    return `<button type="button" class="ev-boton grande" data-elegir="${n}">Ir a la frase ${n}</button>`;
-  }
-  const abre = Date.parse(siguiente.abre_en);
-  return `<button type="button" class="ev-boton grande" disabled>La frase ${n} sale en `
-    + `<strong class="ev-reloj" data-cuenta-atras="${abre}">${cuentaAtras(abre - ahora)}</strong></button>`;
+function soluciones(estado) {
+  const lista = estado?.soluciones ?? [];
+  if (!lista.length) return '';
+  return `<section class="ev-soluciones"><h2>Las palabras</h2><ol>${lista.map((p) => (
+    `<li value="${Number(p.orden)}">${escapar(String(p.palabra).toUpperCase())}</li>`)).join('')}</ol></section>`;
 }
 
-function frase(s, orden, m, ahora) {
-  const volver = '<button type="button" class="ev-volver" data-accion="volver">← Frases</button>';
-  const partida = s.partidas.get(orden);
-  if (!partida) {
-    return `<section class="ev-empezar">${volver}<h1>Frase ${orden}</h1>
-      <p>Destápala con palabras de cinco letras: cada letra que esté en la frase se destapa en todos sus sitios.
-      Tienes cinco palabras. El tiempo corre desde que pulsas Empezar y no se para aunque cierres la web.</p>
-      <button type="button" class="ev-boton grande" data-accion="empezar">Empezar</button>${aviso(s)}</section>`;
-  }
-  const inicio = Date.parse(partida.empezada_en);
-  const reloj = partida.terminada_en
-    ? `<strong class="ev-reloj">${formatoTiempo(partida.tiempo_ms)}</strong>`
-    : `<strong class="ev-reloj" data-cronometro="${inicio}">${formatoTiempo(ahora - inicio)}</strong>`;
-  const resultado = !partida.terminada_en ? ''
-    : (partida.resuelta
-      ? `<p class="ev-resultado bien">¡Resuelta en ${formatoTiempo(partida.tiempo_ms)}!</p>`
-      : '<p class="ev-resultado">Esta vez no ha podido ser.</p>') + aLaSiguiente(s, orden, m, ahora);
-  return `<section class="ev-juego">
-    <div class="ev-barra">${volver}<span class="ev-cronometro">Frase ${orden} · ${reloj}</span></div>
-    ${resultado}${panelDeLaFrase(partida.visible)}${tablero(partida, s.escrito)}${aviso(s)}
-    ${partida.terminada_en ? '<p class="ev-nota">La frase entera se enseña al terminar el evento.</p>' : teclado(partida.intentos)}
+/** Lo que se ve antes de activar el evento: solo el aviso. Ni título, ni reglas, ni nombres. */
+export function vistaDeLaEspera() {
+  return `<section class="ev-espera">
+    <p class="ev-etiqueta">En breve</p>
+    <h1>El evento se activará en breve</h1>
+    <p>Deja esta página abierta: empezará sola.</p>
   </section>`;
 }
 
-/**
- * La puerta de un evento con contraseña: solo el campo para escribirla. Ni título, ni reglas, ni ayuda: quien no la
- * sabe no tiene por qué saber de qué va el evento.
- */
-export function vistaDeLaPuerta(s) {
-  return `<section class="ev-puerta">
-    <form data-formulario="clave">
-      <label for="ev-clave">Contraseña</label>
-      <input id="ev-clave" name="clave" type="password" autocomplete="off" required>
-      <button type="submit" class="ev-boton">Entrar</button>
+/** La lista de nombres que encajan con lo buscado. Se repinta sola al escribir, sin tocar el campo. */
+export function listaDeNombres(s) {
+  if (!s.desplegado) return '';
+  const encontrados = buscarNombres(s.nombres, s.buscado);
+  if (!encontrados.length) return '<p class="ev-nota ev-sin-nombres">Ningún nombre de la lista encaja.</p>';
+  return `<ul class="ev-nombres" id="ev-nombres" role="listbox">${encontrados.map((n) => (
+    n.libre
+      ? `<li><button type="button" role="option" data-nombre="${escapar(n.nombre)}">${escapar(n.nombre)}</button></li>`
+      : `<li><button type="button" role="option" disabled>${escapar(n.nombre)} <em>ya elegido</em></button></li>`
+  )).join('')}</ul>`;
+}
+
+function eleccionDelNombre(s) {
+  return `<section class="ev-entrada">
+    <h1>¿Quién eres?</h1>
+    <p>Escribe tu nombre o búscalo en la lista.</p>
+    <form data-formulario="entrar" autocomplete="off">
+      <label for="ev-nombre" class="ev-etiqueta">Tu nombre</label>
+      <div class="ev-combo">
+        <input id="ev-nombre" name="nombre" value="${escapar(s.buscado)}" autocomplete="off" role="combobox"
+          aria-controls="ev-nombres" aria-expanded="${Boolean(s.desplegado)}" placeholder="Nombre y apellido">
+        <button type="button" class="ev-desplegar" data-accion="desplegar" aria-label="Ver la lista de nombres">▾</button>
+      </div>
+      <div data-lista-de-nombres>${listaDeNombres(s)}</div>
+      <button type="submit" class="ev-boton grande">Entrar</button>
     </form>${aviso(s)}</section>`;
+}
+
+/** La barra de cada palabra: cuál es de cuántas y su cronómetro (parado si terminó). */
+function barra(s, ronda, ahora) {
+  const inicio = Date.parse(ronda.empezada_en);
+  const reloj = ronda.terminada_en
+    ? `<strong class="ev-reloj">${formatoTiempo(ronda.tiempo_ms)}</strong>`
+    : `<strong class="ev-reloj" data-cronometro="${inicio}">${formatoTiempo(ahora - inicio)}</strong>`;
+  return `<div class="ev-barra"><span class="ev-etiqueta">Palabra ${Number(ronda.orden)}/${Number(s.estado.total)}</span>${reloj}</div>`;
+}
+
+function juego(s, ahora) {
+  const p = puntoDelJuego(s.rondas, Number(s.estado.total));
+  const n = Number(s.estado.total);
+  if (p.tipo === 'empezar') {
+    return `<section class="ev-empezar">
+      <p class="ev-etiqueta">Palabra 1/${n}</p>
+      <h1>${n} palabras, 6 intentos cada una</h1>
+      <p>El cronómetro de cada palabra empieza cuando pulsas y se para al resolverla o al gastar los intentos.</p>
+      <button type="button" class="ev-boton grande" data-accion="empezar">Empezar</button>${aviso(s)}
+    </section>${s.ayuda ? '' : comoSeJuega()}`;
+  }
+  const ronda = s.rondas.get(p.orden);
+  if (p.tipo === 'jugando') {
+    return `<section class="ev-juego">${barra(s, ronda, ahora)}${tablero(ronda, s.escrito)}${aviso(s)}
+      ${teclado(ronda.intentos)}</section>`;
+  }
+  const resultado = ronda.resuelta
+    ? `<p class="ev-resultado bien">¡Resuelta en ${intentos(ronda.intentos.length)} y ${formatoTiempo(ronda.tiempo_ms)}!</p>`
+    : '<p class="ev-resultado">No la has adivinado.</p><p class="ev-nota">La palabra se desvela al terminar el evento.</p>';
+  const siguiente = p.tipo === 'entre'
+    ? `<button type="button" class="ev-boton grande" data-accion="empezar">Siguiente palabra ${p.orden + 1}/${n}</button>`
+    : `<h2>¡Has terminado las ${n} palabras!</h2>${resumen(s)}
+       <p class="ev-nota">Los puntos se conocen al terminar el evento.</p>`;
+  return `<section class="ev-juego">${barra(s, ronda, ahora)}${resultado}${tablero(ronda)}${siguiente}${aviso(s)}</section>`;
 }
 
 /** La pantalla del participante para un estado y una hora (ya corregida al servidor). */
 export function vistaDelEvento(s, ahora) {
-  if (!s.nombre && !s.recuperando && s.estado?.bloqueado) return vistaDeLaPuerta(s);
+  if (!s.estado) {
+    return s.sinConexion
+      ? '<section class="ev-espera"><h1>Sin conexión</h1><p>Lo reintentamos solos; no cierres esta página.</p></section>'
+      : '<section class="ev-espera"><p>Cargando…</p></section>';
+  }
+  if (!s.estado.activo && !s.estado.terminado) return vistaDeLaEspera();
 
   const boton = `<button type="button" class="ev-ayuda-boton" data-accion="ayuda" aria-expanded="${Boolean(s.ayuda)}">${
     s.ayuda ? 'Cerrar' : '¿Cómo se juega?'}</button>`;
-  const titulo = `<header class="ev-cabecera"><span class="ev-marca">${escapar(s.estado?.titulo ?? 'La frase del evento')}</span>${
+  const cabecera = `<header class="ev-cabecera"><span class="ev-marca">${escapar(s.estado.titulo ?? '')}</span>${
     s.nombre ? `<span class="ev-quien">${escapar(s.nombre)}</span>` : ''}${boton}</header>${s.ayuda ? comoSeJuega() : ''}`;
 
+  if (s.estado.terminado) {
+    const mio = s.nombre ? `<h2>Tus palabras</h2>${resumen(s)}` : '';
+    return `${cabecera}<section class="ev-final"><p class="ev-etiqueta">Fin</p><h1>El evento ha terminado</h1>
+      <p>Gracias por jugar. Los puntos se anuncian en el evento.</p>${mio}${soluciones(s.estado)}</section>`;
+  }
   if (!s.nombre && s.recuperando) {
-    return `${titulo}<section class="ev-espera"><h1>Recuperando tu partida…</h1>
+    return `${cabecera}<section class="ev-espera"><h1>Recuperando tu partida…</h1>
       <p>No hemos podido conectar. Lo reintentamos solos; no cierres esta página.</p></section>`;
   }
-  if (!s.nombre) {
-    return `${titulo}<section class="ev-entrada">
-      <h1>Destapa la frase</h1>
-      <p>Cinco palabras de cinco letras para destapar cada frase. Gana quien resuelve más frases en menos tiempo.</p>
-      <form data-formulario="entrar">
-        <label for="ev-nombre">Tu nombre</label>
-        <input id="ev-nombre" name="nombre" maxlength="30" autocomplete="name" required>
-        <button type="submit" class="ev-boton">Entrar</button>
-      </form>${aviso(s)}</section>`;
-  }
-
-  const m = momentoDelEvento(s.estado, ahora);
-  if (m.tipo === 'terminado') {
-    return `${titulo}${vistaRanking(s.ranking, s.nombre)}${soluciones(s.estado)}`;
-  }
-  if (m.tipo === 'sin-empezar') {
-    return `${titulo}<section class="ev-espera"><h1>¡Ya estás dentro!</h1>
-      <p>La primera frase sale en cuanto el presentador empiece el evento. No cierres esta página.</p>${aviso(s)}</section>
-      ${s.ayuda ? '' : comoSeJuega()}`;
-  }
-  if (s.seleccionada !== null && m.liberadas.some((f) => f.orden === s.seleccionada)) {
-    return `${titulo}${frase(s, s.seleccionada, m, ahora)}`;
-  }
-  return `${titulo}${lista(s, m, ahora)}`;
+  if (!s.nombre) return `${cabecera}${eleccionDelNombre(s)}`;
+  return `${cabecera}${juego(s, ahora)}`;
 }
 
 // ── Borde ─────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** Cada cuánto se pregunta el estado al servidor. Con 120 móviles, 10 s son 12 peticiones por segundo. */
-const SONDEO_MS = 10_000;
+/** Cada cuánto se pregunta el estado al servidor. Con 120 móviles, 5 s son 24 peticiones por segundo. */
+const SONDEO_MS = 5_000;
 
 /** Monta el juego en un contenedor. `temporizador` es `{cada(ms, fn)}`; el borde le pasa `setInterval`. */
 export async function montarEvento(contenedor, control, temporizador) {
   const pintar = () => {
     contenedor.innerHTML = vistaDelEvento(control.estado, control.ahora());
-    // La pestaña tampoco dice de qué va el evento hasta que se abre.
-    document.title = control.estado.estado?.titulo || 'Acceso';
+    // La pestaña no dice de qué va el evento hasta que se activa.
+    document.title = control.estado.estado?.titulo || 'En breve';
   };
   const arriba = () => window.scrollTo?.(0, 0);
   // Enviar pinta dos veces: al salir («Enviando…», el teclado quieto) y al volver la respuesta.
@@ -476,33 +453,39 @@ export async function montarEvento(contenedor, control, temporizador) {
     pintar();
   };
 
-  // Solo repinta si el clic era del juego: repintar en cualquier clic quitaba el formulario de entrada antes de
-  // que llegara su `submit`, y el navegador lo cancelaba.
+  // Solo repinta si el clic era del juego: repintar en cualquier clic quitaba el formulario antes de que llegara su
+  // `submit`, y el navegador lo cancelaba.
   contenedor.addEventListener('click', async (evento) => {
     const tecla = evento.target.closest('[data-tecla]');
-    const elegida = evento.target.closest('[data-elegir]');
+    const nombre = evento.target.closest('[data-nombre]');
     const accion = evento.target.closest('[data-accion]')?.dataset.accion;
     if (tecla) control.teclear(tecla.dataset.tecla);
-    else if (elegida) {
-      control.elegir(Number(elegida.dataset.elegir));
-      arriba();
-    } else if (accion === 'volver') control.elegir(null);
+    else if (nombre) control.marcar(nombre.dataset.nombre);
+    else if (accion === 'desplegar') control.desplegar();
     else if (accion === 'ayuda') {
       control.ayuda();
       arriba();
-    }
-    else if (accion === 'empezar') await control.empezar();
-    else if (accion === 'enviar') return enviar();
+    } else if (accion === 'empezar') {
+      await control.empezar();
+      arriba();
+    } else if (accion === 'enviar') return enviar();
     else if (accion === 'borrar') control.borrar();
     else return;
     pintar();
   });
 
+  // Al escribir en el buscador solo se repinta la lista: repintar el campo le quitaría el foco.
+  contenedor.addEventListener('input', (evento) => {
+    if (evento.target.name !== 'nombre') return;
+    control.buscar(evento.target.value);
+    const hueco = contenedor.querySelector('[data-lista-de-nombres]');
+    if (hueco) hueco.innerHTML = listaDeNombres(control.estado);
+    evento.target.setAttribute('aria-expanded', String(control.estado.desplegado));
+  });
+
   contenedor.addEventListener('submit', async (evento) => {
     evento.preventDefault();
-    const datos = new FormData(evento.target);
-    if (evento.target.dataset.formulario === 'clave') await control.desbloquear(datos.get('clave'));
-    else await control.entrar(datos.get('nombre'));
+    await control.entrar(new FormData(evento.target).get('nombre'));
     pintar();
   });
 
@@ -523,35 +506,23 @@ export async function montarEvento(contenedor, control, temporizador) {
     pintar();
   });
 
-  // El cronómetro y las cuentas atrás avanzan solos; al llegar una a cero se pregunta al servidor qué toca.
-  temporizador.cada(1000, async () => {
+  // El cronómetro avanza solo.
+  temporizador.cada(1000, () => {
     for (const reloj of contenedor.querySelectorAll('[data-cronometro]')) {
       reloj.textContent = formatoTiempo(control.ahora() - Number(reloj.dataset.cronometro));
     }
-    let llego = false;
-    for (const reloj of contenedor.querySelectorAll('[data-cuenta-atras]')) {
-      const falta = Number(reloj.dataset.cuentaAtras) - control.ahora();
-      reloj.textContent = cuentaAtras(falta);
-      if (falta <= 0) llego = true;
-    }
-    if (llego) {
-      await control.refrescar();
-      pintar();
-    }
   });
+  // El sondeo detecta la activación y el final. Solo repinta si cambia algo de eso, para no pisar lo que se escribe.
   temporizador.cada(SONDEO_MS, async () => {
-    if (!control.estado.nombre) {
-      // Escribiendo el nombre no se repinta el formulario; si se recargó sin red, se reintenta recuperar la partida.
-      if (control.estado.recuperando) {
-        await control.arrancar();
-        pintar();
-      }
+    if (control.estado.recuperando) {
+      await control.arrancar();
+      pintar();
       return;
     }
-    const fase = () => control.momento().tipo + (control.estado.estado?.frases ?? []).map((f) => f.estado).join();
+    const fase = () => `${control.estado.estado?.activo}|${control.estado.estado?.terminado}|${control.estado.sinConexion}`;
     const antes = fase();
     await control.refrescar();
-    if (antes !== fase() || control.estado.sinConexion) pintar();
+    if (antes !== fase()) pintar();
   });
 
   await control.arrancar();

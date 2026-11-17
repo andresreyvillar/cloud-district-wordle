@@ -1,16 +1,24 @@
--- El evento de prueba: frases inventadas, ventanas de 10 minutos y un PIN de prueba.
+-- El evento de prueba: cinco palabras inventadas, una lista de participantes inventados en grupos y un PIN de prueba.
 --
 -- **No es una migración**: no se aplica sola en ningún sitio. La carga `tools/evento_local.py` en su Postgres
--- desechable. Las frases y el PIN del evento real no van al repositorio: se cargan por SQL en Supabase.
+-- desechable (que puede añadir a la lista los nombres de quienes juegan al Wordle, leídos de Supabase al arrancar,
+-- sin que pasen por el repositorio). Las palabras, la lista y el PIN del evento real no van al repositorio.
 --
--- PIN de prueba: prueba-local
+-- PIN de prueba: 0000
 
-insert into public.event_editions (id, titulo, intervalo_minutos, pin_hash)
-values ('prueba', 'Evento de prueba', 10, encode(sha256(convert_to('prueba-local', 'UTF8')), 'hex'));
+insert into public.event_editions (id, titulo, pin_hash)
+values ('prueba', 'Evento de prueba', encode(sha256(convert_to('0000', 'UTF8')), 'hex'));
 
-insert into public.event_phrases (evento, orden, frase) values
-  ('prueba', 1, 'Más vale tarde que nunca'),
-  ('prueba', 2, '¿Quién dijo miedo?'),
-  ('prueba', 3, 'El año que viene, más'),
-  ('prueba', 4, 'Poco a poco se llega lejos'),
-  ('prueba', 5, 'Hoy por ti, mañana por mí');
+insert into public.event_targets (evento, orden, palabra) values
+  ('prueba', 1, 'nubes'),
+  ('prueba', 2, 'piano'),
+  ('prueba', 3, 'campo'),
+  ('prueba', 4, 'lunes'),
+  ('prueba', 5, 'flora');
+
+insert into public.event_roster (evento, nombre, grupo) values
+  ('prueba', 'Participante Uno', 'Grupo 1'),
+  ('prueba', 'Participante Dos', 'Grupo 1'),
+  ('prueba', 'Participante Tres', 'Grupo 2'),
+  ('prueba', 'Participante Cuatro', 'Grupo 2'),
+  ('prueba', 'Participante Cinco', 'Grupo 3');

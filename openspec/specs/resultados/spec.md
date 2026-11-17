@@ -934,111 +934,100 @@ verified-by:
 
 ## Requirement: El evento vive en tablas aditivas que la clave pública no lee ni escribe
 
-<!-- origen: feat-frase-del-evento (added) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
 
-El juego del evento guarda sus datos en tablas propias: `event_editions` (el evento, su intervalo, su inicio, su
-final y la huella del PIN), `event_phrases` (las frases, por orden), `event_players` (nombre y token de cada móvil),
-`event_plays` (una partida por participante y frase, con las letras destapadas), `event_guesses` (las palabras con
-sus colores) y `event_words` (las palabras válidas de cinco letras). No toca `wordle_results` ni ninguna otra tabla
-de la web.
+El juego del evento guarda sus datos en tablas propias: `event_editions` (el evento, su inicio, su final, lo que vale
+un intento, la huella del PIN y la cuenta de fallos), `event_targets` (las palabras, por orden), `event_roster` (la
+lista de participantes con su grupo y el token del móvil que eligió cada nombre), `event_rounds` (una ronda por
+participante y palabra), `event_tries` (los intentos con sus colores) y `event_words` (las palabras válidas de cinco
+letras). Las del juego de frases (`event_phrases`, `event_players`, `event_plays`, `event_guesses`) se quedan, pero
+sus funciones ya no son públicas. No toca `wordle_results` ni ninguna otra tabla de la web.
 
 La clave pública **no lee ni escribe** ninguna de ellas: todo pasa por funciones `SECURITY DEFINER` con
-`search_path` vacío que validan lo que entra y devuelven solo lo que se puede ver. Así la solución de una frase y
-la huella del PIN no son legibles desde el navegador.
+`search_path` vacío que validan lo que entra y devuelven solo lo que se puede ver. Así la solución de una palabra, el
+grupo de cada participante y la huella del PIN no son legibles desde el navegador. Ni las palabras, ni la lista, ni el
+PIN están en el repositorio: se cargan por SQL.
 
-#### Scenario: la clave pública no lee las frases
-- **WHEN** se intenta leer `event_phrases` con la clave pública
+#### Scenario: la clave pública no lee las palabras
+- **WHEN** se intenta leer `event_targets` o `event_roster` con la clave pública
 - **THEN** Postgres lo rechaza
 
-#### Scenario: la clave pública no escribe en las partidas
-- **WHEN** se intenta insertar, cambiar o borrar en `event_plays` o `event_guesses` con la clave pública
+#### Scenario: la clave pública no escribe en las rondas
+- **WHEN** se intenta insertar, cambiar o borrar en `event_rounds` o `event_tries` con la clave pública
 - **THEN** Postgres lo rechaza
 
 verified-by:
-  - tests/slices/frase-del-evento/test_evento_sql.py
+  - tests/slices/palabras-del-evento/test_palabras_sql.py
+  - tests/slices/admin-del-evento/test_admin_sql.py
 
-## Requirement: La frase del evento solo sale del servidor al terminar el evento
+## Requirement: La palabra del evento solo sale del servidor al terminar el evento
 
-<!-- origen: feat-frase-del-evento (added) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
 
-Mientras el evento no ha terminado, ninguna función devuelve el texto de una frase. `empezar_frase`,
-`intentar_palabra` y `mi_partida_del_evento` devuelven la frase **con las letras que el participante ha destapado**
-y un `_` en cada letra tapada, con los espacios y los signos en su sitio. Terminado el evento, `estado_del_evento`
-incluye la solución de cada frase.
+Mientras el evento no ha terminado, ninguna función del móvil devuelve una palabra del evento: `empezar_palabra`,
+`probar_palabra` y `mi_juego` devuelven los intentos con sus colores, y tampoco al fallar la sexta se enseña la
+solución. Terminado el evento, `estado_del_juego` incluye las palabras. Ninguna función del móvil devuelve el grupo de
+nadie.
 
-#### Scenario: en curso no hay solución
-- **WHEN** se pide el estado del evento sin terminar, con partidas resueltas
-- **THEN** ninguna frase trae su solución
+#### Scenario: fallar no enseña la solución
+- **WHEN** un participante falla una palabra con el evento en marcha
+- **THEN** ninguna respuesta trae la palabra
 
-#### Scenario: terminado, la solución es pública
+#### Scenario: terminado, las palabras son públicas
 - **WHEN** se pide el estado del evento terminado
-- **THEN** cada frase trae su solución
+- **THEN** trae las palabras en orden
 
 verified-by:
-  - tests/slices/frase-del-evento/test_evento_sql.py
-  - tests/slices/pantalla-del-evento/test_pantalla_sql.py
+  - tests/slices/palabras-del-evento/test_palabras_sql.py
 
-## Requirement: El cronómetro del evento lo lleva el servidor y no se pausa
+## Requirement: El cronómetro de cada palabra lo lleva el servidor y no se pausa
 
-<!-- origen: feat-frase-del-evento (added) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
 
-`empezar_frase` guarda `empezada_en` con la hora del servidor la primera vez y no la cambia si se repite.
-`intentar_palabra` guarda `terminada_en` con la hora del servidor al destapar la frase entera o al gastar la quinta
-palabra. El tiempo de una partida es la diferencia en milisegundos; no hay pausa ni tiempo máximo, y ninguna función
-acepta una hora que venga de la web.
+`empezar_palabra` guarda `empezada_en` con la hora del servidor la primera vez y no la cambia si se repite.
+`probar_palabra` guarda `terminada_en` con la hora del servidor al resolver o al gastar el sexto intento. El tiempo
+de una palabra es la diferencia en milisegundos; no hay pausa ni tiempo máximo, y ninguna función acepta una hora que
+venga de la web.
 
-Una palabra con el evento sin empezar o ya terminado, en una frase no liberada, en una partida terminada o sin
-empezar se rechaza con `errcode 22023` sin guardar nada.
+Un intento con el evento sin activar o terminado, en una palabra terminada o sin empezar se rechaza con `errcode
+22023` sin guardar nada.
 
-`intentar_palabra` lleva el número de intento que la web cree que envía, y eso la hace **idempotente**: si llega
-otra vez el mismo número con la misma palabra (se perdió la respuesta), devuelve la partida como quedó sin guardar
-nada; un número que no es el siguiente se rechaza.
+`probar_palabra` lleva el número de intento que la web cree que envía, y eso la hace **idempotente**: si llega otra
+vez el mismo número con la misma palabra (se perdió la respuesta), devuelve la ronda como quedó sin guardar nada; un
+número que no es el siguiente se rechaza.
 
 #### Scenario: empezar dos veces no reinicia el reloj
-- **WHEN** un participante llama dos veces a `empezar_frase` en la misma frase
+- **WHEN** un participante llama dos veces a `empezar_palabra` en la misma palabra
 - **THEN** `empezada_en` es la de la primera llamada
 
-#### Scenario: reenviar una palabra que ya llegó no gasta otra
-- **WHEN** llega dos veces la palabra 1 de una partida
-- **THEN** solo hay una palabra guardada y las dos respuestas son iguales
+#### Scenario: reenviar un intento que ya llegó no gasta otro
+- **WHEN** llega dos veces el intento 1 de una ronda
+- **THEN** solo hay un intento guardado
 
 verified-by:
-  - tests/slices/frase-del-evento/test_evento_sql.py
+  - tests/slices/palabras-del-evento/test_palabras_sql.py
 
-## Requirement: En el evento, un nombre y un móvil por participante
+## Requirement: En el evento juega quien está en la lista, con un nombre y un móvil
 
-<!-- origen: feat-frase-del-evento (added) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
 
-`unirse_al_evento(evento, nombre, token)` apunta al participante. El nombre se normaliza (NFC, cualquier blanco
-—también el no separable y los de ancho cero— pasa a un espacio, y se recortan los extremos) y tiene de 1 a 30
-caracteres: letras latinas, cifras, espacios sueltos y `. ' -`, con al menos una letra o cifra. Así no caben
-nombres invisibles ni letras de otro alfabeto que imiten a las nuestras. Es único en el evento sin distinguir
-mayúsculas ni acentos. Un token ya apuntado conserva su nombre aunque llegue otro: devuelve el que tenía. Un nombre
-apuntado con otro token se rechaza. Un evento admite como mucho 500 participantes: un script no puede ocupar los
-nombres de todos ni llenar el ranking.
+La organización carga la lista de participantes con su grupo (`event_roster`). Con el evento activo,
+`nombres_del_evento` devuelve los nombres y si están libres —nunca el grupo— y `elegir_nombre(evento, nombre, token)`
+da un nombre de la lista al móvil que lo pide (la lista solo se entrega con el evento en juego: son nombres reales), comparando sin mayúsculas ni tildes ni espacios en los extremos. Un
+nombre que no está en la lista se rechaza; uno ya elegido por otro móvil, también. Un token que ya tiene nombre lo
+conserva aunque pida otro. Con el evento sin activar o terminado no se elige nombre.
 
-Un evento puede tener **contraseña de acceso** (`clave_hash`, la huella SHA-256, como la del PIN): entonces
-`unirse_al_evento` rechaza a quien no la da o la da mal, sin apuntarlo, y **`estado_del_evento` y
-`ranking_del_evento` no enseñan nada del evento** —ni título, ni frases, ni horarios, ni contadores, ni nombres— a
-quien no trae la contraseña o el token de un participante: solo `{ahora, con_clave, bloqueado}`. Un token ya apuntado
-no la necesita. Nunca se entrega la huella. La ruta oculta no protege nada en un repositorio público; la contraseña
-sí.
+#### Scenario: el nombre de otro móvil se rechaza
+- **WHEN** otro token pide «ANA» estando «Ana» elegida
+- **THEN** se rechaza y «Ana» sigue con su móvil
 
-#### Scenario: el nombre ocupado se rechaza
-- **WHEN** otro token intenta apuntarse con «ANA » estando apuntada «Ana»
-- **THEN** se rechaza y no se crea ningún participante
-
-#### Scenario: un nombre invisible o de otro alfabeto se rechaza
-- **WHEN** alguien se apunta como «Аna» con A cirílica, o con solo un espacio de ancho cero
-- **THEN** se rechaza
-
-#### Scenario: sin la contraseña no se entra
-- **WHEN** alguien se apunta a un evento con contraseña sin darla, o con otra
-- **THEN** se rechaza y no se crea ningún participante
+#### Scenario: un nombre que no está en la lista se rechaza
+- **WHEN** alguien pide un nombre que no está en la lista
+- **THEN** se rechaza y nadie queda con nombre
 
 #### Scenario: un token conserva su nombre
-- **WHEN** un token apuntado como «Ana» vuelve a apuntarse como «Bea»
-- **THEN** sigue siendo «Ana»
+- **WHEN** un token con «Ana» pide «Bea»
+- **THEN** sigue siendo «Ana» y «Bea» sigue libre
 
 verified-by:
-  - tests/slices/frase-del-evento/test_evento_sql.py
+  - tests/slices/palabras-del-evento/test_palabras_sql.py

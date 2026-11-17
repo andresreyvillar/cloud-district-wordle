@@ -550,3 +550,23 @@ carpetas; del método, todo lo que funcionaba: slices, TDD, gates, mutación y r
 **Aprendizaje.** Verificar la spec entera, y no solo lo que cambia, sacó deuda que llevaba meses escondida: 48
 Requirements sin nada que los demostrara y un parser que se tragaba los `checks:` de un bloque con comentarios.
 Un gate que solo mira lo nuevo no ve lo que se pudre.
+
+## 2026-11-17 — El evento pasa de frases a palabras, y la puntuación se mide antes de decidirla
+
+**Qué.** A tres días del evento, el juego cambia: el Wordle de siempre con cinco palabras seguidas, una lista de
+participantes repartida en grupos, puntos por grupo y un admin que activa el evento cuando quiere.
+
+**Por qué importa.** La regla de puntos decide quién gana, y se pidió «que cuenten el tiempo y los intentos» sin
+más. Se midió antes de escribirla: eventos simulados con la distribución real de intentos del canal compararon
+varias equivalencias entre intentos y segundos, y se eligió la que más premia lo que cada uno repite de una mañana a
+otra.
+
+**Decisión.** Marca = tiempo + 30 s por intento; puntos por puesto en cada palabra; el grupo, la media de toda su
+lista. Las reglas de colores, por fin, las del Wordle de verdad: se probaron contra una implementación de referencia en
+miles de pares con letras repetidas.
+
+**Aprendizaje.** La migración se escribió antes que sus tests, y la prueba de mutación lo compensó a medias: cazó casi
+todo, pero la auditoría adversarial encontró lo que nadie había pensado en mutar, como un móvil atascado cuando el
+admin libera su nombre o un intento aceptado que delataba la solución de otra palabra. Mutar lo que la spec prohíbe
+mide los tests; buscar lo que la spec olvidó necesita otros ojos.
+

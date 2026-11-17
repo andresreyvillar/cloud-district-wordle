@@ -1,26 +1,28 @@
-/* El juego del evento: /evento (móvil) y /evento/pantalla (proyector).
+/* El juego del evento: /evento (móvil) y /evento/admin (admin). Solo se carga en las rutas del evento.
  *
- * **El tema vive aquí arriba, en variables.** Para pasar de la marca de Cloud District al tema del evento se
- * cambian estos valores (y, si hay logo, `--ev-logo`); el juego no se toca. Solo se carga en las rutas del evento.
+ * **El tema vive aquí arriba, en variables** (decisión de diseño del evento): negro y #FAF9F4, Host Grotesk Extrabold
+ * para títulos y Light para textos, y una monoespaciada para etiquetas (IBM Plex Mono, libre, en lugar de Unica, que
+ * no se puede publicar en un repositorio abierto). Las casillas, con los colores de siempre del Wordle.
  */
 
+@import url("https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap");
+
 :root {
-  --ev-fondo: #14072B;
-  --ev-superficie: #22123F;
-  --ev-borde: #3A2A5C;
-  --ev-tinta: #FFFFFF;
-  --ev-tinta-suave: #B9B0CC;
-  --ev-acento: #3DE07A;
-  --ev-tinta-sobre-acento: #14072B;
-  --ev-verde: #2FBF6A;
-  --ev-amarillo: #E8B923;
-  --ev-gris: #4A4160;
-  --ev-error: #FF4D6D;
-  --ev-fuente: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --ev-fuente-cifras: "DM Mono", ui-monospace, monospace;
-  --ev-logo: none;          /* con logo: url("../assets/evento/logo.svg") */
-  --ev-logo-hueco: 0;       /* con logo: 2rem, el sitio que ocupa a la izquierda del título */
-  --ev-radio: 6px;
+  --ev-fondo: #FAF9F4;
+  --ev-superficie: #EFEDE4;
+  --ev-borde: #D4D1C6;
+  --ev-tinta: #000000;
+  --ev-tinta-suave: #5E5B52;
+  --ev-acento: #000000;
+  --ev-tinta-sobre-acento: #FAF9F4;
+  --ev-verde: #6AAA64;
+  --ev-amarillo: #C9B458;
+  --ev-gris: #787C7E;
+  --ev-tecla: #DCD9CF;
+  --ev-error: #B3261E;
+  --ev-fuente: "Host Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --ev-fuente-etiqueta: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ev-radio: 4px;
 }
 
 body.modo-evento {
@@ -29,174 +31,164 @@ body.modo-evento {
   background: var(--ev-fondo);
   color: var(--ev-tinta);
   font-family: var(--ev-fuente);
+  font-weight: 300;
 }
 
 .modo-evento [data-vista] {
-  max-width: 34rem;
+  max-width: 32rem;
   margin: 0 auto;
   padding: 0 16px 1.5rem;
 }
 
+.modo-evento h1, .modo-evento h2 { font-family: var(--ev-fuente); font-weight: 800; letter-spacing: -0.01em; }
+.modo-evento h1 { font-size: 1.8rem; line-height: 1.1; margin: 0.4rem 0 0.6rem; }
+.modo-evento h2 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+.modo-evento p { line-height: 1.5; }
+.modo-evento strong { font-weight: 800; }
+
+/* Las etiquetas, con el aire de un formulario a máquina: mayúsculas, monoespaciada y un borde fino. */
+.ev-etiqueta {
+  display: inline-block; font-family: var(--ev-fuente-etiqueta); font-weight: 400; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 0.04em; padding: 0.2rem 0.5rem; border: 1px solid var(--ev-tinta);
+}
+
 .ev-cabecera {
-  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
-  padding: 0.9rem 0; border-bottom: 1px solid var(--ev-borde); margin-bottom: 1rem;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.4rem 0.8rem;
+  padding: 0.9rem 0; border-bottom: 1px solid var(--ev-tinta); margin-bottom: 1rem;
 }
-.ev-marca {
-  font-weight: 700; letter-spacing: 0.02em;
-  padding-left: var(--ev-logo-hueco);
-  background: var(--ev-logo) left center / 1.6rem auto no-repeat;
-}
-.ev-quien { color: var(--ev-tinta-suave); font-size: 0.9rem; margin-left: auto; }
+.ev-marca { font-weight: 800; }
+.ev-quien { order: 3; flex-basis: 100%; font-family: var(--ev-fuente-etiqueta); font-size: 0.75rem; text-transform: uppercase; }
 .ev-ayuda-boton {
-  font: inherit; font-size: 0.85rem; color: var(--ev-tinta); background: var(--ev-superficie);
-  border: 1px solid var(--ev-borde); border-radius: 999px; padding: 0.3rem 0.8rem; cursor: pointer; white-space: nowrap;
+  font: inherit; font-size: 0.85rem; color: var(--ev-tinta); background: none; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--ev-tinta); border-radius: 999px; padding: 0.3rem 0.8rem;
 }
-.ev-ayuda { margin: 0 0 1.2rem; padding: 0.9rem 1rem; border: 1px solid var(--ev-borde); border-radius: var(--ev-radio); }
-.ev-ayuda h2 { margin-top: 0; color: var(--ev-tinta); }
+.ev-ayuda { margin: 0 0 1.2rem; padding: 0.9rem 1rem; border: 1px solid var(--ev-tinta); }
+.ev-ayuda h2 { margin-top: 0; }
+.ev-empezar + .ev-ayuda { margin-top: 1.5rem; }
 .ev-ayuda ol { padding-left: 1.2rem; display: grid; gap: 0.5rem; }
 .ev-leyenda { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.4rem; }
 .ev-leyenda li { display: flex; align-items: center; gap: 0.6rem; }
-.ev-leyenda .ev-celda { width: 1.8rem; flex: none; font-size: 1rem; }
-.ev-ayuda .ev-tablero { margin: 0.4rem 0 0; }
-.ev-truco { margin: 0.8rem 0 0.4rem; }
+.ev-leyenda .ev-celda { width: 1.9rem; flex: none; font-size: 1rem; }
+.ev-ayuda .ev-tablero { margin: 0.4rem 0; justify-content: start; }
+.ev-ayuda .ev-fila { grid-template-columns: repeat(5, 2.2rem); }
+.ev-ayuda .ev-celda { font-size: 1.1rem; }
 
-.modo-evento h1 { font-size: 1.6rem; margin: 0.5rem 0; }
-.modo-evento h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--ev-tinta-suave); }
-.modo-evento p { line-height: 1.5; }
+.ev-espera { padding-top: 22vh; text-align: center; }
+.ev-espera h1 { font-size: 2.2rem; }
+.ev-espera p { color: var(--ev-tinta-suave); }
 
-.ev-entrada form, .ev-puerta form { display: grid; gap: 0.6rem; margin-top: 1rem; }
-.ev-puerta { padding-top: 20vh; }
-.ev-entrada label, .ev-puerta label { font-weight: 600; }
-.ev-entrada input, .ev-puerta input, .pa-pin input {
-  font: inherit; font-size: 1.1rem; padding: 0.8rem; border-radius: var(--ev-radio);
-  border: 2px solid var(--ev-borde); background: var(--ev-superficie); color: var(--ev-tinta);
+/* El buscador de nombres: un campo que filtra y un botón que despliega la lista entera. */
+.ev-entrada form { display: grid; gap: 0.6rem; margin-top: 1rem; }
+.ev-entrada .ev-etiqueta { justify-self: start; }
+.ev-combo { display: flex; }
+.ev-combo input, .pa-pin input {
+  flex: 1; min-width: 0; font: inherit; font-weight: 400; font-size: 1.1rem; padding: 0.8rem;
+  border: 1px solid var(--ev-tinta); border-radius: 0; background: #fff; color: var(--ev-tinta);
 }
-.ev-entrada input:focus, .ev-puerta input:focus, .pa-pin input:focus { outline: none; border-color: var(--ev-acento); }
+.ev-combo input:focus, .pa-pin input:focus { outline: 2px solid var(--ev-tinta); outline-offset: -2px; }
+.ev-desplegar {
+  font: inherit; font-size: 1.1rem; width: 3rem; border: 1px solid var(--ev-tinta); border-left: 0;
+  background: var(--ev-superficie); color: var(--ev-tinta); cursor: pointer;
+}
+.ev-nombres {
+  list-style: none; margin: 0; padding: 0; max-height: 16rem; overflow-y: auto;
+  border: 1px solid var(--ev-tinta); border-top: 0; background: #fff;
+}
+.ev-nombres button {
+  width: 100%; text-align: left; font: inherit; font-weight: 400; padding: 0.7rem 0.8rem; cursor: pointer;
+  border: 0; border-bottom: 1px solid var(--ev-superficie); background: none; color: var(--ev-tinta);
+}
+.ev-nombres button:hover, .ev-nombres button:focus-visible { background: var(--ev-superficie); }
+.ev-nombres button:disabled { color: var(--ev-tinta-suave); cursor: default; }
+.ev-nombres em { font-family: var(--ev-fuente-etiqueta); font-style: normal; font-size: 0.75rem; text-transform: uppercase; }
+.ev-sin-nombres { margin: 0; }
 
 .ev-boton {
-  font: inherit; font-weight: 700; font-size: 1.05rem; cursor: pointer;
-  padding: 0.85rem 1.4rem; border: 0; border-radius: var(--ev-radio);
+  font: inherit; font-weight: 800; font-size: 1.05rem; cursor: pointer;
+  padding: 0.85rem 1.4rem; border: 1px solid var(--ev-acento); border-radius: var(--ev-radio);
   background: var(--ev-acento); color: var(--ev-tinta-sobre-acento);
 }
-.ev-boton.grande { width: 100%; font-size: 1.3rem; padding: 1.1rem; margin-top: 1rem; }
-.ev-boton:disabled { cursor: default; background: var(--ev-superficie); color: var(--ev-tinta-suave); }
-.ev-boton:disabled .ev-reloj { color: var(--ev-tinta); }
+.ev-boton.grande { width: 100%; font-size: 1.2rem; padding: 1rem; margin-top: 1rem; }
+.ev-boton.pequeno { font-size: 0.85rem; padding: 0.35rem 0.8rem; }
+.ev-boton.peligro { background: var(--ev-error); border-color: var(--ev-error); color: #fff; }
+.ev-boton:disabled { cursor: default; opacity: 0.4; }
 .ev-boton:focus-visible, .ev-tecla:focus-visible { outline: 3px solid var(--ev-tinta); outline-offset: 2px; }
 
 .ev-aviso {
-  margin: 0.8rem 0; padding: 0.7rem 0.9rem; border-radius: var(--ev-radio);
-  border: 1px solid var(--ev-error); color: var(--ev-tinta); background: color-mix(in srgb, var(--ev-error) 18%, transparent);
+  margin: 0.8rem 0; padding: 0.7rem 0.9rem; border: 1px solid var(--ev-error); color: var(--ev-error); background: #fff;
 }
-.ev-nota, .ev-queda, .ev-cronometro { color: var(--ev-tinta-suave); }
-.ev-cronometro { margin: 0; }
-.ev-aviso.enviando { border-color: var(--ev-borde); background: var(--ev-superficie); }
-.ev-reloj { font-family: var(--ev-fuente-cifras); color: var(--ev-tinta); }
-.ev-resultado { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0; }
-.ev-resultado.bien { color: var(--ev-acento); }
+.ev-aviso.enviando { border-color: var(--ev-borde); color: var(--ev-tinta-suave); }
+.ev-nota { color: var(--ev-tinta-suave); }
+.ev-reloj { font-family: var(--ev-fuente-etiqueta); font-weight: 500; font-size: 1.1rem; }
+.ev-resultado { font-size: 1.4rem; font-weight: 800; margin: 0.6rem 0 0; }
+.ev-resultado.bien { color: #3F7A3A; }
+.ev-barra { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.4rem; }
 
-/* La frase: cada palabra no se parte, las palabras saltan de línea si no caben. El ancho de una casilla sale de la
-   palabra más larga (`--ev-ancho`, lo pone el panel): así cabe entera en el ancho de la pantalla, hasta 2.1rem. */
-.ev-frase {
-  --ev-casilla: min(2.1rem, calc((min(100vw, 34rem) - 32px) / var(--ev-ancho, 8) - 0.2rem));
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 0.8rem;
-  margin: 1rem 0; padding: 0.8rem 0.4rem; border-radius: var(--ev-radio); background: var(--ev-superficie);
-}
-.ev-palabra { display: inline-flex; gap: 0.2rem; white-space: nowrap; }
-.ev-casilla, .ev-signo {
-  width: var(--ev-casilla); height: calc(var(--ev-casilla) * 1.18);
-  display: inline-grid; place-items: center;
-  font-weight: 700; font-size: calc(var(--ev-casilla) * 0.58); text-transform: uppercase;
-}
-.ev-casilla { border-bottom: 3px solid var(--ev-tinta-suave); }
-.ev-casilla.destapada { background: var(--ev-verde); border-color: var(--ev-verde); border-radius: 4px; }
-.ev-signo { width: auto; color: var(--ev-tinta-suave); }
-
-/* El tablero: cinco palabras de cinco letras. */
-.ev-tablero { display: grid; gap: 0.3rem; justify-content: center; margin: 0.6rem 0 1rem; }
-.ev-fila { display: grid; grid-template-columns: repeat(5, clamp(2.3rem, 11vw, 3rem)); gap: 0.3rem; }
+/* El tablero: seis intentos de cinco letras. */
+.ev-tablero { display: grid; gap: 0.35rem; justify-content: center; margin: 0.6rem 0 1rem; }
+/* Las casillas encogen con el ancho y con el alto: en un móvil bajo, el teclado no tapa la fila que se escribe. */
+.ev-fila { display: grid; grid-template-columns: repeat(5, clamp(2.3rem, min(14vw, 6.4dvh), 3.6rem)); gap: 0.35rem; }
 .ev-celda {
-  aspect-ratio: 1; display: grid; place-items: center; border: 2px solid var(--ev-borde); border-radius: 4px;
-  font-weight: 700; font-size: clamp(1.1rem, 5.5vw, 1.5rem); text-transform: uppercase;
+  aspect-ratio: 1; display: grid; place-items: center; border: 2px solid var(--ev-borde); background: #fff;
+  font-weight: 800; font-size: clamp(1.3rem, 7vw, 2rem); text-transform: uppercase; line-height: 1;
 }
-.ev-celda.llena { border-color: var(--ev-tinta-suave); }
-.ev-actual .ev-celda { border-color: var(--ev-tinta-suave); }
-.ev-celda.verde { background: var(--ev-verde); border-color: var(--ev-verde); }
-.ev-celda.amarilla { background: var(--ev-amarillo); border-color: var(--ev-amarillo); color: #1b1b1f; }
-.ev-celda.gris { background: var(--ev-gris); border-color: var(--ev-gris); }
-
-/* La lista de frases liberadas. */
-.ev-tarjetas { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.5rem; }
-.ev-tarjeta {
-  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem;
-  padding: 1rem; border: 2px solid var(--ev-borde); border-radius: var(--ev-radio);
-  background: var(--ev-superficie); color: var(--ev-tinta); font: inherit; cursor: pointer; text-align: left;
-}
-.ev-tarjeta span { color: var(--ev-tinta-suave); font-size: 0.9rem; }
-.ev-tarjeta.jugando { border-color: var(--ev-amarillo); }
-.ev-tarjeta.resuelta { border-color: var(--ev-verde); }
-.ev-barra { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.ev-volver {
-  font: inherit; color: var(--ev-tinta-suave); background: none; border: 0; padding: 0.4rem 0; cursor: pointer;
-}
+.ev-celda.llena, .ev-actual .ev-celda.llena { border-color: var(--ev-tinta); }
+.ev-celda.verde { background: var(--ev-verde); border-color: var(--ev-verde); color: #fff; }
+.ev-celda.amarilla { background: var(--ev-amarillo); border-color: var(--ev-amarillo); color: #fff; }
+.ev-celda.gris { background: var(--ev-gris); border-color: var(--ev-gris); color: #fff; }
 
 /* El teclado queda abajo, a mano del pulgar. */
 .ev-teclado {
-  position: sticky; bottom: 0; display: grid; gap: 0.35rem;
+  position: sticky; bottom: 0; display: grid; gap: 0.4rem;
   padding: 0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom)); background: var(--ev-fondo);
 }
 .ev-teclado > div { display: flex; justify-content: center; gap: 0.25rem; }
 .ev-tecla {
-  flex: 1 1 0; min-width: 0; max-width: 2.6rem; height: 3.1rem;
-  font: inherit; font-weight: 600; font-size: 1rem; cursor: pointer;
-  border: 0; border-radius: 4px; background: var(--ev-superficie); color: var(--ev-tinta);
+  flex: 1 1 0; min-width: 0; max-width: 2.7rem; height: 3.3rem;
+  font: inherit; font-weight: 800; font-size: 1rem; cursor: pointer;
+  border: 0; border-radius: var(--ev-radio); background: var(--ev-tecla); color: var(--ev-tinta);
   touch-action: manipulation;
 }
-.ev-tecla.ancha { max-width: 4.4rem; flex-grow: 1.8; font-size: 0.72rem; }
-.ev-tecla.verde { background: var(--ev-verde); }
-.ev-tecla.amarilla { background: var(--ev-amarillo); color: #1b1b1f; }
-.ev-tecla.gris { background: var(--ev-gris); color: var(--ev-tinta-suave); }
+.ev-tecla.ancha { max-width: 4.4rem; flex-grow: 1.8; font-size: 0.72rem; text-transform: uppercase; }
+.ev-tecla.verde { background: var(--ev-verde); color: #fff; }
+.ev-tecla.amarilla { background: var(--ev-amarillo); color: #fff; }
+.ev-tecla.gris { background: var(--ev-gris); color: #fff; }
 
-.ev-soluciones ol, .pa-soluciones ol { padding-left: 1.4rem; }
-.ev-soluciones li, .pa-soluciones li { margin: 0.25rem 0; }
+.ev-resumen { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.4rem; }
+.ev-resumen-fila { display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 0.5rem 0; border-bottom: 1px solid var(--ev-borde); }
+.ev-resumen-fila.resuelta span:last-child { font-weight: 800; }
+.ev-resumen-fila.fallada span:last-child { color: var(--ev-tinta-suave); }
+.ev-soluciones ol, .pa-soluciones ol { padding-left: 1.4rem; font-weight: 800; letter-spacing: 0.1em; }
+.ev-final { padding-top: 1rem; }
 
-.ev-ranking ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.3rem; }
-.ev-ranking li {
-  display: grid; grid-template-columns: 2.5rem 1fr auto; gap: 0.6rem; align-items: center;
-  padding: 0.5rem 0.7rem; border-radius: var(--ev-radio); background: var(--ev-superficie);
-}
-.ev-ranking li.mia { outline: 2px solid var(--ev-acento); }
-.ev-puesto, .ev-marca-final { font-family: var(--ev-fuente-cifras); }
-.ev-marca-final { font-size: 0.85rem; color: var(--ev-tinta-suave); }
-.ev-puesto { color: var(--ev-tinta-suave); }
+/* ── Admin ───────────────────────────────────────────────────────────────────────────────────────────── */
 
-/* ── Proyector ───────────────────────────────────────────────────────────────────────────────────────── */
-
-.modo-evento .pa { max-width: none; text-align: center; padding: 2rem 0; }
+.modo-evento .pa { text-align: center; padding: 2rem 0; }
 body.modo-evento:has(.pa) [data-vista] { max-width: 72rem; }
-.pa-titulo { font-size: clamp(2rem, 6vw, 4.5rem) !important; }
-.pa-entra { font-size: clamp(1.1rem, 2.6vw, 2rem); color: var(--ev-tinta-suave); }
-.pa-entra strong { color: var(--ev-acento); }
-.pa-nota { font-size: clamp(1rem, 2.2vw, 1.6rem); color: var(--ev-tinta-suave); }
-.pa-apuntados { font-size: clamp(1.2rem, 3vw, 2.2rem); }
-.pa-reloj { font-family: var(--ev-fuente-cifras); font-size: clamp(4rem, 16vw, 12rem); margin: 0.5rem 0; line-height: 1; }
-.pa-contadores { margin: 1.5rem auto; border-collapse: collapse; font-size: clamp(1rem, 2.2vw, 1.6rem); }
+.pa-titulo { font-size: clamp(2rem, 5vw, 3.5rem) !important; }
+.pa-nota { color: var(--ev-tinta-suave); }
+.pa-apuntados { font-size: clamp(1.1rem, 2.4vw, 1.6rem); }
+.pa-pin { display: inline-flex; gap: 0.6rem; margin-top: 20vh; }
+.pa-contadores { margin: 1.5rem auto; border-collapse: collapse; font-size: clamp(1rem, 2vw, 1.4rem); }
 .pa-contadores th, .pa-contadores td { padding: 0.4rem 1rem; text-align: left; color: var(--ev-tinta-suave); }
-.pa-contadores th { color: var(--ev-tinta); }
-.pa-contadores strong { font-family: var(--ev-fuente-cifras); color: var(--ev-acento); font-size: 1.3em; }
-.pa-pin { display: inline-flex; gap: 0.6rem; margin-top: 2rem; }
-.pa-soluciones { text-align: left; max-width: 40rem; margin: 2rem auto 0; font-size: 1.2rem; }
-.pa-podio { list-style: none; padding: 0; margin: 1rem 0 2rem; display: flex; justify-content: center; align-items: flex-end; gap: 1.5rem; }
-.pa-podio li { display: grid; gap: 0.2rem; padding: 1rem 1.5rem; border-radius: var(--ev-radio); background: var(--ev-superficie); min-width: 12rem; }
-.pa-podio span { color: var(--ev-tinta-suave); }
-.pa-podio strong { font-size: clamp(1.2rem, 2.6vw, 2rem); }
-.pa-podio em { font-style: normal; font-family: var(--ev-fuente-cifras); color: var(--ev-acento); }
-.pa-podio .pa-podio-1 { order: 2; padding-top: 2rem; outline: 3px solid var(--ev-acento); }
-.pa-podio .pa-podio-2 { order: 1; }
-.pa-podio .pa-podio-3 { order: 3; }
-.pa-ranking table { width: 100%; border-collapse: collapse; font-size: clamp(0.9rem, 1.6vw, 1.2rem); }
-.pa-ranking th, .pa-ranking td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--ev-borde); text-align: right; }
+.pa-contadores th { color: var(--ev-tinta); font-weight: 800; }
+.pa-contadores strong { font-family: var(--ev-fuente-etiqueta); color: var(--ev-tinta); font-size: 1.2em; }
+.pa .ev-boton.grande { max-width: 24rem; }
+.pa-nombres { max-width: 32rem; margin: 2rem auto 0; text-align: left; }
+.pa-nombres summary { cursor: pointer; font-weight: 800; }
+.pa-nombres ul { list-style: none; padding: 0; max-height: 20rem; overflow-y: auto; }
+.pa-nombres li { display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0;
+  border-bottom: 1px solid var(--ev-borde); }
+.pa-exportar { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin: 1rem 0 2rem; }
+.pa-ranking { overflow-x: auto; }
+.pa-ranking table { width: 100%; border-collapse: collapse; font-size: clamp(0.85rem, 1.5vw, 1.1rem); }
+.pa-ranking th, .pa-ranking td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--ev-borde); text-align: right;
+  white-space: nowrap; }
 .pa-ranking th:nth-child(2), .pa-ranking .pa-nombre { text-align: left; }
-.pa-ranking td { font-family: var(--ev-fuente-cifras); }
-.pa-ranking .pa-nombre { font-family: var(--ev-fuente); }
-.pa-ranking .pa-total { color: var(--ev-acento); font-weight: 700; }
-.pa-ranking tbody tr:nth-child(-n+3) .pa-nombre { font-weight: 700; }
+.pa-ranking td { font-family: var(--ev-fuente-etiqueta); }
+.pa-ranking .pa-nombre { font-family: var(--ev-fuente); font-weight: 400; }
+.pa-ranking .pa-total { font-weight: 500; }
+.pa-ranking em { font-style: normal; color: var(--ev-tinta-suave); }
+.pa-ranking .pa-nada { color: var(--ev-tinta-suave); }
+.pa-soluciones { text-align: left; max-width: 40rem; margin: 2rem auto 0; font-size: 1.2rem; }

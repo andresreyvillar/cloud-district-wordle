@@ -1,8 +1,8 @@
 /**
  * La API del juego del evento: solo funciones de la base de datos, nunca tablas.
  *
- * Slices: `frase-del-evento` y `pantalla-del-evento`. La clave pública no lee ni escribe ninguna tabla del evento:
- * la solución de una frase no puede llegar al navegador, así que todo pasa por funciones que devuelven lo que se
+ * Slices: `palabras-del-evento` y `admin-del-evento`. La clave pública no lee ni escribe ninguna tabla del evento:
+ * la solución de una palabra no puede llegar al navegador, así que todo pasa por funciones que devuelven lo que se
  * puede ver.
  *
  * **En local habla con el servidor local** (`tools/evento_local.py`), que emula `/rest/v1/rpc` sobre un Postgres
@@ -68,22 +68,34 @@ async function llamar(cliente, funcion, argumentos, plazo = PLAZO_MS) {
   return data;
 }
 
+/**
+ * Las funciones del admin no lanzan error con un PIN que no vale (un error desharía la cuenta de fallos): contestan
+ * `{error}`. Aquí se convierte en un rechazo, como cualquier otro.
+ */
+function conPin(respuesta) {
+  if (respuesta && typeof respuesta === 'object' && !Array.isArray(respuesta) && respuesta.error) {
+    throw new FalloDelEvento(String(respuesta.error), 'rechazo');
+  }
+  return respuesta;
+}
+
 /** La API sobre un cliente con `rpc(funcion, argumentos)`. Los tests le pasan uno falso. */
 export function apiDelEvento(cliente, evento, plazo = PLAZO_MS) {
   const llamar_ = (funcion, argumentos) => llamar(cliente, funcion, argumentos, plazo);
+  const admin = async (funcion, argumentos) => conPin(await llamar_(funcion, { p_evento: evento, ...argumentos }));
   return {
     evento,
-    unirse: (nombre, token, clave = null) =>
-      llamar_('unirse_al_evento', { p_evento: evento, p_nombre: nombre, p_token: token, p_clave: clave }),
-    // Con contraseña, el estado y el ranking solo llegan con el token de un participante o con la contraseña.
-    estado: (token = null, clave = null) => llamar_('estado_del_evento', { p_evento: evento, p_token: token, p_clave: clave }),
-    miPartida: (token) => llamar_('mi_partida_del_evento', { p_evento: evento, p_token: token }),
-    empezar: (token, orden) => llamar_('empezar_frase', { p_evento: evento, p_token: token, p_orden: orden }),
-    intentar: (token, orden, palabra, numero) => llamar_('intentar_palabra',
+    estado: () => llamar_('estado_del_juego', { p_evento: evento }),
+    nombres: () => llamar_('nombres_del_evento', { p_evento: evento }),
+    elegir: (nombre, token) => llamar_('elegir_nombre', { p_evento: evento, p_nombre: nombre, p_token: token }),
+    miJuego: (token) => llamar_('mi_juego', { p_evento: evento, p_token: token }),
+    empezar: (token, orden) => llamar_('empezar_palabra', { p_evento: evento, p_token: token, p_orden: orden }),
+    probar: (token, orden, palabra, numero) => llamar_('probar_palabra',
       { p_evento: evento, p_token: token, p_orden: orden, p_palabra: palabra, p_numero: numero }),
-    terminarEvento: (pin) => llamar_('terminar_evento', { p_evento: evento, p_pin: pin }),
-    empezarEvento: (pin) => llamar_('empezar_evento', { p_evento: evento, p_pin: pin }),
-    ranking: (token = null, clave = null) => llamar_('ranking_del_evento', { p_evento: evento, p_token: token, p_clave: clave }),
+    panel: (pin) => admin('panel_del_evento', { p_pin: pin }),
+    activar: (pin) => admin('empezar_evento', { p_pin: pin }),
+    terminar: (pin) => admin('terminar_evento', { p_pin: pin }),
+    liberar: (pin, nombre) => admin('liberar_nombre', { p_pin: pin, p_nombre: nombre }),
   };
 }
 
