@@ -149,7 +149,7 @@ function navegar(ruta, resultados, instantaneas) {
 
 /**
  * El juego del evento: se pinta solo, sin la cabecera, la navegación ni los datos de la web de estadísticas
- * (slices `frase-del-evento` y `pantalla-del-evento`). Con su propia hoja de estilos, que lleva el tema.
+ * (slices `palabras-del-evento` y `admin-del-evento`). Con su propia hoja de estilos, que lleva el tema.
  */
 async function arrancarEvento(destino) {
   document.querySelector('.cabecera')?.remove();
@@ -158,8 +158,8 @@ async function arrancarEvento(destino) {
   const hoja = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: recurso('css/evento.css') });
   const robots = Object.assign(document.createElement('meta'), { name: 'robots', content: 'noindex' });
   document.head.append(hoja, robots);
-  // Neutro hasta saber si el evento se puede enseñar: con contraseña, la pestaña no dice de qué va.
-  document.title = 'Acceso';
+  // Neutro hasta saber si el evento está activo: antes, la pestaña no dice de qué va.
+  document.title = 'En breve';
 
   const vista = elementos().vista;
   const { apiReal } = await import('./evento/api.js');
@@ -174,25 +174,19 @@ async function arrancarEvento(destino) {
   const reloj = () => Date.now();
   const temporizador = { cada: (ms, fn) => setInterval(fn, ms) };
 
-  if (destino.vista === VISTAS.PANTALLA_DEL_EVENTO) {
-    const { controlDeLaPantalla, montarPantalla } = await import('./evento/pantalla.js');
-    const direccion = `${window.location.host}${conBase('/evento')}${window.location.search}`;
-    await montarPantalla(vista, controlDeLaPantalla({ api, reloj }), temporizador, direccion);
+  if (destino.vista === VISTAS.ADMIN_DEL_EVENTO) {
+    const { controlDelAdmin, montarAdmin } = await import('./evento/admin.js');
+    await montarAdmin(vista, controlDelAdmin({ api }), temporizador, api.evento);
     return;
   }
   const { controlDelEvento, montarEvento } = await import('./evento/jugador.js');
-  // La lista de palabras válidas, para avisar al momento de una que no vale. Si no carga, decide solo el servidor.
-  const palabras = await fetch(recurso('assets/evento/palabras.txt'))
-    .then((respuesta) => (respuesta.ok ? respuesta.text() : ''))
-    .then((texto) => (texto ? new Set(texto.split('\n').filter(Boolean)) : null))
-    .catch(() => null);
   // El token del móvil se guarda en el navegador. Sin almacenamiento (incógnito estricto) se juega igual, pero al
   // recargar habría que volver a entrar con otro nombre.
   const almacen = {
     leer: (clave) => { try { return window.localStorage.getItem(clave); } catch { return null; } },
     guardar: (clave, valor) => { try { window.localStorage.setItem(clave, valor); } catch { /* sin almacenamiento */ } },
   };
-  await montarEvento(vista, controlDelEvento({ api, almacen, reloj, palabras }), temporizador);
+  await montarEvento(vista, controlDelEvento({ api, almacen, reloj }), temporizador);
 }
 
 export async function arrancar() {

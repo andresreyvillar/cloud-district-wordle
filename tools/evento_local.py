@@ -1,11 +1,13 @@
 """El juego del evento en local, entero, sin tocar Supabase.
 
-    python3 tools/evento_local.py                 # ventanas de 10 minutos, como el evento de prueba
-    python3 tools/evento_local.py --intervalo 2   # ventanas de 2 minutos, para probar rápido
+    python3 tools/evento_local.py                   # el evento de prueba, con los nombres de quienes juegan al Wordle
+    python3 tools/evento_local.py --sin-nombres     # solo los participantes inventados de la semilla
     python3 tools/evento_local.py --puerto 9000
 
 Levanta un Postgres **desechable** con las migraciones del repositorio y el evento de prueba
-(`supabase/seeds/evento_de_prueba.sql`), y sirve la v2 en la red local. Las llamadas de la web a
+(`supabase/seeds/evento_de_prueba.sql`), y sirve la v2 en la red local. Para probar el buscador con nombres de
+verdad, añade a la lista a quienes juegan al Wordle, repartidos al azar en diez grupos: los lee de Supabase **solo
+para leer**, con la clave pública, y no los escribe en ningún fichero. Las llamadas de la web a
 `/rest/v1/rpc/<función>` —lo que en producción contesta Supabase— las contesta este servidor ejecutando la función
 en ese Postgres con el rol `anon`, el mismo que usa la clave pública. Solo atiende las funciones del evento.
 
@@ -33,18 +35,21 @@ from serve_v2 import PREFIJO, PUERTO, RAIZ, ManejadorSPA  # noqa: E402
 from tests.postgres_local import INITDB, PG_CTL, PSQL, postgres_con_migraciones  # noqa: E402
 
 SEMILLA = RAIZ_DEL_REPO / "supabase" / "seeds" / "evento_de_prueba.sql"
-PIN_DE_PRUEBA = "prueba-local"
+PIN_DE_PRUEBA = "0000"
+GRUPOS = 10
 
 #: Lo único que se puede llamar: las funciones públicas del evento, con sus parámetros.
 FUNCIONES = {
-    "unirse_al_evento": ("p_evento", "p_nombre", "p_token", "p_clave"),
-    "estado_del_evento": ("p_evento", "p_token", "p_clave"),
-    "mi_partida_del_evento": ("p_evento", "p_token"),
-    "empezar_frase": ("p_evento", "p_token", "p_orden"),
-    "intentar_palabra": ("p_evento", "p_token", "p_orden", "p_palabra", "p_numero"),
-    "terminar_evento": ("p_evento", "p_pin"),
+    "estado_del_juego": ("p_evento",),
+    "nombres_del_evento": ("p_evento",),
+    "elegir_nombre": ("p_evento", "p_nombre", "p_token"),
+    "mi_juego": ("p_evento", "p_token"),
+    "empezar_palabra": ("p_evento", "p_token", "p_orden"),
+    "probar_palabra": ("p_evento", "p_token", "p_orden", "p_palabra", "p_numero"),
+    "panel_del_evento": ("p_evento", "p_pin"),
     "empezar_evento": ("p_evento", "p_pin"),
-    "ranking_del_evento": ("p_evento", "p_token", "p_clave"),
+    "terminar_evento": ("p_evento", "p_pin"),
+    "liberar_nombre": ("p_evento", "p_pin", "p_nombre"),
 }
 
 ERROR_DE_POSTGRES = re.compile(r"ERROR:\s+([0-9A-Z]{5}):\s+(.*)")
@@ -112,6 +117,44 @@ class ManejadorDelEvento(ManejadorSPA):
         self.wfile.write(datos)
 
 
+def nombres_del_wordle() -> list[str]:
+    """Los nombres de quienes juegan al Wordle, leídos de Supabase con la clave pública (solo lectura)."""
+    import os
+    import ssl
+    import urllib.request
+
+    try:  # El Python de python.org no trae los certificados raíz; `certifi` sí (viene con `supabase`).
+        import certifi
+        contexto = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        contexto = ssl.create_default_context()
+
+    url, clave = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_ANON_KEY")
+    if not url or not clave:
+        return []
+    peticion = urllib.request.Request(f"{url}/rest/v1/wordle_results?select=player_name&limit=100000",
+                                      headers={"apikey": clave, "Authorization": f"Bearer {clave}"})
+    with urllib.request.urlopen(peticion, timeout=15, context=contexto) as respuesta:
+        filas = json.load(respuesta)
+    return sorted({str(f["player_name"]).strip() for f in filas if str(f.get("player_name") or "").strip()})
+
+
+def cargar_nombres(sql, nombres: list[str]) -> int:
+    """Añade los nombres a la lista del evento de prueba, repartidos al azar en grupos. Devuelve cuántos entraron."""
+    import random
+
+    aleatorio = random.Random()
+    filas = []
+    for i, nombre in enumerate(aleatorio.sample(nombres, len(nombres))):
+        nombre = nombre[:60].replace("$", "")
+        filas.append(f"('prueba', $n${nombre}$n$, 'Grupo {i % GRUPOS + 1}')")
+    if not filas:
+        return 0
+    resultado = sql("insert into public.event_roster (evento, nombre, grupo) values " + ", ".join(filas)
+                    + " on conflict (evento, clave) do nothing")
+    return 0 if resultado.returncode else len(filas)
+
+
 def ip_de_la_red_local() -> str | None:
     """La IP de este ordenador en la wifi. Conectar un socket UDP no envía nada: solo elige la interfaz."""
     try:
@@ -127,7 +170,8 @@ def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(line_buffering=True)
     analizador = argparse.ArgumentParser(description="El juego del evento en local, sin tocar Supabase.")
     analizador.add_argument("--puerto", type=int, default=PUERTO)
-    analizador.add_argument("--intervalo", type=int, default=None, help="minutos de cada ventana (por defecto, 10)")
+    analizador.add_argument("--sin-nombres", action="store_true",
+                            help="no añadir a la lista los nombres de quienes juegan al Wordle")
     argumentos = analizador.parse_args(argv)
 
     if not (INITDB and PG_CTL and PSQL):
@@ -142,18 +186,21 @@ def main(argv: list[str] | None = None) -> int:
         if cargada.returncode != 0:
             print(cargada.stderr)
             return 1
-        if argumentos.intervalo:
-            sql(f"update public.event_editions set intervalo_minutos = {int(argumentos.intervalo)} where id = 'prueba'")
+        if not argumentos.sin_nombres:
+            try:
+                print(f"Añadidos {cargar_nombres(sql, nombres_del_wordle())} nombres del Wordle a la lista.")
+            except OSError as error:
+                print(f"No se han podido leer los nombres del Wordle ({error}): solo los inventados.")
 
         ManejadorDelEvento.sql = staticmethod(sql)
         servidor = ThreadingHTTPServer(("0.0.0.0", argumentos.puerto), partial(ManejadorDelEvento, directory=str(RAIZ)))
         ip = ip_de_la_red_local()
         print()
         print(f"  Participante:  http://localhost:{argumentos.puerto}{PREFIJO}evento")
-        print(f"  Proyector:     http://localhost:{argumentos.puerto}{PREFIJO}evento/pantalla   (PIN: {PIN_DE_PRUEBA})")
+        print(f"  Admin:         http://localhost:{argumentos.puerto}{PREFIJO}evento/admin   (PIN: {PIN_DE_PRUEBA})")
         if ip:
             print(f"  Desde el móvil (misma wifi):  http://{ip}:{argumentos.puerto}{PREFIJO}evento")
-        print(f"  Ventanas de {argumentos.intervalo or 10} minutos. Ctrl+C para parar: la base de datos se borra.")
+        print("  Activa el evento desde el admin. Ctrl+C para parar: la base de datos se borra.")
         print()
         try:
             servidor.serve_forever()

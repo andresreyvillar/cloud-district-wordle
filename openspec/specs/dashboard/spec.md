@@ -1347,87 +1347,96 @@ verified-by:
 
 ## Requirement: El evento se juega en una ruta oculta, con su propia apariencia
 
-<!-- origen: feat-frase-del-evento (added) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
 
-`/evento` (el participante) y `/evento/pantalla` (el proyector) no aparecen en la navegación y se pintan sin la
-cabecera ni la navegación de la web de estadísticas. Tampoco cargan sus datos: la vista del evento solo habla con
-las funciones del evento. Su apariencia vive en una hoja de estilos propia que declara colores, tipografía y logo
-como variables, para pasar de la marca de Cloud District al tema del evento sin tocar el juego.
+`/evento` (el participante) y `/evento/admin` (el admin) no aparecen en la navegación y se pintan sin la cabecera ni
+la navegación de la web de estadísticas. Tampoco cargan sus datos: la vista del evento solo habla con las funciones
+del evento. Su apariencia vive en una hoja de estilos propia, con el tema del evento en variables: fondo `#FAF9F4`,
+tinta negra, Host Grotesk (Extrabold en títulos, Light en textos), una monoespaciada para las etiquetas y las
+casillas con los colores de siempre del Wordle.
 
 #### Scenario: la navegación no lleva al evento
 - **WHEN** se pinta la navegación
 - **THEN** ningún enlace lleva a `/evento`
 
 #### Scenario: la ruta resuelve a la vista del evento
-- **WHEN** se resuelven `/evento` y `/evento/pantalla`
-- **THEN** dan la vista del participante y la del proyector
+- **WHEN** se resuelven `/evento` y `/evento/admin`
+- **THEN** dan la vista del participante y la del admin
 
 verified-by:
-  - tests/slices/frase-del-evento/evento.test.js
-  - tests/slices/pantalla-del-evento/pantalla.test.js
+  - tests/slices/palabras-del-evento/palabras.test.js
 
-## Requirement: La frase del evento se destapa con palabras de cinco letras, como «La frase del día»
+## Requirement: Las palabras del evento se adivinan como en el Wordle, una tras otra
 
-<!-- origen: feat-frase-del-evento (added) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
 
-Las reglas son las de «La frase del día» de lapalabradeldia.com (decisión del dueño). Cada intento es una palabra de
-cinco letras que está en `event_words`, el diccionario del evento —derivado del diccionario ortográfico de
-LibreOffice (RLA-ES), que sigue la norma de la RAE—; una palabra que no está no gasta intento. Hay cinco intentos.
+Las reglas son las del Wordle de siempre (decisión del dueño). El evento tiene varias palabras de cinco letras, que
+se juegan **en orden**: la siguiente solo se empieza con la anterior terminada. Cada palabra tiene **seis intentos**,
+y cada intento es una palabra de cinco letras que está en `event_words`, el diccionario del evento —derivado del
+diccionario ortográfico de LibreOffice (RLA-ES), que sigue la norma de la RAE—, o que es la solución de esa misma
+palabra (la empresa puede elegir una que no esté); la de otra palabra no vale, para no delatarla. Una palabra que no
+vale no gasta intento. Si vale lo decide el servidor.
 
-Cada letra de la palabra se colorea contra **el conjunto de letras de la frase**, no por posición: `G` si está en
-la frase y no se había destapado con una palabra anterior (y entonces se destapa en todas las casillas donde
-aparece; repetida en la misma palabra, sale `G` las dos veces), `Y` si está pero ya estaba destapada, y `.` si no
-está. Se compara sin tildes ni diéresis, y la ñ es distinta de la n. **Se gana al destapar todas las letras
-distintas de la frase**; tras la quinta palabra con alguna tapada, se pierde.
+Cada letra se colorea **por posición**: `G` si está en su sitio; después, de izquierda a derecha, `Y` mientras
+queden en la solución letras así que no hayan salido `G` ni `Y`, y `.` el resto. Se compara sin tildes ni diéresis,
+y la ñ es distinta de la n. Se gana con cinco `G`; tras el sexto intento sin ellas, se pierde.
 
 #### Scenario: la web lo explica con un ejemplo
-- **WHEN** el participante espera a que empiece el evento o pulsa «¿Cómo se juega?»
-- **THEN** ve las reglas en cuatro líneas y un ejemplo de colores con una frase inventada
+- **WHEN** el participante va a empezar la primera palabra o pulsa «¿Cómo se juega?»
+- **THEN** ve las reglas, los tres colores y un ejemplo con una palabra inventada
 
-#### Scenario: verde destapa en toda la frase
-- **GIVEN** la frase «sol y mar» sin nada destapado
-- **WHEN** se juega «sacas»
-- **THEN** la s y la a salen verdes —las dos veces cada una—, la c gris, y la frase muestra «s__ _ _a_»
+#### Scenario: una letra repetida
+- **GIVEN** la palabra «casas»
+- **WHEN** se juega «sacos»
+- **THEN** salen `YGY.G`: la última s verde, la primera amarilla, la c amarilla y la o gris
 
-#### Scenario: amarilla si ya estaba destapada
-- **GIVEN** la s ya destapada
-- **WHEN** se juega «sosos»
-- **THEN** la s sale amarilla y la o, verde
+#### Scenario: no quedan más como ella
+- **GIVEN** la palabra «lapiz»
+- **WHEN** se juega «pizza»
+- **THEN** la primera z sale amarilla y la segunda, gris
 
-#### Scenario: se gana al destapar la última letra
-- **WHEN** una palabra destapa las letras que quedaban
-- **THEN** la partida queda resuelta
-
-verified-by:
-  - tests/slices/frase-del-evento/test_evento_sql.py
-
-## Requirement: Las frases del evento se liberan cada intervalo desde que el presentador lo empieza
-
-<!-- origen: feat-frase-del-evento (added) -->
-
-`empezar_evento(evento, pin)` fija `empieza_en` con la hora del servidor si el PIN coincide con su huella y el
-evento no había empezado; si ya había empezado, no lo mueve. Con un intervalo de N minutos, la frase k se libera en
-`empieza_en + (k−1)·N` y se juega sin tiempo máximo hasta `terminado_en`, que fija `terminar_evento(evento, pin)`.
-El intervalo es una columna del evento: 10 minutos en las pruebas y 30 el día del evento, sin desplegar. Empezado el
-evento ya no se cambia: movería las liberaciones.
-
-`estado_del_evento` devuelve la hora del servidor, para que el cronómetro y las cuentas atrás no dependan del reloj
-del móvil, y por cada frase cuándo se libera, si está pendiente, abierta o cerrada, y cuántos la juegan, la han
-resuelto y se han quedado sin palabras. Nunca devuelve nombres ni tiempos.
-
-#### Scenario: al terminar una frase, la web lleva a la siguiente o cuenta lo que falta
-- **WHEN** un participante termina una frase y la siguiente aún no se ha liberado
-- **THEN** ve el botón de ir a ella apagado, con la cuenta atrás hasta que salga, y se enciende al llegar a cero
-
-#### Scenario: un PIN incorrecto no empieza ni termina el evento
-- **WHEN** se llama a `empezar_evento` o `terminar_evento` con un PIN que no coincide
-- **THEN** se rechaza y el evento sigue como estaba
-
-#### Scenario: la segunda frase sale al cumplirse el intervalo y la primera sigue abierta
-- **GIVEN** un evento empezado hace N minutos y un segundo
-- **WHEN** se pide su estado
-- **THEN** la frase 1 y la 2 están abiertas y la 3 pendiente
+#### Scenario: al terminar una palabra se pasa a la siguiente
+- **WHEN** un participante resuelve o falla una palabra que no es la última
+- **THEN** ve el botón «Siguiente palabra k/N», que empieza la siguiente con su propio cronómetro
 
 verified-by:
-  - tests/slices/pantalla-del-evento/test_pantalla_sql.py
-  - tests/slices/pantalla-del-evento/pantalla.test.js
+  - tests/slices/palabras-del-evento/test_palabras_sql.py
+  - tests/slices/palabras-del-evento/palabras.test.js
+
+## Requirement: El admin activa y termina el evento con un PIN que se bloquea al fallar
+
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
+
+No hay hora fija: `empezar_evento(evento, pin)` activa el evento con la hora del servidor si el PIN coincide con su
+huella (activado, no se mueve), y desde ese momento todas las palabras se pueden jugar. Hasta entonces
+`estado_del_juego` solo devuelve `{ahora, activo: false, terminado: false}` y `nombres_del_evento` se niega: quien
+abre el enlace solo ve que el evento se activará en breve. `terminar_evento(evento, pin)` lo termina (sin activar no
+se puede; terminado, no se mueve).
+
+**Cada cinco fallos seguidos bloquean el PIN, y cada bloqueo dura el doble** (1, 2, 4… minutos, hasta una hora),
+también para el bueno: con un PIN de cuatro cifras, probarlos todos lleva meses. Quien sepa el id del evento puede
+tener al admin bloqueado; el plan B es desbloquearlo por SQL. Un acierto pone la cuenta a cero. Las funciones con PIN no lanzan error con un PIN que no vale —un error desharía la cuenta—: contestan
+`{error}`.
+
+`panel_del_evento(evento, pin)` da al admin, durante el evento, cuántos han elegido nombre de cuántos hay en la lista
+y, por palabra, cuántos la juegan, la han resuelto y la han fallado, sin nombres ni tiempos. `liberar_nombre(evento,
+pin, nombre)` deja libre un nombre y borra lo jugado con él, salvo con el evento terminado.
+
+#### Scenario: un PIN incorrecto no hace nada
+- **WHEN** se llama a `empezar_evento`, `terminar_evento`, `panel_del_evento` o `liberar_nombre` con un PIN que no
+  coincide
+- **THEN** se contesta `{error: "PIN incorrecto"}` y el evento sigue como estaba
+
+#### Scenario: cinco fallos bloquean el PIN
+- **GIVEN** cinco fallos seguidos del PIN
+- **WHEN** se usa el PIN bueno antes de un minuto
+- **THEN** se contesta que hay que esperar, y el evento sigue como estaba
+
+#### Scenario: antes de activar no se ve nada
+- **WHEN** se pide el estado de un evento sin activar
+- **THEN** solo trae la hora del servidor y que no está activo
+
+verified-by:
+  - tests/slices/admin-del-evento/test_admin_sql.py
+  - tests/slices/admin-del-evento/admin.test.js
+  - tests/slices/palabras-del-evento/test_palabras_sql.py

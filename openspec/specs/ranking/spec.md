@@ -1069,29 +1069,37 @@ checks:
 verified-by:
   - tests/slices/clasificacion-de-figuras/test_album.py
 
-## Requirement: El evento se ordena por frases resueltas y tiempo, y publica el ranking al terminar
+## Requirement: El evento puntúa cada palabra por tiempo e intentos, y cada grupo por la media de su lista
 
-<!-- origen: feat-frase-del-evento (added) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
 
-El ranking del evento no tiene puntos (decisión del dueño): va delante quien resolvió más frases y, con las mismas,
-quien tardó menos en total. El tiempo total suma las partidas **terminadas** —resueltas o perdidas tras cinco
-palabras—, de `empezada_en` a `terminada_en` en milisegundos. Una partida a medias al terminar el evento no suma ni
-frase ni tiempo, y quien no terminó ninguna no sale. Las mismas frases y el mismo tiempo comparten puesto (1, 1, 3).
+En cada palabra, la **marca** de quien la resolvió es su tiempo más `segundos_por_intento` (30 s, decisión del dueño
+medida con eventos simulados) por cada intento; menos es mejor. Quien la resolvió se lleva **1 punto más uno por cada
+resolvedor con peor marca**: la misma marca, los mismos puntos. Quien la falló, la dejó a medias al terminar el evento
+o no la jugó se lleva 0. Los puntos de un participante suman los de sus palabras, y los participantes se ordenan por
+puntos (los mismos puntos comparten puesto: 1, 1, 3).
 
-`ranking_del_evento` solo lo entrega cuando el presentador ha terminado el evento. Antes rechaza la petición:
-durante el evento nadie ve su posición.
+Cada grupo puntúa **la media de toda su lista**: la suma de los puntos de sus miembros entre cuántos son, hayan jugado
+o no; el puesto sale de la media sin redondear. Con 30 s, un intento de más se compensa siendo 30 segundos más rápido. `segundos_por_intento` es una columna del
+evento: se recalibra sin desplegar.
 
-#### Scenario: durante el evento no hay ranking
-- **WHEN** se pide el ranking con el evento sin terminar
-- **THEN** se rechaza
+`panel_del_evento` solo entrega los puntos con el evento terminado; durante el evento nadie ve su posición. El admin
+los exporta en JSON y CSV.
 
-#### Scenario: más frases resueltas va delante aunque tarde más
-- **WHEN** uno resolvió dos frases en diez minutos y otro una en un minuto
-- **THEN** va delante el de dos frases
+#### Scenario: un intento de más se compensa con 30 segundos
+- **GIVEN** una palabra resuelta por Ana en 4 intentos y 30 s, por Bea en 3 y 70 s y por Cris en 3 y 50 s
+- **WHEN** se calculan los puntos
+- **THEN** Cris (140) se lleva 3, Ana (150) 2 y Bea (160) 1, y quien la falló, 0
 
-#### Scenario: una partida a medias no cuenta
-- **WHEN** el evento termina con una partida empezada y sin terminar
-- **THEN** no suma frase ni tiempo
+#### Scenario: el grupo puntúa la media de su lista
+- **GIVEN** un grupo de dos en el que uno suma 3 puntos y el otro no juega
+- **WHEN** se calculan los puntos del grupo
+- **THEN** son 1,5
+
+#### Scenario: durante el evento no hay puntos
+- **WHEN** se pide el panel con el evento sin terminar
+- **THEN** no trae puntos de participantes ni de grupos
 
 verified-by:
-  - tests/slices/pantalla-del-evento/test_pantalla_sql.py
+  - tests/slices/admin-del-evento/test_admin_sql.py
+  - tests/slices/admin-del-evento/admin.test.js
