@@ -1,11 +1,11 @@
 /* El juego del evento: /evento (móvil) y /evento/admin (admin). Solo se carga en las rutas del evento.
  *
- * **El tema vive aquí arriba, en variables** (decisión de diseño del evento): negro y #FAF9F4, Host Grotesk Extrabold
- * para títulos y Light para textos, y una monoespaciada para etiquetas (IBM Plex Mono, libre, en lugar de Unica, que
+ * **El tema vive aquí arriba, en variables** (decisión de diseño del evento): negro y #FAF9F4, Helvetica en negrita
+ * para títulos y Light para textos (fuente del sistema: no tiene licencia web libre, así que en Android cae a Arial), y una monoespaciada para etiquetas (IBM Plex Mono, libre, en lugar de Unica, que
  * no se puede publicar en un repositorio abierto). Las casillas, con los colores de siempre del Wordle.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap");
 
 :root {
   --ev-fondo: #FAF9F4;
@@ -20,7 +20,7 @@
   --ev-gris: #787C7E;
   --ev-tecla: #DCD9CF;
   --ev-error: #B3261E;
-  --ev-fuente: "Host Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --ev-fuente: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --ev-fuente-etiqueta: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --ev-radio: 4px;
 }

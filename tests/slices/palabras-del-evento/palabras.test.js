@@ -115,12 +115,13 @@ test('la ruta /evento y /evento/admin resuelven a sus vistas y ninguna pestaña 
 });
 
 /** @scenarios el-evento-tiene-su-propia-apariencia */
-test('la hoja del evento usa negro y #FAF9F4, Host Grotesk y los colores del Wordle, y la web no la usa', () => {
+test('la hoja del evento usa negro y #FAF9F4, Helvetica y los colores del Wordle, y la web no la usa', () => {
   const hoja = readFileSync(new URL('../../../v2/css/evento.css', import.meta.url), 'utf8');
   const raiz = hoja.slice(hoja.indexOf(':root {'), hoja.indexOf('}', hoja.indexOf(':root {')));
   assert.match(raiz, /--ev-fondo: #FAF9F4;/);
   assert.match(raiz, /--ev-tinta: #000000;/);
-  assert.match(raiz, /--ev-fuente: "Host Grotesk"/);
+  assert.match(raiz, /--ev-fuente: "Helvetica Neue", Helvetica,/);
+  assert.doesNotMatch(hoja, /Host Grotesk|Host\+Grotesk/, 'no queda rastro de la fuente anterior');
   for (const variable of ['--ev-verde', '--ev-amarillo', '--ev-gris', '--ev-fuente-etiqueta']) {
     assert.match(raiz, new RegExp(`${variable}:`), variable);
   }
