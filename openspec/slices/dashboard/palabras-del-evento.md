@@ -60,7 +60,7 @@ navegación lleva a esas rutas
 
 ### el-evento-tiene-su-propia-apariencia
 **WHEN** se abre cualquier pantalla del evento
-**THEN** se ve con el tema del evento —fondo `#FAF9F4`, tinta negra, Host Grotesk y casillas verde, amarilla y gris
+**THEN** se ve con el tema del evento —fondo `#FAF9F4`, tinta negra, Helvetica y casillas verde, amarilla y gris
 del Wordle—, declarado en variables de una hoja propia que la web de estadísticas no carga
 
 ### antes-de-activar-solo-se-ve-la-espera

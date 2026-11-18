@@ -1,0 +1,17 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-18T09:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    Petición del dueño: el evento pasa de Host Grotesk a Helvetica. Helvetica no tiene licencia web libre, así que va
+    como fuente del sistema («Helvetica Neue», Helvetica, Arial): en iPhone y Mac es Helvetica; en Android y Windows,
+    Arial. Las etiquetas siguen en IBM Plex Mono. Modificación menor del escenario el-evento-tiene-su-propia-apariencia.

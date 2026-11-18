@@ -1347,12 +1347,12 @@ verified-by:
 
 ## Requirement: El evento se juega en una ruta oculta, con su propia apariencia
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-en-helvetica (modified) -->
 
 `/evento` (el participante) y `/evento/admin` (el admin) no aparecen en la navegación y se pintan sin la cabecera ni
 la navegación de la web de estadísticas. Tampoco cargan sus datos: la vista del evento solo habla con las funciones
 del evento. Su apariencia vive en una hoja de estilos propia, con el tema del evento en variables: fondo `#FAF9F4`,
-tinta negra, Host Grotesk (Extrabold en títulos, Light en textos), una monoespaciada para las etiquetas y las
+tinta negra, Helvetica (negrita en títulos, Light en textos), una monoespaciada para las etiquetas y las
 casillas con los colores de siempre del Wordle.
 
 #### Scenario: la navegación no lleva al evento
