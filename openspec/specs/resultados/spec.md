@@ -962,12 +962,14 @@ verified-by:
 
 ## Requirement: La palabra del evento solo sale del servidor al terminar el evento
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified) -->
 
 Mientras el evento no ha terminado, ninguna función del móvil devuelve una palabra del evento: `empezar_palabra`,
 `probar_palabra` y `mi_juego` devuelven los intentos con sus colores, y tampoco al fallar la sexta se enseña la
-solución. Terminado el evento, `estado_del_juego` incluye las palabras. Ninguna función del móvil devuelve el grupo de
-nadie.
+solución. **Tampoco devuelven qué palabra del evento hay detrás de cada número del participante**: las rondas viajan
+con el número que él ve (`orden`, de 1 a N), nunca con el de la palabra en `event_targets`. Terminado el evento,
+`estado_del_juego` incluye las palabras y `mi_juego` las del participante en su orden (`palabras`). Ninguna función
+del móvil devuelve el grupo de nadie.
 
 #### Scenario: fallar no enseña la solución
 - **WHEN** un participante falla una palabra con el evento en marcha
@@ -976,6 +978,14 @@ nadie.
 #### Scenario: terminado, las palabras son públicas
 - **WHEN** se pide el estado del evento terminado
 - **THEN** trae las palabras en orden
+
+#### Scenario: el número que ve el participante no delata la palabra
+- **WHEN** un participante juega con el evento en marcha
+- **THEN** sus rondas llevan el número que él ve, y ninguna respuesta dice qué palabra del evento hay detrás
+
+#### Scenario: terminado, cada uno recibe sus palabras en su orden
+- **WHEN** un participante pide su juego con el evento terminado
+- **THEN** trae las palabras del evento en el orden en que le tocaron
 
 verified-by:
   - tests/slices/palabras-del-evento/test_palabras_sql.py

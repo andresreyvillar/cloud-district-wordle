@@ -1071,12 +1071,13 @@ verified-by:
 
 ## Requirement: El evento puntúa cada palabra por tiempo e intentos, y cada grupo por la media de su lista
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified) -->
 
 En cada palabra, la **marca** de quien la resolvió es su tiempo más `segundos_por_intento` (30 s, decisión del dueño
 medida con eventos simulados) por cada intento; menos es mejor. Quien la resolvió se lleva **1 punto más uno por cada
 resolvedor con peor marca**: la misma marca, los mismos puntos. Quien la falló, la dejó a medias al terminar el evento
-o no la jugó se lleva 0. Los puntos de un participante suman los de sus palabras, y los participantes se ordenan por
+o no la jugó se lleva 0. Como cada participante juega las palabras en su propio orden, las marcas de una palabra se
+comparan entre todos los que jugaron **esa palabra**, sea cual sea el número que les tocó. Los puntos de un participante suman los de sus palabras, y los participantes se ordenan por
 puntos (los mismos puntos comparten puesto: 1, 1, 3).
 
 Cada grupo puntúa **la media de toda su lista**: la suma de los puntos de sus miembros entre cuántos son, hayan jugado
@@ -1090,6 +1091,11 @@ los exporta en JSON y CSV.
 - **GIVEN** una palabra resuelta por Ana en 4 intentos y 30 s, por Bea en 3 y 70 s y por Cris en 3 y 50 s
 - **WHEN** se calculan los puntos
 - **THEN** Cris (140) se lleva 3, Ana (150) 2 y Bea (160) 1, y quien la falló, 0
+
+#### Scenario: compiten quienes jugaron la misma palabra, en el número que les tocara
+- **GIVEN** dos participantes a los que la misma palabra del evento les tocó en números distintos
+- **WHEN** se calculan los puntos de esa palabra
+- **THEN** compiten entre sí por ella
 
 #### Scenario: el grupo puntúa la media de su lista
 - **GIVEN** un grupo de dos en el que uno suma 3 puntos y el otro no juega

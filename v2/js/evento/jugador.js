@@ -44,6 +44,8 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
     buscado: '',
     desplegado: false,
     rondas: new Map(),
+    // Las soluciones del participante en su orden: solo llegan con el evento terminado.
+    palabras: null,
     escrito: [],
     aviso: null,
     enviando: false,
@@ -79,6 +81,9 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
       else s.aviso = error.message;
       return;
     }
+    // Las palabras de cada uno, en su orden, solo las da el servidor con el evento terminado: si termina con la
+    // página abierta, se piden.
+    if (s.estado.terminado && s.token && !s.palabras) await sincronizar();
     if (s.estado.activo && !s.nombre && !s.recuperando && !s.nombres) await cargarNombres();
   }
 
@@ -89,6 +94,7 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
       const mio = await api.miJuego(s.token);
       s.nombre = mio.nombre;
       s.rondas = new Map((mio.rondas ?? []).map((ronda) => [ronda.orden, ronda]));
+      s.palabras = Array.isArray(mio.palabras) ? mio.palabras : null;
       s.recuperando = false;
     } catch (error) {
       // Solo un token que el evento no conoce (otro evento, un nombre liberado por el admin) se tira: se vuelve a
@@ -280,13 +286,22 @@ export function teclado(intentos) {
   </div>`;
 }
 
-/** Cómo se juega: las reglas del Wordle y los tres colores, con un ejemplo inventado. */
-export function comoSeJuega() {
+/** Cuánto suma cada intento, si el servidor lo ha dicho. Sin cifra no se inventa una. */
+function porIntento(segundos) {
+  const n = Number(segundos);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/** Cómo se juega: que el tiempo cuenta, las reglas del Wordle y los tres colores, con un ejemplo inventado. */
+export function comoSeJuega(segundos) {
+  const n = porIntento(segundos);
   const fila = (palabra, colores) => `<div class="ev-fila">${[...palabra].map((letra, i) => (
     `<span class="ev-celda ${CLASE[colores[i]]}">${letra}</span>`)).join('')}</div>`;
   return `<section class="ev-ayuda" aria-label="Cómo se juega">
     <h2>Cómo se juega</h2>
     <ol>
+      <li><strong>El tiempo cuenta</strong>: cuanto antes resuelvas cada palabra, más puntos. El cronómetro corre desde
+        que pulsas y no se para aunque cierres la web${n ? `, y cada intento suma además ${n} segundos` : ''}.</li>
       <li>Adivina la <strong>palabra de 5 letras</strong> en <strong>6 intentos</strong>. Cada intento tiene que ser una
         palabra que exista.</li>
       <li>Tras cada intento, las letras cambian de color:
@@ -301,8 +316,7 @@ export function comoSeJuega() {
     <p class="ev-nota">Ejemplo con la palabra NUBES: en PLUMA la U está pero en otro sitio; en NUBIA, la N, la U y la B
       están en su sitio.</p>
     <div class="ev-tablero">${fila('PLUMA', '..Y..')}${fila('NUBIA', 'GGG..')}</div>
-    <p class="ev-nota">Cuentan los intentos y el tiempo de cada palabra, que corre desde que pulsas y no se para aunque
-      cierres la web. Las tildes no cuentan; la Ñ es una letra más.</p>
+    <p class="ev-nota">Las tildes no cuentan; la Ñ es una letra más.</p>
   </section>`;
 }
 
@@ -321,7 +335,9 @@ function resumen(s) {
     const texto = !ronda ? 'Sin jugar' : !ronda.terminada_en ? 'Sin terminar'
       : ronda.resuelta ? `${intentos(ronda.intentos.length)} · ${formatoTiempo(ronda.tiempo_ms)}` : 'Sin resolver';
     const clase = ronda?.resuelta ? ' resuelta' : ronda?.terminada_en ? ' fallada' : '';
-    return `<li class="ev-resumen-fila${clase}"><span class="ev-etiqueta">Palabra ${i + 1}</span><span>${texto}</span></li>`;
+    const palabra = s.palabras?.[i];
+    const cual = palabra ? ` · ${escapar(String(palabra).toUpperCase())}` : '';
+    return `<li class="ev-resumen-fila${clase}"><span class="ev-etiqueta">Palabra ${i + 1}${cual}</span><span>${texto}</span></li>`;
   }).join('');
   return `<ol class="ev-resumen">${filas}</ol>`;
 }
@@ -376,19 +392,23 @@ function barra(s, ronda, ahora) {
   const reloj = ronda.terminada_en
     ? `<strong class="ev-reloj">${formatoTiempo(ronda.tiempo_ms)}</strong>`
     : `<strong class="ev-reloj" data-cronometro="${inicio}">${formatoTiempo(ahora - inicio)}</strong>`;
-  return `<div class="ev-barra"><span class="ev-etiqueta">Palabra ${Number(ronda.orden)}/${Number(s.estado.total)}</span>${reloj}</div>`;
+  const cuenta = ronda.terminada_en ? '' : '<span class="ev-cuenta">⏱ El tiempo cuenta</span>';
+  return `<div class="ev-barra"><span class="ev-etiqueta">Palabra ${Number(ronda.orden)}/${Number(s.estado.total)}</span>${reloj}${cuenta}</div>`;
 }
 
 function juego(s, ahora) {
   const p = puntoDelJuego(s.rondas, Number(s.estado.total));
   const n = Number(s.estado.total);
+  const segundos = porIntento(s.estado.segundos_por_intento);
   if (p.tipo === 'empezar') {
     return `<section class="ev-empezar">
       <p class="ev-etiqueta">Palabra 1/${n}</p>
       <h1>${n} palabras, 6 intentos cada una</h1>
-      <p>El cronómetro de cada palabra empieza cuando pulsas y se para al resolverla o al gastar los intentos.</p>
+      <p class="ev-tiempo"><strong>El tiempo cuenta.</strong> El cronómetro arranca al pulsar y no se para hasta que
+        la resuelves o gastas los intentos.${segundos ? ` Cada intento suma además ${segundos} segundos.` : ''}
+        Cuanto antes, más puntos.</p>
       <button type="button" class="ev-boton grande" data-accion="empezar">Empezar</button>${aviso(s)}
-    </section>${s.ayuda ? '' : comoSeJuega()}`;
+    </section>${s.ayuda ? '' : comoSeJuega(segundos)}`;
   }
   const ronda = s.rondas.get(p.orden);
   if (p.tipo === 'jugando') {
@@ -417,12 +437,13 @@ export function vistaDelEvento(s, ahora) {
   const boton = `<button type="button" class="ev-ayuda-boton" data-accion="ayuda" aria-expanded="${Boolean(s.ayuda)}">${
     s.ayuda ? 'Cerrar' : '¿Cómo se juega?'}</button>`;
   const cabecera = `<header class="ev-cabecera"><span class="ev-marca">${escapar(s.estado.titulo ?? '')}</span>${
-    s.nombre ? `<span class="ev-quien">${escapar(s.nombre)}</span>` : ''}${boton}</header>${s.ayuda ? comoSeJuega() : ''}`;
+    s.nombre ? `<span class="ev-quien">${escapar(s.nombre)}</span>` : ''}${boton}</header>${
+    s.ayuda ? comoSeJuega(s.estado.segundos_por_intento) : ''}`;
 
   if (s.estado.terminado) {
     const mio = s.nombre ? `<h2>Tus palabras</h2>${resumen(s)}` : '';
     return `${cabecera}<section class="ev-final"><p class="ev-etiqueta">Fin</p><h1>El evento ha terminado</h1>
-      <p>Gracias por jugar. Los puntos se anuncian en el evento.</p>${mio}${soluciones(s.estado)}</section>`;
+      <p>Gracias por jugar. Los puntos se anuncian en el evento.</p>${mio}${s.nombre ? '' : soluciones(s.estado)}</section>`;
   }
   if (!s.nombre && s.recuperando) {
     return `${cabecera}<section class="ev-espera"><h1>Recuperando tu partida…</h1>

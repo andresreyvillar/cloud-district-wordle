@@ -92,9 +92,35 @@ def probar(db, tk: str, palabra: str, orden: int = 1, numero: int | None = None)
     """Un intento. Sin `numero`, el siguiente de la ronda, como lo calcula el móvil."""
     if numero is None:
         hechos = valor(db, "select coalesce(max(r.intentos), 0) from public.event_rounds r join public.event_roster p "
-                           f"on p.id = r.jugador where p.token::text = '{tk}' and r.orden = {orden}")
+                           f"on p.id = r.jugador where p.token::text = '{tk}' "
+                           f"and r.orden = (public.evento_orden_de(p.id))[{orden}]")
         numero = int(hechos or 0) + 1
     return rpc(db, "probar_palabra", EVENTO, tk, orden, palabra, numero)
+
+
+def orden_de(db, tk: str) -> list[int]:
+    """Qué palabra del evento (su `orden` en `event_targets`) hay detrás de cada número que ve el participante."""
+    texto = valor(db, "select array_to_json(public.evento_orden_de(id)) from public.event_roster "
+                      f"where token::text = '{tk}'")
+    return json.loads(texto)
+
+
+def palabra_en(db, tk: str, posicion: int) -> str:
+    """La solución de la palabra que el participante ve con ese número."""
+    return PALABRAS[orden_de(db, tk)[posicion - 1]]
+
+
+def hasta_la_palabra(db, tk: str, orden: int) -> int:
+    """Deja empezada la palabra `orden` del evento, con las de antes en su orden ya terminadas. Devuelve su número."""
+    posicion = orden_de(db, tk).index(orden) + 1
+    for anterior in range(1, posicion):
+        ok, ronda = empezar(db, tk, anterior)
+        assert ok, ronda
+        valor(db, "update public.event_rounds set terminada_en = now() where terminada_en is null and jugador = "
+                  f"(select id from public.event_roster where token::text = '{tk}')")
+    ok, ronda = empezar(db, tk, posicion)
+    assert ok, ronda
+    return posicion
 
 
 def estado(db):

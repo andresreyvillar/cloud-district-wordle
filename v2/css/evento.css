@@ -119,10 +119,10 @@ body.modo-evento {
 }
 .ev-aviso.enviando { border-color: var(--ev-borde); color: var(--ev-tinta-suave); }
 .ev-nota { color: var(--ev-tinta-suave); }
-.ev-reloj { font-family: var(--ev-fuente-etiqueta); font-weight: 500; font-size: 1.1rem; }
+.ev-reloj { font-family: var(--ev-fuente-etiqueta); font-weight: 500; font-size: 1.5rem; }
 .ev-resultado { font-size: 1.4rem; font-weight: 800; margin: 0.6rem 0 0; }
 .ev-resultado.bien { color: #3F7A3A; }
-.ev-barra { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.4rem; }
+.ev-barra { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; column-gap: 1rem; margin-bottom: 0.4rem; }
 
 /* El tablero: seis intentos de cinco letras. */
 .ev-tablero { display: grid; gap: 0.35rem; justify-content: center; margin: 0.6rem 0 1rem; }
@@ -192,3 +192,8 @@ body.modo-evento:has(.pa) [data-vista] { max-width: 72rem; }
 .pa-ranking em { font-style: normal; color: var(--ev-tinta-suave); }
 .pa-ranking .pa-nada { color: var(--ev-tinta-suave); }
 .pa-soluciones { text-align: left; max-width: 40rem; margin: 2rem auto 0; font-size: 1.2rem; }
+
+/* El tiempo cuenta: se dice al empezar y se recuerda junto al reloj mientras corre. */
+.ev-tiempo strong { font-weight: 800; }
+.ev-cuenta { flex-basis: 100%; font-family: var(--ev-fuente-etiqueta); font-size: 0.75rem; text-transform: uppercase;
+  color: var(--ev-tinta-suave); text-align: right; }

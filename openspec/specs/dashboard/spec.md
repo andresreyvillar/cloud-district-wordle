@@ -1368,10 +1368,15 @@ verified-by:
 
 ## Requirement: Las palabras del evento se adivinan como en el Wordle, una tras otra
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified) -->
 
 Las reglas son las del Wordle de siempre (decisión del dueño). El evento tiene varias palabras de cinco letras, que
-se juegan **en orden**: la siguiente solo se empieza con la anterior terminada. Cada palabra tiene **seis intentos**,
+se juegan **una tras otra**: la siguiente solo se empieza con la anterior terminada. **Cada participante las juega en
+su propio orden**: la web numera las palabras de 1 a N, y el servidor decide qué palabra del evento hay detrás de cada
+número para cada participante —una permutación fija por participante, que no cambia al recargar y que lleva dentro
+un secreto del servidor (la huella del PIN), porque el repositorio es público y los ids de la lista son
+correlativos— sin decírselo al móvil hasta que el evento termina. Cambiar el PIN o las palabras con el evento en
+marcha cambiaría el orden de todos: se hace antes de activarlo. Cada palabra tiene **seis intentos**,
 y cada intento es una palabra de cinco letras que está en `event_words`, el diccionario del evento —derivado del
 diccionario ortográfico de LibreOffice (RLA-ES), que sigue la norma de la RAE—, o que es la solución de esa misma
 palabra (la empresa puede elegir una que no esté); la de otra palabra no vale, para no delatarla. Una palabra que no
@@ -1380,6 +1385,10 @@ vale no gasta intento. Si vale lo decide el servidor.
 Cada letra se colorea **por posición**: `G` si está en su sitio; después, de izquierda a derecha, `Y` mientras
 queden en la solución letras así que no hayan salido `G` ni `Y`, y `.` el resto. Se compara sin tildes ni diéresis,
 y la ñ es distinta de la n. Se gana con cinco `G`; tras el sexto intento sin ellas, se pierde.
+
+**La web deja claro que el tiempo cuenta**: la pantalla de empezar lo dice en negrita, con los segundos que suma cada
+intento (`segundos_por_intento`, que `estado_del_juego` entrega con el evento en juego); las reglas lo ponen en primer
+lugar, y el cronómetro de cada palabra lo recuerda mientras corre.
 
 #### Scenario: la web lo explica con un ejemplo
 - **WHEN** el participante va a empezar la primera palabra o pulsa «¿Cómo se juega?»
@@ -1398,6 +1407,15 @@ y la ñ es distinta de la n. Se gana con cinco `G`; tras el sexto intento sin el
 #### Scenario: al terminar una palabra se pasa a la siguiente
 - **WHEN** un participante resuelve o falla una palabra que no es la última
 - **THEN** ve el botón «Siguiente palabra k/N», que empieza la siguiente con su propio cronómetro
+
+#### Scenario: cada uno en su orden
+- **GIVEN** un evento con tres palabras y varios participantes
+- **WHEN** cada uno juega sus palabras 1, 2 y 3
+- **THEN** cada uno juega las tres palabras una vez, y no todos en el mismo orden
+
+#### Scenario: el tiempo cuenta, y se dice
+- **WHEN** el participante va a empezar la primera palabra
+- **THEN** lee que el tiempo cuenta y cuántos segundos suma cada intento
 
 verified-by:
   - tests/slices/palabras-del-evento/test_palabras_sql.py
