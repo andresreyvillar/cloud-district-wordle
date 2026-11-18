@@ -448,12 +448,15 @@ test('con el evento terminado no se teclea, no se envía y no se empieza nada', 
   assert.doesNotMatch(vista(c), /data-tecla/);
 });
 
+const FIN = estadoActivo({ activo: false, terminado: true, total: 2,
+  soluciones: [{ orden: 1, palabra: 'casas' }, { orden: 2, palabra: 'perro' }] });
+
 /** @scenarios al-terminar-el-evento-se-ven-las-soluciones */
-test('terminado el evento se ven las palabras y el resumen propio', async () => {
+test('terminado el evento, cada uno ve sus palabras en su orden, con lo que hizo en cada una', async () => {
   const rondas = new Map([[1, resuelta(1)]]);
   const api = apiFalsa({
-    rondas, elegidos: new Map([['tk', 'Ana López']]),
-    est: estadoActivo({ activo: false, terminado: true, soluciones: [{ orden: 1, palabra: 'casas' }, { orden: 2, palabra: 'perro' }] }),
+    rondas, est: FIN,
+    miJuego: async () => ({ nombre: 'Ana López', rondas: [...rondas.values()], palabras: ['perro', 'casas'] }),
   });
   const c = control(api, { almacen: almacenFalso({ 'evento:token:prueba': 'tk' }) });
   await c.arrancar();
@@ -461,9 +464,59 @@ test('terminado el evento se ven las palabras y el resumen propio', async () => 
   const html = vista(c);
 
   assert.match(html, /El evento ha terminado/);
+  assert.match(html, /Palabra 1 · PERRO<\/span><span>1 intento · 1:01/);
+  assert.match(html, /Palabra 2 · CASAS<\/span><span>Sin jugar/);
+  assert.doesNotMatch(html, /Las palabras/, 'la lista del evento va en otro orden que el suyo: no se enseña');
+});
+
+/** @scenarios al-terminar-el-evento-se-ven-las-soluciones */
+test('si el evento termina con la página abierta, se piden sus palabras al servidor', async () => {
+  const est = estadoActivo({ total: 2 });
+  let fin = false;
+  const api = apiFalsa({
+    est,
+    miJuego: async () => ({ nombre: 'Ana López', rondas: [], ...(fin ? { palabras: ['perro', 'casas'] } : {}) }),
+  });
+  const c = await dentro(api);
+  assert.doesNotMatch(vista(c), /PERRO/);
+
+  Object.assign(est, FIN);
+  fin = true;
+  await c.refrescar();
+
+  assert.match(vista(c), /Palabra 1 · PERRO<\/span><span>Sin jugar/);
+});
+
+/** @scenarios al-terminar-el-evento-se-ven-las-soluciones */
+test('terminado el evento, quien no eligió nombre ve las palabras del evento', () => {
+  const html = vistaDelEvento({ estado: FIN, nombre: null, rondas: new Map(), escrito: [] }, T0);
+
   assert.match(html, /Las palabras[\s\S]*CASAS[\s\S]*PERRO/);
-  assert.match(html, /Palabra 1<\/span><span>1 intento · 1:01/);
-  assert.match(html, /Palabra 2<\/span><span>Sin jugar/);
+});
+
+/** @scenarios el-tiempo-cuenta-y-se-dice */
+test('al ir a empezar, en las reglas y con el reloj en marcha se dice que el tiempo cuenta', async () => {
+  const c = await dentro(apiFalsa({ est: estadoActivo({ segundos_por_intento: 45 }) }));
+
+  const inicio = vista(c);
+  assert.match(inicio, /<strong>El tiempo cuenta\.<\/strong>/);
+  assert.match(inicio, /Cada intento suma además 45 segundos/);
+  assert.match(inicio, /Cuanto antes, más puntos/);
+  assert.match(comoSeJuega(45), /<ol>\s*<li><strong>El tiempo cuenta<\/strong>/);
+  assert.match(comoSeJuega(45), /cada intento suma además 45 segundos/);
+
+  await c.empezar();
+  assert.match(vista(c), /class="ev-cuenta">⏱ El tiempo cuenta</);
+});
+
+/** @scenarios el-tiempo-cuenta-y-se-dice */
+test('sin los segundos del servidor, se dice igual que el tiempo cuenta, sin inventar la cifra', async () => {
+  const c = await dentro(apiFalsa());
+
+  const inicio = vista(c);
+
+  assert.match(inicio, /<strong>El tiempo cuenta\.<\/strong>/);
+  assert.doesNotMatch(inicio, /\d+ segundos/);
 });
 
 /** @scenarios el-texto-de-los-participantes-se-escapa */

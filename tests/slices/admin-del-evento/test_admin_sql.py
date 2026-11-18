@@ -15,8 +15,8 @@ from pathlib import Path
 import pytest
 
 from tests.evento_sql import (
-    EVENTO, PIN, SEMILLA, activado, elegir, empezar, fijar, jugador, panel, probar, reiniciar, rpc, terminado, token,
-    valor,
+    EVENTO, PIN, SEMILLA, activado, elegir, empezar, fijar, hasta_la_palabra, jugador, panel, probar, reiniciar, rpc,
+    terminado, token, valor,
 )
 from tests.postgres_local import MIGRACIONES, postgres_con_migraciones, sin_postgres
 
@@ -139,11 +139,11 @@ def test_el_pin_correcto_termina_el_evento_una_sola_vez_y_sin_activar_no_se_term
 def test_durante_el_evento_el_panel_cuenta_sin_nombres_tiempos_ni_puntos(db):
     activado(db)
     ana, bea, cris = jugador(db, "Ana"), jugador(db, "Bea"), jugador(db, "Cris")
-    for tk in (ana, bea, cris):
-        assert empezar(db, tk, 1)[0]
-    assert probar(db, ana, "casas")[0]
+    # Cada uno la tiene detrás del número que le toque: los contadores son de la palabra del evento.
+    numero = {tk: hasta_la_palabra(db, tk, 1) for tk in (ana, bea, cris)}
+    assert probar(db, ana, "casas", numero[ana])[0]
     for palabra in ["tunde", "pique", "chufa", "nieve", "bucle", "letra"]:
-        probar(db, bea, palabra)
+        probar(db, bea, palabra, numero[bea])
 
     datos = panel(db)
 

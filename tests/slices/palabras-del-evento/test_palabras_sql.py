@@ -15,8 +15,8 @@ import json
 import pytest
 
 from tests.evento_sql import (
-    EVENTO, GRUPOS, PALABRAS, SEMILLA, activado, elegir, empezar, estado, jugador, probar, reiniciar, rpc, terminado,
-    token, valor,
+    EVENTO, GRUPOS, LISTA, PALABRAS, SEMILLA, activado, elegir, empezar, estado, hasta_la_palabra, jugador, orden_de,
+    palabra_en, panel, probar, reiniciar, rpc, terminado, token, valor,
 )
 from tests.postgres_local import postgres_con_migraciones, sin_postgres
 
@@ -53,6 +53,14 @@ def jugando(db, nombre="Ana", orden=1):
     return tk
 
 
+def en_la_palabra(db, orden, nombre="Ana"):
+    """Un móvil con la palabra `orden` **del evento** empezada, esté en el número que le toque. Devuelve el token y
+    ese número."""
+    activado(db)
+    tk = jugador(db, nombre)
+    return tk, hasta_la_palabra(db, tk, orden)
+
+
 def intento(db, tk, palabra, orden=1):
     ok, ronda = probar(db, tk, palabra, orden)
     assert ok, ronda
@@ -80,6 +88,15 @@ def test_activado_el_estado_trae_titulo_y_cuantas_palabras_hay_sin_soluciones(db
 
     assert datos["activo"] is True and datos["titulo"] == "Evento de test" and datos["total"] == 3
     assert datos["soluciones"] is None
+
+
+# @scenarios el-tiempo-cuenta-y-se-dice
+def test_activado_el_estado_dice_cuantos_segundos_suma_cada_intento(db):
+    assert "segundos_por_intento" not in estado(db), "antes de activar, nada"
+    activado(db)
+    valor(db, f"update public.event_editions set segundos_por_intento = 45 where id = '{EVENTO}'")
+
+    assert estado(db)["segundos_por_intento"] == 45
 
 
 # ── El nombre ────────────────────────────────────────────────────────────────────────────────────────────
@@ -168,7 +185,7 @@ def test_el_tiempo_va_de_empezar_a_resolver_con_la_hora_del_servidor(db):
     tk = jugando(db)
     valor(db, "update public.event_rounds set empezada_en = now() - interval '73.5 seconds'")
 
-    ronda = intento(db, tk, "casas")
+    ronda = intento(db, tk, palabra_en(db, tk, 1))
 
     assert ronda["resuelta"] is True
     assert 73_000 <= ronda["tiempo_ms"] < 80_000
@@ -181,9 +198,108 @@ def test_la_siguiente_palabra_solo_con_la_anterior_terminada(db):
     ok, error = empezar(db, tk, 2)
     assert not ok and "palabra anterior" in error
 
-    intento(db, tk, "casas")
+    intento(db, tk, palabra_en(db, tk, 1))
     assert empezar(db, tk, 2)[0]
     assert not empezar(db, tk, 4)[0], "no hay palabra 4"
+
+
+def jugar_las_tres(db, tk):
+    """Empieza y termina las tres palabras del participante por sus números, y apunta qué palabra del evento se guardó
+    detrás de cada uno."""
+    jugadas = []
+    for posicion in (1, 2, 3):
+        ok, ronda = empezar(db, tk, posicion)
+        assert ok, ronda
+        assert ronda["orden"] == posicion, "la ronda viaja con el número que ve el participante"
+        jugadas.append(int(valor(db, "select r.orden from public.event_rounds r join public.event_roster p on "
+                                     f"p.id = r.jugador where p.token::text = '{tk}' and r.terminada_en is null")))
+        valor(db, "update public.event_rounds set terminada_en = now() where terminada_en is null")
+    return jugadas
+
+
+# @scenarios cada-participante-juega-las-palabras-en-su-orden
+def test_cada_participante_juega_todas_las_palabras_en_su_propio_orden(db):
+    activado(db)
+
+    jugadas = {nombre: jugar_las_tres(db, jugador(db, nombre)) for nombre, _ in LISTA}
+
+    for nombre, orden in jugadas.items():
+        assert sorted(orden) == [1, 2, 3], f"{nombre} juega cada palabra una vez"
+    assert len({tuple(orden) for orden in jugadas.values()}) > 1, "no todos en el mismo orden"
+
+
+# @scenarios el-orden-de-cada-uno-no-cambia
+def test_el_orden_de_un_participante_es_el_mismo_al_volver(db):
+    activado(db)
+    tk = jugador(db, "Ana")
+    primera_vez = jugar_las_tres(db, tk)
+
+    valor(db, "truncate public.event_rounds cascade")
+    assert rpc(db, "mi_juego", EVENTO, tk)[1]["nombre"] == "Ana", "recarga: el móvil conserva su nombre"
+
+    assert jugar_las_tres(db, tk) == primera_vez
+
+
+# @scenarios el-orden-no-viaja-al-movil
+def test_el_orden_lleva_un_secreto_del_servidor_y_no_sale_solo_de_los_ids(db):
+    """El repositorio es público y los ids de la lista, correlativos: con la fórmula y los ids no basta para saber el
+    orden de nadie. Con otra huella de PIN, el orden de alguien cambia."""
+    activado(db)
+    tks = [jugador(db, nombre) for nombre, _ in LISTA]
+    antes = [orden_de(db, tk) for tk in tks]
+
+    valor(db, "update public.event_editions set pin_hash = encode(sha256(convert_to('otro', 'UTF8')), 'hex') "
+              f"where id = '{EVENTO}'")
+    try:
+        despues = [orden_de(db, tk) for tk in tks]
+    finally:
+        valor(db, "update public.event_editions set pin_hash = encode(sha256(convert_to('1234', 'UTF8')), 'hex') "
+                  f"where id = '{EVENTO}'")
+
+    assert despues != antes
+
+
+# @scenarios el-orden-no-viaja-al-movil
+def test_las_respuestas_solo_llevan_el_numero_que_ve_el_participante(db):
+    activado(db)
+    barajado = next((tk for tk in (jugador(db, nombre) for nombre, _ in LISTA) if orden_de(db, tk)[0] != 1), None)
+    assert barajado, "algún participante tiene otra palabra detrás de su número 1"
+    claves = {"orden", "empezada_en", "terminada_en", "resuelta", "tiempo_ms", "intentos"}
+
+    ok, empezada = empezar(db, barajado, 1)
+    assert ok, empezada
+    ok, probada = probar(db, barajado, "tunde", 1)
+    assert ok, probada
+    ok, mio = rpc(db, "mi_juego", EVENTO, barajado)
+    assert ok, mio
+
+    assert set(mio) == {"nombre", "rondas"}, "con el evento en marcha, sin palabras"
+    for ronda in (empezada, probada, *mio["rondas"]):
+        assert set(ronda) == claves
+        assert ronda["orden"] == 1
+
+
+# @scenarios los-puntos-comparan-la-misma-palabra
+def test_compiten_por_una_palabra_quienes_la_jugaron_aunque_fuera_en_otro_numero(db):
+    activado(db)
+    numeros = {}
+    for nombre in ("Ana", "Bea", "Cris", "Dani", "Íñigo Pérez", "Eva"):
+        tk = jugador(db, nombre)
+        numeros.setdefault(orden_de(db, tk).index(1) + 1, (nombre, tk))
+    assert len(numeros) > 1, "a dos participantes la palabra 1 les toca en números distintos"
+    (rapido, tk_rapido), (lento, tk_lento) = list(numeros.values())[:2]
+    for tk, segundos in ((tk_rapido, 20), (tk_lento, 50)):
+        posicion = hasta_la_palabra(db, tk, 1)
+        assert intento(db, tk, "casas", posicion)["resuelta"] is True
+        valor(db, "update public.event_rounds set empezada_en = terminada_en - make_interval(secs => "
+                  f"{segundos}) where orden = 1 and jugador = (select id from public.event_roster where "
+                  f"token::text = '{tk}')")
+    terminado(db)
+
+    jugadores = {j["nombre"]: j for j in panel(db)["jugadores"]}
+
+    palabra_1 = {nombre: next(p for p in jugadores[nombre]["palabras"] if p["orden"] == 1) for nombre in (rapido, lento)}
+    assert (palabra_1[rapido]["puntos"], palabra_1[lento]["puntos"]) == (2, 1)
 
 
 # @scenarios cada-palabra-tiene-seis-intentos-de-cinco-letras
@@ -223,13 +339,12 @@ def test_una_palabra_que_no_esta_en_la_lista_no_gasta_intento(db):
 def test_una_solucion_fuera_del_diccionario_solo_vale_en_su_palabra(db):
     valor(db, f"update public.event_targets set palabra = 'zzqxk' where evento = '{EVENTO}' and orden = 2")
     try:
-        tk = jugando(db)
-        ok, error = probar(db, tk, "zzqxk")
+        ana, en_la_1 = en_la_palabra(db, 1, "Ana")
+        ok, error = probar(db, ana, "zzqxk", en_la_1)
         assert not ok and "no está en la lista" in error, "en la palabra 1 no delata la solución de la 2"
 
-        intento(db, tk, "casas")
-        assert empezar(db, tk, 2)[0]
-        assert intento(db, tk, "zzqxk", 2)["resuelta"] is True, "en su palabra se puede resolver"
+        bea, en_la_2 = en_la_palabra(db, 2, "Bea")
+        assert intento(db, bea, "zzqxk", en_la_2)["resuelta"] is True, "en su palabra se puede resolver"
     finally:
         valor(db, f"update public.event_targets set palabra = 'perro' where evento = '{EVENTO}' and orden = 2")
 
@@ -243,9 +358,9 @@ def test_una_solucion_fuera_del_diccionario_solo_vale_en_su_palabra(db):
     ("Cásas", "GGGGG"),   # las tildes no cuentan
 ])
 def test_verde_en_su_sitio_amarilla_en_otro_y_gris_si_no_esta(db, palabra, colores):
-    tk = jugando(db)
+    tk, posicion = en_la_palabra(db, 1)
 
-    ronda = intento(db, tk, palabra)
+    ronda = intento(db, tk, palabra, posicion)
 
     assert ronda["intentos"][-1]["colores"] == colores
 
@@ -257,22 +372,22 @@ def test_verde_en_su_sitio_amarilla_en_otro_y_gris_si_no_esta(db, palabra, color
     (3, "pizza", "YYY.Y"),   # lapiz: una sola z, así que la segunda sale gris
 ])
 def test_una_letra_repetida_solo_sale_tantas_veces_como_esta(db, orden, palabra, colores):
-    tk = jugando(db, orden=orden)
+    tk, posicion = en_la_palabra(db, orden)
 
-    ronda = intento(db, tk, palabra, orden)
+    ronda = intento(db, tk, palabra, posicion)
 
     assert ronda["intentos"][-1]["colores"] == colores
 
 
 # @scenarios se-gana-con-cinco-verdes
 def test_cinco_verdes_resuelven_la_palabra(db):
-    tk = jugando(db)
-    intento(db, tk, "sacos")
+    tk, posicion = en_la_palabra(db, 1)
+    intento(db, tk, "sacos", posicion)
 
-    ronda = intento(db, tk, "casas")
+    ronda = intento(db, tk, "casas", posicion)
 
     assert ronda["resuelta"] is True and ronda["terminada_en"] is not None
-    ok, _ = probar(db, tk, "casas")
+    ok, _ = probar(db, tk, "casas", posicion)
     assert not ok, "terminada, no admite más"
 
 
@@ -326,6 +441,19 @@ def test_terminado_el_evento_el_estado_trae_las_soluciones(db):
     assert [s["palabra"] for s in datos["soluciones"]] == list(PALABRAS.values())
 
 
+# @scenarios al-terminar-el-evento-se-ven-las-soluciones
+def test_terminado_el_evento_cada_uno_recibe_sus_palabras_en_su_orden(db):
+    activado(db)
+    tk = next((tk for tk in (jugador(db, nombre) for nombre, _ in LISTA) if orden_de(db, tk) != [1, 2, 3]), None)
+    assert tk, "algún participante tiene un orden que no es el del evento"
+    suyas = [PALABRAS[orden] for orden in orden_de(db, tk)]
+    assert "palabras" not in rpc(db, "mi_juego", EVENTO, tk)[1], "en marcha, no"
+
+    terminado(db)
+
+    assert rpc(db, "mi_juego", EVENTO, tk)[1]["palabras"] == suyas
+
+
 # ── La web no toca las tablas ────────────────────────────────────────────────────────────────────────────
 
 # @scenarios la-web-no-toca-las-tablas-del-evento
@@ -343,6 +471,8 @@ def test_la_clave_publica_no_lee_ni_escribe_las_tablas_del_evento(db, tabla):
     "select public.evento_wordle('casas', 'sacos')",
     "select public.evento_pin('t', '1234')",
     "select * from public.evento_puntos('t')",
+    # Diría qué palabra del evento hay detrás de cada número. Se le niega la función, no solo las tablas que lee.
+    "select public.evento_orden_de(1) /* función */",
     "select nextval('public.event_roster_id_seq')",
     # El juego de frases ya no se llama desde la web.
     "select public.estado_del_evento('t')",
@@ -352,3 +482,5 @@ def test_la_clave_publica_no_llama_a_los_ayudantes_ni_al_juego_de_frases(db, con
     resultado = db(consulta, rol="anon")
     assert resultado.returncode != 0
     assert "permission denied" in resultado.stderr
+    if "/* función */" in consulta:
+        assert "permission denied for function" in resultado.stderr

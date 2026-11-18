@@ -1,0 +1,33 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-18T15:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+    seguridad: pass
+  rondas_correccion: 2
+  mutacion:
+    aplicadas: 15
+    cazadas: 15
+    reforzadas: 2
+  notas: >-
+    Petición del dueño dos días antes del evento: cada participante resuelve las palabras en un orden distinto, para
+    minimizar trampas, y el juego deja claro que el tiempo cuenta. El servidor traduce el número que ve el participante
+    a la palabra del evento con un hash fijo por participante (sin columnas nuevas); las rondas se siguen guardando con
+    la palabra del evento, así que puntos, contadores del admin y liberar nombres no cambian. Al terminar, cada uno ve
+    sus palabras en su orden. La web dice «El tiempo cuenta» al empezar, en las reglas y junto al reloj, con los
+    segundos por intento que entrega el servidor. Rondas de corrección: dos mutantes
+    sobrevivieron al principio —las palabras del final en el orden del evento (el test usaba un participante cuyo orden
+    coincidía con el del evento) y el ayudante del orden sin revocar (la clave pública ya chocaba con las tablas, así que
+    el test aceptaba cualquier «permission denied»)—; los dos tests se reforzaron. La auditoría adversarial (dos
+    verificadores, también de seguridad) no sostuvo refutaciones; apuntó que la fórmula del orden es pública y los ids
+    correlativos, así que el hash lleva ahora la huella del PIN, y que una solución fuera del diccionario se puede
+    buscar a fuerza de peticiones sin gastar intentos (ya existía): las palabras reales tienen que estar en
+    event_words.

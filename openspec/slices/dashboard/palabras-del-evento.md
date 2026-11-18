@@ -36,12 +36,21 @@ cada uno busca su nombre en un campo que autocompleta y que también despliega l
 pertenece a uno de diez **grupos**, pero el móvil no lo sabe: los puntos se cuentan por grupo y los ve el admin.
 
 **Antes de que el admin active el evento, el enlace solo dice que se activará en breve**: ni título, ni reglas, ni
-nombres. Activado, todas las palabras están disponibles; se juegan en orden.
+nombres. Activado, todas las palabras están disponibles; se juegan una tras otra.
+
+**Cada participante juega las palabras en su propio orden** (decisión del dueño, para que nadie pueda soplar «la
+primera es…»): todos ven «Palabra 1/N», «Palabra 2/N»…, pero detrás de cada número hay una palabra distinta según
+quién juegue. El orden lo decide el servidor, es fijo para cada participante y el móvil no sabe qué palabra del
+evento tiene detrás de cada número hasta que el evento termina.
 
 **Cada palabra tiene su cronómetro** (decisión del dueño): empieza al pulsar «Empezar» (la primera) o «Siguiente
 palabra k/N» (las demás) y se para al resolverla o al gastar el sexto intento. El rato entre palabras no cuenta, y el
 cronómetro **no se pausa**: cerrar la web no lo para. **La solución no viaja al móvil**: el servidor devuelve solo
 los colores, y la palabra se enseña al terminar el evento. Los puntos (ver `admin-del-evento`) no se ven en el móvil.
+
+**El tiempo cuenta, y se dice** (decisión del dueño): la pantalla de empezar, las reglas y el cronómetro de cada
+palabra dejan claro que cuanto antes se resuelve, más puntos, y que cada intento suma además los segundos que el
+evento tenga configurados.
 
 ## Trigger técnico
 
@@ -144,6 +153,29 @@ la última ve el resumen de todas, sin puntos
 **WHEN** se intenta empezar una palabra sin haber terminado la anterior
 **THEN** el servidor lo rechaza: las palabras se juegan una tras otra
 
+### cada-participante-juega-las-palabras-en-su-orden
+**WHEN** varios participantes juegan la «Palabra 1/N», la «2/N»…
+**THEN** cada uno juega todas las palabras del evento, una vez cada una, pero en un orden que depende de quién es: no
+todos tienen la misma palabra detrás del mismo número
+
+### el-orden-de-cada-uno-no-cambia
+**WHEN** un participante recarga la web o vuelve más tarde
+**THEN** detrás de cada número sigue la misma palabra que tenía
+
+### el-orden-no-viaja-al-movil
+**WHEN** el participante juega con el evento en marcha
+**THEN** ninguna respuesta del servidor dice qué palabra del evento hay detrás de cada número: solo el número que ve
+
+### los-puntos-comparan-la-misma-palabra
+**WHEN** se calculan los puntos de una palabra que unos jugaron como la primera y otros como la tercera
+**THEN** compiten todos los que jugaron esa palabra, sea cual sea el número que les tocó
+
+### el-tiempo-cuenta-y-se-dice
+**WHEN** el participante va a empezar o lee las reglas
+**THEN** ve que el tiempo cuenta: cuanto antes la resuelve, más puntos, y cada intento suma además los segundos
+configurados en el evento (sin cifra si el servidor no la da); mientras juega una palabra, junto al reloj se le
+recuerda que el tiempo cuenta
+
 ### la-solucion-no-viaja-al-movil
 **WHEN** el participante falla una palabra
 **THEN** no se le enseña la solución, que ninguna respuesta del servidor lleva hasta que termina el evento
@@ -155,8 +187,8 @@ entregarse y una palabra a medias se queda sin terminar
 
 ### al-terminar-el-evento-se-ven-las-soluciones
 **WHEN** el evento ha terminado
-**THEN** el participante ve las palabras del evento y el resumen de las suyas (resuelta, sin resolver, sin terminar o
-sin jugar)
+**THEN** el participante ve el resumen de las suyas en su orden, cada una con la palabra que le tocó (resuelta, sin
+resolver, sin terminar o sin jugar); quien no eligió nombre ve las palabras del evento
 
 ### el-texto-de-los-participantes-se-escapa
 **WHEN** un nombre de la lista lleva HTML
