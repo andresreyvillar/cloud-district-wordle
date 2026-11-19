@@ -54,6 +54,7 @@ FUNCIONES = {
     "tablero_del_evento": ("p_evento",),
     "echar_participante": ("p_evento", "p_nombre"),
     "cambiar_palabra": ("p_evento", "p_orden", "p_palabra"),
+    "palabras_del_evento": ("p_evento",),
 }
 
 ERROR_DE_POSTGRES = re.compile(r"ERROR:\s+([0-9A-Z]{5}):\s+(.*)")

@@ -1,0 +1,18 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-19T17:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 0
+  notas: >-
+    El dueño tiene el dashboard abierto y quiere jugar sin conocer las palabras: el tablero deja de darlas antes de
+    empezar, y se revisan y cambian en su propio enlace (/evento/palabras), con palabras_del_evento, que solo responde
+    antes de la hora de empezar. Sin PIN, como el resto: lo que las separa es el enlace. Los tests SQL se escribieron
+    junto con la función, no antes; su eficacia la mide la mutación.

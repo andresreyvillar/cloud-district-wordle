@@ -30,8 +30,10 @@ El evento **empieza y termina a su hora** (decisión del dueño): `empieza_en` y
 —el día del evento, de 10:00 a 16:00 de Madrid— y nadie tiene que activarlo ni terminarlo. El admin es **un dashboard
 sin contraseña** (decisión del dueño, avisado de que así cualquiera con el enlace ve las palabras antes de empezar),
 con el estilo del cartel del evento: fondo crema con la cuadrícula fina, título grande en minúscula, anotaciones
-pequeñas en monoespaciada. Antes de empezar dice cuánto falta y enseña **las palabras, que se pueden cambiar** por
-otras del diccionario del juego hasta la hora de empezar; después quedan fijas y no se ven hasta que termina. **Mientras juegan, el admin lo sigue en directo** (decisión del dueño): cuántos han elegido
+pequeñas en monoespaciada. Antes de empezar dice cuánto falta, **pero no enseña las palabras**: el dueño tiene el
+dashboard abierto y juega sin conocerlas. Las palabras se revisan y **se cambian en su propio enlace**
+(`/evento/palabras`, para Nouha) por otras del diccionario del juego hasta la hora de empezar; después quedan fijas y
+no se ven en ninguna parte hasta que termina. **Mientras juegan, el admin lo sigue en directo** (decisión del dueño): cuántos han elegido
 nombre; por palabra, cuántos la están jugando, cuántos la han resuelto y cuántos la han fallado; y **una fila por cada
 participante que ha entrado**, con su grupo, cuántas palabras ha resuelto, el tiempo de sus palabras terminadas, en
 qué palabra va con su reloj, y sus puntos y su puesto. El **ranking de participantes y el de grupos se ven en directo**
@@ -77,8 +79,8 @@ Ruta `/evento/admin` de la v2, fuera de la navegación. Llama sin PIN a `tablero
 
 ### el-panel-se-ve-sin-pin
 **WHEN** se abre `/evento/admin`
-**THEN** se ve el dashboard del evento sin pedir contraseña: antes de empezar, cuánto falta y las palabras; durante y
-después, los participantes y los rankings; nunca las palabras mientras se juega
+**THEN** se ve el dashboard del evento sin pedir contraseña: antes de empezar, cuánto falta; durante y después, los
+participantes y los rankings; las palabras, solo al terminar (antes de empezar se revisan en su propio enlace)
 
 ### el-evento-empieza-y-termina-a-su-hora
 **WHEN** llega la hora de empezar o la de terminar cargadas en el evento
@@ -86,9 +88,9 @@ después, los participantes y los rankings; nunca las palabras mientras se juega
 no se puede elegir nombre, aunque la hora ya esté cargada
 
 ### se-cambian-las-palabras-antes-de-empezar
-**WHEN** antes de la hora de empezar, el admin cambia una palabra y pulsa «Guardar»
+**WHEN** antes de la hora de empezar, en `/evento/palabras`, quien revisa las palabras cambia una y pulsa «Guardar»
 **THEN** queda cambiada si tiene cinco letras, está en el diccionario del juego y no repite otra del evento; si no,
-se dice por qué; llegada la hora de empezar, ya no se puede cambiar ninguna
+se dice por qué; llegada la hora de empezar, ya no se puede cambiar ninguna y el enlace solo dice que ya no se ven
 
 ### los-diez-primeros-suman-f1-a-su-grupo
 **WHEN** se calcula la clasificación individual

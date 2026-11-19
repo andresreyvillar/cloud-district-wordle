@@ -209,7 +209,7 @@ function contadores(p) {
     ${p.antes ? '' : `<table class="pa-contadores"><tbody>${palabras}</tbody></table>`}</section>`;
 }
 
-/** Antes de empezar: las palabras, una por fila, para revisarlas y cambiarlas. */
+/** Las palabras, una por fila, para revisarlas y cambiarlas. Solo en su propio enlace (`/evento/palabras`). */
 function editorDePalabras(p) {
   const limite = p.empieza_en ? ` hasta las ${hora(p.empieza_en)}` : '';
   const filas = (p.palabras ?? []).map((w) => `<form class="pa-palabra" data-formulario="palabra" data-orden="${
@@ -220,6 +220,12 @@ function editorDePalabras(p) {
   return `<section class="pa-palabras"><h2>Las palabras</h2>
     <p class="pa-nota">Se pueden cambiar${limite}: cinco letras, del diccionario del juego y sin repetir. Después ya no
       se ven ni se cambian hasta que termine.</p>${filas}</section>`;
+}
+
+/** Antes de empezar, el dashboard no enseña las palabras: quien lo mira también puede jugar. */
+function sinPalabras() {
+  return `<section class="pa-palabras"><h2>Las palabras</h2>
+    <p class="pa-nota">Se revisan en su propio enlace, para que el dashboard se pueda mirar sin conocerlas.</p></section>`;
 }
 
 /** En qué va cada uno: la palabra que juega con su reloj (con la hora del servidor), si ha terminado o si no ha empezado. */
@@ -292,7 +298,7 @@ export function vistaDelAdmin(s) {
   }
   const p = s.panel;
   if (p.antes) {
-    return `<div class="pa pa-cartel">${cabecera(p)}${contadores(p)}${editorDePalabras(p)}${aviso(s)}</div>`;
+    return `<div class="pa pa-cartel">${cabecera(p)}${contadores(p)}${sinPalabras()}${aviso(s)}</div>`;
   }
   // Los dos rankings de grupos, uno al lado del otro; los participantes, a todo el ancho (son muchos y con muchas columnas).
   const rankings = `<div class="pa-columnas"><div>${campeonatoF1(p.grupos_f1)}</div><div>${rankingDeGrupos(p.grupos)}</div></div>
@@ -377,6 +383,69 @@ export async function montarAdmin(contenedor, control, temporizador, evento, con
     pintar();
   });
 
+  await control.refrescar();
+  pintar();
+}
+
+// ── Las palabras, en su propio enlace ─────────────────────────────────────────────────────────────────────
+
+/** El control de `/evento/palabras`: leer las palabras y cambiar una, solo antes de empezar. */
+export function controlDePalabras({ api }) {
+  const s = { datos: null, cerrado: null, aviso: null, sinConexion: false, ocupado: false };
+
+  async function refrescar() {
+    try {
+      s.datos = await api.palabras();
+      s.cerrado = null;
+      s.sinConexion = false;
+    } catch (error) {
+      if (error.tipo === 'red') s.sinConexion = true;
+      else s.cerrado = error.message;
+    }
+  }
+
+  async function cambiarPalabra(orden, palabra) {
+    if (s.ocupado) return;
+    s.ocupado = true;
+    try {
+      await api.cambiarPalabra(orden, palabra);
+      s.aviso = `Palabra ${Number(orden)} guardada.`;
+    } catch (error) {
+      s.aviso = error.tipo === 'rechazo' ? error.message : 'No se ha podido conectar. Prueba otra vez.';
+    } finally {
+      s.ocupado = false;
+    }
+    await refrescar();
+  }
+
+  return { estado: s, refrescar, cambiarPalabra };
+}
+
+/** La página de las palabras: con el estilo del cartel; empezado el evento, solo dice que ya no se ven aquí. */
+export function vistaDePalabras(s) {
+  if (s.cerrado) {
+    return `<div class="pa pa-cartel"><p class="pa-estado">${escapar(s.cerrado)}</p></div>`;
+  }
+  if (!s.datos) {
+    return `<div class="pa pa-cartel"><p class="pa-estado">${s.sinConexion ? 'Sin conexión: reintentando…' : 'Cargando…'}</p>
+      ${aviso(s)}</div>`;
+  }
+  const p = { ...s.datos, antes: true };
+  return `<div class="pa pa-cartel">${cabecera(p)}${editorDePalabras(p)}${aviso(s)}</div>`;
+}
+
+export async function montarPalabras(contenedor, control) {
+  const pintar = () => {
+    contenedor.innerHTML = vistaDePalabras(control.estado);
+    document.title = 'Las palabras';
+  };
+  contenedor.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formulario = e.target.closest('[data-formulario="palabra"]');
+    if (!formulario) return;
+    await control.cambiarPalabra(Number(formulario.dataset.orden), new FormData(formulario).get('palabra'));
+    pintar();
+  });
   await control.refrescar();
   pintar();
 }

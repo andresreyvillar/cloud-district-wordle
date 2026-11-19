@@ -179,6 +179,11 @@ async function arrancarEvento(destino) {
     await montarAdmin(vista, controlDelAdmin({ api }), temporizador, api.evento);
     return;
   }
+  if (destino.vista === VISTAS.PALABRAS_DEL_EVENTO) {
+    const { controlDePalabras, montarPalabras } = await import('./evento/admin.js');
+    await montarPalabras(vista, controlDePalabras({ api }));
+    return;
+  }
   const { controlDelEvento, montarEvento } = await import('./evento/jugador.js');
   // El token del móvil se guarda en el navegador. Sin almacenamiento (incógnito estricto) se juega igual, pero al
   // recargar habría que volver a entrar con otro nombre.
