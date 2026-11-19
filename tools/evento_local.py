@@ -53,8 +53,10 @@ FUNCIONES = {
     # El dashboard, sin PIN.
     "tablero_del_evento": ("p_evento",),
     "echar_participante": ("p_evento", "p_nombre"),
-    "cambiar_palabra": ("p_evento", "p_orden", "p_palabra"),
-    "palabras_del_evento": ("p_evento",),
+    "estado_de_las_palabras": ("p_evento",),
+    "crear_pin_de_palabras": ("p_evento", "p_pin"),
+    "ver_palabras": ("p_evento", "p_pin"),
+    "guardar_palabra": ("p_evento", "p_pin", "p_orden", "p_palabra"),
 }
 
 ERROR_DE_POSTGRES = re.compile(r"ERROR:\s+([0-9A-Z]{5}):\s+(.*)")

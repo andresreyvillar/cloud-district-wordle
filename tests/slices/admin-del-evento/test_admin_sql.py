@@ -479,39 +479,108 @@ def test_los_empatados_en_el_top_diez_se_reparten_los_puntos_de_sus_puestos(db):
     assert (f1["Ana"], f1["Bea"], f1["Cris"], f1["Dani"]) == (21.5, 21.5, 15, 0), "(25 + 18) / 2 cada uno"
 
 
-# @scenarios se-cambian-las-palabras-antes-de-empezar
-def test_las_palabras_se_ven_en_su_enlace_solo_antes_de_empezar(db):
-    programado(db, "1 hour", "7 hours")
-    ok, datos = rpc(db, "palabras_del_evento", EVENTO)
-    assert ok and datos["palabras"] == [{"orden": 1, "palabra": "casas"}, {"orden": 2, "palabra": "perro"},
-                                        {"orden": 3, "palabra": "lapiz"}], datos
-    assert datos["empieza_en"]
+PIN_DE_PALABRAS = "4321"
 
-    programado(db, "-1 second", "6 hours")
-    ok, error = rpc(db, "palabras_del_evento", EVENTO)
-    assert not ok and "ya ha empezado" in error, "en juego, nunca"
-    programado(db, "-7 hours", "-1 second")
-    assert not rpc(db, "palabras_del_evento", EVENTO)[0], "terminado se ven en el dashboard, no aquí"
+
+def sin_pin_de_palabras(db):
+    valor(db, "update public.event_editions set palabras_pin_hash = null, palabras_pin_fallos = 0, "
+              f"palabras_pin_bloqueado_hasta = null where id = '{EVENTO}'")
+
+
+def con_pin_de_palabras(db):
+    sin_pin_de_palabras(db)
+    ok, datos = rpc(db, "crear_pin_de_palabras", EVENTO, PIN_DE_PALABRAS)
+    assert ok, datos
+
+
+# @scenarios las-palabras-tienen-su-propio-pin
+def test_la_primera_vez_se_crea_el_pin_de_las_palabras_y_luego_hace_falta(db):
+    programado(db, "1 hour", "7 hours")
+    sin_pin_de_palabras(db)
+    try:
+        assert rpc(db, "estado_de_las_palabras", EVENTO)[1]["tiene_pin"] is False
+        assert "error" in rpc(db, "ver_palabras", EVENTO, "1234")[1], "sin PIN creado no se ven"
+        for malo in ("12", "123", "12345", "abcd", ""):
+            assert not rpc(db, "crear_pin_de_palabras", EVENTO, malo)[0], malo
+        orden_antes = valor(db, "select array_to_json(public.evento_orden_de(id)) from public.event_roster limit 1")
+
+        assert rpc(db, "crear_pin_de_palabras", EVENTO, PIN_DE_PALABRAS)[0]
+
+        assert rpc(db, "estado_de_las_palabras", EVENTO)[1]["tiene_pin"] is True
+        ok, error = rpc(db, "crear_pin_de_palabras", EVENTO, "0000")
+        assert not ok and "ya" in error.lower(), "solo la primera vez"
+        assert rpc(db, "ver_palabras", EVENTO, "0000")[1] == {"error": "PIN incorrecto"}
+        ok, datos = rpc(db, "ver_palabras", EVENTO, PIN_DE_PALABRAS)
+        assert ok and [w["palabra"] for w in datos["palabras"]] == ["casas", "perro", "lapiz"], datos
+        assert valor(db, "select array_to_json(public.evento_orden_de(id)) from public.event_roster limit 1") == orden_antes, \
+            "el PIN de las palabras no es el del evento: el orden de cada participante no cambia"
+    finally:
+        sin_pin_de_palabras(db)
+
+
+# @scenarios las-palabras-tienen-su-propio-pin
+def test_cinco_fallos_bloquean_el_pin_de_las_palabras(db):
+    programado(db, "1 hour", "7 hours")
+    con_pin_de_palabras(db)
+    try:
+        for _ in range(5):
+            assert rpc(db, "ver_palabras", EVENTO, "0000")[1] == {"error": "PIN incorrecto"}
+        bloqueado = rpc(db, "ver_palabras", EVENTO, PIN_DE_PALABRAS)[1]
+        assert "error" in bloqueado and "espera" in bloqueado["error"].lower(), "bloqueado también para el bueno"
+    finally:
+        sin_pin_de_palabras(db)
+
+
+# @scenarios se-cambian-las-palabras-antes-de-empezar
+def test_las_palabras_solo_se_ven_antes_de_empezar_y_con_el_pin(db):
+    programado(db, "1 hour", "7 hours")
+    con_pin_de_palabras(db)
+    try:
+        ok, datos = rpc(db, "ver_palabras", EVENTO, PIN_DE_PALABRAS)
+        assert ok and datos["palabras"] == [{"orden": 1, "palabra": "casas"}, {"orden": 2, "palabra": "perro"},
+                                            {"orden": 3, "palabra": "lapiz"}], datos
+        assert datos["empieza_en"]
+
+        programado(db, "-1 second", "6 hours")
+        ok, error = rpc(db, "ver_palabras", EVENTO, PIN_DE_PALABRAS)
+        assert not ok and "ya ha empezado" in error, "en juego, nunca, ni con el PIN"
+        programado(db, "-7 hours", "-1 second")
+        assert not rpc(db, "ver_palabras", EVENTO, PIN_DE_PALABRAS)[0], "terminado se ven en el dashboard, no aquí"
+    finally:
+        sin_pin_de_palabras(db)
 
 
 # @scenarios se-cambian-las-palabras-antes-de-empezar
 def test_antes_de_empezar_se_cambia_una_palabra_por_otra_del_diccionario(db):
     programado(db, "1 hour", "7 hours")
+    con_pin_de_palabras(db)
     try:
-        ok, datos = rpc(db, "cambiar_palabra", EVENTO, 2, " Sácos ")
+        assert rpc(db, "guardar_palabra", EVENTO, "0000", 2, "sacos")[1] == {"error": "PIN incorrecto"}
+        ok, datos = rpc(db, "guardar_palabra", EVENTO, PIN_DE_PALABRAS, 2, " Sácos ")
         assert ok and datos == {"orden": 2, "palabra": "sacos"}, datos
-        assert [p["palabra"] for p in rpc(db, "palabras_del_evento", EVENTO)[1]["palabras"]] == ["casas", "sacos", "lapiz"]
+        palabras = rpc(db, "ver_palabras", EVENTO, PIN_DE_PALABRAS)[1]["palabras"]
+        assert [w["palabra"] for w in palabras] == ["casas", "sacos", "lapiz"]
         for palabra, motivo in (("zzzzz", "diccionario"), ("casas", "ya está"), ("casa", "cinco letras")):
-            ok, error = rpc(db, "cambiar_palabra", EVENTO, 3, palabra)
+            ok, error = rpc(db, "guardar_palabra", EVENTO, PIN_DE_PALABRAS, 3, palabra)
             assert not ok and motivo in error, (palabra, error)
-        assert not rpc(db, "cambiar_palabra", EVENTO, 9, "salas")[0], "una palabra que no existe"
+        assert not rpc(db, "guardar_palabra", EVENTO, PIN_DE_PALABRAS, 9, "salas")[0], "una palabra que no existe"
 
         programado(db, "-1 second", "6 hours")
-        ok, error = rpc(db, "cambiar_palabra", EVENTO, 3, "salas")
+        ok, error = rpc(db, "guardar_palabra", EVENTO, PIN_DE_PALABRAS, 3, "salas")
         assert not ok and "ya ha empezado" in error
         assert valor(db, f"select palabra from public.event_targets where evento = '{EVENTO}' and orden = 3") == "lapiz"
     finally:
         valor(db, f"update public.event_targets set palabra = 'perro' where evento = '{EVENTO}' and orden = 2")
+        sin_pin_de_palabras(db)
+
+
+# @scenarios las-palabras-tienen-su-propio-pin
+@pytest.mark.parametrize("consulta", ["select public.palabras_del_evento('t')",
+                                      "select public.cambiar_palabra('t', 1, 'sacos')",
+                                      "select public.evento_pin_de_palabras('t', '1234')"])
+def test_sin_el_pin_no_hay_atajo_a_las_palabras(db, consulta):
+    resultado = db(consulta, rol="anon")
+    assert resultado.returncode != 0 and "permission denied for function" in resultado.stderr
 
 
 # @scenarios se-libera-un-nombre

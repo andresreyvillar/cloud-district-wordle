@@ -98,9 +98,12 @@ export function apiDelEvento(cliente, evento, plazo = PLAZO_MS) {
     liberar: (pin, nombre) => admin('liberar_nombre', { p_pin: pin, p_nombre: nombre }),
     // El dashboard, sin PIN.
     tablero: () => llamar_('tablero_del_evento', { p_evento: evento }),
-    palabras: () => llamar_('palabras_del_evento', { p_evento: evento }),
+    // Las palabras, con su propio PIN (lo crea quien las revisa la primera vez).
+    estadoDeLasPalabras: () => llamar_('estado_de_las_palabras', { p_evento: evento }),
+    crearPinDePalabras: (pin) => llamar_('crear_pin_de_palabras', { p_evento: evento, p_pin: pin }),
+    verPalabras: (pin) => admin('ver_palabras', { p_pin: pin }),
+    guardarPalabra: (pin, orden, palabra) => admin('guardar_palabra', { p_pin: pin, p_orden: orden, p_palabra: palabra }),
     echar: (nombre) => llamar_('echar_participante', { p_evento: evento, p_nombre: nombre }),
-    cambiarPalabra: (orden, palabra) => llamar_('cambiar_palabra', { p_evento: evento, p_orden: orden, p_palabra: palabra }),
   };
 }
 

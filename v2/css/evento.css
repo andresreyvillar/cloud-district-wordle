@@ -245,3 +245,7 @@ body.modo-evento:has(.pa-cartel) {
 .pa-palabra input { width: 8.5ch; padding: 0.35rem 0.6rem; border: 1px solid var(--ev-tinta); border-radius: 0;
   background: #fff; font-family: var(--ev-fuente-etiqueta); font-size: 1.6rem; letter-spacing: 0.3em;
   text-transform: uppercase; }
+/* El PIN de las palabras: en la página del cartel, debajo del título y sin el hueco de la antigua pantalla del PIN. */
+.pa-cartel .pa-pin { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 0.5rem; }
+.pa-cartel .pa-pin .pa-nota { flex-basis: 100%; margin: 0 0 0.4rem; }
+.pa-cartel .pa-pin input { width: 7ch; font-family: var(--ev-fuente-etiqueta); font-size: 1.4rem; letter-spacing: 0.3em; }
