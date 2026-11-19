@@ -59,7 +59,8 @@ def reiniciar(db) -> None:
     valor(db, "truncate public.event_rounds cascade; "
               f"update public.event_roster set token = null, elegido_en = null where evento = '{EVENTO}'; "
               "update public.event_editions set empieza_en = null, terminado_en = null, pin_fallos = 0, "
-              f"pin_bloqueado_hasta = null, segundos_por_intento = 30 where id = '{EVENTO}'")
+              f"pin_bloqueado_hasta = null, segundos_por_intento = 30, puntos_por_acierto = 10, puntos_por_rapidez = 5 "
+              f"where id = '{EVENTO}'")
 
 
 def activado(db) -> None:

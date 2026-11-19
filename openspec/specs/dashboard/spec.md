@@ -1368,7 +1368,7 @@ verified-by:
 
 ## Requirement: Las palabras del evento se adivinan como en el Wordle, una tras otra
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified), feat-evento-edicion-y-avisos (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified), feat-evento-edicion-y-avisos (modified), feat-evento-palabra-resuelta (modified), feat-evento-puntos-por-acierto (modified) -->
 
 Las reglas son las del Wordle de siempre (decisión del dueño). El evento tiene varias palabras de cinco letras, que
 se juegan **una tras otra**: la siguiente solo se empieza con la anterior terminada. **Cada participante las juega en
@@ -1386,15 +1386,20 @@ Cada letra se colorea **por posición**: `G` si está en su sitio; después, de 
 queden en la solución letras así que no hayan salido `G` ni `Y`, y `.` el resto. Se compara sin tildes ni diéresis,
 y la ñ es distinta de la n. Se gana con cinco `G`; tras el sexto intento sin ellas, se pierde.
 
+**La palabra resuelta se nombra** (decisión del dueño): el resultado y el resumen de sus palabras enseñan la que el
+participante ha resuelto, que es la de su último intento —ya la ha escrito él, así que no revela nada—; las falladas
+siguen sin nombre hasta que termina el evento, porque quien acaba antes podría pasárselas a los demás.
+
 **La fila que se escribe se edita casilla a casilla** (decisión del dueño, como en lapalabradeldia.com): tocar una
 casilla la elige; una letra va a la casilla elegida y el cursor pasa a la siguiente vacía a su derecha (o al final);
 borrar quita la letra de la elegida o, si está vacía, la de la anterior; las flechas mueven el cursor. Se envía con
 las cinco casillas llenas. **Los avisos flotan** sobre la pantalla sin mover el tablero ni el teclado; los de error se
 desvanecen solos, y «Enviando…» y «Sin conexión» se quedan mientras dura lo que dicen.
 
-**La web deja claro que el tiempo cuenta**: la pantalla de empezar lo dice en negrita, con los segundos que suma cada
-intento (`segundos_por_intento`, que `estado_del_juego` entrega con el evento en juego); las reglas lo ponen en primer
-lugar, y el cronómetro de cada palabra lo recuerda mientras corre.
+**La web deja claro que acertar es lo que más cuenta y que el tiempo también**: la pantalla de empezar y las reglas
+lo dicen en primer lugar, con los puntos de cada palabra acertada, el extra por rapidez y los segundos que suma cada
+intento (`puntos_por_acierto`, `puntos_por_rapidez` y `segundos_por_intento`, que `estado_del_juego` entrega con el
+evento activado); sin esas cifras, lo dice sin números. El cronómetro de cada palabra recuerda que el tiempo cuenta.
 
 #### Scenario: la web lo explica con un ejemplo
 - **WHEN** el participante va a empezar la primera palabra o pulsa «¿Cómo se juega?»
@@ -1419,22 +1424,39 @@ lugar, y el cronómetro de cada palabra lo recuerda mientras corre.
 - **WHEN** cada uno juega sus palabras 1, 2 y 3
 - **THEN** cada uno juega las tres palabras una vez, y no todos en el mismo orden
 
+#### Scenario: la palabra resuelta se nombra, la fallada no
+- **GIVEN** un participante que ha resuelto una palabra y fallado otra, con el evento en marcha
+- **WHEN** ve el resumen de sus palabras
+- **THEN** la resuelta lleva su nombre y la fallada no
+
 #### Scenario: se corrige una letra sin borrar las demás
 - **GIVEN** la fila escrita «SALAS»
 - **WHEN** el participante toca la primera casilla y teclea C
 - **THEN** la fila es «CALAS», sin haber borrado nada más
 
-#### Scenario: el tiempo cuenta, y se dice
+#### Scenario: acertar cuenta más, y el tiempo también, y se dice
 - **WHEN** el participante va a empezar la primera palabra
-- **THEN** lee que el tiempo cuenta y cuántos segundos suma cada intento
+- **THEN** lee cuántos puntos da cada palabra acertada, hasta cuántos más da la rapidez y cuántos segundos suma cada
+  intento
 
 verified-by:
   - tests/slices/palabras-del-evento/test_palabras_sql.py
   - tests/slices/palabras-del-evento/palabras.test.js
 
-## Requirement: El admin activa y termina el evento con un PIN que se bloquea al fallar
+## Requirement: El evento empieza y termina a su hora, y el admin es un dashboard sin PIN
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-admin-en-directo (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-admin-en-directo (modified), feat-admin-dashboard (modified) -->
+
+**El evento empieza y termina a su hora** (decisión del dueño): con `empieza_en` y `terminado_en` cargados de
+antemano, está en juego de una hora a la otra; antes de `empieza_en` no lo está aunque esté cargada, y
+`estado_del_juego` sigue diciendo solo que no está activo. **El admin es un dashboard sin contraseña** (decisión del
+dueño, avisado de que así cualquiera con el enlace ve las palabras antes de empezar): `tablero_del_evento(evento)`
+da, sin PIN, lo mismo que el panel más los puntos F1; las palabras, solo antes de empezar y al terminar, nunca
+mientras se juega. `cambiar_palabra(evento, orden, palabra)` cambia una palabra hasta la hora de empezar, si tiene
+cinco letras, está en el diccionario del juego y no repite otra; `echar_participante(evento, nombre)` deja libre un
+nombre y borra lo jugado con él, salvo con el evento terminado. La web tiene el estilo del cartel del evento.
+
+Las funciones con PIN siguen para operar a mano:
 
 No hay hora fija: `empezar_evento(evento, pin)` activa el evento con la hora del servidor si el PIN coincide con su
 huella (activado, no se mueve), y desde ese momento todas las palabras se pueden jugar. Hasta entonces
@@ -1456,6 +1478,19 @@ nombre y borra lo jugado con él, salvo con el evento terminado. Las soluciones 
 
 Terminado, la web compone un texto para compartir —el ranking de grupos con sus puntos y el podio de participantes— y
 lo ofrece para copiar, para WhatsApp (`https://wa.me/?text=…`) y para email (`mailto:`).
+
+#### Scenario: el evento empieza solo a su hora
+- **GIVEN** un evento con la hora de empezar cargada y aún por llegar
+- **WHEN** se pide el estado o alguien intenta elegir nombre
+- **THEN** no está activo; llegada la hora, sí, sin que nadie lo active
+
+#### Scenario: las palabras se cambian solo antes de empezar
+- **WHEN** se cambia una palabra por otra del diccionario antes de la hora de empezar
+- **THEN** queda cambiada; después de esa hora, se rechaza
+
+#### Scenario: el dashboard no enseña las palabras mientras se juega
+- **WHEN** se pide el tablero con el evento en juego
+- **THEN** no trae ninguna palabra; antes de empezar y al terminar, sí
 
 #### Scenario: un PIN incorrecto no hace nada
 - **WHEN** se llama a `empezar_evento`, `terminar_evento`, `panel_del_evento` o `liberar_nombre` con un PIN que no

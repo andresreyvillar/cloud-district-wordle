@@ -962,14 +962,15 @@ verified-by:
 
 ## Requirement: La palabra del evento solo sale del servidor al terminar el evento
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified), feat-admin-dashboard (modified) -->
 
 Mientras el evento no ha terminado, ninguna función del móvil devuelve una palabra del evento: `empezar_palabra`,
 `probar_palabra` y `mi_juego` devuelven los intentos con sus colores, y tampoco al fallar la sexta se enseña la
 solución. **Tampoco devuelven qué palabra del evento hay detrás de cada número del participante**: las rondas viajan
 con el número que él ve (`orden`, de 1 a N), nunca con el de la palabra en `event_targets`. Terminado el evento,
-`estado_del_juego` incluye las palabras y `mi_juego` las del participante en su orden (`palabras`). Ninguna función
-del móvil devuelve el grupo de nadie.
+`estado_del_juego` incluye las palabras y `mi_juego` las del participante en su orden (`palabras`). Antes de empezar,
+`tablero_del_evento` las entrega sin PIN para revisarlas (decisión del dueño); mientras se juega, ninguna función
+pública las devuelve. Ninguna función del móvil devuelve el grupo de nadie.
 
 #### Scenario: fallar no enseña la solución
 - **WHEN** un participante falla una palabra con el evento en marcha

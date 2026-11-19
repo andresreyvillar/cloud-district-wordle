@@ -48,9 +48,9 @@ palabra k/N» (las demás) y se para al resolverla o al gastar el sexto intento.
 cronómetro **no se pausa**: cerrar la web no lo para. **La solución no viaja al móvil**: el servidor devuelve solo
 los colores, y la palabra se enseña al terminar el evento. Los puntos (ver `admin-del-evento`) no se ven en el móvil.
 
-**El tiempo cuenta, y se dice** (decisión del dueño): la pantalla de empezar, las reglas y el cronómetro de cada
-palabra dejan claro que cuanto antes se resuelve, más puntos, y que cada intento suma además los segundos que el
-evento tenga configurados.
+**Acertar es lo que más cuenta, y el tiempo también, y se dice** (decisión del dueño): la pantalla de empezar y las
+reglas dicen cuántos puntos da cada palabra acertada y hasta cuántos más da la rapidez, y que cada intento suma los
+segundos que el evento tenga configurados; el cronómetro de cada palabra recuerda que el tiempo cuenta.
 
 ## Trigger técnico
 
@@ -183,9 +183,14 @@ todos tienen la misma palabra detrás del mismo número
 
 ### el-tiempo-cuenta-y-se-dice
 **WHEN** el participante va a empezar o lee las reglas
-**THEN** ve que el tiempo cuenta: cuanto antes la resuelve, más puntos, y cada intento suma además los segundos
-configurados en el evento (sin cifra si el servidor no la da); mientras juega una palabra, junto al reloj se le
-recuerda que el tiempo cuenta
+**THEN** ve que acertar es lo que más cuenta (los puntos de cada palabra acertada) y que el tiempo también (hasta
+cuántos puntos más por rapidez, y los segundos que suma cada intento), con las cifras del evento o sin cifras si el
+servidor no las da; mientras juega una palabra, junto al reloj se le recuerda que el tiempo cuenta
+
+### la-palabra-resuelta-se-nombra
+**WHEN** el participante resuelve una palabra
+**THEN** el resultado la nombra («¡CASAS! Resuelta en…») y el resumen de sus palabras también; las que falla siguen sin
+nombre hasta que termina el evento
 
 ### la-solucion-no-viaja-al-movil
 **WHEN** el participante falla una palabra

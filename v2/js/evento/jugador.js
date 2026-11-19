@@ -328,16 +328,28 @@ function porIntento(segundos) {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-/** Cómo se juega: que el tiempo cuenta, las reglas del Wordle y los tres colores, con un ejemplo inventado. */
-export function comoSeJuega(segundos) {
-  const n = porIntento(segundos);
+/** Lo que vale acertar, el extra por rapidez y los segundos por intento, si el servidor los ha dicho. */
+function cifras(estado) {
+  return {
+    acierto: porIntento(estado?.puntos_por_acierto),
+    rapidez: porIntento(estado?.puntos_por_rapidez),
+    segundos: porIntento(estado?.segundos_por_intento),
+  };
+}
+
+/** Cómo se juega: que acertar es lo que más cuenta y que el tiempo también, las reglas del Wordle y los tres colores, con un ejemplo inventado. */
+export function comoSeJuega(estado = {}) {
+  const { acierto, rapidez, segundos: n } = cifras(estado);
   const fila = (palabra, colores) => `<div class="ev-fila">${[...palabra].map((letra, i) => (
     `<span class="ev-celda ${CLASE[colores[i]]}">${letra}</span>`)).join('')}</div>`;
   return `<section class="ev-ayuda" aria-label="Cómo se juega">
     <h2>Cómo se juega</h2>
     <ol>
-      <li><strong>El tiempo cuenta</strong>: cuanto antes resuelvas cada palabra, más puntos. El cronómetro corre desde
-        que pulsas y no se para aunque cierres la web${n ? `, y cada intento suma además ${n} segundos` : ''}.</li>
+      <li><strong>Acertar es lo que más cuenta</strong>: cada palabra acertada da ${
+        acierto ? `${acierto} puntos` : 'puntos'}; la que no aciertas, ninguno.</li>
+      <li><strong>El tiempo cuenta</strong>: ${
+        rapidez ? `hasta ${rapidez} puntos más` : 'puntos extra'} cuanto antes la resuelvas. El cronómetro corre desde que pulsas y no se para aunque cierres la web${
+        n ? `, y cada intento suma además ${n} segundos` : ''}.</li>
       <li>Adivina la <strong>palabra de 5 letras</strong> en <strong>6 intentos</strong>. Cada intento tiene que ser una
         palabra que exista.</li>
       <li>Tras cada intento, las letras cambian de color:
@@ -366,6 +378,12 @@ function aviso(s) {
 
 const intentos = (n) => `${n} ${n === 1 ? 'intento' : 'intentos'}`;
 
+/** La palabra que el participante resolvió: la de su último intento. Ya la ha escrito él, así que no revela nada. Una
+ * fallada no tiene: su solución solo llega al terminar el evento. */
+function resueltaCon(ronda) {
+  return ronda?.resuelta ? (ronda.intentos?.at(-1)?.palabra ?? null) : null;
+}
+
 /** Cómo le fue en cada palabra: resuelta (intentos y tiempo), sin resolver, sin terminar o sin jugar. */
 function resumen(s) {
   const filas = Array.from({ length: Number(s.estado?.total) || 0 }, (_, i) => {
@@ -373,7 +391,7 @@ function resumen(s) {
     const texto = !ronda ? 'Sin jugar' : !ronda.terminada_en ? 'Sin terminar'
       : ronda.resuelta ? `${intentos(ronda.intentos.length)} · ${formatoTiempo(ronda.tiempo_ms)}` : 'Sin resolver';
     const clase = ronda?.resuelta ? ' resuelta' : ronda?.terminada_en ? ' fallada' : '';
-    const palabra = s.palabras?.[i];
+    const palabra = s.palabras?.[i] ?? resueltaCon(ronda);
     const cual = palabra ? ` · ${escapar(String(palabra).toUpperCase())}` : '';
     return `<li class="ev-resumen-fila${clase}"><span class="ev-etiqueta">Palabra ${i + 1}${cual}</span><span>${texto}</span></li>`;
   }).join('');
@@ -437,16 +455,19 @@ function barra(s, ronda, ahora) {
 function juego(s, ahora) {
   const p = puntoDelJuego(s.rondas, Number(s.estado.total));
   const n = Number(s.estado.total);
-  const segundos = porIntento(s.estado.segundos_por_intento);
+  const { acierto, rapidez, segundos } = cifras(s.estado);
   if (p.tipo === 'empezar') {
     return `<section class="ev-empezar">
       <p class="ev-etiqueta">Palabra 1/${n}</p>
       <h1>${n} palabras, 6 intentos cada una</h1>
-      <p class="ev-tiempo"><strong>El tiempo cuenta.</strong> El cronómetro arranca al pulsar y no se para hasta que
-        la resuelves o gastas los intentos.${segundos ? ` Cada intento suma además ${segundos} segundos.` : ''}
-        Cuanto antes, más puntos.</p>
+      <p class="ev-tiempo"><strong>Acertar es lo que más cuenta:</strong> cada palabra acertada da ${
+        acierto ? `${acierto} puntos` : 'puntos'}.</p>
+      <p class="ev-tiempo"><strong>El tiempo cuenta.</strong> ${
+        rapidez ? `Hasta ${rapidez} puntos más` : 'Puntos extra'} cuanto más rápido: el cronómetro arranca al pulsar y no
+        se para hasta que la resuelves o gastas los intentos.${
+        segundos ? ` Cada intento suma además ${segundos} segundos.` : ''}</p>
       <button type="button" class="ev-boton grande" data-accion="empezar">Empezar</button>${aviso(s)}
-    </section>${s.ayuda ? '' : comoSeJuega(segundos)}`;
+    </section>${s.ayuda ? '' : comoSeJuega(s.estado)}`;
   }
   const ronda = s.rondas.get(p.orden);
   if (p.tipo === 'jugando') {
@@ -454,7 +475,8 @@ function juego(s, ahora) {
       ${teclado(ronda.intentos)}</section>`;
   }
   const resultado = ronda.resuelta
-    ? `<p class="ev-resultado bien">¡Resuelta en ${intentos(ronda.intentos.length)} y ${formatoTiempo(ronda.tiempo_ms)}!</p>`
+    ? `<p class="ev-resultado bien">¡${escapar(String(resueltaCon(ronda) ?? '').toUpperCase())}! Resuelta en ${
+      intentos(ronda.intentos.length)} y ${formatoTiempo(ronda.tiempo_ms)}</p>`
     : '<p class="ev-resultado">No la has adivinado.</p><p class="ev-nota">La palabra se desvela al terminar el evento.</p>';
   const siguiente = p.tipo === 'entre'
     ? `<button type="button" class="ev-boton grande" data-accion="empezar">Siguiente palabra ${p.orden + 1}/${n}</button>`
@@ -476,7 +498,7 @@ export function vistaDelEvento(s, ahora) {
     s.ayuda ? 'Cerrar' : '¿Cómo se juega?'}</button>`;
   const cabecera = `<header class="ev-cabecera"><span class="ev-marca">${escapar(s.estado.titulo ?? '')}</span>${
     s.nombre ? `<span class="ev-quien">${escapar(s.nombre)}</span>` : ''}${boton}</header>${
-    s.ayuda ? comoSeJuega(s.estado.segundos_por_intento) : ''}`;
+    s.ayuda ? comoSeJuega(s.estado) : ''}`;
 
   if (s.estado.terminado) {
     const mio = s.nombre ? `<h2>Tus palabras</h2>${resumen(s)}` : '';

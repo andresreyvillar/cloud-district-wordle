@@ -456,8 +456,8 @@ test('el tablero pinta los colores del servidor y el teclado no baja de color', 
   assert.match(teclado([]), /data-tecla="ñ"/);
 });
 
-/** @scenarios se-gana-con-cinco-verdes, al-terminar-una-palabra-se-pasa-a-la-siguiente */
-test('al resolver se ve el resultado y Siguiente palabra 2/3, que empieza la 2 con su propio cronómetro', async () => {
+/** @scenarios se-gana-con-cinco-verdes, al-terminar-una-palabra-se-pasa-a-la-siguiente, la-palabra-resuelta-se-nombra */
+test('al resolver se ve el resultado con la palabra y Siguiente palabra 2/3, que empieza la 2 con su propio cronómetro', async () => {
   const api = apiFalsa();
   const c = await dentro(api);
   await c.empezar();
@@ -465,7 +465,7 @@ test('al resolver se ve el resultado y Siguiente palabra 2/3, que empieza la 2 c
   await c.enviar();
 
   const html = vista(c);
-  assert.match(html, /¡Resuelta en 1 intento y 0:30!/);
+  assert.match(html, /¡CASAS! Resuelta en 1 intento y 0:30/);
   assert.match(html, /data-accion="empezar">Siguiente palabra 2\/3</);
   assert.doesNotMatch(html, /data-tecla/, 'sin teclado');
 
@@ -499,10 +499,12 @@ test('al fallar la sexta no se enseña la palabra y se puede seguir con la sigui
   assert.match(html, /Siguiente palabra 2\/3/);
 });
 
-/** @scenarios al-terminar-una-palabra-se-pasa-a-la-siguiente */
-test('tras la última palabra se ve el resumen de todas, sin puntos', async () => {
-  const rondas = new Map([[1, resuelta(1)], [2, ronda(2, { terminada_en: new Date(T0).toISOString(), tiempo_ms: 90_000 })],
-    [3, resuelta(3, [{ palabra: 'salas', colores: 'YG.GG' }, { palabra: 'casas', colores: 'GGGGG' }], 125_000)]]);
+/** @scenarios al-terminar-una-palabra-se-pasa-a-la-siguiente, la-palabra-resuelta-se-nombra */
+test('tras la última palabra se ve el resumen de todas, con el nombre de las resueltas y sin puntos', async () => {
+  const fallada = ronda(2, { terminada_en: new Date(T0).toISOString(), tiempo_ms: 90_000,
+    intentos: Array.from({ length: 6 }, () => ({ palabra: 'salas', colores: 'YG.GG' })) });
+  const rondas = new Map([[1, resuelta(1)], [2, fallada],
+    [3, resuelta(3, [{ palabra: 'salas', colores: 'YG.GG' }, { palabra: 'perro', colores: 'GGGGG' }], 125_000)]]);
   const api = apiFalsa({ rondas, elegidos: new Map([['tk', 'Ana López']]) });
   const c = control(api, { almacen: almacenFalso({ 'evento:token:prueba': 'tk' }) });
   await c.arrancar();
@@ -510,9 +512,10 @@ test('tras la última palabra se ve el resumen de todas, sin puntos', async () =
   const html = vista(c);
 
   assert.match(html, /¡Has terminado las 3 palabras!/);
-  assert.match(html, /Palabra 1<\/span><span>1 intento · 1:01/);
-  assert.match(html, /Palabra 2<\/span><span>Sin resolver/);
-  assert.match(html, /Palabra 3<\/span><span>2 intentos · 2:05/);
+  assert.match(html, /Palabra 1 · CASAS<\/span><span>1 intento · 1:01/);
+  assert.match(html, /Palabra 2<\/span><span>Sin resolver/, 'la fallada, sin nombre hasta terminar el evento');
+  assert.doesNotMatch(html, /SALAS/, 'un intento fallido no se toma por la solución');
+  assert.match(html, /Palabra 3 · PERRO<\/span><span>2 intentos · 2:05/);
   assert.doesNotMatch(html, /Siguiente palabra|puntos:/i);
 });
 
@@ -584,28 +587,32 @@ test('terminado el evento, quien no eligió nombre ve las palabras del evento', 
 });
 
 /** @scenarios el-tiempo-cuenta-y-se-dice */
-test('al ir a empezar, en las reglas y con el reloj en marcha se dice que el tiempo cuenta', async () => {
-  const c = await dentro(apiFalsa({ est: estadoActivo({ segundos_por_intento: 45 }) }));
+test('al ir a empezar y en las reglas se dice que acertar es lo que más cuenta y que el tiempo también, con las cifras', async () => {
+  const cifras = { segundos_por_intento: 45, puntos_por_acierto: 10, puntos_por_rapidez: 5 };
+  const c = await dentro(apiFalsa({ est: estadoActivo(cifras) }));
 
   const inicio = vista(c);
-  assert.match(inicio, /<strong>El tiempo cuenta\.<\/strong>/);
+  assert.match(inicio, /<strong>Acertar es lo que más cuenta:<\/strong> cada palabra acertada da 10 puntos\./);
+  assert.match(inicio, /<strong>El tiempo cuenta\.<\/strong> Hasta 5 puntos más cuanto más rápido/);
   assert.match(inicio, /Cada intento suma además 45 segundos/);
-  assert.match(inicio, /Cuanto antes, más puntos/);
-  assert.match(comoSeJuega(45), /<ol>\s*<li><strong>El tiempo cuenta<\/strong>/);
-  assert.match(comoSeJuega(45), /cada intento suma además 45 segundos/);
+  const reglas = comoSeJuega(cifras);
+  assert.match(reglas, /<ol>\s*<li><strong>Acertar es lo que más cuenta<\/strong>: cada palabra acertada da 10 puntos/);
+  assert.match(reglas, /<li><strong>El tiempo cuenta<\/strong>: hasta 5 puntos más cuanto antes la resuelvas/);
+  assert.match(reglas, /cada intento suma además 45 segundos/);
 
   await c.empezar();
   assert.match(vista(c), /class="ev-cuenta">⏱ El tiempo cuenta</);
 });
 
 /** @scenarios el-tiempo-cuenta-y-se-dice */
-test('sin los segundos del servidor, se dice igual que el tiempo cuenta, sin inventar la cifra', async () => {
+test('sin las cifras del servidor, se dice igual que acertar cuenta más y el tiempo también, sin inventarlas', async () => {
   const c = await dentro(apiFalsa());
 
   const inicio = vista(c);
 
+  assert.match(inicio, /<strong>Acertar es lo que más cuenta:<\/strong>/);
   assert.match(inicio, /<strong>El tiempo cuenta\.<\/strong>/);
-  assert.doesNotMatch(inicio, /\d+ segundos/);
+  assert.doesNotMatch(inicio, /\d+ (segundos|puntos)/);
 });
 
 /** @scenarios el-texto-de-los-participantes-se-escapa */

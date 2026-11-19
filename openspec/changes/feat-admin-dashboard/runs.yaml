@@ -1,0 +1,26 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-19T15:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    aplicadas: 10
+    cazadas: 10
+    reforzadas: 0
+  notas: >-
+    La víspera del evento, el dueño convierte el admin en un dashboard y panel de control: estilo del cartel, sin
+    contraseña (avisado de que así cualquiera con el enlace ve las palabras antes de empezar y puede echar a gente o
+    cambiarlas; lo aceptó), el evento empieza y termina a su hora (10:00-16:00 de Madrid), participantes y rankings en
+    todo momento, campeonato F1 de grupos además de la media (los diez primeros suman 25, 18, 15… y los empatados se
+    reparten los puntos de sus puestos), y las palabras visibles y editables hasta empezar. Durante el juego el tablero
+    no da las palabras, aunque no haya contraseña. Ronda de corrección: vista en local, la tabla de participantes no
+    cabía al lado de los grupos y cortaba «Echar»; pasó a todo el ancho. Las funciones con PIN se quedan para operar a
+    mano.
