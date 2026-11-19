@@ -74,6 +74,7 @@ export const VISTAS = Object.freeze({
   EVENTO: 'evento',
   ADMIN_DEL_EVENTO: 'admin-del-evento',
   PALABRAS_DEL_EVENTO: 'palabras-del-evento',
+  RESULTADOS_DEL_EVENTO: 'resultados-del-evento',
   JUGADOR: 'jugador',
   DESCONOCIDA: 'desconocida',
 });
@@ -123,6 +124,9 @@ export function resolver(ruta) {
   if (primero === 'evento' && resto.length === 1 && resto[0] === 'admin') {
     return { vista: VISTAS.ADMIN_DEL_EVENTO };
   }
+  if (primero === 'evento' && resto.length === 1 && resto[0] === 'resultados') {
+    return { vista: VISTAS.RESULTADOS_DEL_EVENTO };
+  }
   // Las palabras, en su propio enlace: quien tiene el dashboard abierto puede jugar sin conocerlas.
   if (primero === 'evento' && resto.length === 1 && resto[0] === 'palabras') {
     return { vista: VISTAS.PALABRAS_DEL_EVENTO };
@@ -169,7 +173,7 @@ export function seccionDe(vista) {
 
 /** Si un destino es del evento: esas vistas se pintan solas, sin la web de estadísticas ni sus datos. */
 export function esDelEvento(destino) {
-  return [VISTAS.EVENTO, VISTAS.ADMIN_DEL_EVENTO, VISTAS.PALABRAS_DEL_EVENTO].includes(destino?.vista);
+  return [VISTAS.EVENTO, VISTAS.ADMIN_DEL_EVENTO, VISTAS.PALABRAS_DEL_EVENTO, VISTAS.RESULTADOS_DEL_EVENTO].includes(destino?.vista);
 }
 
 /**
@@ -216,6 +220,8 @@ function _rutaInterna(destino) {
       return '/evento';
     case VISTAS.ADMIN_DEL_EVENTO:
       return '/evento/admin';
+    case VISTAS.RESULTADOS_DEL_EVENTO:
+      return '/evento/resultados';
     case VISTAS.PALABRAS_DEL_EVENTO:
       return '/evento/palabras';
     default:

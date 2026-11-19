@@ -570,3 +570,11 @@ todo, pero la auditoría adversarial encontró lo que nadie había pensado en mu
 admin libera su nombre o un intento aceptado que delataba la solución de otra palabra. Mutar lo que la spec prohíbe
 mide los tests; buscar lo que la spec olvidó necesita otros ojos.
 
+
+## Revelado de los puntos del barrio
+
+**Qué.** La presentación de resultados del evento revela los premios F1 desde el último puesto premiado al primero. Cada persona suma al grupo que devuelve el tablero; teclado y botones permiten avanzar, volver y reiniciar.
+
+**Decisión.** Se reutiliza la API pública de solo lectura y solo se admite el tablero cerrado. No hay cambios en las reglas, el esquema ni los datos del evento real. Los puestos individuales empatados se revelan juntos; el podio anima los puntos y el primero añade fuegos artificiales, con movimiento reducido respetado.
+
+**Aprendizaje.** La integración necesita una prueba del viewport completo, no solo del componente: el espacio inferior heredado y los premios compartidos podían sacar los controles de la pantalla. Los dos casos quedan como regresiones automáticas y la auditoría independiente confirma la corrección.

@@ -416,3 +416,10 @@
   entera de cada dominio que cruza el slice, no solo lo que cambió.
 - **Codificada en:** ADR 0009, `openspec/slice-system.md` §5 y §6, y `tools/wslice/gates.py`
   (`specs-coverage` y `checks-probe` sobre la spec viva) · **estado:** codificada.
+
+### 2026-11-19 — La presentación se prueba dentro de la web y con empates múltiples
+- **Qué pasó:** la maqueta cabía en el proyector, pero al integrarla heredaba el espacio inferior de la web de estadísticas; además, varios premiados empatados hacían crecer el panel y desplazaban los controles.
+- **Causa raíz:** la maqueta aislada no ejercitaba los estilos globales ni la cantidad máxima de personas en un premio compartido.
+- **Regla:** la presentación integrada se comprueba con la página completa a 1440×900, con premios normales y diez personas empatadas; los controles permanecen dentro del viewport y el listado compartido conserva todos los nombres.
+- **Codificada en:** `tests/slices/resultados-del-evento/test_browser.py`, `test_presenta_por_teclado_y_botones_sin_scroll_y_sin_escrituras` y `test_diez_empatados_conservan_controles_visibles` · **estado:** codificada.
+- **Run:** `openspec/changes/feat-resultados-del-evento/runs.yaml`.

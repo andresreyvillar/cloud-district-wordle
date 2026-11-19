@@ -174,6 +174,13 @@ async function arrancarEvento(destino) {
   const reloj = () => Date.now();
   const temporizador = { cada: (ms, fn) => setInterval(fn, ms) };
 
+  if (destino.vista === VISTAS.RESULTADOS_DEL_EVENTO) {
+    document.body.classList.add('modo-resultados-evento');
+    document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: recurso('css/evento-resultados.css') }));
+    const { createResultsController, mountResults } = await import('./evento/resultados.js');
+    await mountResults(vista, createResultsController(api), temporizador);
+    return;
+  }
   if (destino.vista === VISTAS.ADMIN_DEL_EVENTO) {
     const { controlDelAdmin, montarAdmin } = await import('./evento/admin.js');
     await montarAdmin(vista, controlDelAdmin({ api }), temporizador, api.evento);

@@ -1,0 +1,30 @@
+- run: '2026-11-19T18:00:00Z'
+  fase: propose
+  actor: codex
+  gates: {}
+  rondas_correccion: 0
+  notas: 'Integración y despliegue solicitados por el dueño sobre la maqueta aprobada. El plan acota la lectura al tablero cerrado y conserva datos y reglas. Las specs consolidadas quedan sin tocar por el guardrail explícito del AGENTS.md aportado; el contrato se registra en deltas.'
+
+- run: '2026-11-19T16:40:04.286197+00:00'
+  fase: implement
+  actor: codex
+  gates:
+    validate: pass
+    coverage: pass
+    verify-slice: pass
+    gates-mecanicos: pass
+    tests-python: pass
+    tests-javascript: pass
+    mutacion: pass
+    adversarial: pass
+  rondas_correccion: 3
+  notas: >-
+    844 tests Python y 371 JavaScript en verde; cuatro pruebas de navegador del slice.
+    Las mutaciones revelado-prematuro, salta-premios e ignora-movimiento-reducido caen
+    respectivamente en espera-al-cierre, retrocede-y-reinicia y anima-el-podio. Se restaura
+    desde el index y la suite del slice vuelve a verde. Dos auditorías independientes:
+    lógica sin refutaciones; UI detecta empates múltiples que desplazan controles, corregido
+    y refutación retirada tras reproducir cuatro y diez empatados. El padding inferior de
+    body heredado también se retira. Regresiones y lección codificadas. README sin cambios:
+    verificado, la ruta es un enlace oculto del evento. No se toca esquema, RLS, credenciales
+    ni cron. Despliegue solicitado explícitamente por el dueño tras aprobar la maqueta.
