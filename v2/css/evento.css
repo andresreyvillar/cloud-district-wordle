@@ -203,3 +203,15 @@ body.modo-evento:has(.pa) [data-vista] { max-width: 72rem; }
   border-radius: var(--ev-radio); background: var(--ev-superficie); color: var(--ev-tinta);
   font-family: var(--ev-fuente-etiqueta); font-size: 0.9rem; line-height: 1.4; text-align: left; resize: vertical; }
 .pa-compartir a.ev-boton { display: inline-block; text-decoration: none; }
+
+/* Los avisos flotan: no ocupan sitio, así que el tablero y el teclado no se mueven, y no tapan los toques. Los de error
+   se desvanecen solos; «Enviando…» y «Sin conexión» se quedan mientras dura lo que dicen. */
+.ev-flotante { position: fixed; z-index: 10; top: calc(env(safe-area-inset-top, 0px) + 5.5rem); left: 50%;
+  transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); margin: 0; box-sizing: border-box;
+  text-align: center; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); pointer-events: none; }
+.ev-flotante.se-desvanece { animation: 3s ease-in forwards ev-desvanece; }
+@keyframes ev-desvanece { 0%, 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+
+/* La fila que se escribe se edita casilla a casilla: se toca una para elegirla, y la elegida se marca. */
+.ev-actual .ev-celda { cursor: pointer; }
+.ev-actual .ev-celda.ev-cursor { border-color: var(--ev-tinta); box-shadow: inset 0 0 0 2px var(--ev-tinta); background: var(--ev-superficie); }

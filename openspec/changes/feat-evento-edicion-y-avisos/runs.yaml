@@ -1,0 +1,24 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-19T10:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  mutacion:
+    aplicadas: 9
+    cazadas: 9
+    reforzadas: 0
+  notas: >-
+    Dos mejoras del dueño la víspera del evento, solo en la web: los avisos («Enviando…», la palabra no está en la
+    lista…) empujaban el teclado hacia abajo; ahora flotan sobre la pantalla y los de error se desvanecen solos. Y la
+    fila que se escribe se edita casilla a casilla, como en lapalabradeldia.com: tocar una casilla la elige, la letra va
+    ahí y el cursor salta a la siguiente vacía, borrar quita la de la elegida o la anterior, y las flechas mueven el
+    cursor. Ronda de corrección: elegir una casilla repintaba y volvía a sacar el aviso ya desvanecido; tocar la fila
+    lo quita. Comprobado en un móvil simulado: el teclado no se mueve con el aviso.

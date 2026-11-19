@@ -125,6 +125,17 @@ pulsar no lo reinicia, y el tiempo de la palabra va de ahí a resolverla o falla
 **THEN** tiene que ser de cinco letras (uno más corto no se envía, uno más largo no se escribe), y al sexto sin
 acertar la palabra termina sin resolver
 
+### una-letra-se-corrige-sin-borrar-las-demas
+**WHEN** el participante toca una casilla de la fila que está escribiendo y teclea una letra
+**THEN** la letra va a esa casilla sin tocar las demás y el cursor pasa a la siguiente casilla vacía; borrar quita la
+letra de la casilla elegida, o la de la anterior si la elegida está vacía, y las flechas mueven el cursor (como en
+lapalabradeldia.com, a diferencia del Wordle original)
+
+### los-avisos-flotan-sobre-la-pantalla
+**WHEN** sale un aviso («Enviando…», una palabra que no está en la lista, falta una letra, sin conexión)
+**THEN** aparece superpuesto a la pantalla, sin desplazar el tablero ni el teclado, y los de error desaparecen solos
+a los pocos segundos
+
 ### una-palabra-que-no-esta-en-la-lista-no-gasta-intento
 **WHEN** el participante envía una palabra que no está en la lista de palabras válidas
 **THEN** se le avisa, la palabra se queda escrita para corregirla y no gasta intento; la solución de otra palabra

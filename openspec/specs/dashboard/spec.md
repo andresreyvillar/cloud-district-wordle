@@ -1368,7 +1368,7 @@ verified-by:
 
 ## Requirement: Las palabras del evento se adivinan como en el Wordle, una tras otra
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified), feat-evento-edicion-y-avisos (modified) -->
 
 Las reglas son las del Wordle de siempre (decisión del dueño). El evento tiene varias palabras de cinco letras, que
 se juegan **una tras otra**: la siguiente solo se empieza con la anterior terminada. **Cada participante las juega en
@@ -1385,6 +1385,12 @@ vale no gasta intento. Si vale lo decide el servidor.
 Cada letra se colorea **por posición**: `G` si está en su sitio; después, de izquierda a derecha, `Y` mientras
 queden en la solución letras así que no hayan salido `G` ni `Y`, y `.` el resto. Se compara sin tildes ni diéresis,
 y la ñ es distinta de la n. Se gana con cinco `G`; tras el sexto intento sin ellas, se pierde.
+
+**La fila que se escribe se edita casilla a casilla** (decisión del dueño, como en lapalabradeldia.com): tocar una
+casilla la elige; una letra va a la casilla elegida y el cursor pasa a la siguiente vacía a su derecha (o al final);
+borrar quita la letra de la elegida o, si está vacía, la de la anterior; las flechas mueven el cursor. Se envía con
+las cinco casillas llenas. **Los avisos flotan** sobre la pantalla sin mover el tablero ni el teclado; los de error se
+desvanecen solos, y «Enviando…» y «Sin conexión» se quedan mientras dura lo que dicen.
 
 **La web deja claro que el tiempo cuenta**: la pantalla de empezar lo dice en negrita, con los segundos que suma cada
 intento (`segundos_por_intento`, que `estado_del_juego` entrega con el evento en juego); las reglas lo ponen en primer
@@ -1412,6 +1418,11 @@ lugar, y el cronómetro de cada palabra lo recuerda mientras corre.
 - **GIVEN** un evento con tres palabras y varios participantes
 - **WHEN** cada uno juega sus palabras 1, 2 y 3
 - **THEN** cada uno juega las tres palabras una vez, y no todos en el mismo orden
+
+#### Scenario: se corrige una letra sin borrar las demás
+- **GIVEN** la fila escrita «SALAS»
+- **WHEN** el participante toca la primera casilla y teclea C
+- **THEN** la fila es «CALAS», sin haber borrado nada más
 
 #### Scenario: el tiempo cuenta, y se dice
 - **WHEN** el participante va a empezar la primera palabra
