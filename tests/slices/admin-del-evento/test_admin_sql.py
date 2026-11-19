@@ -15,8 +15,8 @@ from pathlib import Path
 import pytest
 
 from tests.evento_sql import (
-    EVENTO, PIN, SEMILLA, activado, elegir, empezar, fijar, hasta_la_palabra, jugador, panel, probar, reiniciar, rpc,
-    terminado, token, valor,
+    EVENTO, PIN, SEMILLA, activado, elegir, empezar, fijar, jugador, panel, probar, reiniciar, rpc, terminado, token,
+    valor,
 )
 from tests.postgres_local import MIGRACIONES, postgres_con_migraciones, sin_postgres
 
@@ -135,24 +135,57 @@ def test_el_pin_correcto_termina_el_evento_una_sola_vez_y_sin_activar_no_se_term
 
 # ── Durante el evento ────────────────────────────────────────────────────────────────────────────────────
 
-# @scenarios los-contadores-no-tienen-nombres
-def test_durante_el_evento_el_panel_cuenta_sin_nombres_tiempos_ni_puntos(db):
+def a_medias(db, nombre: str, orden: int, segundos: int) -> None:
+    """Una palabra empezada hace `segundos` y sin terminar."""
+    valor(db, "insert into public.event_rounds (jugador, orden, empezada_en) select id, "
+              f"{orden}, now() - make_interval(secs => {segundos}) from public.event_roster "
+              f"where evento = '{EVENTO}' and nombre = '{nombre}'")
+
+
+# @scenarios el-admin-sigue-a-cada-participante
+def test_durante_el_evento_el_panel_sigue_a_cada_participante_sin_soluciones(db):
     activado(db)
-    ana, bea, cris = jugador(db, "Ana"), jugador(db, "Bea"), jugador(db, "Cris")
-    # Cada uno la tiene detrás del número que le toque: los contadores son de la palabra del evento.
-    numero = {tk: hasta_la_palabra(db, tk, 1) for tk in (ana, bea, cris)}
-    assert probar(db, ana, "casas", numero[ana])[0]
-    for palabra in ["tunde", "pique", "chufa", "nieve", "bucle", "letra"]:
-        probar(db, bea, palabra, numero[bea])
+    for nombre in ("Ana", "Bea", "Cris"):
+        jugador(db, nombre)
+    fijar(db, "Ana", 1, 30, 2)
+    fijar(db, "Ana", 2, 45, 6, resuelta=False)
+    a_medias(db, "Bea", 3, 90)
 
     datos = panel(db)
 
-    primera = datos["palabras"][0]
-    assert (primera["jugando"], primera["resueltas"], primera["falladas"]) == (1, 1, 1)
+    contadores = [(p["jugando"], p["resueltas"], p["falladas"]) for p in datos["palabras"]]
+    assert contadores == [(0, 1, 0), (0, 0, 1), (1, 0, 0)]
     assert (datos["participantes"], datos["elegidos"]) == (6, 3)
-    assert "jugadores" not in datos and "grupos" not in datos
     assert all("palabra" not in p for p in datos["palabras"]), "las soluciones, al terminar"
-    assert "tiempo" not in json.dumps(datos)
+    filas = {j["nombre"]: j for j in datos["jugadores"]}
+    ana, bea, cris, eva = filas["Ana"], filas["Bea"], filas["Cris"], filas["Eva"]
+    assert (ana["elegido"], ana["empezadas"], ana["terminadas"], ana["resueltas"], ana["tiempo_ms"]) == (True, 2, 2, 1, 75_000)
+    assert ana["jugando_desde"] is None
+    assert (bea["empezadas"], bea["terminadas"], bea["tiempo_ms"]) == (1, 0, 0)
+    assert valor(db, f"select abs(extract(epoch from now() - '{bea['jugando_desde']}'::timestamptz) - 90) < 5") == "t"
+    assert (cris["elegido"], cris["empezadas"]) == (True, 0)
+    assert eva["elegido"] is False
+
+
+# @scenarios el-ranking-se-ve-en-directo
+def test_durante_el_evento_el_ranking_cuenta_lo_terminado_hasta_ese_momento(db):
+    activado(db)
+    fijar(db, "Ana", 1, 30, 2)    # 30 + 60 = 90
+    fijar(db, "Bea", 1, 50, 2)    # 50 + 60 = 110
+    a_medias(db, "Cris", 1, 10)   # a medias: cero
+
+    datos = panel(db)
+
+    filas = {j["nombre"]: j for j in datos["jugadores"]}
+    assert (filas["Ana"]["puesto"], filas["Ana"]["puntos"]) == (1, 2)
+    assert (filas["Bea"]["puesto"], filas["Bea"]["puntos"]) == (2, 1)
+    assert filas["Cris"]["puntos"] == 0
+    grupos = {g["grupo"]: g for g in datos["grupos"]}
+    assert (grupos["Rojo"]["puesto"], grupos["Rojo"]["puntos_totales"]) == (1, 3)
+
+    fijar(db, "Dani", 1, 10, 1)   # 10 + 30 = 40: la mejor marca, y los demás no bajan
+    filas = {j["nombre"]: j for j in panel(db)["jugadores"]}
+    assert (filas["Dani"]["puntos"], filas["Ana"]["puntos"], filas["Bea"]["puntos"]) == (3, 2, 1)
 
 
 # @scenarios se-libera-un-nombre
@@ -291,11 +324,11 @@ def test_el_puesto_del_grupo_sale_de_la_media_sin_redondear(db):
         valor(db, f"delete from public.event_roster where evento = '{EVENTO}' and grupo in ('Veinte', 'Veintiuno')")
 
 
-# @scenarios los-puntos-solo-se-ven-al-terminar
+# @scenarios las-soluciones-solo-se-ven-al-terminar
 def test_los_puntos_y_las_soluciones_salen_en_el_panel_al_terminar(db):
     fijar(db, "Ana", 1, 10, 1)
     activado(db)
-    assert "jugadores" not in panel(db)
+    assert all("palabra" not in p for p in panel(db)["palabras"]), "en marcha, sin soluciones"
 
     terminado(db)
     datos = panel(db)

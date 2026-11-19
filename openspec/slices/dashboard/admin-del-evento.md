@@ -6,7 +6,7 @@ actor: admin del evento
 trigger:
   type: ui
   surface: web
-  detail: "ruta oculta /evento/admin: con el PIN, activar, seguir, liberar nombres, terminar y exportar los puntos por grupo"
+  detail: "ruta oculta /evento/admin: con el PIN, activar, seguir en directo, echar participantes, terminar, exportar y compartir los puntos"
 events:
   emits: []
   consumes: []
@@ -21,15 +21,20 @@ blocked: null
 # El admin activa el evento cuando quiere, lo sigue, lo termina y exporta los puntos por grupo
 
 **Actor:** quien lleva el evento, desde un portátil
-**Trigger:** abrir `/evento/admin`, escribir el PIN y pulsar «Activar el evento», «Terminar el evento», «Liberar» o
-una exportación
+**Trigger:** abrir `/evento/admin`, escribir el PIN y pulsar «Activar el evento», «Terminar el evento», «Echar», una
+exportación o «Copiar», «WhatsApp» o «Email»
 
 ## Contexto
 
 El evento no tiene hora fija: **lo activa el admin a voluntad** (decisión del dueño), y desde ese momento todas las
-palabras se pueden jugar. Mientras juegan, el admin ve cuántos han elegido nombre y, por palabra, cuántos la están
-jugando, cuántos la han resuelto y cuántos la han fallado, **sin nombres ni tiempos**. Si alguien elige un nombre que
-no es el suyo, el admin lo libera: el nombre vuelve a la lista y lo jugado con él se borra.
+palabras se pueden jugar. **Mientras juegan, el admin lo sigue en directo** (decisión del dueño): cuántos han elegido
+nombre; por palabra, cuántos la están jugando, cuántos la han resuelto y cuántos la han fallado; y **una fila por cada
+participante que ha entrado**, con su grupo, cuántas palabras ha resuelto, el tiempo de sus palabras terminadas, en
+qué palabra va con su reloj, y sus puntos y su puesto. El **ranking de participantes y el de grupos se ven en directo**
+y se actualizan solos cada pocos segundos; son provisionales, porque una palabra a medias cuenta cero y los puntos de
+cada palabra dependen de cuántos la resuelvan peor. El móvil de los participantes sigue sin ver puntos ni puestos, y
+las soluciones solo se ven al terminar. Si alguien elige un nombre que no es el suyo, el admin lo **echa** desde su
+fila: el nombre vuelve a la lista y lo jugado con él se borra.
 
 Al terminar, salen **los puntos** (decisión del dueño, medida con eventos simulados):
 
@@ -40,7 +45,8 @@ Al terminar, salen **los puntos** (decisión del dueño, medida con eventos simu
 - Cada grupo puntúa **la media de toda su lista**: quien no juega cuenta como cero.
 
 Los puntos se exportan en JSON y CSV para quien lleva la cuenta de los grupos, que los recibirá en su API cuando
-nos den el formato.
+nos den el formato. Terminado el evento, **los resultados se comparten en texto** (decisión del dueño): el ranking de
+grupos con sus puntos y el podio de participantes, para copiarlo o mandarlo por WhatsApp o por email.
 
 El PIN puede ser corto (cuatro cifras): **cada cinco fallos seguidos lo bloquean, y cada bloqueo dura el doble** (1,
 2, 4… minutos, hasta una hora), también para el bueno: probar los 10.000 lleva meses. Quien sepa el id del evento
@@ -74,13 +80,20 @@ dura el doble, hasta una hora; un acierto pone la cuenta a cero
 **THEN** el evento queda activo con la hora del servidor y los móviles pasan a pedir el nombre; activarlo otra vez no
 lo mueve
 
-### los-contadores-no-tienen-nombres
+### el-admin-sigue-a-cada-participante
 **WHEN** el evento está activo
-**THEN** el panel enseña cuántos han elegido nombre de cuántos hay en la lista y, por palabra, cuántos la juegan, la
-han resuelto y la han fallado, sin nombres, tiempos, puntos ni soluciones
+**THEN** el panel enseña cuántos han elegido nombre de cuántos hay en la lista; por palabra, cuántos la juegan, la han
+resuelto y la han fallado; y una fila por cada participante que ha entrado, con su grupo, sus palabras resueltas, el
+tiempo de sus palabras terminadas y en qué palabra va con su reloj, o si está entre dos palabras, ha terminado o no ha
+empezado; sin soluciones
+
+### el-ranking-se-ve-en-directo
+**WHEN** el evento está activo y los participantes van terminando palabras
+**THEN** el panel enseña el puesto y los puntos de cada participante que ha entrado y el ranking de grupos, con lo
+terminado hasta ese momento y marcados como provisionales, y se actualiza solo cada pocos segundos
 
 ### se-libera-un-nombre
-**WHEN** el admin pulsa «Liberar» junto a un nombre elegido y lo confirma
+**WHEN** el admin pulsa «Echar» en la fila de un participante y lo confirma
 **THEN** el nombre vuelve a estar libre, se borra lo que se jugó con él y el móvil que lo tenía vuelve a pedir el
 nombre en cuanto habla con el servidor; con el evento terminado no se libera ninguno, porque cambiaría los puntos
 
@@ -108,10 +121,15 @@ sus palabras
 **THEN** son la suma de los puntos de su lista dividida entre todos sus miembros, hayan jugado o no (el puesto sale
 de la media sin redondear), y el panel enseña también el total, cuántos son y cuántos jugaron
 
-### los-puntos-solo-se-ven-al-terminar
+### las-soluciones-solo-se-ven-al-terminar
 **WHEN** el evento ha terminado
 **THEN** el panel enseña el ranking de grupos, el de participantes con cada palabra (intentos, tiempo y puntos) y las
-soluciones; antes de terminar no los entrega
+soluciones; antes de terminar no entrega las soluciones
+
+### se-comparten-los-resultados-en-texto
+**WHEN** el evento ha terminado y el admin pulsa «Copiar», «WhatsApp» o «Email»
+**THEN** obtiene un texto con el ranking de todos los grupos y sus puntos (la media) y el podio de participantes con
+su grupo y sus puntos, listo para pegar en un mensaje; los nombres van como texto, sin HTML
 
 ### se-exportan-los-puntos
 **WHEN** el admin pulsa «Grupos (CSV)», «Participantes (CSV)» o «Todo (JSON)»

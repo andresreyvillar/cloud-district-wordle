@@ -1071,7 +1071,7 @@ verified-by:
 
 ## Requirement: El evento puntúa cada palabra por tiempo e intentos, y cada grupo por la media de su lista
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified), feat-admin-en-directo (modified) -->
 
 En cada palabra, la **marca** de quien la resolvió es su tiempo más `segundos_por_intento` (30 s, decisión del dueño
 medida con eventos simulados) por cada intento; menos es mejor. Quien la resolvió se lleva **1 punto más uno por cada
@@ -1084,8 +1084,10 @@ Cada grupo puntúa **la media de toda su lista**: la suma de los puntos de sus m
 o no; el puesto sale de la media sin redondear. Con 30 s, un intento de más se compensa siendo 30 segundos más rápido. `segundos_por_intento` es una columna del
 evento: se recalibra sin desplegar.
 
-`panel_del_evento` solo entrega los puntos con el evento terminado; durante el evento nadie ve su posición. El admin
-los exporta en JSON y CSV.
+`panel_del_evento` entrega los puntos al admin también durante el evento, **provisionales**: cuentan las palabras
+terminadas hasta ese momento, así que una a medias vale cero y los puntos de una palabra suben cuando otro la resuelve
+peor. Ningún participante ve puntos ni puesto en su móvil. El admin los exporta en JSON y CSV y, terminado, los
+comparte en texto.
 
 #### Scenario: un intento de más se compensa con 30 segundos
 - **GIVEN** una palabra resuelta por Ana en 4 intentos y 30 s, por Bea en 3 y 70 s y por Cris en 3 y 50 s
@@ -1102,9 +1104,10 @@ los exporta en JSON y CSV.
 - **WHEN** se calculan los puntos del grupo
 - **THEN** son 1,5
 
-#### Scenario: durante el evento no hay puntos
-- **WHEN** se pide el panel con el evento sin terminar
-- **THEN** no trae puntos de participantes ni de grupos
+#### Scenario: durante el evento, puntos provisionales en el panel
+- **GIVEN** el evento activo y una palabra resuelta por una participante y a medias por otro
+- **WHEN** se pide el panel
+- **THEN** la que la resolvió tiene sus puntos y el que la juega, cero de esa palabra
 
 verified-by:
   - tests/slices/admin-del-evento/test_admin_sql.py
