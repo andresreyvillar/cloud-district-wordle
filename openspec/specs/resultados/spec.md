@@ -969,7 +969,7 @@ Mientras el evento no ha terminado, ninguna función del móvil devuelve una pal
 solución. **Tampoco devuelven qué palabra del evento hay detrás de cada número del participante**: las rondas viajan
 con el número que él ve (`orden`, de 1 a N), nunca con el de la palabra en `event_targets`. Terminado el evento,
 `estado_del_juego` incluye las palabras y `mi_juego` las del participante en su orden (`palabras`). Antes de empezar,
-`palabras_del_evento` las entrega sin PIN para revisarlas en su propio enlace (decisión del dueño); mientras se juega, ninguna función
+`ver_palabras` las entrega con el PIN propio de quien las revisa (decisión del dueño); mientras se juega, ninguna función
 pública las devuelve. Ninguna función del móvil devuelve el grupo de nadie.
 
 #### Scenario: fallar no enseña la solución

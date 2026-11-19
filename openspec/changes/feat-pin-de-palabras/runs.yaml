@@ -1,0 +1,19 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-19T18:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 1
+  notas: >-
+    El dueño quiere que en el dashboard haya un botón para Nouha, que la primera vez crea un PIN de cuatro cifras que
+    solo ella sabe y desde entonces lo necesita para ver y cambiar las palabras. Es un PIN aparte del del evento,
+    porque el orden de cada participante se calcula con la huella del PIN del evento y crearlo barajaría a todos. Las
+    funciones sin PIN de la víspera (palabras_del_evento, cambiar_palabra) dejan de ser públicas. Cinco fallos
+    bloquean el PIN cinco minutos; si se olvida, se reinicia por SQL.

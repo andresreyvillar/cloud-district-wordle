@@ -42,7 +42,6 @@ export function controlDelAdmin({ api }) {
     estado: s,
     refrescar,
     echar: (nombre) => accion(() => api.echar(nombre)),
-    cambiarPalabra: (orden, palabra) => accion(() => api.cambiarPalabra(orden, palabra), `Palabra ${Number(orden)} guardada.`),
   };
 }
 
@@ -222,10 +221,13 @@ function editorDePalabras(p) {
       se ven ni se cambian hasta que termine.</p>${filas}</section>`;
 }
 
-/** Antes de empezar, el dashboard no enseña las palabras: quien lo mira también puede jugar. */
+/** Antes de empezar, el dashboard no enseña las palabras: quien lo mira también puede jugar. Solo un botón para quien
+ * las revisa, que las ve con su propio PIN. */
 function sinPalabras() {
   return `<section class="pa-palabras"><h2>Las palabras</h2>
-    <p class="pa-nota">Se revisan en su propio enlace, para que el dashboard se pueda mirar sin conocerlas.</p></section>`;
+    <p class="pa-nota">No se ven aquí, para que el dashboard se pueda mirar sin conocerlas. Quien las revisa entra con su
+      PIN.</p>
+    <a class="ev-boton" href="evento/palabras">Revisar las palabras</a></section>`;
 }
 
 /** En qué va cada uno: la palabra que juega con su reloj (con la hora del servidor), si ha terminado o si no ha empezado. */
@@ -387,16 +389,18 @@ export async function montarAdmin(contenedor, control, temporizador, evento, con
   pintar();
 }
 
-// ── Las palabras, en su propio enlace ─────────────────────────────────────────────────────────────────────
+// ── Las palabras, con su propio PIN ───────────────────────────────────────────────────────────────────────
 
-/** El control de `/evento/palabras`: leer las palabras y cambiar una, solo antes de empezar. */
+/** El control de `/evento/palabras`: crear el PIN la primera vez, entrar con él, ver y cambiar las palabras. El PIN vive
+ * solo en memoria: al recargar se vuelve a pedir. */
 export function controlDePalabras({ api }) {
-  const s = { datos: null, cerrado: null, aviso: null, sinConexion: false, ocupado: false };
+  const s = { estado: null, pin: null, datos: null, cerrado: null, aviso: null, sinConexion: false, ocupado: false };
+  const fallo = (error) => (error.tipo === 'rechazo' ? error.message : 'No se ha podido conectar. Prueba otra vez.');
 
   async function refrescar() {
     try {
-      s.datos = await api.palabras();
-      s.cerrado = null;
+      s.estado = await api.estadoDeLasPalabras();
+      s.cerrado = s.estado.antes ? null : 'El evento ya ha empezado: las palabras ya no se ven aquí.';
       s.sinConexion = false;
     } catch (error) {
       if (error.tipo === 'red') s.sinConexion = true;
@@ -404,34 +408,86 @@ export function controlDePalabras({ api }) {
     }
   }
 
+  async function entrar(pin) {
+    try {
+      s.datos = await api.verPalabras(pin);
+      s.pin = pin;
+      s.aviso = null;
+    } catch (error) {
+      s.aviso = fallo(error);
+      if (/ya ha empezado/.test(s.aviso)) s.cerrado = s.aviso;
+    }
+  }
+
+  /** La primera vez: un PIN de cuatro cifras, escrito dos veces igual. */
+  async function crearPin(pin, repetido) {
+    const texto = String(pin ?? '');
+    if (!/^[0-9]{4}$/.test(texto)) {
+      s.aviso = 'El PIN tiene que tener cuatro cifras.';
+      return;
+    }
+    if (texto !== String(repetido ?? '')) {
+      s.aviso = 'Los dos PIN no coinciden.';
+      return;
+    }
+    try {
+      await api.crearPinDePalabras(texto);
+    } catch (error) {
+      s.aviso = fallo(error);
+      await refrescar();
+      return;
+    }
+    await refrescar();
+    await entrar(texto);
+  }
+
   async function cambiarPalabra(orden, palabra) {
-    if (s.ocupado) return;
+    if (s.ocupado || !s.pin) return;
     s.ocupado = true;
     try {
-      await api.cambiarPalabra(orden, palabra);
+      await api.guardarPalabra(s.pin, orden, palabra);
       s.aviso = `Palabra ${Number(orden)} guardada.`;
     } catch (error) {
-      s.aviso = error.tipo === 'rechazo' ? error.message : 'No se ha podido conectar. Prueba otra vez.';
+      s.aviso = fallo(error);
     } finally {
       s.ocupado = false;
     }
-    await refrescar();
+    try {
+      s.datos = await api.verPalabras(s.pin);
+    } catch (error) {
+      s.aviso = fallo(error);
+    }
   }
 
-  return { estado: s, refrescar, cambiarPalabra };
+  return { estado: s, refrescar, crearPin, entrar, cambiarPalabra };
 }
 
-/** La página de las palabras: con el estilo del cartel; empezado el evento, solo dice que ya no se ven aquí. */
+const campoPin = (nombre, etiqueta) => `<input name="${nombre}" type="password" inputmode="numeric" maxlength="4"
+  autocomplete="off" pattern="[0-9]{4}" aria-label="${etiqueta}" placeholder="····">`;
+
+/** La página de las palabras: con el estilo del cartel. Pide crear el PIN la primera vez, después lo pide para entrar, y
+ * con él enseña las palabras para cambiarlas. Empezado el evento, solo dice que ya no se ven aquí. */
 export function vistaDePalabras(s) {
   if (s.cerrado) {
     return `<div class="pa pa-cartel"><p class="pa-estado">${escapar(s.cerrado)}</p></div>`;
   }
-  if (!s.datos) {
+  if (!s.estado) {
     return `<div class="pa pa-cartel"><p class="pa-estado">${s.sinConexion ? 'Sin conexión: reintentando…' : 'Cargando…'}</p>
       ${aviso(s)}</div>`;
   }
-  const p = { ...s.datos, antes: true };
-  return `<div class="pa pa-cartel">${cabecera(p)}${editorDePalabras(p)}${aviso(s)}</div>`;
+  const p = { ...s.estado, ...(s.datos ?? {}), antes: true };
+  if (s.pin && s.datos) {
+    return `<div class="pa pa-cartel">${cabecera(p)}${editorDePalabras(p)}${aviso(s)}</div>`;
+  }
+  const formulario = s.estado.tiene_pin
+    ? `<form class="pa-pin" data-formulario="pin"><p class="pa-nota">Escribe tu PIN para ver las palabras.</p>
+        ${campoPin('pin', 'PIN')}<button type="submit" class="ev-boton">Entrar</button></form>`
+    : `<form class="pa-pin" data-formulario="crear-pin"><p class="pa-nota">Es la primera vez: crea un PIN de cuatro
+        cifras. Solo lo sabrás tú, y desde ahora se pedirá para ver y cambiar las palabras.</p>
+        ${campoPin('pin', 'PIN nuevo')}${campoPin('repetido', 'Repite el PIN')}
+        <button type="submit" class="ev-boton">Crear el PIN</button></form>`;
+  return `<div class="pa pa-cartel">${cabecera(p)}<section class="pa-palabras"><h2>Las palabras</h2>${formulario}</section>
+    ${aviso(s)}</div>`;
 }
 
 export async function montarPalabras(contenedor, control) {
@@ -441,9 +497,13 @@ export async function montarPalabras(contenedor, control) {
   };
   contenedor.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const formulario = e.target.closest('[data-formulario="palabra"]');
-    if (!formulario) return;
-    await control.cambiarPalabra(Number(formulario.dataset.orden), new FormData(formulario).get('palabra'));
+    const formulario = e.target.closest('[data-formulario]');
+    const datos = new FormData(formulario);
+    const tipo = formulario?.dataset.formulario;
+    if (tipo === 'crear-pin') await control.crearPin(datos.get('pin'), datos.get('repetido'));
+    else if (tipo === 'pin') await control.entrar(datos.get('pin'));
+    else if (tipo === 'palabra') await control.cambiarPalabra(Number(formulario.dataset.orden), datos.get('palabra'));
+    else return;
     pintar();
   });
   await control.refrescar();

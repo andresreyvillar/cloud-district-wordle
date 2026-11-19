@@ -31,9 +31,11 @@ El evento **empieza y termina a su hora** (decisión del dueño): `empieza_en` y
 sin contraseña** (decisión del dueño, avisado de que así cualquiera con el enlace ve las palabras antes de empezar),
 con el estilo del cartel del evento: fondo crema con la cuadrícula fina, título grande en minúscula, anotaciones
 pequeñas en monoespaciada. Antes de empezar dice cuánto falta, **pero no enseña las palabras**: el dueño tiene el
-dashboard abierto y juega sin conocerlas. Las palabras se revisan y **se cambian en su propio enlace**
-(`/evento/palabras`, para Nouha) por otras del diccionario del juego hasta la hora de empezar; después quedan fijas y
-no se ven en ninguna parte hasta que termina. **Mientras juegan, el admin lo sigue en directo** (decisión del dueño): cuántos han elegido
+dashboard abierto y juega sin conocerlas. Un botón «Revisar las palabras» lleva a su propia página
+(`/evento/palabras`), para quien las revisa (Nouha): **la primera vez crea un PIN de cuatro cifras que solo sabe ella**,
+y desde entonces ese PIN hace falta para verlas y **cambiarlas** por otras del diccionario del juego, hasta la hora de
+empezar; después quedan fijas y no se ven en ninguna parte hasta que termina. Es un PIN aparte del del evento: el orden
+de cada participante se calcula con el del evento, y no cambia. **Mientras juegan, el admin lo sigue en directo** (decisión del dueño): cuántos han elegido
 nombre; por palabra, cuántos la están jugando, cuántos la han resuelto y cuántos la han fallado; y **una fila por cada
 participante que ha entrado**, con su grupo, cuántas palabras ha resuelto, el tiempo de sus palabras terminadas, en
 qué palabra va con su reloj, y sus puntos y su puesto. El **ranking de participantes y el de grupos se ven en directo**
@@ -87,8 +89,15 @@ participantes y los rankings; las palabras, solo al terminar (antes de empezar s
 **THEN** el evento empieza o termina solo, sin que nadie lo active; antes de su hora los móviles solo ven la espera y
 no se puede elegir nombre, aunque la hora ya esté cargada
 
+### las-palabras-tienen-su-propio-pin
+**WHEN** antes de empezar, quien revisa las palabras pulsa «Revisar las palabras» en el dashboard
+**THEN** la primera vez crea un PIN de cuatro cifras (escrito dos veces igual); desde entonces se le pide ese PIN y,
+sin él, no se ven las palabras ni hay otra función pública que las dé; cinco fallos seguidos lo bloquean cinco minutos;
+crear el PIN no cambia el orden de las palabras de ningún participante
+
 ### se-cambian-las-palabras-antes-de-empezar
-**WHEN** antes de la hora de empezar, en `/evento/palabras`, quien revisa las palabras cambia una y pulsa «Guardar»
+**WHEN** antes de la hora de empezar, en `/evento/palabras` y con el PIN, quien revisa las palabras cambia una y pulsa
+«Guardar»
 **THEN** queda cambiada si tiene cinco letras, está en el diccionario del juego y no repite otra del evento; si no,
 se dice por qué; llegada la hora de empezar, ya no se puede cambiar ninguna y el enlace solo dice que ya no se ven
 
