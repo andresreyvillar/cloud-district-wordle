@@ -1069,30 +1069,54 @@ checks:
 verified-by:
   - tests/slices/clasificacion-de-figuras/test_album.py
 
-## Requirement: El evento puntúa cada palabra por tiempo e intentos, y cada grupo por la media de su lista
+## Requirement: El evento puntúa sobre todo acertar y después la rapidez, y cada grupo por la media de su lista
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified), feat-admin-en-directo (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-evento-orden-aleatorio (modified), feat-admin-en-directo (modified), feat-evento-puntos-por-acierto (modified), feat-admin-dashboard (modified) -->
 
-En cada palabra, la **marca** de quien la resolvió es su tiempo más `segundos_por_intento` (30 s, decisión del dueño
-medida con eventos simulados) por cada intento; menos es mejor. Quien la resolvió se lleva **1 punto más uno por cada
-resolvedor con peor marca**: la misma marca, los mismos puntos. Quien la falló, la dejó a medias al terminar el evento
-o no la jugó se lleva 0. Como cada participante juega las palabras en su propio orden, las marcas de una palabra se
+Cada palabra resuelta da `puntos_por_acierto` (10) más un extra de hasta `puntos_por_rapidez` (5) por rapidez
+(decisión del dueño, medida con eventos simulados: quien acierta más palabras queda delante en el 99 % de los casos,
+frente al 78 % de la regla anterior, que daba 1 punto más uno por cada resolvedor más lento y dejaba al resolvedor
+lento casi igual que a quien fallaba). La rapidez se mide con la **marca**: el tiempo más `segundos_por_intento` (30
+s) por cada intento; menos es mejor. Con R resolvedores de la palabra y M de ellos con mejor marca, el extra es
+`puntos_por_rapidez × (1 − M / (R − 1))` —el mejor, entero; el peor, nada; quien la resuelve solo, entero—, así que la
+misma marca da los mismos puntos y empatar no quita extra. Los puntos se redondean a dos decimales. Quien la falló, la
+dejó a medias al terminar el evento o no la jugó se lleva 0. Como cada participante juega las palabras en su propio orden, las marcas de una palabra se
 comparan entre todos los que jugaron **esa palabra**, sea cual sea el número que les tocó. Los puntos de un participante suman los de sus palabras, y los participantes se ordenan por
 puntos (los mismos puntos comparten puesto: 1, 1, 3).
 
-Cada grupo puntúa **la media de toda su lista**: la suma de los puntos de sus miembros entre cuántos son, hayan jugado
-o no; el puesto sale de la media sin redondear. Con 30 s, un intento de más se compensa siendo 30 segundos más rápido. `segundos_por_intento` es una columna del
-evento: se recalibra sin desplegar.
+**Campeonato F1 de grupos** (decisión del dueño), además de la media: los diez primeros de la clasificación
+individual con puntos suman a su grupo 25, 18, 15, 12, 10, 8, 6, 4, 2 y 1; los empatados se reparten los puntos de los
+puestos que ocupan juntos (dos primeros, (25 + 18) / 2 = 21,5 cada uno). `tablero_del_evento` da los puntos F1 de cada
+participante y, por grupo, el total y quién lo ha sumado.
+
+Cada grupo puntúa además **la media de toda su lista**: la suma de los puntos de sus miembros entre cuántos son, hayan jugado
+o no; el puesto sale de la media sin redondear. `puntos_por_acierto`, `puntos_por_rapidez` y `segundos_por_intento`
+son columnas del evento: se recalibran sin desplegar.
 
 `panel_del_evento` entrega los puntos al admin también durante el evento, **provisionales**: cuentan las palabras
-terminadas hasta ese momento, así que una a medias vale cero y los puntos de una palabra suben cuando otro la resuelve
-peor. Ningún participante ve puntos ni puesto en su móvil. El admin los exporta en JSON y CSV y, terminado, los
+terminadas hasta ese momento, así que una a medias vale cero, y el extra de una palabra se reparte de nuevo cada vez
+que alguien la resuelve. Ningún participante ve puntos ni puesto en su móvil. El admin los exporta en JSON y CSV y, terminado, los
 comparte en texto.
 
-#### Scenario: un intento de más se compensa con 30 segundos
+#### Scenario: acertar da 10 y la rapidez, hasta 5
 - **GIVEN** una palabra resuelta por Ana en 4 intentos y 30 s, por Bea en 3 y 70 s y por Cris en 3 y 50 s
 - **WHEN** se calculan los puntos
-- **THEN** Cris (140) se lleva 3, Ana (150) 2 y Bea (160) 1, y quien la falló, 0
+- **THEN** Cris (marca 140) se lleva 15, Ana (150) 12,5 y Bea (160) 10, y quien la falló, 0
+
+#### Scenario: acertar una palabra más pesa más que la rapidez
+- **GIVEN** Ana resuelve dos palabras, las dos la más lenta, y Bea resuelve solo una de ellas, la más rápida
+- **WHEN** se calculan los puntos
+- **THEN** Ana (20) queda delante de Bea (15)
+
+#### Scenario: los diez primeros suman F1 a su grupo
+- **GIVEN** doce participantes con puntos distintos, alternando dos grupos
+- **WHEN** se calcula el campeonato F1
+- **THEN** del primero al décimo suman 25, 18, 15, 12, 10, 8, 6, 4, 2 y 1 a su grupo, y el undécimo y el duodécimo, 0
+
+#### Scenario: los empatados se reparten los puntos F1
+- **GIVEN** dos participantes empatados en cabeza
+- **WHEN** se calcula el campeonato F1
+- **THEN** se llevan 21,5 cada uno y el siguiente, 15
 
 #### Scenario: compiten quienes jugaron la misma palabra, en el número que les tocara
 - **GIVEN** dos participantes a los que la misma palabra del evento les tocó en números distintos
@@ -1100,9 +1124,9 @@ comparte en texto.
 - **THEN** compiten entre sí por ella
 
 #### Scenario: el grupo puntúa la media de su lista
-- **GIVEN** un grupo de dos en el que uno suma 3 puntos y el otro no juega
+- **GIVEN** un grupo de dos en el que uno suma 15 puntos y el otro no juega
 - **WHEN** se calculan los puntos del grupo
-- **THEN** son 1,5
+- **THEN** son 7,5
 
 #### Scenario: durante el evento, puntos provisionales en el panel
 - **GIVEN** el evento activo y una palabra resuelta por una participante y a medias por otro

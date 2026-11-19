@@ -91,12 +91,14 @@ def test_activado_el_estado_trae_titulo_y_cuantas_palabras_hay_sin_soluciones(db
 
 
 # @scenarios el-tiempo-cuenta-y-se-dice
-def test_activado_el_estado_dice_cuantos_segundos_suma_cada_intento(db):
+def test_activado_el_estado_dice_los_puntos_por_acertar_y_por_rapidez_y_los_segundos_por_intento(db):
     assert "segundos_por_intento" not in estado(db), "antes de activar, nada"
+    assert "puntos_por_acierto" not in estado(db)
     activado(db)
     valor(db, f"update public.event_editions set segundos_por_intento = 45 where id = '{EVENTO}'")
 
-    assert estado(db)["segundos_por_intento"] == 45
+    datos = estado(db)
+    assert (datos["segundos_por_intento"], datos["puntos_por_acierto"], datos["puntos_por_rapidez"]) == (45, 10, 5)
 
 
 # ── El nombre ────────────────────────────────────────────────────────────────────────────────────────────
@@ -299,7 +301,7 @@ def test_compiten_por_una_palabra_quienes_la_jugaron_aunque_fuera_en_otro_numero
     jugadores = {j["nombre"]: j for j in panel(db)["jugadores"]}
 
     palabra_1 = {nombre: next(p for p in jugadores[nombre]["palabras"] if p["orden"] == 1) for nombre in (rapido, lento)}
-    assert (palabra_1[rapido]["puntos"], palabra_1[lento]["puntos"]) == (2, 1)
+    assert (palabra_1[rapido]["puntos"], palabra_1[lento]["puntos"]) == (15, 10)
 
 
 # @scenarios cada-palabra-tiene-seis-intentos-de-cinco-letras

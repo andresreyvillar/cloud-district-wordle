@@ -177,15 +177,15 @@ def test_durante_el_evento_el_ranking_cuenta_lo_terminado_hasta_ese_momento(db):
     datos = panel(db)
 
     filas = {j["nombre"]: j for j in datos["jugadores"]}
-    assert (filas["Ana"]["puesto"], filas["Ana"]["puntos"]) == (1, 2)
-    assert (filas["Bea"]["puesto"], filas["Bea"]["puntos"]) == (2, 1)
+    assert (filas["Ana"]["puesto"], filas["Ana"]["puntos"]) == (1, 15)
+    assert (filas["Bea"]["puesto"], filas["Bea"]["puntos"]) == (2, 10)
     assert filas["Cris"]["puntos"] == 0
     grupos = {g["grupo"]: g for g in datos["grupos"]}
-    assert (grupos["Rojo"]["puesto"], grupos["Rojo"]["puntos_totales"]) == (1, 3)
+    assert (grupos["Rojo"]["puesto"], float(grupos["Rojo"]["puntos_totales"])) == (1, 25)
 
-    fijar(db, "Dani", 1, 10, 1)   # 10 + 30 = 40: la mejor marca, y los demás no bajan
+    fijar(db, "Dani", 1, 10, 1)   # 10 + 30 = 40: la mejor marca, y el extra se reparte de nuevo
     filas = {j["nombre"]: j for j in panel(db)["jugadores"]}
-    assert (filas["Dani"]["puntos"], filas["Ana"]["puntos"], filas["Bea"]["puntos"]) == (3, 2, 1)
+    assert (filas["Dani"]["puntos"], filas["Ana"]["puntos"], filas["Bea"]["puntos"]) == (15, 12.5, 10)
 
 
 # @scenarios se-libera-un-nombre
@@ -229,11 +229,12 @@ def test_la_marca_es_el_tiempo_mas_treinta_segundos_por_intento(db):
 
     tabla, datos = puntos(db)
 
-    assert (tabla["Cris"], tabla["Ana"], tabla["Bea"], tabla["Dani"], tabla["Eva"]) == (3, 2, 1, 0, 0)
+    # 10 por acertar y hasta 5 por rapidez: el mejor (140) 15, el del medio (150) 12,5, el peor (160) 10.
+    assert (tabla["Cris"], tabla["Ana"], tabla["Bea"], tabla["Dani"], tabla["Eva"]) == (15, 12.5, 10, 0, 0)
     assert [j["nombre"] for j in datos["jugadores"][:3]] == ["Cris", "Ana", "Bea"]
     ana = next(j for j in datos["jugadores"] if j["nombre"] == "Ana")
     assert ana["palabras"] == [{"orden": 1, "resuelta": True, "intentos": 4, "tiempo_ms": 30_000,
-                                "marca_ms": 150_000, "puntos": 2}]
+                                "marca_ms": 150_000, "puntos": 12.5}]
 
 
 # @scenarios cada-palabra-puntua-por-tiempo-e-intentos
@@ -247,7 +248,8 @@ def test_las_palabras_puntuan_por_separado_y_se_suman(db):
 
     tabla, _ = puntos(db)
 
-    assert (tabla["Ana"], tabla["Bea"], tabla["Cris"]) == (2 + 1, 1 + 3, 0 + 2)
+    # Palabra 1: Ana 120, Bea 130. Palabra 2: Bea 80, Cris 200, Ana 210.
+    assert (tabla["Ana"], tabla["Bea"], tabla["Cris"]) == (15 + 10, 10 + 15, 0 + 12.5)
 
 
 # @scenarios cada-palabra-puntua-por-tiempo-e-intentos
@@ -260,7 +262,7 @@ def test_una_palabra_a_medias_al_terminar_no_puntua(db):
 
     tabla, _ = puntos(db)
 
-    assert (tabla["Ana"], tabla["Bea"]) == (0, 1)
+    assert (tabla["Ana"], tabla["Bea"]) == (0, 15), "a medias no puntúa; quien la resuelve solo se lleva el extra entero"
 
 
 # @scenarios el-empate-comparte-puntos
@@ -272,7 +274,7 @@ def test_la_misma_marca_da_los_mismos_puntos(db):
 
     tabla, datos = puntos(db)
 
-    assert (tabla["Ana"], tabla["Bea"], tabla["Cris"]) == (2, 2, 1)
+    assert (tabla["Ana"], tabla["Bea"], tabla["Cris"]) == (15, 15, 10), "empatar en cabeza no quita extra"
     assert [j["puesto"] for j in datos["jugadores"][:3]] == [1, 1, 3]
 
 
@@ -285,35 +287,64 @@ def test_con_otros_segundos_por_intento_cambia_quien_gana(db):
 
     tabla, datos = puntos(db)
 
-    assert (tabla["Bea"], tabla["Ana"]) == (2, 1), "con 45 s, 70 + 135 = 205 gana a 30 + 180 = 210"
+    assert (tabla["Bea"], tabla["Ana"]) == (15, 10), "con 45 s, 70 + 135 = 205 gana a 30 + 180 = 210"
     assert datos["segundos_por_intento"] == 45
+
+
+# @scenarios los-segundos-por-intento-se-cambian-sin-codigo
+def test_con_otros_puntos_por_acierto_y_por_rapidez_cambian_los_puntos(db):
+    fijar(db, "Ana", 1, 30, 1)
+    fijar(db, "Bea", 1, 50, 1)
+    fijar(db, "Cris", 1, 70, 1)
+    valor(db, "update public.event_editions set puntos_por_acierto = 20, puntos_por_rapidez = 8")
+    try:
+        terminado(db)
+        tabla, _ = puntos(db)
+    finally:
+        valor(db, "update public.event_editions set puntos_por_acierto = 10, puntos_por_rapidez = 5")
+
+    assert (tabla["Ana"], tabla["Bea"], tabla["Cris"]) == (28, 24, 20)
+
+
+# @scenarios acertar-pesa-mas-que-la-rapidez
+def test_acertar_una_palabra_mas_pesa_mas_que_ser_el_mas_rapido(db):
+    fijar(db, "Ana", 1, 300, 6)   # la más lenta en las dos
+    fijar(db, "Ana", 2, 300, 6)
+    fijar(db, "Bea", 1, 10, 1)    # la más rápida, pero solo una
+    fijar(db, "Cris", 2, 10, 1)
+    terminado(db)
+
+    tabla, datos = puntos(db)
+
+    assert (tabla["Ana"], tabla["Bea"], tabla["Cris"]) == (20, 15, 15)
+    assert datos["jugadores"][0]["nombre"] == "Ana"
 
 
 # @scenarios la-puntuacion-del-grupo-es-la-media-de-su-lista
 def test_el_grupo_puntua_la_media_de_toda_su_lista(db):
-    fijar(db, "Ana", 1, 10, 1)    # Rojo: 3 + 0 (Bea no juega)
-    fijar(db, "Cris", 1, 20, 1)   # Azul: 2 + 1
+    fijar(db, "Ana", 1, 10, 1)    # Rojo: 15 + 0 (Bea no juega) = 15 → 7,5
+    fijar(db, "Cris", 1, 20, 1)   # Azul: 12,5 + 10 = 22,5 → 11,25
     fijar(db, "Dani", 1, 30, 1)
     terminado(db)
 
     _, datos = puntos(db)
 
     grupos = {g["grupo"]: g for g in datos["grupos"]}
-    assert (grupos["Rojo"]["puntos_totales"], float(grupos["Rojo"]["puntos"])) == (3, 1.5)
-    assert (grupos["Azul"]["puntos_totales"], float(grupos["Azul"]["puntos"])) == (3, 1.5)
+    assert (float(grupos["Rojo"]["puntos_totales"]), float(grupos["Rojo"]["puntos"])) == (15, 7.5)
+    assert (float(grupos["Azul"]["puntos_totales"]), float(grupos["Azul"]["puntos"])) == (22.5, 11.25)
     assert (grupos["Rojo"]["miembros"], grupos["Rojo"]["jugaron"]) == (2, 1)
     assert float(grupos["Verde"]["puntos"]) == 0
-    assert [g["puesto"] for g in datos["grupos"]] == [1, 1, 3]
+    assert [g["grupo"] for g in datos["grupos"]] == ["Azul", "Rojo", "Verde"]
 
 
 # @scenarios la-puntuacion-del-grupo-es-la-media-de-su-lista
 def test_el_puesto_del_grupo_sale_de_la_media_sin_redondear(db):
     valor(db, f"insert into public.event_roster (evento, nombre, grupo) "
-              f"select '{EVENTO}', 'P' || i, 'Veinte' from generate_series(1, 20) i union all "
-              f"select '{EVENTO}', 'Q' || i, 'Veintiuno' from generate_series(1, 21) i")
+              f"select '{EVENTO}', 'P' || i, 'Veinte' from generate_series(1, 300) i union all "
+              f"select '{EVENTO}', 'Q' || i, 'Veintiuno' from generate_series(1, 301) i")
     try:
         fijar(db, "P1", 1, 60, 3)
-        fijar(db, "Q1", 1, 60, 3)   # la misma marca: 1 punto cada uno; 1/20 = 0,05 y 1/21 = 0,0476 (0,05 redondeado)
+        fijar(db, "Q1", 1, 60, 3)   # la misma marca: 15 cada uno; 15/300 = 0,05 y 15/301 = 0,0498 (0,05 redondeado)
         terminado(db)
 
         grupos = {g["grupo"]: g for g in panel(db)["grupos"]}
@@ -351,3 +382,140 @@ def test_las_migraciones_no_traen_palabras_participantes_ni_huella_de_pin():
 
     semilla = Path(MIGRACIONES).parent / "seeds" / "evento_de_prueba.sql"
     assert "'prueba'" in semilla.read_text(encoding="utf-8"), "en el repositorio solo está el evento de prueba"
+
+
+# ── El dashboard sin PIN: horario, tablero público, F1, palabras y echar ─────────────────────────────────
+
+def programado(db, desde: str, hasta: str) -> None:
+    """El evento programado de `now() + desde` a `now() + hasta` (intervalos de Postgres)."""
+    valor(db, f"update public.event_editions set empieza_en = now() + interval '{desde}', "
+              f"terminado_en = now() + interval '{hasta}' where id = '{EVENTO}'")
+
+
+def tablero(db):
+    ok, datos = rpc(db, "tablero_del_evento", EVENTO)
+    assert ok, datos
+    return datos
+
+
+# @scenarios el-evento-empieza-y-termina-a-su-hora
+def test_el_evento_programado_no_empieza_antes_de_su_hora_y_termina_a_la_suya(db):
+    programado(db, "1 hour", "7 hours")
+    datos = rpc(db, "estado_del_juego", EVENTO)[1]
+    assert datos["activo"] is False
+    assert set(datos) == {"ahora", "activo", "terminado"}, "antes de su hora, nada"
+    ok, error = elegir(db, "Ana", token())
+    assert not ok and "no está activo" in error
+
+    programado(db, "-1 second", "6 hours")
+    assert rpc(db, "estado_del_juego", EVENTO)[1]["activo"] is True
+    assert elegir(db, "Ana", token())[0], "a su hora empieza solo, sin que nadie lo active"
+
+    programado(db, "-7 hours", "-1 second")
+    datos = rpc(db, "estado_del_juego", EVENTO)[1]
+    assert (datos["activo"], datos["terminado"]) == (False, True), "a su hora termina solo"
+
+
+# @scenarios el-panel-se-ve-sin-pin
+def test_el_tablero_se_ve_sin_pin_y_las_palabras_solo_antes_de_empezar_y_al_terminar(db):
+    programado(db, "1 hour", "7 hours")
+    datos = tablero(db)
+    assert (datos["antes"], datos["activo"], datos["terminado"]) == (True, False, False)
+    assert [p["palabra"] for p in datos["palabras"]] == ["casas", "perro", "lapiz"], "antes, para revisarlas"
+    assert datos["empieza_en"] and datos["terminado_en"]
+
+    programado(db, "-1 second", "6 hours")
+    datos = tablero(db)
+    assert (datos["antes"], datos["activo"]) == (False, True)
+    assert all("palabra" not in p for p in datos["palabras"]), "durante el juego, nunca"
+    assert {"jugadores", "grupos", "grupos_f1", "participantes", "elegidos"} <= set(datos)
+
+    programado(db, "-7 hours", "-1 second")
+    assert [p["palabra"] for p in tablero(db)["palabras"]] == ["casas", "perro", "lapiz"], "terminado, otra vez"
+
+
+def doce_jugadores(db):
+    """Doce participantes más, en dos grupos, con una palabra resuelta cada uno: J1 la más rápida, J12 la más lenta."""
+    valor(db, f"insert into public.event_roster (evento, nombre, grupo) select '{EVENTO}', 'J' || i, "
+              f"case when i % 2 = 1 then 'Impar' else 'Par' end from generate_series(1, 12) i")
+    for i in range(1, 13):
+        fijar(db, f"J{i}", 1, 10 * i, 1)
+
+
+def quitar_doce(db):
+    valor(db, f"delete from public.event_roster where evento = '{EVENTO}' and nombre like 'J%'")
+
+
+# @scenarios los-diez-primeros-suman-f1-a-su-grupo
+def test_los_diez_primeros_suman_a_su_grupo_los_puntos_de_la_f1(db):
+    doce_jugadores(db)
+    try:
+        programado(db, "-1 hour", "5 hours")
+        datos = tablero(db)
+    finally:
+        quitar_doce(db)
+
+    f1 = {j["nombre"]: float(j["f1"]) for j in datos["jugadores"]}
+    assert [f1[f"J{i}"] for i in range(1, 13)] == [25, 18, 15, 12, 10, 8, 6, 4, 2, 1, 0, 0]
+    assert f1["Ana"] == 0, "sin puntos, sin F1"
+    grupos = {g["grupo"]: g for g in datos["grupos_f1"]}
+    assert float(grupos["Impar"]["puntos"]) == 25 + 15 + 10 + 6 + 2
+    assert float(grupos["Par"]["puntos"]) == 18 + 12 + 8 + 4 + 1
+    assert (grupos["Impar"]["puesto"], grupos["Par"]["puesto"]) == (1, 2)
+    assert [(p["nombre"], float(p["puntos"])) for p in grupos["Impar"]["personas"]] == [
+        ("J1", 25), ("J3", 15), ("J5", 10), ("J7", 6), ("J9", 2)]
+    assert grupos["Rojo"]["personas"] == [] and float(grupos["Rojo"]["puntos"]) == 0
+
+
+# @scenarios los-diez-primeros-suman-f1-a-su-grupo
+def test_los_empatados_en_el_top_diez_se_reparten_los_puntos_de_sus_puestos(db):
+    fijar(db, "Ana", 1, 60, 3)    # 150
+    fijar(db, "Bea", 1, 90, 2)    # 150: empatan en cabeza
+    fijar(db, "Cris", 1, 151, 0)  # 151
+    programado(db, "-1 hour", "5 hours")
+
+    f1 = {j["nombre"]: float(j["f1"]) for j in tablero(db)["jugadores"]}
+
+    assert (f1["Ana"], f1["Bea"], f1["Cris"], f1["Dani"]) == (21.5, 21.5, 15, 0), "(25 + 18) / 2 cada uno"
+
+
+# @scenarios se-cambian-las-palabras-antes-de-empezar
+def test_antes_de_empezar_se_cambia_una_palabra_por_otra_del_diccionario(db):
+    programado(db, "1 hour", "7 hours")
+    try:
+        ok, datos = rpc(db, "cambiar_palabra", EVENTO, 2, " Sácos ")
+        assert ok and datos == {"orden": 2, "palabra": "sacos"}, datos
+        assert [p["palabra"] for p in tablero(db)["palabras"]] == ["casas", "sacos", "lapiz"]
+        for palabra, motivo in (("zzzzz", "diccionario"), ("casas", "ya está"), ("casa", "cinco letras")):
+            ok, error = rpc(db, "cambiar_palabra", EVENTO, 3, palabra)
+            assert not ok and motivo in error, (palabra, error)
+        assert not rpc(db, "cambiar_palabra", EVENTO, 9, "salas")[0], "una palabra que no existe"
+
+        programado(db, "-1 second", "6 hours")
+        ok, error = rpc(db, "cambiar_palabra", EVENTO, 3, "salas")
+        assert not ok and "ya ha empezado" in error
+        assert valor(db, f"select palabra from public.event_targets where evento = '{EVENTO}' and orden = 3") == "lapiz"
+    finally:
+        valor(db, f"update public.event_targets set palabra = 'perro' where evento = '{EVENTO}' and orden = 2")
+
+
+# @scenarios se-libera-un-nombre
+def test_se_echa_a_un_participante_sin_pin_mientras_dura_el_evento(db):
+    programado(db, "-1 second", "6 hours")
+    tk = jugador(db, "Ana")
+    assert empezar(db, tk, 1)[0]
+
+    ok, datos = rpc(db, "echar_participante", EVENTO, "ana")
+
+    assert ok and datos == {"nombre": "Ana"}, datos
+    assert valor(db, "select count(*) from public.event_rounds") == "0"
+    assert not rpc(db, "mi_juego", EVENTO, tk)[0]
+    programado(db, "-7 hours", "-1 second")
+    ok, error = rpc(db, "echar_participante", EVENTO, "Bea")
+    assert not ok and "terminado" in error
+
+
+# @scenarios la-web-no-toca-las-tablas-del-evento
+def test_el_ayudante_de_la_f1_no_es_publico(db):
+    resultado = db("select * from public.evento_f1('t')", rol="anon")
+    assert resultado.returncode != 0 and "permission denied for function" in resultado.stderr

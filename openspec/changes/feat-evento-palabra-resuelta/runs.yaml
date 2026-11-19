@@ -1,0 +1,22 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-19T11:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 0
+  mutacion:
+    aplicadas: 3
+    cazadas: 3
+    reforzadas: 0
+  notas: >-
+    El dueño probó el evento y vio que las palabras resueltas no se nombraban, ni al resolverlas ni en el resumen
+    final: era la regla anti-trampas (las soluciones no viajan al móvil hasta terminar el evento), que no hacía falta
+    para las resueltas, porque el participante ya las ha escrito. Ahora el resultado y el resumen nombran la resuelta,
+    tomada de su último intento; las falladas siguen sin nombre hasta terminar. Solo la web; sin cambio de servidor.

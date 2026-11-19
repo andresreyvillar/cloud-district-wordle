@@ -1,0 +1,25 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-19T12:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+  rondas_correccion: 0
+  mutacion:
+    aplicadas: 7
+    cazadas: 7
+    reforzadas: 0
+  notas: >-
+    El dueño quiere premiar la rapidez pero sobre todo acertar. Con la regla anterior (1 punto más uno por cada
+    resolvedor más lento) el resolvedor más lento sacaba casi lo mismo que quien fallaba, y en la simulación (miles de
+    eventos con la distribución real de intentos del canal, palabras difíciles) quien acertaba más palabras quedaba
+    delante solo en el 78 % de los casos; en una mañana de ejemplo con la lista cargada, una participante con 3 de 5
+    quedaba por delante de otra con 5 de 5. Ahora cada palabra acertada da 10 y hasta 5 más por rapidez (99 %); el
+    precio medido es que la suerte pesa más (la correlación con lo merecido baja de 0,73 a 0,57). Los 10 y los 5 son
+    columnas del evento, como los 30 s por intento, y el móvil los dice al empezar y en las reglas.
