@@ -73,6 +73,7 @@ export const VISTAS = Object.freeze({
   DEBATE: 'debate',
   EVENTO: 'evento',
   ADMIN_DEL_EVENTO: 'admin-del-evento',
+  PALABRAS_DEL_EVENTO: 'palabras-del-evento',
   JUGADOR: 'jugador',
   DESCONOCIDA: 'desconocida',
 });
@@ -122,6 +123,10 @@ export function resolver(ruta) {
   if (primero === 'evento' && resto.length === 1 && resto[0] === 'admin') {
     return { vista: VISTAS.ADMIN_DEL_EVENTO };
   }
+  // Las palabras, en su propio enlace: quien tiene el dashboard abierto puede jugar sin conocerlas.
+  if (primero === 'evento' && resto.length === 1 && resto[0] === 'palabras') {
+    return { vista: VISTAS.PALABRAS_DEL_EVENTO };
+  }
   // `/reglas` era la pestaña de antes: lleva a Info, para que ningún enlace viejo dé error.
   if ((primero === 'info' || primero === 'reglas') && resto.length === 0) {
     return { vista: VISTAS.INFO, temporada: null };
@@ -158,13 +163,13 @@ export function seccionDe(vista) {
   if (vista === VISTAS.JUGADOR) return VISTAS.TEMPORADA;
   if (vista === VISTAS.DESCONOCIDA) return null;
   // El evento vive fuera de la navegación: ninguna sección lo contiene.
-  if (vista === VISTAS.EVENTO || vista === VISTAS.ADMIN_DEL_EVENTO) return null;
+  if (esDelEvento({ vista })) return null;
   return vista;
 }
 
 /** Si un destino es del evento: esas vistas se pintan solas, sin la web de estadísticas ni sus datos. */
 export function esDelEvento(destino) {
-  return destino?.vista === VISTAS.EVENTO || destino?.vista === VISTAS.ADMIN_DEL_EVENTO;
+  return [VISTAS.EVENTO, VISTAS.ADMIN_DEL_EVENTO, VISTAS.PALABRAS_DEL_EVENTO].includes(destino?.vista);
 }
 
 /**
@@ -211,6 +216,8 @@ function _rutaInterna(destino) {
       return '/evento';
     case VISTAS.ADMIN_DEL_EVENTO:
       return '/evento/admin';
+    case VISTAS.PALABRAS_DEL_EVENTO:
+      return '/evento/palabras';
     default:
       return '/';
   }

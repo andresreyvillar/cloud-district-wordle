@@ -1445,14 +1445,15 @@ verified-by:
 
 ## Requirement: El evento empieza y termina a su hora, y el admin es un dashboard sin PIN
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-admin-en-directo (modified), feat-admin-dashboard (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-admin-en-directo (modified), feat-admin-dashboard (modified), feat-palabras-en-su-enlace (modified) -->
 
 **El evento empieza y termina a su hora** (decisión del dueño): con `empieza_en` y `terminado_en` cargados de
 antemano, está en juego de una hora a la otra; antes de `empieza_en` no lo está aunque esté cargada, y
 `estado_del_juego` sigue diciendo solo que no está activo. **El admin es un dashboard sin contraseña** (decisión del
 dueño, avisado de que así cualquiera con el enlace ve las palabras antes de empezar): `tablero_del_evento(evento)`
-da, sin PIN, lo mismo que el panel más los puntos F1; las palabras, solo antes de empezar y al terminar, nunca
-mientras se juega. `cambiar_palabra(evento, orden, palabra)` cambia una palabra hasta la hora de empezar, si tiene
+da, sin PIN, lo mismo que el panel más los puntos F1; las palabras, solo al terminar. Antes de empezar se revisan en
+su propio enlace, `/evento/palabras`, con `palabras_del_evento(evento)`, que solo las da antes de la hora de empezar
+(decisión del dueño: él mira el dashboard y juega sin conocerlas). `cambiar_palabra(evento, orden, palabra)` cambia una palabra hasta la hora de empezar, si tiene
 cinco letras, está en el diccionario del juego y no repite otra; `echar_participante(evento, nombre)` deja libre un
 nombre y borra lo jugado con él, salvo con el evento terminado. La web tiene el estilo del cartel del evento.
 
@@ -1490,7 +1491,7 @@ lo ofrece para copiar, para WhatsApp (`https://wa.me/?text=…`) y para email (`
 
 #### Scenario: el dashboard no enseña las palabras mientras se juega
 - **WHEN** se pide el tablero con el evento en juego
-- **THEN** no trae ninguna palabra; antes de empezar y al terminar, sí
+- **THEN** no trae ninguna palabra, tampoco antes de empezar; al terminar, sí
 
 #### Scenario: un PIN incorrecto no hace nada
 - **WHEN** se llama a `empezar_evento`, `terminar_evento`, `panel_del_evento` o `liberar_nombre` con un PIN que no

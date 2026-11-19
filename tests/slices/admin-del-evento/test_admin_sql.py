@@ -417,11 +417,11 @@ def test_el_evento_programado_no_empieza_antes_de_su_hora_y_termina_a_la_suya(db
 
 
 # @scenarios el-panel-se-ve-sin-pin
-def test_el_tablero_se_ve_sin_pin_y_las_palabras_solo_antes_de_empezar_y_al_terminar(db):
+def test_el_tablero_se_ve_sin_pin_y_las_palabras_solo_al_terminar(db):
     programado(db, "1 hour", "7 hours")
     datos = tablero(db)
     assert (datos["antes"], datos["activo"], datos["terminado"]) == (True, False, False)
-    assert [p["palabra"] for p in datos["palabras"]] == ["casas", "perro", "lapiz"], "antes, para revisarlas"
+    assert all("palabra" not in p for p in datos["palabras"]), "antes tampoco: se revisan en su propio enlace"
     assert datos["empieza_en"] and datos["terminado_en"]
 
     programado(db, "-1 second", "6 hours")
@@ -480,12 +480,27 @@ def test_los_empatados_en_el_top_diez_se_reparten_los_puntos_de_sus_puestos(db):
 
 
 # @scenarios se-cambian-las-palabras-antes-de-empezar
+def test_las_palabras_se_ven_en_su_enlace_solo_antes_de_empezar(db):
+    programado(db, "1 hour", "7 hours")
+    ok, datos = rpc(db, "palabras_del_evento", EVENTO)
+    assert ok and datos["palabras"] == [{"orden": 1, "palabra": "casas"}, {"orden": 2, "palabra": "perro"},
+                                        {"orden": 3, "palabra": "lapiz"}], datos
+    assert datos["empieza_en"]
+
+    programado(db, "-1 second", "6 hours")
+    ok, error = rpc(db, "palabras_del_evento", EVENTO)
+    assert not ok and "ya ha empezado" in error, "en juego, nunca"
+    programado(db, "-7 hours", "-1 second")
+    assert not rpc(db, "palabras_del_evento", EVENTO)[0], "terminado se ven en el dashboard, no aquí"
+
+
+# @scenarios se-cambian-las-palabras-antes-de-empezar
 def test_antes_de_empezar_se_cambia_una_palabra_por_otra_del_diccionario(db):
     programado(db, "1 hour", "7 hours")
     try:
         ok, datos = rpc(db, "cambiar_palabra", EVENTO, 2, " Sácos ")
         assert ok and datos == {"orden": 2, "palabra": "sacos"}, datos
-        assert [p["palabra"] for p in tablero(db)["palabras"]] == ["casas", "sacos", "lapiz"]
+        assert [p["palabra"] for p in rpc(db, "palabras_del_evento", EVENTO)[1]["palabras"]] == ["casas", "sacos", "lapiz"]
         for palabra, motivo in (("zzzzz", "diccionario"), ("casas", "ya está"), ("casa", "cinco letras")):
             ok, error = rpc(db, "cambiar_palabra", EVENTO, 3, palabra)
             assert not ok and motivo in error, (palabra, error)

@@ -13,7 +13,8 @@ import { test } from 'node:test';
 
 import { FalloDelEvento } from '../../../v2/js/evento/api.js';
 import {
-  controlDelAdmin, csvDeGrupos, csvDeParticipantes, cuantoFalta, exportacion, textoParaCompartir, vistaDelAdmin,
+  controlDelAdmin, controlDePalabras, csvDeGrupos, csvDeParticipantes, cuantoFalta, exportacion, textoParaCompartir,
+  vistaDelAdmin, vistaDePalabras,
 } from '../../../v2/js/evento/admin.js';
 
 const palabras = (extra = []) => [1, 2].map((orden, i) => ({ orden, jugando: 0, resueltas: 0, falladas: 0, ...(extra[i] ?? {}) }));
@@ -99,15 +100,16 @@ const vista = async (api) => vistaDelAdmin((await abierto(api)).estado);
 // ── Sin PIN, a su hora ───────────────────────────────────────────────────────────────────────────────────────
 
 /** @scenarios el-panel-se-ve-sin-pin, el-evento-empieza-y-termina-a-su-hora */
-test('el dashboard se abre sin contraseña y, antes de empezar, dice cuánto falta y enseña las palabras', async () => {
-  const api = apiFalsa({ panel: panelAntes() });
+test('el dashboard se abre sin contraseña y, antes de empezar, dice cuánto falta sin enseñar las palabras', async () => {
+  const api = apiFalsa({ panel: { ...panelAntes(), palabras: palabras() } });
 
   const html = await vista(api);
 
   assert.deepEqual(api.llamadas, [['tablero']], 'sin PIN');
   assert.doesNotMatch(html, /type="password"|PIN/);
   assert.match(html, /Empieza en 2 h 13 min · de 10:00 a 16:00/);
-  assert.match(html, /name="palabra" value="CASAS"[\s\S]*name="palabra" value="PERRO"/);
+  assert.doesNotMatch(html, /name="palabra"|CASAS|PERRO/, 'se revisan en su propio enlace');
+  assert.match(html, /en su propio enlace/);
   assert.doesNotMatch(html, /data-accion="(activar|terminar)"/, 'empieza y termina solo');
 });
 
@@ -126,20 +128,45 @@ test('mientras se juega, el dashboard no enseña ninguna palabra', async () => {
 
 // ── Las palabras ──────────────────────────────────────────────────────────────────────────────────────────
 
+const PALABRAS_ANTES = { ahora: '2026-11-20T06:47:00Z', titulo: 'Evento de test', empieza_en: HORARIO.empieza_en,
+  palabras: [{ orden: 1, palabra: 'casas' }, { orden: 2, palabra: 'perro' }] };
+
+async function enLasPalabras(sobre = {}) {
+  const api = { llamadas: [], palabras: async () => PALABRAS_ANTES, ...sobre };
+  const control = controlDePalabras({ api });
+  await control.refrescar();
+  return { api, control };
+}
+
 /** @scenarios se-cambian-las-palabras-antes-de-empezar */
-test('antes de empezar se cambia una palabra; si el servidor dice que no, se dice por qué', async () => {
-  const api = apiFalsa({ panel: panelAntes() });
-  const control = await abierto(api);
+test('en su propio enlace, antes de empezar, se ven las palabras y se cambia una; si el servidor dice que no, se dice por qué', async () => {
+  const cambios = [];
+  const { control } = await enLasPalabras({ cambiarPalabra: async (orden, palabra) => { cambios.push([orden, palabra]); } });
+  const html = vistaDePalabras(control.estado);
+  assert.match(html, /name="palabra" value="CASAS"[\s\S]*name="palabra" value="PERRO"/);
+  assert.match(html, /hasta las 10:00/);
 
   await control.cambiarPalabra(2, 'gozne');
-  assert.deepEqual(api.llamadas.find(([n]) => n === 'cambiarPalabra'), ['cambiarPalabra', 2, 'gozne']);
-  assert.match(vistaDelAdmin(control.estado), /Palabra 2 guardada/);
+  assert.deepEqual(cambios, [[2, 'gozne']]);
+  assert.match(vistaDePalabras(control.estado), /Palabra 2 guardada/);
 
-  const otro = await abierto(apiFalsa({ panel: panelAntes(), cambiarPalabra: async () => {
+  const { control: otro } = await enLasPalabras({ cambiarPalabra: async () => {
     throw new FalloDelEvento('Esa palabra no está en el diccionario del juego.', 'rechazo');
-  } }));
+  } });
   await otro.cambiarPalabra(1, 'zzzzz');
-  assert.match(vistaDelAdmin(otro.estado), /Esa palabra no está en el diccionario del juego/);
+  assert.match(vistaDePalabras(otro.estado), /Esa palabra no está en el diccionario del juego/);
+});
+
+/** @scenarios se-cambian-las-palabras-antes-de-empezar */
+test('en su propio enlace, empezado el evento, solo dice que ya no se ven', async () => {
+  const { control } = await enLasPalabras({ palabras: async () => {
+    throw new FalloDelEvento('El evento ya ha empezado: las palabras ya no se ven aquí.', 'rechazo');
+  } });
+
+  const html = vistaDePalabras(control.estado);
+
+  assert.match(html, /ya ha empezado/);
+  assert.doesNotMatch(html, /name="palabra"/);
 });
 
 // ── En directo ────────────────────────────────────────────────────────────────────────────────────────────

@@ -104,6 +104,9 @@ test('la ruta /evento y /evento/admin resuelven a sus vistas y ninguna pestaña 
   assert.equal(resolver('/evento/admin').vista, VISTAS.ADMIN_DEL_EVENTO);
   assert.equal(resolver('/evento/pantalla').vista, VISTAS.DESCONOCIDA);
   assert.ok(esDelEvento(resolver('/evento')) && esDelEvento(resolver('/evento/admin')));
+  assert.equal(resolver('/evento/palabras').vista, VISTAS.PALABRAS_DEL_EVENTO);
+  assert.ok(esDelEvento(resolver('/evento/palabras')));
+  assert.equal(rutaDe({ vista: VISTAS.PALABRAS_DEL_EVENTO }), '/evento/palabras');
   assert.equal(rutaDe({ vista: VISTAS.ADMIN_DEL_EVENTO }), '/evento/admin');
   for (const destino of [{ vista: VISTAS.TEMPORADA }, { vista: VISTAS.EVENTO }]) {
     assert.doesNotMatch(navegacion(destino), /evento/);
