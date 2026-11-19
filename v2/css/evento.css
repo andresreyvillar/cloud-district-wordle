@@ -197,3 +197,9 @@ body.modo-evento:has(.pa) [data-vista] { max-width: 72rem; }
 .ev-tiempo strong { font-weight: 800; }
 .ev-cuenta { flex-basis: 100%; font-family: var(--ev-fuente-etiqueta); font-size: 0.75rem; text-transform: uppercase;
   color: var(--ev-tinta-suave); text-align: right; }
+
+/* Compartir los resultados: el texto tal cual se enviará, y los botones para copiarlo o mandarlo. */
+.pa-compartir textarea { box-sizing: border-box; width: 100%; padding: 0.8rem; border: 1px solid var(--ev-borde);
+  border-radius: var(--ev-radio); background: var(--ev-superficie); color: var(--ev-tinta);
+  font-family: var(--ev-fuente-etiqueta); font-size: 0.9rem; line-height: 1.4; text-align: left; resize: vertical; }
+.pa-compartir a.ev-boton { display: inline-block; text-decoration: none; }

@@ -1423,7 +1423,7 @@ verified-by:
 
 ## Requirement: El admin activa y termina el evento con un PIN que se bloquea al fallar
 
-<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified) -->
+<!-- origen: feat-frase-del-evento (added), feat-palabras-del-evento (modified), feat-admin-en-directo (modified) -->
 
 No hay hora fija: `empezar_evento(evento, pin)` activa el evento con la hora del servidor si el PIN coincide con su
 huella (activado, no se mueve), y desde ese momento todas las palabras se pueden jugar. Hasta entonces
@@ -1436,9 +1436,15 @@ también para el bueno: con un PIN de cuatro cifras, probarlos todos lleva meses
 tener al admin bloqueado; el plan B es desbloquearlo por SQL. Un acierto pone la cuenta a cero. Las funciones con PIN no lanzan error con un PIN que no vale —un error desharía la cuenta—: contestan
 `{error}`.
 
-`panel_del_evento(evento, pin)` da al admin, durante el evento, cuántos han elegido nombre de cuántos hay en la lista
-y, por palabra, cuántos la juegan, la han resuelto y la han fallado, sin nombres ni tiempos. `liberar_nombre(evento,
-pin, nombre)` deja libre un nombre y borra lo jugado con él, salvo con el evento terminado.
+`panel_del_evento(evento, pin)` da al admin, durante el evento, cuántos han elegido nombre de cuántos hay en la lista;
+por palabra, cuántos la juegan, la han resuelto y la han fallado; y, por cada participante de la lista, si ha entrado
+(`elegido`), cuántas palabras ha empezado, terminado y resuelto, el tiempo de las terminadas (`tiempo_ms`), desde
+cuándo juega la que tiene a medias (`jugando_desde`), y sus puntos y su puesto. La web enseña una fila por cada
+participante que ha entrado, con un botón «Echar» que llama a `liberar_nombre(evento, pin, nombre)`: deja libre el
+nombre y borra lo jugado con él, salvo con el evento terminado. Las soluciones solo salen con el evento terminado.
+
+Terminado, la web compone un texto para compartir —el ranking de grupos con sus puntos y el podio de participantes— y
+lo ofrece para copiar, para WhatsApp (`https://wa.me/?text=…`) y para email (`mailto:`).
 
 #### Scenario: un PIN incorrecto no hace nada
 - **WHEN** se llama a `empezar_evento`, `terminar_evento`, `panel_del_evento` o `liberar_nombre` con un PIN que no
@@ -1453,6 +1459,16 @@ pin, nombre)` deja libre un nombre y borra lo jugado con él, salvo con el event
 #### Scenario: antes de activar no se ve nada
 - **WHEN** se pide el estado de un evento sin activar
 - **THEN** solo trae la hora del servidor y que no está activo
+
+#### Scenario: el admin sigue a cada participante en directo
+- **GIVEN** el evento activo, una participante que ha resuelto una palabra y otro que juega la suya
+- **WHEN** el admin pide el panel
+- **THEN** trae a los dos como entrados, con lo resuelto, su tiempo, quién está jugando desde cuándo y sus puntos, y
+  ninguna solución
+
+#### Scenario: los resultados se comparten en texto
+- **WHEN** el evento ha terminado y el admin pide el texto para compartir
+- **THEN** trae los grupos por puesto con sus puntos y el podio de participantes
 
 verified-by:
   - tests/slices/admin-del-evento/test_admin_sql.py

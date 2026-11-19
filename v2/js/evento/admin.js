@@ -1,9 +1,10 @@
 /**
  * La pantalla del admin del evento: `/evento/admin`.
  *
- * Slice: `admin-del-evento`. Con el PIN, el admin activa el evento cuando quiere, lo sigue con contadores **sin
- * nombres ni tiempos**, libera un nombre elegido por error y lo termina. Terminado, ve los puntos por grupo y por
- * participante y los exporta (JSON y CSV) para quien lleva la cuenta de los grupos.
+ * Slice: `admin-del-evento`. Con el PIN, el admin activa el evento cuando quiere y lo sigue **en directo**: contadores
+ * por palabra, una fila por cada participante que ha entrado (en qué palabra va, su tiempo, sus puntos y un botón para
+ * echarlo) y el ranking provisional de participantes y grupos. Lo termina, y entonces ve las soluciones, exporta los
+ * puntos (JSON y CSV) y comparte los resultados en texto por WhatsApp o email.
  *
  * El PIN vive solo en memoria: al recargar se vuelve a pedir.
  */
@@ -117,6 +118,42 @@ export function csvDeParticipantes(datos) {
   return [filaCsv(['puesto', 'nombre', 'grupo', 'puntos', ...columnas]), ...filas].join('\n') + '\n';
 }
 
+// ── Compartir ──────────────────────────────────────────────────────────────────────────────────────────
+
+const MEDALLAS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
+/** Los puntos en español: «0,5», «12,25». */
+function formatoPuntos(n) {
+  const valor = Number(n) || 0;
+  const texto = valor.toLocaleString('es-ES', { maximumFractionDigits: 2 });
+  return `${texto} ${valor === 1 ? 'punto' : 'puntos'}`;
+}
+
+const conMedalla = (puesto) => MEDALLAS[Number(puesto)] ?? `${Number(puesto)}.`;
+
+/** Los resultados en texto, para pegar en WhatsApp o en un email: todos los grupos por puesto y el podio. */
+export function textoParaCompartir(panel) {
+  const grupos = (panel?.grupos ?? []).map((g) => `${conMedalla(g.puesto)} ${g.grupo} · ${formatoPuntos(g.puntos)}`);
+  const podio = (panel?.jugadores ?? []).filter((j) => Number(j.puesto) <= 3 && Number(j.puntos) > 0)
+    .map((j) => `${conMedalla(j.puesto)} ${j.nombre} (${j.grupo}) · ${formatoPuntos(j.puntos)}`);
+  return [`🏆 ${panel?.titulo ?? ''} — resultados`, '', 'GRUPOS', ...grupos,
+    ...(podio.length ? ['', 'PODIO', ...podio] : [])].join('\n');
+}
+
+function compartir(p) {
+  const texto = textoParaCompartir(p);
+  const asunto = `${p.titulo ?? ''} — resultados`;
+  const whatsapp = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  const email = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(texto)}`;
+  return `<section class="pa-compartir"><h2>Compartir los resultados</h2>
+    <textarea readonly rows="${texto.split('\n').length}" aria-label="Resultados en texto">${escapar(texto)}</textarea>
+    <div class="pa-exportar">
+      <button type="button" class="ev-boton" data-compartir="copiar">Copiar</button>
+      <a class="ev-boton" href="${escapar(whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="ev-boton" href="${escapar(email)}">Email</a>
+    </div></section>`;
+}
+
 // ── Vista ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 function aviso(s) {
@@ -132,14 +169,28 @@ function contadores(palabras) {
   return `<table class="pa-contadores"><tbody>${filas}</tbody></table>`;
 }
 
-function nombresElegidos(nombres) {
-  const elegidos = (nombres ?? []).filter((n) => n.elegido);
-  if (!elegidos.length) return '';
-  return `<details class="pa-nombres"><summary>Liberar un nombre elegido por error</summary>
-    <p class="pa-nota">Libera el nombre y borra lo que se jugó con él: quien lo tenía tendrá que volver a elegir.</p>
-    <ul>${elegidos.map((n) => `<li><span>${escapar(n.nombre)}</span>
-      <button type="button" class="ev-boton pequeno" data-liberar="${escapar(n.nombre)}">Liberar</button></li>`).join('')}</ul>
-  </details>`;
+/** En qué va cada uno: la palabra que juega con su reloj (con la hora del servidor), si ha terminado o si no ha empezado. */
+function enQueVa(j, n, ahora) {
+  if (j.jugando_desde) {
+    const reloj = formatoTiempo(Math.max(0, Date.parse(ahora) - Date.parse(j.jugando_desde)));
+    return `Jugando la ${Number(j.empezadas)}/${n} · ${reloj}`;
+  }
+  if (Number(j.terminadas) >= n && n > 0) return 'Ha terminado';
+  return Number(j.empezadas) ? 'Entre palabras' : 'Sin empezar';
+}
+
+/** Una fila por cada participante que ha entrado, por puesto, con su tiempo, en qué va y el botón para echarlo. */
+function participantesEnDirecto(p) {
+  const n = (p.palabras ?? []).length;
+  const entrados = (p.jugadores ?? []).filter((j) => j.elegido);
+  if (!entrados.length) return '';
+  const filas = entrados.map((j) => `<tr><td class="pa-puesto">${Number(j.puesto)}</td><td class="pa-nombre">${
+    escapar(j.nombre)}</td><td>${escapar(j.grupo)}</td><td class="pa-total">${Number(j.puntos)}</td><td>${
+    Number(j.resueltas)}/${n}</td><td>${formatoTiempo(Number(j.tiempo_ms) || 0)}</td><td>${enQueVa(j, n, p.ahora)}</td>
+    <td><button type="button" class="ev-boton pequeno" data-liberar="${escapar(j.nombre)}">Echar</button></td></tr>`).join('');
+  return `<section class="pa-ranking"><h2>Participantes</h2><table><thead><tr><th>#</th><th>Nombre</th><th>Grupo</th>
+    <th>Puntos</th><th>Resueltas</th><th>Tiempo</th><th>Ahora</th><th></th></tr></thead><tbody>${filas}</tbody></table>
+    </section>`;
 }
 
 function rankingDeGrupos(grupos) {
@@ -187,7 +238,7 @@ export function vistaDelAdmin(s) {
         <button type="button" class="ev-boton" data-exportar="participantes">Participantes (CSV)</button>
         <button type="button" class="ev-boton" data-exportar="json">Todo (JSON)</button>
       </div>
-      ${rankingDeGrupos(p.grupos)}${rankingDeParticipantes(p.jugadores, n)}
+      ${compartir(p)}${rankingDeGrupos(p.grupos)}${rankingDeParticipantes(p.jugadores, n)}
       <section class="pa-soluciones"><h2>Las palabras</h2><ol>${(p.palabras ?? []).map((w) => (
     `<li value="${Number(w.orden)}">${escapar(String(w.palabra ?? '').toUpperCase())}</li>`)).join('')}</ol></section>
       ${aviso(s)}</div>`;
@@ -199,7 +250,9 @@ export function vistaDelAdmin(s) {
   }
   return `<div class="pa">${titulo}<p class="pa-nota">Evento activo</p>${elegidos}${contadores(p.palabras)}
     <button type="button" class="ev-boton grande peligro" data-accion="terminar">Terminar el evento</button>
-    ${nombresElegidos(p.nombres)}${aviso(s)}</div>`;
+    <p class="pa-nota">Puntos provisionales: cuentan las palabras terminadas y cambian mientras se juega. Se actualizan
+      solos.</p>
+    ${rankingDeGrupos(p.grupos)}${participantesEnDirecto(p)}${aviso(s)}</div>`;
 }
 
 // ── Borde ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -211,6 +264,16 @@ function descargar(nombre, contenido, tipo) {
   enlace.click();
   enlace.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Copia el texto; sin permiso para el portapapeles, lo deja seleccionado para copiarlo a mano. */
+async function copiar(texto, area) {
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch {
+    area?.select();
+    document.execCommand?.('copy');
+  }
 }
 
 /** Monta la pantalla. `temporizador` es `{cada(ms, fn)}`; `confirmar`, la pregunta antes de lo que no se deshace. */
@@ -230,9 +293,14 @@ export async function montarAdmin(contenedor, control, temporizador, evento, con
     const accion = e.target.closest('[data-accion]')?.dataset.accion;
     const liberar = e.target.closest('[data-liberar]')?.dataset.liberar;
     const exportar = e.target.closest('[data-exportar]')?.dataset.exportar;
+    const compartirlo = e.target.closest('[data-compartir]')?.dataset.compartir;
     if (accion === 'activar' && confirmar('¿Activar el evento? Todo el mundo podrá empezar a jugar.')) await control.activar();
     else if (accion === 'terminar' && confirmar('¿Terminar el evento? No se admitirán más intentos.')) await control.terminar();
-    else if (liberar && confirmar(`¿Liberar «${liberar}»? Se borra lo que se jugó con ese nombre.`)) await control.liberar(liberar);
+    else if (liberar && confirmar(`¿Echar a «${liberar}»? Su nombre queda libre y se borra lo que ha jugado.`)) await control.liberar(liberar);
+    else if (compartirlo === 'copiar') {
+      await copiar(textoParaCompartir(control.estado.panel), contenedor.querySelector('.pa-compartir textarea'));
+      return;
+    }
     else if (exportar) {
       const datos = exportacion(control.estado.panel, evento);
       if (exportar === 'grupos') descargar(`${evento}-grupos.csv`, csvDeGrupos(datos), 'text/csv;charset=utf-8');

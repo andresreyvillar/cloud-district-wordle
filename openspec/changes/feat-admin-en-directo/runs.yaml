@@ -1,0 +1,28 @@
+# Run records del cambio (§11).
+
+- run: '2026-11-18T17:00:00Z'
+  fase: implement
+  actor: fabrica
+  modelo: claude-opus-5-5
+  gates:
+    validate: pass
+    coverage: pass
+    gates-mecanicos: pass
+    tests: pass
+    mutacion: pass
+    adversarial: pass
+    seguridad: pass
+  rondas_correccion: 0
+  mutacion:
+    aplicadas: 10
+    cazadas: 10
+    reforzadas: 0
+  notas: >-
+    Petición del dueño dos días antes del evento: en el admin, ver a quién ha entrado y echarlo si se ha equivocado, el
+    tiempo de cada uno y el ranking general actualizándose; y compartir los vencedores con los puntos de los grupos en
+    texto para WhatsApp o email. `panel_del_evento` entrega los puntos también durante el evento (provisionales) y, por
+    participante, si ha entrado, cuántas palabras lleva, su tiempo y desde cuándo juega la que tiene a medias. Las
+    soluciones siguen saliendo solo al terminar y el móvil sigue sin ver puntos. La auditoría adversarial (un
+    verificador, también de seguridad) no sostuvo refutaciones; señaló el estado «Entre palabras», que el escenario no
+    nombraba (añadido), y que el panel deja reconstruir el orden de cada participante a quien tiene el PIN, que ya podía
+    calcularlo: no es una fuga nueva.
