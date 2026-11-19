@@ -331,6 +331,95 @@ test('un intento incompleto no se envía y no pasa de cinco letras', async () =>
   assert.ok(!api.llamadas.some(([n]) => n === 'probar'));
 });
 
+/** La fila que se escribe tal como se ve: las letras y la casilla elegida. */
+const filaActual = (c) => {
+  const fila = vista(c).match(/<div class="ev-fila ev-actual">([\s\S]*?)<\/div>/)[1];
+  return [...fila.matchAll(/<span class="ev-celda([^"]*)" data-casilla="(\d)"[^>]*>([^<]*)<\/span>/g)]
+    .map(([, clases, , letra]) => (clases.includes('ev-cursor') ? `[${letra || '_'}]` : letra || '_')).join('');
+};
+
+/** @scenarios una-letra-se-corrige-sin-borrar-las-demas */
+test('se toca una casilla y se cambia su letra sin borrar las demás, y eso es lo que se envía', async () => {
+  const api = apiFalsa();
+  const c = await dentro(api);
+  await c.empezar();
+  escribir(c, 'salas');
+  assert.equal(filaActual(c), 'SALAS');
+
+  c.elegirCasilla(0);
+  assert.equal(filaActual(c), '[S]ALAS');
+  c.teclear('c');
+  assert.equal(filaActual(c), 'CALAS', 'sin casillas vacías a la derecha, el cursor sale de la fila');
+  await c.enviar();
+
+  assert.deepEqual(api.llamadas.find(([n]) => n === 'probar').slice(2, 4), [1, 'calas']);
+});
+
+/** @scenarios una-letra-se-corrige-sin-borrar-las-demas */
+test('borrar quita la letra de la casilla elegida, o la anterior si está vacía, y se rellena el hueco', async () => {
+  const c = await dentro(apiFalsa());
+  await c.empezar();
+  escribir(c, 'casas');
+
+  c.elegirCasilla(2);
+  c.borrar();
+  assert.equal(filaActual(c), 'CA[_]AS', 'solo esa casilla');
+  await c.enviar();
+  assert.match(vista(c), /Falta 1 letra/);
+
+  c.teclear('s');
+  assert.equal(filaActual(c), 'CASAS', 'el hueco se rellena y el cursor sale de la fila');
+  c.borrar();
+  assert.equal(filaActual(c), 'CASA[_]', 'al final, borra la última');
+  c.borrar();
+  assert.equal(filaActual(c), 'CAS[_]_', 'vacía la elegida, retrocede y borra la anterior');
+});
+
+/** @scenarios una-letra-se-corrige-sin-borrar-las-demas */
+test('al escribir en medio, el cursor salta a la siguiente casilla vacía; las flechas lo mueven', async () => {
+  const c = await dentro(apiFalsa());
+  await c.empezar();
+  escribir(c, 'c');
+  c.elegirCasilla(3);
+  c.teclear('a');
+  assert.equal(filaActual(c), 'C__A[_]');
+
+  c.mover(-1);
+  c.mover(-1);
+  assert.equal(filaActual(c), 'C_[_]A_');
+  c.teclear('s');
+  assert.equal(filaActual(c), 'C_SA[_]', 'salta la A, que ya estaba');
+  c.mover(-9);
+  assert.equal(filaActual(c), '[C]_SA_', 'no sale por la izquierda');
+  c.elegirCasilla(7);
+  assert.equal(filaActual(c), '[C]_SA_', 'una casilla que no existe no se elige');
+});
+
+/** @scenarios los-avisos-flotan-sobre-la-pantalla */
+test('los avisos flotan fuera del flujo de la página y los de error se desvanecen solos', async () => {
+  const c = await dentro(apiFalsa());
+  await c.empezar();
+  escribir(c, 'zzzzz');
+  await c.enviar();
+
+  const html = vista(c);
+  assert.match(html, /<p class="ev-aviso ev-flotante se-desvanece" role="alert">la palabra no está en la lista<\/p>/);
+  const enviando = vistaDelEvento({ ...c.estado, enviando: true }, c.ahora());
+  assert.match(enviando, /<p class="ev-aviso ev-flotante enviando" role="status">Enviando…<\/p>/, 'mientras envía, no se va');
+  const sinRed = vistaDelEvento({ ...c.estado, aviso: null, sinConexion: true }, c.ahora());
+  assert.match(sinRed, /<p class="ev-aviso ev-flotante" role="alert">Sin conexión/, 'mientras no hay red, tampoco');
+
+  c.elegirCasilla(0);
+  assert.doesNotMatch(vista(c), /ev-aviso/, 'tocar la fila lo quita: si no, cada repintado lo volvería a sacar');
+
+  const hoja = readFileSync(new URL('../../../v2/css/evento.css', import.meta.url), 'utf8');
+  const flotante = hoja.match(/\.ev-flotante \{([^}]*)\}/)?.[1] ?? '';
+  assert.match(flotante, /position: fixed/, 'no ocupa sitio: el teclado no se mueve');
+  assert.match(flotante, /pointer-events: none/, 'no tapa los toques');
+  assert.match(hoja, /\.ev-flotante\.se-desvanece \{[^}]*animation: [^;]*ev-desvanece/);
+  assert.match(hoja, /@keyframes ev-desvanece \{[^@]*opacity: 0/);
+});
+
 /** @scenarios una-palabra-que-no-esta-en-la-lista-no-gasta-intento */
 test('una palabra que no está en la lista la rechaza el servidor: se avisa, se queda escrita y no gasta intento', async () => {
   const api = apiFalsa();

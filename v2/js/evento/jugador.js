@@ -46,7 +46,10 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
     rondas: new Map(),
     // Las soluciones del participante en su orden: solo llegan con el evento terminado.
     palabras: null,
+    // La fila que se escribe, casilla a casilla ('' es una casilla vacía), y la casilla elegida: de 0 a 4, o 5 si el
+    // cursor ha salido de la fila.
     escrito: [],
+    cursor: 0,
     aviso: null,
     enviando: false,
     empezando: false,
@@ -177,6 +180,7 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
     try {
       s.rondas.set(orden, await api.empezar(s.token, orden));
       s.escrito = [];
+      s.cursor = 0;
       s.aviso = null;
     } catch (error) {
       s.aviso = error.tipo === 'rechazo' ? error.message : MENSAJE_SIN_RED;
@@ -195,15 +199,39 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
     return s.estado?.activo && p.tipo === 'jugando' ? s.rondas.get(p.orden) : null;
   }
 
+  const casilla = (i) => s.escrito[i] ?? '';
+
+  /** La letra va a la casilla elegida, y el cursor salta a la siguiente vacía a su derecha (o sale de la fila). */
   function teclear(letra) {
-    if (!enJuego() || s.enviando) return;
-    if (s.escrito.length < LETRAS) s.escrito.push(letra);
+    if (!enJuego() || s.enviando || s.cursor >= LETRAS) return;
+    s.escrito[s.cursor] = letra;
+    let siguiente = s.cursor + 1;
+    while (siguiente < LETRAS && casilla(siguiente)) siguiente += 1;
+    s.cursor = siguiente;
     s.aviso = null;
   }
 
+  /** Borra la letra de la casilla elegida; si está vacía (o el cursor ha salido de la fila), la de la anterior. */
   function borrar() {
     if (!enJuego() || s.enviando) return;
-    s.escrito.pop();
+    if (s.cursor >= LETRAS || !casilla(s.cursor)) s.cursor = Math.max(0, Math.min(s.cursor, LETRAS) - 1);
+    s.escrito[s.cursor] = '';
+    s.aviso = null;
+  }
+
+  /** Elige una casilla de la fila que se escribe, para cambiar su letra sin borrar las demás. */
+  function elegirCasilla(i) {
+    const n = Number(i);
+    if (!enJuego() || s.enviando || !Number.isInteger(n) || n < 0 || n >= LETRAS) return;
+    s.cursor = n;
+    // Cada repintado vuelve a sacar el aviso: se quita al tocar la fila, o reaparecería al elegir una casilla.
+    s.aviso = null;
+  }
+
+  /** Mueve el cursor por la fila (las flechas del teclado del ordenador). */
+  function mover(paso) {
+    if (!enJuego() || s.enviando) return;
+    s.cursor = Math.max(0, Math.min(LETRAS - 1, Math.min(s.cursor, LETRAS) + Number(paso)));
     s.aviso = null;
   }
 
@@ -211,7 +239,7 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
   async function enviar() {
     const ronda = enJuego();
     if (!ronda || s.enviando) return;
-    const faltan = LETRAS - s.escrito.length;
+    const faltan = Array.from({ length: LETRAS }, (_, i) => casilla(i)).filter((letra) => !letra).length;
     if (faltan > 0) {
       s.aviso = faltan === 1 ? 'Falta 1 letra.' : `Faltan ${faltan} letras.`;
       return;
@@ -224,6 +252,7 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
       const numero = (ronda.intentos?.length ?? 0) + 1;
       s.rondas.set(ronda.orden, await api.probar(s.token, ronda.orden, palabra, numero));
       s.escrito = [];
+      s.cursor = 0;
       s.aviso = null;
     } catch (error) {
       // Sin red, lo escrito se queda: la palabra no ha llegado y no cuenta.
@@ -246,7 +275,7 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
 
   return {
     estado: s, ahora, punto, arrancar, sincronizar, refrescar, buscar, desplegar, marcar, entrar, empezar, teclear,
-    borrar, enviar, ayuda,
+    borrar, elegirCasilla, mover, enviar, ayuda,
   };
 }
 
@@ -254,18 +283,25 @@ export function controlDelEvento({ api, almacen, reloj, generarToken = tokenAlea
 
 const CLASE = { G: 'verde', Y: 'amarilla', '.': 'gris' };
 
-/** El tablero de seis intentos: los enviados con sus colores, el que se escribe y los que quedan. */
-export function tablero(ronda, escrito = []) {
+/** El tablero de seis intentos: los enviados con sus colores, el que se escribe (con la casilla elegida, que se toca para
+ * cambiarla) y los que quedan. */
+export function tablero(ronda, escrito = [], cursor = null) {
   const filas = [];
   const celdas = (letras, colores) => Array.from({ length: LETRAS }, (_, i) => {
     const letra = letras[i] ?? '';
     const color = colores ? ` ${CLASE[colores[i]] ?? ''}` : '';
     return `<span class="ev-celda${letra ? ' llena' : ''}${color}">${escapar(letra.toUpperCase())}</span>`;
   }).join('');
+  const editables = (letras) => Array.from({ length: LETRAS }, (_, i) => {
+    const letra = letras[i] ?? '';
+    const elegida = i === cursor ? ' ev-cursor' : '';
+    return `<span class="ev-celda${letra ? ' llena' : ''}${elegida}" data-casilla="${i}" role="button" aria-label="Casilla ${
+      i + 1}">${escapar(letra.toUpperCase())}</span>`;
+  }).join('');
   for (const { palabra, colores } of ronda.intentos ?? []) {
     filas.push(`<div class="ev-fila">${celdas([...palabra], colores)}</div>`);
   }
-  if (!ronda.terminada_en && filas.length < INTENTOS) filas.push(`<div class="ev-fila ev-actual">${celdas(escrito, null)}</div>`);
+  if (!ronda.terminada_en && filas.length < INTENTOS) filas.push(`<div class="ev-fila ev-actual">${editables(escrito)}</div>`);
   while (filas.length < INTENTOS) filas.push(`<div class="ev-fila">${celdas([], null)}</div>`);
   return `<div class="ev-tablero" aria-label="Tablero">${filas.join('')}</div>`;
 }
@@ -320,10 +356,12 @@ export function comoSeJuega(segundos) {
   </section>`;
 }
 
+/** Los avisos flotan sobre la pantalla: no empujan el tablero ni el teclado. Los de error se desvanecen solos; «Enviando…»
+ * y «Sin conexión» se quedan mientras dura lo que dicen. */
 function aviso(s) {
-  if (s.enviando) return '<p class="ev-aviso enviando" role="status">Enviando…</p>';
-  const texto = s.aviso ?? (s.sinConexion ? 'Sin conexión: reintentando…' : null);
-  return texto ? `<p class="ev-aviso" role="alert">${escapar(texto)}</p>` : '';
+  if (s.enviando) return '<p class="ev-aviso ev-flotante enviando" role="status">Enviando…</p>';
+  if (s.aviso) return `<p class="ev-aviso ev-flotante se-desvanece" role="alert">${escapar(s.aviso)}</p>`;
+  return s.sinConexion ? '<p class="ev-aviso ev-flotante" role="alert">Sin conexión: reintentando…</p>' : '';
 }
 
 const intentos = (n) => `${n} ${n === 1 ? 'intento' : 'intentos'}`;
@@ -412,7 +450,7 @@ function juego(s, ahora) {
   }
   const ronda = s.rondas.get(p.orden);
   if (p.tipo === 'jugando') {
-    return `<section class="ev-juego">${barra(s, ronda, ahora)}${tablero(ronda, s.escrito)}${aviso(s)}
+    return `<section class="ev-juego">${barra(s, ronda, ahora)}${tablero(ronda, s.escrito, s.cursor)}${aviso(s)}
       ${teclado(ronda.intentos)}</section>`;
   }
   const resultado = ronda.resuelta
@@ -478,9 +516,11 @@ export async function montarEvento(contenedor, control, temporizador) {
   // `submit`, y el navegador lo cancelaba.
   contenedor.addEventListener('click', async (evento) => {
     const tecla = evento.target.closest('[data-tecla]');
+    const casilla = evento.target.closest('[data-casilla]');
     const nombre = evento.target.closest('[data-nombre]');
     const accion = evento.target.closest('[data-accion]')?.dataset.accion;
     if (tecla) control.teclear(tecla.dataset.tecla);
+    else if (casilla) control.elegirCasilla(casilla.dataset.casilla);
     else if (nombre) control.marcar(nombre.dataset.nombre);
     else if (accion === 'desplegar') control.desplegar();
     else if (accion === 'ayuda') {
@@ -518,6 +558,8 @@ export async function montarEvento(contenedor, control, temporizador) {
       return;
     }
     if (evento.key === 'Backspace') control.borrar();
+    else if (evento.key === 'ArrowLeft') control.mover(-1);
+    else if (evento.key === 'ArrowRight') control.mover(1);
     else {
       const letra = letraDeTecla(evento.key);
       if (!letra) return;
